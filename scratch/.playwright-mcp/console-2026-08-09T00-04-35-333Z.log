@@ -1,0 +1,3 @@
+[      -3ms] [ERROR] Failed to load resource: the server responded with a status of 999 () @ https://www.linkedin.com/in/berat-ercevik:0
+[     254ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "username"): (More info: https://goo.gl/9p2vKq) %o @ https://www.linkedin.com/authwall?trk=gf&trkInfo=AQG02IBYhBVQnwAAAZ_j1eo4Kf161v1OMo5Div-cKVfdL2DMSfxjQwpZye9JRqcNK0_tbYvMhUAQLMvqjDEMwiWBqgA9jyT06aqgEr6mZvP6jwh5iDlsNV_aTLVZel_sdPdTMLU=&original_referer=&sessionRedirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fberat-ercevik:0
+[    1367ms] [WARNING] Element with id: dust-var-locale not found @ https://static.licdn.com/aero-v1/sc/h/4sy6xgzo0t4xd6r0uco9cdjd2:1
