@@ -42,3 +42,6 @@ next-env.d.ts
 
 # ai
 .claude
+
+# scratch work / temp artifacts
+/scratch
