@@ -1,4 +1,8 @@
-import { expect, test } from "@playwright/test";
+import {
+  attachRuntimeErrorCollector,
+  expect,
+  test,
+} from "./runtime-errors";
 
 const navigationItems = [
   { id: "home", label: "Home" },
@@ -101,6 +105,7 @@ test("keeps the hero heading and profile actions in the initial viewport", async
       isMobile: viewport.width === 390,
     });
     const page = await context.newPage();
+    const runtimeErrors = attachRuntimeErrorCollector(page);
     await page.goto("/");
 
     await expect(page.getByRole("heading", { level: 1 })).toBeInViewport({
@@ -112,6 +117,7 @@ test("keeps the hero heading and profile actions in the initial viewport", async
       ).toBeInViewport({ ratio: 1 });
     }
 
+    runtimeErrors.assertEmpty();
     await context.close();
   }
 });
@@ -123,6 +129,7 @@ test("keeps the skills marquee static in a narrow fine-pointer viewport", async 
     viewport: { width: 390, height: 844 },
   });
   const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
   await page.goto("/");
 
   await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
@@ -137,6 +144,7 @@ test("keeps the skills marquee static in a narrow fine-pointer viewport", async 
     await expect(track).toHaveCSS("transform", "none");
   }
 
+  runtimeErrors.assertEmpty();
   await context.close();
 });
 
@@ -160,6 +168,7 @@ test("moves enhanced desktop skill rows in opposite directions", async ({ page }
 test("disables continuous skill movement for reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
   await page.goto("/");
 
   await expect(page.locator('[data-skills-marquee="static"]')).toHaveCount(1);
@@ -171,6 +180,7 @@ test("disables continuous skill movement for reduced motion", async ({ browser }
   }
   await expect(page.locator("#skills")).toContainText("Concurrency & Parallelism");
 
+  runtimeErrors.assertEmpty();
   await context.close();
 });
 
@@ -242,26 +252,43 @@ test("navigation keeps a single-column menu throughout the mobile range", async 
     viewport: { width: 700, height: 900 },
     hasTouch: true,
     isMobile: true,
+    reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
 
   await page.goto("/");
   await page
     .getByRole("button", { name: "Open section navigation" })
     .tap();
 
-  const homeBox = await page
-    .getByRole("link", { name: "Home", exact: true })
-    .boundingBox();
-  const aboutBox = await page
-    .getByRole("link", { name: "About", exact: true })
-    .boundingBox();
+  const homeLink = page.getByRole("link", { name: "Home", exact: true });
+  const aboutLink = page.getByRole("link", { name: "About", exact: true });
+  await expect(homeLink).toBeVisible();
+  await expect(aboutLink).toBeVisible();
+  await expect
+    .poll(async () => {
+      const [home, about] = await Promise.all([
+        homeLink.boundingBox(),
+        aboutLink.boundingBox(),
+      ]);
+      return Boolean(
+        home &&
+          about &&
+          Math.abs(home.x - about.x) < 1 &&
+          about.y >= home.y + home.height,
+      );
+    })
+    .toBe(true);
+
+  const homeBox = await homeLink.boundingBox();
+  const aboutBox = await aboutLink.boundingBox();
 
   expect(homeBox).not.toBeNull();
   expect(aboutBox).not.toBeNull();
-  expect(Math.abs(homeBox!.x - aboutBox!.x)).toBeLessThan(1);
   expect(aboutBox!.y).toBeGreaterThanOrEqual(homeBox!.y + homeBox!.height);
 
+  runtimeErrors.assertEmpty();
   await context.close();
 });
 
@@ -274,6 +301,7 @@ test("navigation remains operable in a touch-sized viewport", async ({
     isMobile: true,
   });
   const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
 
   await page.goto("/");
 
@@ -293,5 +321,184 @@ test("navigation remains operable in a touch-sized viewport", async ({
   await expect(page.locator("#about")).toBeInViewport();
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 
+  runtimeErrors.assertEmpty();
   await context.close();
+});
+
+test("keeps every canonical destination exact and serves the local resume as PDF", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const canonicalDestinations = [
+    "https://github.com/bercev",
+    "https://linkedin.com/in/berat-ercevik",
+    "/resume.pdf",
+    "https://openreview.net/forum?id=nZYF0aPAMP",
+    "https://arxiv.org/abs/2602.21236",
+    "https://vitae.tools/",
+  ] as const;
+
+  for (const href of canonicalDestinations) {
+    const links = page.locator(`a[href=${JSON.stringify(href)}]`);
+    expect(await links.count(), `${href} should be linked`).toBeGreaterThan(0);
+    for (const link of await links.all()) {
+      await expect(link).toHaveAttribute("href", href);
+      await expect(link).toHaveAttribute("target", "_blank");
+      await expect(link).toHaveAttribute("rel", /(^|\s)noopener(\s|$)/);
+      await expect(link).toHaveAttribute("rel", /(^|\s)noreferrer(\s|$)/);
+    }
+  }
+
+  const resumeResponse = await page.request.get("/resume.pdf", {
+    failOnStatusCode: false,
+  });
+  expect(resumeResponse.status()).toBe(200);
+  expect(resumeResponse.headers()["content-type"]).toMatch(
+    /^application\/pdf(?:;|$)/,
+  );
+  await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
+});
+
+test("supports a visible keyboard path through chrome, external links, and Bubble Menu", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const expectVisibleFocus = async (locator: ReturnType<typeof page.locator>) => {
+    await expect(locator).toBeFocused();
+    expect(
+      await locator.evaluate((element) => {
+        const styles = window.getComputedStyle(element);
+        return (
+          element.matches(":focus-visible") &&
+          styles.outlineStyle !== "none" &&
+          Number.parseFloat(styles.outlineWidth) >= 2
+        );
+      }),
+    ).toBe(true);
+  };
+
+  await page.keyboard.press("Tab");
+  await expectVisibleFocus(
+    page.getByRole("link", { name: "Berat Ercevik, home" }),
+  );
+
+  await page.keyboard.press("Tab");
+  const themeToggle = page.getByRole("button", {
+    name: /Switch to (light|dark) theme/,
+  });
+  await expectVisibleFocus(themeToggle);
+  await expect(themeToggle).toHaveAccessibleName(/Switch to (light|dark) theme/);
+
+  const expectedContentHrefs = [
+    "https://github.com/bercev",
+    "https://linkedin.com/in/berat-ercevik",
+    "/resume.pdf",
+    "https://openreview.net/forum?id=nZYF0aPAMP",
+    "https://arxiv.org/abs/2602.21236",
+    "https://vitae.tools/",
+  ] as const;
+
+  for (const href of expectedContentHrefs) {
+    await page.keyboard.press("Tab");
+    const focused = page.locator(":focus");
+    await expectVisibleFocus(focused);
+    await expect(focused).toHaveAttribute("href", href);
+  }
+
+  const skillRows = page.locator("[data-skills-row]");
+  await expect(skillRows).toHaveCount(2);
+  for (const skillRow of await skillRows.all()) {
+    await page.keyboard.press("Tab");
+    await expectVisibleFocus(skillRow);
+  }
+
+  for (const href of [
+    "https://github.com/bercev",
+    "https://linkedin.com/in/berat-ercevik",
+    "/resume.pdf",
+  ] as const) {
+    await page.keyboard.press("Tab");
+    const focused = page.locator(":focus");
+    await expectVisibleFocus(focused);
+    await expect(focused).toHaveAttribute("href", href);
+  }
+
+  await page.keyboard.press("Tab");
+  const menuTrigger = page.getByRole("button", {
+    name: "Open section navigation",
+  });
+  await expectVisibleFocus(menuTrigger);
+  await expect(menuTrigger).toHaveAccessibleName("Open section navigation");
+  await page.keyboard.press("Enter");
+
+  for (const item of navigationItems) {
+    await page.keyboard.press("Tab");
+    const sectionLink = page.getByRole("link", {
+      name: item.label,
+      exact: true,
+    });
+    await expectVisibleFocus(sectionLink);
+    await expect(sectionLink).toHaveAttribute("href", `#${item.id}`);
+  }
+});
+
+test("keeps document and animated-text semantics stable and hides decorative canvases", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(
+    "Berat Ercevik",
+  );
+
+  const headingLabels = [
+    "About",
+    "Publications",
+    "Experience",
+    "Projects",
+    "Skills",
+  ] as const;
+  for (const label of headingLabels) {
+    await expect(
+      page.getByRole("heading", { level: 2, name: label, exact: true }),
+    ).toHaveCount(1);
+  }
+
+  const stableTagline = page.locator("#home .sr-only", {
+    hasText: /^I build software that reasons, adapts, and ships\.$/,
+  });
+  await expect(stableTagline).toHaveCount(1);
+
+  await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
+    "data-effect-mode",
+    "enhanced",
+  );
+  const canvases = page.locator("canvas");
+  await expect(canvases).toHaveCount(2);
+  for (const canvas of await canvases.all()) {
+    expect(
+      await canvas.evaluate(
+        (element) => element.closest('[aria-hidden="true"]') !== null,
+      ),
+    ).toBe(true);
+  }
+
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 100);
+  await page.clock.runFor(2_400);
+  await expect(
+    page.locator("#home").getByText("Rigorous", { exact: true }),
+  ).toBeAttached();
+  await expect(stableTagline).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(
+    "Berat Ercevik",
+  );
+  for (const label of headingLabels) {
+    await expect(
+      page.getByRole("heading", { level: 2, name: label, exact: true }),
+    ).toHaveCount(1);
+  }
 });

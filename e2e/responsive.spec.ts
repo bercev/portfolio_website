@@ -1,4 +1,10 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import type { Locator } from "@playwright/test";
+
+import {
+  attachRuntimeErrorCollector,
+  expect,
+  test,
+} from "./runtime-errors";
 
 const MOBILE_VIEWPORT = { width: 390, height: 844 } as const;
 const SECTION_IDS = [
@@ -17,17 +23,6 @@ type ElementBox = {
   x: number;
   y: number;
 };
-
-function collectRuntimeErrors(page: Page) {
-  const errors: string[] = [];
-
-  page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
-  });
-  page.on("pageerror", (error) => errors.push(error.message));
-
-  return errors;
-}
 
 async function getBoxes(locator: Locator): Promise<ElementBox[]> {
   return locator.evaluateAll((elements) =>
@@ -60,7 +55,7 @@ test("keeps every multi-column section readable at 390px", async ({
     isMobile: true,
   });
   const page = await context.newPage();
-  const errors = collectRuntimeErrors(page);
+  const runtimeErrors = attachRuntimeErrorCollector(page);
 
   await page.goto("/");
 
@@ -109,7 +104,7 @@ test("keeps every multi-column section readable at 390px", async ({
     expect(x + width).toBeLessThanOrEqual(MOBILE_VIEWPORT.width - 16 + 1);
   }
 
-  expect(errors).toEqual([]);
+  runtimeErrors.assertEmpty();
   await context.close();
 });
 
@@ -122,7 +117,7 @@ test("keeps the mobile menu above the safe area and keyboard accessible", async 
     isMobile: true,
   });
   const page = await context.newPage();
-  const errors = collectRuntimeErrors(page);
+  const runtimeErrors = attachRuntimeErrorCollector(page);
 
   await page.goto("/");
 
@@ -158,7 +153,7 @@ test("keeps the mobile menu above the safe area and keyboard accessible", async 
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
   await expect(trigger).toBeFocused();
 
-  expect(errors).toEqual([]);
+  runtimeErrors.assertEmpty();
   await context.close();
 });
 
@@ -167,8 +162,9 @@ test("renders static, fully visible content for reduced motion", async ({
 }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
-  const errors = collectRuntimeErrors(page);
+  const runtimeErrors = attachRuntimeErrorCollector(page);
 
+  await page.clock.install();
   await page.goto("/");
 
   await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
@@ -199,8 +195,15 @@ test("renders static, fully visible content for reduced motion", async ({
 
   const firstTrait = page.getByText("Curious", { exact: true });
   await expect(firstTrait).toBeVisible();
-  await page.waitForTimeout(2_700);
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 100);
+  await page.clock.runFor(2_400);
   await expect(firstTrait).toBeVisible();
+  await expect(page.getByText("Rigorous", { exact: true })).toHaveCount(0);
+  await expect(
+    page.locator("#home .sr-only", {
+      hasText: /^I build software that reasons, adapts, and ships\.$/,
+    }),
+  ).toHaveCount(1);
 
   for (const id of SECTION_IDS) {
     await expect(page.locator(`#${id}`)).toBeVisible();
@@ -210,7 +213,7 @@ test("renders static, fully visible content for reduced motion", async ({
     await expect(skillsRow).toBeVisible();
   }
 
-  expect(errors).toEqual([]);
+  runtimeErrors.assertEmpty();
   await context.close();
 });
 
@@ -219,7 +222,7 @@ test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
     viewport: { width: 1280, height: 720 },
   });
   const finePage = await fineContext.newPage();
-  const fineErrors = collectRuntimeErrors(finePage);
+  const fineRuntimeErrors = attachRuntimeErrorCollector(finePage);
 
   await finePage.goto("/");
   await expect(finePage.locator("[data-effect-mode]")).toHaveAttribute(
@@ -228,7 +231,7 @@ test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
   );
   await expect(finePage.locator("[data-pixel-trail]")).toHaveCount(1);
   await expect(finePage.locator("[data-click-spark]")).toHaveCount(1);
-  expect(fineErrors).toEqual([]);
+  fineRuntimeErrors.assertEmpty();
   await fineContext.close();
 
   const coarseContext = await browser.newContext({
@@ -236,7 +239,7 @@ test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
     hasTouch: true,
   });
   const coarsePage = await coarseContext.newPage();
-  const coarseErrors = collectRuntimeErrors(coarsePage);
+  const coarseRuntimeErrors = attachRuntimeErrorCollector(coarsePage);
 
   await coarsePage.goto("/");
   await expect(coarsePage.locator("[data-effect-mode]")).toHaveAttribute(
@@ -245,6 +248,82 @@ test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
   );
   await expect(coarsePage.locator("[data-pixel-trail]")).toHaveCount(0);
   await expect(coarsePage.locator("[data-click-spark]")).toHaveCount(0);
-  expect(coarseErrors).toEqual([]);
+  coarseRuntimeErrors.assertEmpty();
   await coarseContext.close();
 });
+
+const SNAPSHOT_SECTIONS = [
+  { id: "home", name: "hero" },
+  { id: "about", name: "about" },
+  { id: "publications", name: "publications" },
+  { id: "experience", name: "experience" },
+  { id: "projects", name: "projects" },
+  { id: "skills", name: "skills" },
+  { id: "contact", name: "contact" },
+] as const;
+
+for (const theme of ["light", "dark"] as const) {
+  test(`matches the approved ${theme} full-page and section baselines`, async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+
+    await page.emulateMedia({
+      colorScheme: theme,
+      reducedMotion: "reduce",
+    });
+    await page.addInitScript((storedTheme) => {
+      localStorage.setItem("theme", storedTheme);
+    }, theme);
+    await page.goto("/");
+    await expect(page.locator("nextjs-portal")).toHaveCount(0);
+
+    await expect(page.locator("html")).toHaveClass(
+      new RegExp(`(^|\\s)${theme}(\\s|$)`),
+    );
+    await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
+      "data-effect-mode",
+      "static",
+    );
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await Promise.all(
+        Array.from(document.images, (image) =>
+          image.complete
+            ? Promise.resolve()
+            : new Promise<void>((resolve) => {
+                image.addEventListener("load", () => resolve(), { once: true });
+                image.addEventListener("error", () => resolve(), { once: true });
+              }),
+        ),
+      );
+      await new Promise<void>((resolve) =>
+        window.requestAnimationFrame(() =>
+          window.requestAnimationFrame(() => resolve()),
+        ),
+      );
+    });
+
+    const stableClassName = await page.locator("html").getAttribute("class");
+    await expect(page.locator("html")).toHaveClass(stableClassName ?? "");
+
+    await expect(page).toHaveScreenshot(`${theme}-full-page.png`, {
+      animations: "disabled",
+      caret: "hide",
+      fullPage: true,
+      scale: "css",
+    });
+
+    for (const section of SNAPSHOT_SECTIONS) {
+      await expect(page.locator(`#${section.id}`)).toHaveScreenshot(
+        `${theme}-${section.name}.png`,
+        {
+          animations: "disabled",
+          caret: "hide",
+          scale: "css",
+        },
+      );
+      await expect(page.locator("html")).toHaveClass(stableClassName ?? "");
+    }
+  });
+}

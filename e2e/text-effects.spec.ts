@@ -1,21 +1,33 @@
-import { expect, test } from "@playwright/test";
+import {
+  attachRuntimeErrorCollector,
+  expect,
+  test,
+} from "./runtime-errors";
 
 test("keeps animated text and links semantically stable", async ({ page }) => {
+  await page.clock.install();
   await page.goto("/");
 
-  const showcase = page.getByRole("region", { name: "Text effect semantics" });
-  await expect(showcase).toBeAttached();
-  await expect(showcase.getByText("Berat", { exact: true })).toBeAttached();
+  const hero = page.locator("#home");
+  const stableTagline = hero.locator(".sr-only", {
+    hasText: /^I build software that reasons, adapts, and ships\.$/,
+  });
   await expect(
-    showcase.locator(".sr-only", {
-      hasText: /^I build software that reasons, adapts, and ships\.$/,
-    }),
+    hero.locator(".sr-only", { hasText: /^Berat$/ }),
   ).toBeAttached();
+  await expect(stableTagline).toBeAttached();
   await expect(
-    showcase.locator(".sr-only", { hasText: /^About$/ }),
+    page.locator("#about .sr-only", { hasText: /^About$/ }),
   ).toBeAttached();
 
-  const external = showcase.getByRole("link", { name: /GitHub/i });
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 100);
+  await page.clock.runFor(2_400);
+  await expect(
+    hero.getByText("Rigorous", { exact: true }),
+  ).toBeAttached();
+  await expect(stableTagline).toBeAttached();
+
+  const external = hero.getByRole("link", { name: /GitHub/i }).first();
   await expect(external).toHaveAttribute("target", "_blank");
   await expect(external).toHaveAttribute("rel", /noopener/);
   await expect(external).toHaveAttribute("rel", /noreferrer/);
@@ -24,11 +36,20 @@ test("keeps animated text and links semantically stable", async ({ page }) => {
 test("keeps the first trait static for reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
 
+  await page.clock.install();
   await page.goto("/");
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 100);
+  await page.clock.runFor(2_400);
 
-  const showcase = page.getByRole("region", { name: "Text effect semantics" });
-  await expect(showcase.getByText("Curious", { exact: true })).toBeAttached();
+  await expect(
+    page.locator("#home").getByText("Curious", { exact: true }),
+  ).toBeAttached();
+  await expect(
+    page.locator("#home").getByText("Rigorous", { exact: true }),
+  ).toHaveCount(0);
 
+  runtimeErrors.assertEmpty();
   await context.close();
 });

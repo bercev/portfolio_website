@@ -33,7 +33,6 @@ const metadataBase = new URL(
 const title = "Berat Ercevik - Software Engineer";
 const description =
   "Software engineering portfolio featuring full-stack applications, agentic systems, and AI research by Berat Ercevik.";
-
 export const metadata: Metadata = {
   metadataBase,
   title,
