@@ -1,0 +1,579 @@
+- generic [ref=f1e2]:
+  - complementary "Report navigation" [ref=f1e3]:
+    - generic [ref=f1e4]: Doctor / 2026-08-10
+    - navigation [ref=f1e5]:
+      - link "00 Summary" [ref=f1e6] [cursor=pointer]:
+        - /url: "#summary"
+        - generic [ref=f1e7]: "00"
+        - generic [ref=f1e8]: Summary
+      - link "01 Inventory" [ref=f1e9] [cursor=pointer]:
+        - /url: "#inventory"
+        - generic [ref=f1e10]: "01"
+        - generic [ref=f1e11]: Inventory
+      - link "02 Actions" [ref=f1e12] [cursor=pointer]:
+        - /url: "#actions"
+        - generic [ref=f1e13]: "02"
+        - generic [ref=f1e14]: Actions
+      - link "03 Warnings" [ref=f1e15] [cursor=pointer]:
+        - /url: "#warnings"
+        - generic [ref=f1e16]: "03"
+        - generic [ref=f1e17]: Warnings
+      - link "04 Decision" [ref=f1e18] [cursor=pointer]:
+        - /url: "#decision"
+        - generic [ref=f1e19]: "04"
+        - generic [ref=f1e20]: Decision
+    - paragraph [ref=f1e21]: PORTFOLIO_WEBSITEREAD-ONLY AUDIT50 SESSIONS / 7.1 DAYS
+  - main [ref=f1e22]:
+    - generic [ref=f1e23]:
+      - generic [ref=f1e24]:
+        - text: Claude Code diagnostic record
+        - heading "Healthy core. Heavy context." [level=1] [ref=f1e25]: Healthy core.Heavy context.
+        - paragraph [ref=f1e26]: "The installation is sound. The opportunity is subtraction: unused extensions and derivable guidance currently occupy context before useful work begins."
+      - complementary "Estimated context saving" [ref=f1e27]:
+        - text: Recoverable each session
+        - strong [ref=f1e28]: ~4.4k
+        - paragraph [ref=f1e29]: estimated tokens, with reversible cleanup
+    - generic "Audit summary" [ref=f1e30]:
+      - generic [ref=f1e31]:
+        - strong [ref=f1e32]: "18"
+        - text: unused user skills
+      - generic [ref=f1e33]:
+        - strong [ref=f1e34]: "3"
+        - text: unused plugins
+      - generic [ref=f1e35]:
+        - strong [ref=f1e36]: "2"
+        - text: unused project MCP servers
+      - generic [ref=f1e37]:
+        - strong [ref=f1e38]: "0"
+        - text: installation faults
+    - generic [ref=f1e39]:
+      - generic [ref=f1e40]:
+        - generic [ref=f1e41]: 01 / inventory
+        - generic [ref=f1e42]:
+          - heading "What loads, and whether it earns its place" [level=2] [ref=f1e43]
+          - paragraph [ref=f1e44]: Usage totals are lifetime counters. “Used in window” combines trustworthy timestamps with transcript evidence from the 50 most recent sessions across all projects.
+      - region "Claude Code component inventory" [ref=f1e45]:
+        - table [ref=f1e46]:
+          - rowgroup [ref=f1e47]:
+            - row [ref=f1e48]:
+              - columnheader "Component" [ref=f1e49]
+              - columnheader "Type" [ref=f1e50]
+              - columnheader "Scope" [ref=f1e51]
+              - columnheader "Uses total" [ref=f1e52]
+              - columnheader "Used in window?" [ref=f1e53]
+              - columnheader "Est. resident tokens" [ref=f1e54]
+              - columnheader "Verdict" [ref=f1e55]
+          - rowgroup [ref=f1e56]:
+            - row [ref=f1e57]:
+              - cell "ask-matt" [ref=f1e58]
+              - cell "Skill" [ref=f1e59]
+              - cell "User" [ref=f1e60]
+              - cell "0" [ref=f1e61]
+              - cell "No" [ref=f1e62]
+              - cell "0, manual-only" [ref=f1e63]
+              - cell "Disable" [ref=f1e64]
+            - row [ref=f1e66]:
+              - cell "code-review" [ref=f1e67]
+              - cell "Skill" [ref=f1e68]
+              - cell "User" [ref=f1e69]
+              - cell "2" [ref=f1e70]
+              - cell "Yes" [ref=f1e71]
+              - cell "107" [ref=f1e72]
+              - cell "Keep" [ref=f1e73]
+            - row [ref=f1e75]:
+              - cell "codebase-design" [ref=f1e76]
+              - cell "Skill" [ref=f1e77]
+              - cell "User" [ref=f1e78]
+              - cell "0" [ref=f1e79]
+              - cell "No" [ref=f1e80]
+              - cell "70" [ref=f1e81]
+              - cell "Disable" [ref=f1e82]
+            - row [ref=f1e84]:
+              - cell "diagnosing-bugs" [ref=f1e85]
+              - cell "Skill" [ref=f1e86]
+              - cell "User" [ref=f1e87]
+              - cell "0" [ref=f1e88]
+              - cell "No" [ref=f1e89]
+              - cell "43" [ref=f1e90]
+              - cell "Disable" [ref=f1e91]
+            - row [ref=f1e93]:
+              - cell "domain-modeling" [ref=f1e94]
+              - cell "Skill" [ref=f1e95]
+              - cell "User" [ref=f1e96]
+              - cell "0" [ref=f1e97]
+              - cell "No" [ref=f1e98]
+              - cell "58" [ref=f1e99]
+              - cell "Disable" [ref=f1e100]
+            - row [ref=f1e102]:
+              - cell "grill-me" [ref=f1e103]
+              - cell "Skill" [ref=f1e104]
+              - cell "User" [ref=f1e105]
+              - cell "1" [ref=f1e106]
+              - cell "Yes" [ref=f1e107]
+              - cell "15" [ref=f1e108]
+              - cell "Keep" [ref=f1e109]
+            - row [ref=f1e111]:
+              - cell "grill-with-docs" [ref=f1e112]
+              - cell "Skill" [ref=f1e113]
+              - cell "User" [ref=f1e114]
+              - cell "0" [ref=f1e115]
+              - cell "No" [ref=f1e116]
+              - cell "0, manual-only" [ref=f1e117]
+              - cell "Disable" [ref=f1e118]
+            - row [ref=f1e120]:
+              - cell "grilling" [ref=f1e121]
+              - cell "Skill" [ref=f1e122]
+              - cell "User" [ref=f1e123]
+              - cell "1" [ref=f1e124]
+              - cell "Yes" [ref=f1e125]
+              - cell "40" [ref=f1e126]
+              - cell "Keep" [ref=f1e127]
+            - row [ref=f1e129]:
+              - cell "handoff" [ref=f1e130]
+              - cell "Skill" [ref=f1e131]
+              - cell "User" [ref=f1e132]
+              - cell "1" [ref=f1e133]
+              - cell "No" [ref=f1e134]
+              - cell "0, manual-only" [ref=f1e135]
+              - cell "Disable" [ref=f1e136]
+            - row [ref=f1e138]:
+              - cell "implement" [ref=f1e139]
+              - cell "Skill" [ref=f1e140]
+              - cell "User" [ref=f1e141]
+              - cell "0" [ref=f1e142]
+              - cell "No" [ref=f1e143]
+              - cell "0, manual-only" [ref=f1e144]
+              - cell "Disable" [ref=f1e145]
+            - row [ref=f1e147]:
+              - cell "improve-codebase-architecture" [ref=f1e148]
+              - cell "Skill" [ref=f1e149]
+              - cell "User" [ref=f1e150]
+              - cell "0" [ref=f1e151]
+              - cell "No" [ref=f1e152]
+              - cell "0, manual-only" [ref=f1e153]
+              - cell "Disable" [ref=f1e154]
+            - row [ref=f1e156]:
+              - cell "prototype" [ref=f1e157]
+              - cell "Skill" [ref=f1e158]
+              - cell "User" [ref=f1e159]
+              - cell "0" [ref=f1e160]
+              - cell "No" [ref=f1e161]
+              - cell "47" [ref=f1e162]
+              - cell "Disable" [ref=f1e163]
+            - row [ref=f1e165]:
+              - cell "research" [ref=f1e166]
+              - cell "Skill" [ref=f1e167]
+              - cell "User" [ref=f1e168]
+              - cell "0" [ref=f1e169]
+              - cell "No" [ref=f1e170]
+              - cell "62" [ref=f1e171]
+              - cell "Disable" [ref=f1e172]
+            - row [ref=f1e174]:
+              - cell "resolving-merge-conflicts" [ref=f1e175]
+              - cell "Skill" [ref=f1e176]
+              - cell "User" [ref=f1e177]
+              - cell "0" [ref=f1e178]
+              - cell "No" [ref=f1e179]
+              - cell "24" [ref=f1e180]
+              - cell "Disable" [ref=f1e181]
+            - row [ref=f1e183]:
+              - cell "setup-matt-pocock-skills" [ref=f1e184]
+              - cell "Skill" [ref=f1e185]
+              - cell "User" [ref=f1e186]
+              - cell "0" [ref=f1e187]
+              - cell "No" [ref=f1e188]
+              - cell "0, manual-only" [ref=f1e189]
+              - cell "Disable" [ref=f1e190]
+            - row [ref=f1e192]:
+              - cell "tdd" [ref=f1e193]
+              - cell "Skill" [ref=f1e194]
+              - cell "User" [ref=f1e195]
+              - cell "0" [ref=f1e196]
+              - cell "No" [ref=f1e197]
+              - cell "38" [ref=f1e198]
+              - cell "Disable" [ref=f1e199]
+            - row [ref=f1e201]:
+              - cell "teach" [ref=f1e202]
+              - cell "Skill" [ref=f1e203]
+              - cell "User" [ref=f1e204]
+              - cell "0" [ref=f1e205]
+              - cell "No" [ref=f1e206]
+              - cell "0, manual-only" [ref=f1e207]
+              - cell "Disable" [ref=f1e208]
+            - row [ref=f1e210]:
+              - cell "to-spec" [ref=f1e211]
+              - cell "Skill" [ref=f1e212]
+              - cell "User" [ref=f1e213]
+              - cell "0" [ref=f1e214]
+              - cell "No" [ref=f1e215]
+              - cell "0, manual-only" [ref=f1e216]
+              - cell "Disable" [ref=f1e217]
+            - row [ref=f1e219]:
+              - cell "to-tickets" [ref=f1e220]
+              - cell "Skill" [ref=f1e221]
+              - cell "User" [ref=f1e222]
+              - cell "0" [ref=f1e223]
+              - cell "No" [ref=f1e224]
+              - cell "0, manual-only" [ref=f1e225]
+              - cell "Disable" [ref=f1e226]
+            - row [ref=f1e228]:
+              - cell "triage" [ref=f1e229]
+              - cell "Skill" [ref=f1e230]
+              - cell "User" [ref=f1e231]
+              - cell "0" [ref=f1e232]
+              - cell "No" [ref=f1e233]
+              - cell "0, manual-only" [ref=f1e234]
+              - cell "Disable" [ref=f1e235]
+            - row [ref=f1e237]:
+              - cell "vault-note" [ref=f1e238]
+              - cell "Skill" [ref=f1e239]
+              - cell "User" [ref=f1e240]
+              - cell "3" [ref=f1e241]
+              - cell "Yes" [ref=f1e242]
+              - cell "69" [ref=f1e243]
+              - cell "Keep" [ref=f1e244]
+            - row [ref=f1e246]:
+              - cell "vault-router" [ref=f1e247]
+              - cell "Skill" [ref=f1e248]
+              - cell "User" [ref=f1e249]
+              - cell "3" [ref=f1e250]
+              - cell "Yes" [ref=f1e251]
+              - cell "67" [ref=f1e252]
+              - cell "Keep" [ref=f1e253]
+            - row [ref=f1e255]:
+              - cell "wayfinder" [ref=f1e256]
+              - cell "Skill" [ref=f1e257]
+              - cell "User" [ref=f1e258]
+              - cell "0" [ref=f1e259]
+              - cell "No" [ref=f1e260]
+              - cell "0, manual-only" [ref=f1e261]
+              - cell "Disable" [ref=f1e262]
+            - row [ref=f1e264]:
+              - cell "21st" [ref=f1e265]
+              - cell "Plugin" [ref=f1e266]
+              - cell "User" [ref=f1e267]
+              - cell "2" [ref=f1e268]
+              - cell "Yes" [ref=f1e269]
+              - cell "663" [ref=f1e270]
+              - cell "Keep" [ref=f1e271]
+            - row [ref=f1e273]:
+              - cell "claude-md-management" [ref=f1e274]
+              - cell "Plugin" [ref=f1e275]
+              - cell "User" [ref=f1e276]
+              - cell "1" [ref=f1e277]
+              - cell "Yes" [ref=f1e278]
+              - cell "105" [ref=f1e279]
+              - cell "Keep" [ref=f1e280]
+            - row [ref=f1e282]:
+              - cell "code-review" [ref=f1e283]
+              - cell "Plugin" [ref=f1e284]
+              - cell "User" [ref=f1e285]
+              - cell "0" [ref=f1e286]
+              - cell "No" [ref=f1e287]
+              - cell "9" [ref=f1e288]
+              - cell "Disable" [ref=f1e289]
+            - row [ref=f1e291]:
+              - cell "code-simplifier" [ref=f1e292]
+              - cell "Plugin" [ref=f1e293]
+              - cell "User" [ref=f1e294]
+              - cell "0" [ref=f1e295]
+              - cell "No" [ref=f1e296]
+              - cell "47" [ref=f1e297]
+              - cell "Disable" [ref=f1e298]
+            - row [ref=f1e300]:
+              - cell "context7" [ref=f1e301]
+              - cell "Plugin" [ref=f1e302]
+              - cell "User" [ref=f1e303]
+              - cell "0" [ref=f1e304]
+              - cell "No" [ref=f1e305]
+              - cell "0¹" [ref=f1e306]
+              - cell "Disable" [ref=f1e307]
+            - row [ref=f1e309]:
+              - cell "frontend-design" [ref=f1e310]
+              - cell "Plugin" [ref=f1e311]
+              - cell "User" [ref=f1e312]
+              - cell "1" [ref=f1e313]
+              - cell "Yes" [ref=f1e314]
+              - cell "55" [ref=f1e315]
+              - cell "Keep" [ref=f1e316]
+            - row [ref=f1e318]:
+              - cell "playwright" [ref=f1e319]
+              - cell "Plugin" [ref=f1e320]
+              - cell "User" [ref=f1e321]
+              - cell "44" [ref=f1e322]
+              - cell "Yes" [ref=f1e323]
+              - cell "0¹" [ref=f1e324]
+              - cell "Keep" [ref=f1e325]
+            - row [ref=f1e327]:
+              - cell "skill-creator" [ref=f1e328]
+              - cell "Plugin" [ref=f1e329]
+              - cell "User" [ref=f1e330]
+              - cell "5" [ref=f1e331]
+              - cell "Yes" [ref=f1e332]
+              - cell "83" [ref=f1e333]
+              - cell "Keep" [ref=f1e334]
+            - row [ref=f1e336]:
+              - cell "superpowers" [ref=f1e337]
+              - cell "Plugin" [ref=f1e338]
+              - cell "User" [ref=f1e339]
+              - cell "123" [ref=f1e340]
+              - cell "Yes" [ref=f1e341]
+              - cell "538" [ref=f1e342]
+              - cell "Keep" [ref=f1e343]
+            - row [ref=f1e345]:
+              - cell "21st" [ref=f1e346]
+              - cell "MCP server" [ref=f1e347]
+              - cell "Local" [ref=f1e348]
+              - cell "n/a" [ref=f1e349]
+              - cell "Yes, 7 calls" [ref=f1e350]
+              - cell "~8.5k" [ref=f1e351]
+              - cell "Keep" [ref=f1e352]
+            - row [ref=f1e354]:
+              - cell "plugin:21st:21st" [ref=f1e355]
+              - cell "MCP server" [ref=f1e356]
+              - cell "Plugin" [ref=f1e357]
+              - cell "n/a" [ref=f1e358]
+              - cell "Yes, 1 call" [ref=f1e359]
+              - cell "~500" [ref=f1e360]
+              - cell "Keep" [ref=f1e361]
+            - row [ref=f1e363]:
+              - cell "plugin:context7:context7" [ref=f1e364]
+              - cell "MCP server" [ref=f1e365]
+              - cell "Plugin" [ref=f1e366]
+              - cell "n/a" [ref=f1e367]
+              - cell "No" [ref=f1e368]
+              - cell "~800" [ref=f1e369]
+              - cell "Disable with plugin" [ref=f1e370]
+            - row [ref=f1e372]:
+              - cell "plugin:playwright:playwright" [ref=f1e373]
+              - cell "MCP server" [ref=f1e374]
+              - cell "Plugin" [ref=f1e375]
+              - cell "n/a" [ref=f1e376]
+              - cell "Yes, 47 calls" [ref=f1e377]
+              - cell "~3.5k" [ref=f1e378]
+              - cell "Keep" [ref=f1e379]
+            - row [ref=f1e381]:
+              - cell "next-devtools" [ref=f1e382]
+              - cell "MCP server" [ref=f1e383]
+              - cell "Project" [ref=f1e384]
+              - cell "n/a" [ref=f1e385]
+              - cell "No" [ref=f1e386]
+              - cell "~1.8k" [ref=f1e387]
+              - cell "Disable locally" [ref=f1e388]
+            - row [ref=f1e390]:
+              - cell "shadcn" [ref=f1e391]
+              - cell "MCP server" [ref=f1e392]
+              - cell "Project" [ref=f1e393]
+              - cell "n/a" [ref=f1e394]
+              - cell "No" [ref=f1e395]
+              - cell "~1.2k" [ref=f1e396]
+              - cell "Disable locally" [ref=f1e397]
+            - row [ref=f1e399]:
+              - cell "~/.claude/CLAUDE.md + RTK" [ref=f1e400]
+              - cell "Guidance" [ref=f1e401]
+              - cell "Global" [ref=f1e402]
+              - cell "n/a" [ref=f1e403]
+              - cell "Always" [ref=f1e404]
+              - cell "~243" [ref=f1e405]
+              - cell "Keep" [ref=f1e406]
+            - row [ref=f1e408]:
+              - cell "/Users/berat/Projects/CLAUDE.md" [ref=f1e409]
+              - cell "Guidance" [ref=f1e410]
+              - cell "Ancestor" [ref=f1e411]
+              - cell "n/a" [ref=f1e412]
+              - cell "Always here" [ref=f1e413]
+              - cell "~252" [ref=f1e414]
+              - cell "Keep" [ref=f1e415]
+            - row [ref=f1e417]:
+              - cell "portfolio_website/CLAUDE.md + import" [ref=f1e418]
+              - cell "Guidance" [ref=f1e419]
+              - cell "Project" [ref=f1e420]
+              - cell "n/a" [ref=f1e421]
+              - cell "Always here" [ref=f1e422]
+              - cell "~854" [ref=f1e423]
+              - cell "Trim" [ref=f1e424]
+      - paragraph [ref=f1e426]: ¹ Plugin row excludes its MCP schema, shown separately. MCP servers have no lifetime counter. All MCP schemas shown here were resident, not deferred, in the audited session.
+    - generic [ref=f1e427]:
+      - generic [ref=f1e428]:
+        - generic [ref=f1e429]: 02 / actions
+        - generic [ref=f1e430]:
+          - heading "Proposed changes" [level=2] [ref=f1e431]
+          - paragraph [ref=f1e432]: Nothing in this section has been applied. Disabled extensions can be restored later, and the report preserves every proposed text removal.
+      - generic [ref=f1e433]:
+        - group [ref=f1e434]:
+          - generic "00 Setup health Healthy −" [ref=f1e435] [cursor=pointer]:
+            - generic [ref=f1e436]: "00"
+            - strong [ref=f1e437]: Setup health
+            - generic [ref=f1e438]: Healthy
+            - text: −
+          - list [ref=f1e440]:
+            - listitem [ref=f1e441]:
+              - text: Native Claude Code
+              - code [ref=f1e442]: 2.1.220
+              - text: is selected and matches
+              - code [ref=f1e443]: "installMethod: native"
+              - text: .
+            - listitem [ref=f1e444]:
+              - code [ref=f1e445]: ~/.local/bin
+              - text: is on
+              - code [ref=f1e446]: PATH
+              - text: .
+            - listitem [ref=f1e447]:
+              - text: No npm-global or legacy
+              - code [ref=f1e448]: ~/.claude/local
+              - text: installation remains.
+            - listitem [ref=f1e449]: All settings and MCP JSON files parse successfully.
+            - listitem [ref=f1e450]:
+              - text: The
+              - code [ref=f1e451]: claudex-worker
+              - text: agent definition is valid and has no collision.
+        - group [ref=f1e452]:
+          - generic "01 Disable unused extensions ~4.2k saved −" [ref=f1e453] [cursor=pointer]:
+            - generic [ref=f1e454]: "01"
+            - strong [ref=f1e455]: Disable unused extensions
+            - generic [ref=f1e456]: ~4.2k saved
+            - text: −
+          - generic [ref=f1e457]:
+            - heading [level=3] [ref=f1e458]:
+              - code [ref=f1e459]: ~/.claude/settings.json
+            - paragraph [ref=f1e460]:
+              - text: Add
+              - code [ref=f1e461]: "\"off\""
+              - text: entries under
+              - code [ref=f1e462]: skillOverrides
+              - text: "for:"
+            - code [ref=f1e464]: ask-matt codebase-design diagnosing-bugs domain-modeling grill-with-docs handoff implement improve-codebase-architecture prototype research resolving-merge-conflicts setup-matt-pocock-skills tdd teach to-spec to-tickets triage wayfinder
+            - paragraph [ref=f1e465]:
+              - text: Set these existing plugin entries to
+              - code [ref=f1e466]: "false"
+              - text: ":"
+            - code [ref=f1e468]: "\"context7@claude-plugins-official\": false, \"code-review@claude-plugins-official\": false, \"code-simplifier@claude-plugins-official\": false"
+            - heading [level=3] [ref=f1e469]:
+              - code [ref=f1e470]: .claude/settings.local.json
+            - paragraph [ref=f1e471]:
+              - text: Locally disable the unused project MCP servers without editing the checked-in
+              - code [ref=f1e472]: .mcp.json
+              - text: ":"
+            - code [ref=f1e474]: "\"disabledMcpjsonServers\": [ \"next-devtools\", \"shadcn\" ]"
+        - group [ref=f1e475]:
+          - generic "02 Local guidance deduplication No action +" [ref=f1e476] [cursor=pointer]:
+            - generic [ref=f1e477]: "02"
+            - strong [ref=f1e478]: Local guidance deduplication
+            - generic [ref=f1e479]: No action
+            - text: +
+        - group [ref=f1e480]:
+          - generic "03 Trim checked-in guidance ~135 saved −" [ref=f1e481] [cursor=pointer]:
+            - generic [ref=f1e482]: "03"
+            - strong [ref=f1e483]: Trim checked-in guidance
+            - generic [ref=f1e484]: ~135 saved
+            - text: −
+          - generic [ref=f1e485]:
+            - paragraph [ref=f1e486]:
+              - text: No loaded file approaches the ~40,000-character warning threshold. The project
+              - code [ref=f1e487]: CLAUDE.md
+              - text: is 2,736 characters.
+            - heading "Shorten the derivable stack preamble" [level=3] [ref=f1e488]
+            - code [ref=f1e490]: "Next.js 16.3.0 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS v4. One-page portfolio for Berat Ercevik — **design approved, build not started**. Spec: `docs/superpowers/specs/2026-08-08-portfolio-design.md` (brief: `docs/prompts/starting_prompt.md`)."
+            - paragraph [ref=f1e491]: "Replace with:"
+            - code [ref=f1e493]: "One-page portfolio for Berat Ercevik — **design approved, build not started**. Spec: `docs/superpowers/specs/2026-08-08-portfolio-design.md` (brief: `docs/prompts/starting_prompt.md`)."
+            - heading "Remove standard manifest commands" [level=3] [ref=f1e494]
+            - code [ref=f1e496]: "## Commands - `npm run dev` — dev server at http://localhost:3000 - `npm run build` / `npm run start` — production build / serve - `npx eslint .` — lint"
+            - heading "Remove guidance already represented by imported or source files" [level=3] [ref=f1e497]
+            - code [ref=f1e499]: "## Next.js 16 - Consult `node_modules/next/dist/docs/` before writing Next.js code (enforced by AGENTS.md). - Tailwind v4 — `@import \"tailwindcss\"`; `@theme inline` maps tokens. - Alias `@/*` → repo root."
+        - group [ref=f1e500]:
+          - generic "04 Move tooling guidance behind a skill ~100 saved −" [ref=f1e501] [cursor=pointer]:
+            - generic [ref=f1e502]: "04"
+            - strong [ref=f1e503]: Move tooling guidance behind a skill
+            - generic [ref=f1e504]: ~100 saved
+            - text: −
+          - generic [ref=f1e505]:
+            - paragraph [ref=f1e506]:
+              - text: Move the project’s MCP-server notes from the always-loaded
+              - code [ref=f1e507]: CLAUDE.md
+              - text: into a new
+              - code [ref=f1e508]: .claude/skills/portfolio-tooling/SKILL.md
+              - text: . Only its concise name and description remain resident; the detailed tool map loads when relevant.
+            - code [ref=f1e510]: "## MCP servers - **next-devtools** (`.mcp.json`) — dev-server tools (`get_routes`, `get_errors`, …); requires `npm run dev`. - **shadcn** (`.mcp.json`) — add components via shadcn CLI. - **21st** — search/fetch components + themes (Chalk Slate). - **context7** — current docs for Next.js / motion / shadcn. - **playwright** — verify + screenshots (light & dark, mobile, links). - react-bits has **no MCP server** — port components from the reactbits.dev URLs in the brief."
+        - group [ref=f1e511]:
+          - generic "07 Claude Code version No action +" [ref=f1e512] [cursor=pointer]:
+            - generic [ref=f1e513]: "07"
+            - strong [ref=f1e514]: Claude Code version
+            - generic [ref=f1e515]: No action
+            - text: +
+        - group [ref=f1e516]:
+          - generic "08 Make auto mode the default Permission change −" [ref=f1e517] [cursor=pointer]:
+            - generic [ref=f1e518]: "08"
+            - strong [ref=f1e519]: Make auto mode the default
+            - generic [ref=f1e520]: Permission change
+            - text: −
+          - generic [ref=f1e521]:
+            - paragraph [ref=f1e522]:
+              - text: Add this user-wide default to
+              - code [ref=f1e523]: ~/.claude/settings.json
+              - text: ":"
+            - code [ref=f1e525]: "\"permissions\": { \"defaultMode\": \"auto\" }"
+            - paragraph [ref=f1e526]: No managed, project, or local setting shadows it. If auto mode is unavailable for the selected model or organization, Claude Code falls back to normal prompting with a notice.
+        - group [ref=f1e527]:
+          - generic "09 Read-only allow rules No action +" [ref=f1e528] [cursor=pointer]:
+            - generic [ref=f1e529]: "09"
+            - strong [ref=f1e530]: Read-only allow rules
+            - generic [ref=f1e531]: No action
+            - text: +
+    - generic [ref=f1e532]:
+      - generic [ref=f1e533]:
+        - generic [ref=f1e534]: 03 / warnings
+        - heading "No slow hooks. A few large context residents." [level=2] [ref=f1e536]
+      - generic [ref=f1e537]:
+        - article [ref=f1e538]:
+          - text: Hook timing
+          - heading "Automation is responsive" [level=3] [ref=f1e539]
+          - list [ref=f1e540]:
+            - listitem [ref=f1e541]:
+              - code [ref=f1e542]: PreToolUse:Bash
+              - text: ": 545 runs, 34 ms median, 852 ms maximum."
+            - listitem [ref=f1e543]: "Session start: 84–140 ms median, 1.64 s maximum."
+            - listitem [ref=f1e544]: "Stop: 462 ms."
+            - listitem [ref=f1e545]: No recorded timeouts or obviously heavy configured patterns.
+        - article [ref=f1e546]:
+          - text: Measurement note
+          - heading [level=3] [ref=f1e547]:
+            - text: Use
+            - code [ref=f1e548]: /context
+            - text: for exact totals
+          - paragraph [ref=f1e549]:
+            - text: These are disk- and schema-based estimates. They are sufficient for ranking and cleanup decisions, while
+            - code [ref=f1e550]: /context
+            - text: provides the exact live measurement for a specific session.
+      - heading "Largest resident additions" [level=3] [ref=f1e551]
+      - list [ref=f1e552]:
+        - listitem [ref=f1e553]:
+          - generic [ref=f1e554]: 21st MCP schemas
+          - strong [ref=f1e555]: ~8.5k est.
+        - listitem [ref=f1e556]:
+          - generic [ref=f1e557]: Playwright MCP schemas
+          - strong [ref=f1e558]: ~3.5k est.
+        - listitem [ref=f1e559]:
+          - generic [ref=f1e560]: User and plugin skill listings
+          - strong [ref=f1e561]: ~2.1k est.
+        - listitem [ref=f1e562]:
+          - generic [ref=f1e563]: Next-devtools MCP schemas
+          - strong [ref=f1e564]: ~1.8k est.
+        - listitem [ref=f1e565]:
+          - generic [ref=f1e566]: Shadcn MCP schemas
+          - strong [ref=f1e567]: ~1.2k est.
+    - generic [ref=f1e568]:
+      - text: 04 / decision gate
+      - heading "The report is complete. The system is unchanged." [level=2] [ref=f1e569]
+      - paragraph [ref=f1e570]: Cleanup and permission posture require separate consent. The recommended path is to apply all reversible cleanup, then independently choose whether auto mode should become the user-wide default.
+      - generic [ref=f1e571]:
+        - article [ref=f1e572]:
+          - generic [ref=f1e573]: Cleanup
+          - 'heading "Recommended: clean up everything" [level=3] [ref=f1e574]'
+          - paragraph [ref=f1e575]: Disable 18 unused skills, 3 plugins, and 2 MCP servers; trim derivable guidance; move tool notes behind lazy loading.
+        - article [ref=f1e576]:
+          - generic [ref=f1e577]: Permission posture
+          - 'heading "Recommended: default to auto mode" [level=3] [ref=f1e578]'
+          - paragraph [ref=f1e579]: A safety classifier handles routine approvals. This is separate from cleanup because it changes what can run without an explicit prompt.
+    - generic [ref=f1e580]:
+      - generic [ref=f1e581]: Claude Code Doctor · Portfolio Website
+      - generic [ref=f1e582]: Read-only scan completed 2026-08-10 · No cleanup applied
