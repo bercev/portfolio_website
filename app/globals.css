@@ -163,8 +163,8 @@
   --color-effect-spark: var(--effect-spark);
   --color-effect-glow: var(--effect-glow);
 
-  --font-sans: var(--font-geist-sans);
-  --font-serif: var(--font-instrument-serif);
+  --font-sans: var(--font-archivo);
+  --font-serif: var(--font-archivo);
   --font-mono: var(--font-geist-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -190,7 +190,7 @@ body {
   overflow-x: clip;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), var(--font-sans);
+  font-family: var(--font-sans);
   letter-spacing: var(--letter-spacing);
   text-rendering: optimizeLegibility;
 }

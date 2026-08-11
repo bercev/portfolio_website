@@ -30,6 +30,13 @@ Next.js 16.3.0 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS v
 - **playwright** — verify + screenshots (light & dark, mobile, links).
 - react-bits has **no MCP server** — port components from the reactbits.dev URLs in the brief.
 
+## Model & vision constraints (IMPORTANT)
+
+- The custom `auto/best-free` model (via **omniroute**) has **no vision**. Do NOT rely on `browser_take_screenshot` or any image-returning tool as a way for Claude to *see* the page — an embedded image can't be processed and trips a `400` (this also breaks `/compact` when a screenshot is in context).
+- **Verify with text, not pixels:** use Playwright `browser_snapshot`, `browser_find` (DOM/accessibility tree), and next-devtools `get_routes`/`get_errors`. Trust the DOM, not the screenshot.
+- If a vision/image call fires or errors anyway, **skip the image, fall back to text, and keep going** — never block or loop on it.
+- Screenshots as *deliverables for the human* (written to disk / used as placeholder assets) are fine and expected here; just don't expect the model to read them back.
+
 ## Skills & workflow
 
 - `superpowers:brainstorming` → `writing-plans` → `executing-plans` (or `subagent-driven-development`); `verification-before-completion` before done; `test-driven-development` for testable logic.

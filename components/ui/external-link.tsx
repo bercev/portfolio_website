@@ -23,7 +23,7 @@ export function ExternalLink({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center gap-1.5 underline-offset-4 transition-colors hover:text-portfolio-accent hover:underline",
+        "inline-flex items-center gap-1.5 transition-transform hover:-translate-y-0.5 active:translate-y-px",
         className,
       )}
     >

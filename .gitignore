@@ -43,3 +43,8 @@ next-env.d.ts
 # ai
 .claude
 scratch/
+test-results/
+scripts/
+playwright-report/
+.playwright-mcp/
+e2e/
