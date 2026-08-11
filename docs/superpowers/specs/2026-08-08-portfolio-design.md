@@ -1,7 +1,7 @@
 # Design Spec — Berat Ercevik One-Page Portfolio
 
 **Date:** 2026-08-08
-**Status:** Approved (design) — **do not build yet** (awaiting implementation plan)
+**Status:** Approved — implementation-ready
 **Source brief:** `docs/prompts/starting_prompt.md`
 **Branch:** `gpt` — fresh start; supersedes the previously deleted spec of this name
 
@@ -49,7 +49,7 @@ Creative but tasteful. A one-page portfolio that grabs attention without noise. 
 
 ## 6. Typography
 
-- Display: serif (Fraunces vs Instrument Serif — TBD)
+- Display: Instrument Serif
 - Body: Chalk Slate sans (system stack)
 - Labels/eyebrows: mono
 
@@ -78,8 +78,32 @@ Creative but tasteful. A one-page portfolio that grabs attention without noise. 
 - No console errors
 - GitHub / LinkedIn / resume / paper links resolve
 
-## 10. Open items (decide during build)
+## 10. Resolved implementation decisions
 
-- Serif display font (Fraunces vs Instrument Serif)
-- Hero tagline copy
-- Character-trait words
+- **Display font:** Instrument Serif for display headings, with the existing sans/mono roles preserved.
+- **Hero tagline:** “I build software that reasons, adapts, and ships.”
+- **Character traits:** Curious, Rigorous, Collaborative, Resourceful.
+- **Copy:** First-person editorial rendering of facts from `resume.pdf` and the source brief. Do not invent employer affiliations, contact details, publication abstracts, or links.
+- **Numeric content:** No stat counters, proof-point tiles, or metric-led marketing copy. Dates and the explicitly required 4.0 GPA remain factual metadata; resume metrics are omitted from section summaries.
+- **Contact links:** GitHub, LinkedIn, and resume only. Vitae appears only on its project card.
+- **Navigation:** Minimal top header with identity and theme toggle; bottom Bubble Menu links to Home plus every content section.
+- **Card treatment:** Border Glow wraps education, publication, experience, and project cards. Skills remain chips rather than cards.
+- **Publication placeholders:** Stable 16:10 local placeholder assets with descriptive alt text; replaceable later without component changes.
+- **Effect policy:** Fine-pointer devices receive pointer effects and the full background profile; touch/mobile receives a reduced background profile; reduced-motion receives static decoration and no continuous effects.
+- **Deployment:** Include a reproducible Netlify configuration and document local/production verification.
+
+## 11. Architecture
+
+- `app/page.tsx` and static section shells remain Server Components.
+- Browser-dependent behavior lives in isolated Client Components: theme, Bubble Menu, scroll progress, text animation, card glow, click spark, prismatic background, pixel trail, and moving skill chips.
+- One typed `data/content.ts` export owns all visible copy, dates, tags, and URLs.
+- One capability-policy module owns pointer, mobile, and reduced-motion gating so effects cannot drift into inconsistent behavior.
+- All concrete colors live in `app/globals.css`; canvas effects resolve CSS variables instead of duplicating color literals in TypeScript.
+- Decorative layers are pointer-inert and hidden from assistive technology. Stable semantic text remains available beneath animated presentations.
+
+## 12. Testing strategy
+
+- Add repeatable lint, production-build, and Playwright scripts.
+- Playwright covers desktop light/dark full-page and per-section screenshots, the 390px mobile layout, theme persistence, Bubble Menu anchors, reduced-motion behavior, effect gating, local/external link targets, keyboard access, console errors, page errors, and failed local requests.
+- Freeze continuous effects during deterministic screenshot assertions and test live effect initialization separately.
+- The implementation is complete only after fresh lint, build, and Playwright runs pass.

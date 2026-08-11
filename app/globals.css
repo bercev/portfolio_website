@@ -1,26 +1,307 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3f7fc;
+  --foreground: #060a12;
+  --card: #f9fcff;
+  --card-foreground: #060a12;
+  --popover: #f9fcff;
+  --popover-foreground: #060a12;
+  --primary: #101723;
+  --primary-foreground: #fafafa;
+  --secondary: #e7edf6;
+  --secondary-foreground: #101723;
+  --muted: #e7edf6;
+  --muted-foreground: #636974;
+  --accent: #e7edf6;
+  --accent-foreground: #101723;
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(1 0 0);
+  --border: #d8dfe9;
+  --input: #d8dfe9;
+  --ring: #87909d;
+  --chart-1: oklch(0.81 0.10 252);
+  --chart-2: oklch(0.62 0.19 260);
+  --chart-3: oklch(0.55 0.22 263);
+  --chart-4: oklch(0.49 0.22 264);
+  --chart-5: oklch(0.42 0.18 266);
+  --sidebar: #eef2f9;
+  --sidebar-foreground: #060a12;
+  --sidebar-primary: #101723;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #e7edf6;
+  --sidebar-accent-foreground: #101723;
+  --sidebar-border: #d8dfe9;
+  --sidebar-ring: #87909d;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --radius: 0.625rem;
+  --shadow-color: oklch(0 0 0);
+  --shadow-opacity: 0.1;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0;
+  --shadow-offset-y: 1px;
+  --letter-spacing: 0em;
+  --spacing: 0.25rem;
+
+  --portfolio-accent: #00d8ff;
+  --portfolio-accent-foreground: #060a12;
+  --effect-prismatic-primary: var(--portfolio-accent);
+  --effect-prismatic-secondary: #9cf1ff;
+  --effect-trail: var(--portfolio-accent);
+  --effect-spark: var(--portfolio-accent);
+  --effect-glow: var(--portfolio-accent);
+
+  --z-effect-background: 0;
+  --z-page-content: 10;
+  --z-site-header: 40;
+  --z-site-navigation: 50;
+  --z-effect-pointer: 60;
+
+  color-scheme: light;
+}
+
+.dark {
+  --background: #141d2b;
+  --foreground: #e5ecf1;
+  --card: #1a2533;
+  --card-foreground: #e5ecf1;
+  --popover: #202c3c;
+  --popover-foreground: #e5ecf1;
+  --primary: #d7dfe5;
+  --primary-foreground: #182230;
+  --secondary: #243040;
+  --secondary-foreground: #e5ecf1;
+  --muted: #232d3c;
+  --muted-foreground: #8794a1;
+  --accent: #2b3a4d;
+  --accent-foreground: #e5ecf1;
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: #2b3646;
+  --input: #273444;
+  --ring: #6e7c8c;
+  --chart-1: oklch(0.81 0.10 252);
+  --chart-2: oklch(0.62 0.19 260);
+  --chart-3: oklch(0.55 0.22 263);
+  --chart-4: oklch(0.49 0.22 264);
+  --chart-5: oklch(0.42 0.18 266);
+  --sidebar: #17212f;
+  --sidebar-foreground: #e5ecf1;
+  --sidebar-primary: #1048e6;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #243040;
+  --sidebar-accent-foreground: #e5ecf1;
+  --sidebar-border: #25303e;
+  --sidebar-ring: #6e7c8c;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --radius: 0.625rem;
+  --shadow-color: oklch(0 0 0);
+  --shadow-opacity: 0.1;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0;
+  --shadow-offset-y: 1px;
+  --letter-spacing: 0em;
+  --spacing: 0.25rem;
+
+  --effect-prismatic-secondary: #00788f;
+
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-portfolio-accent: var(--portfolio-accent);
+  --color-portfolio-accent-foreground: var(--portfolio-accent-foreground);
+  --color-effect-prismatic-primary: var(--effect-prismatic-primary);
+  --color-effect-prismatic-secondary: var(--effect-prismatic-secondary);
+  --color-effect-trail: var(--effect-trail);
+  --color-effect-spark: var(--effect-spark);
+  --color-effect-glow: var(--effect-glow);
+
   --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-instrument-serif);
   --font-mono: var(--font-geist-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  min-height: 100%;
+  overflow-x: clip;
+  scroll-behavior: smooth;
+  background: var(--background);
 }
 
 body {
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: clip;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), var(--font-sans);
+  letter-spacing: var(--letter-spacing);
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--portfolio-accent);
+  color: var(--portfolio-accent-foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px var(--portfolio-accent);
+}
+
+[data-effect-layer] {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+[data-effect-layer="background"] {
+  z-index: var(--z-effect-background);
+}
+
+[data-effect-layer="pointer"] {
+  z-index: var(--z-effect-pointer);
+}
+
+@keyframes skills-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(calc(-50% - 0.5rem), 0, 0);
+  }
+}
+
+[data-skills-marquee="enhanced"] [data-skills-row] {
+  overflow: hidden;
+}
+
+[data-skills-marquee="enhanced"] [data-skills-track] {
+  width: max-content;
+  flex-wrap: nowrap;
+  animation: skills-marquee 36s linear infinite;
+  will-change: transform;
+}
+
+[data-skills-marquee="enhanced"]
+  [data-skills-row][data-direction="reverse"]
+  [data-skills-track] {
+  animation-direction: reverse;
+}
+
+[data-skills-marquee="enhanced"] [data-skills-copy] {
+  width: auto;
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+[data-skills-marquee="enhanced"] [data-skills-copy] > div {
+  width: auto;
+  flex-wrap: nowrap;
+}
+
+[data-skills-marquee="enhanced"] [data-skills-copy][aria-hidden="true"] {
+  display: flex;
+}
+
+[data-skills-marquee="enhanced"] [data-skills-row]:hover [data-skills-track],
+[data-skills-marquee="enhanced"]
+  [data-skills-row]:focus-within
+  [data-skills-track] {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-skills-track] {
+    animation: none !important;
+    transform: none !important;
+    will-change: auto;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  [data-effect-layer="pointer"] {
+    display: none !important;
+  }
 }
