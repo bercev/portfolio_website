@@ -51,7 +51,7 @@ export function ClickSpark({
   }, []);
 
   return (
-    <div data-effect="click-spark" data-effect-layer="pointer">
+    <div data-effect="click-spark" data-click-spark data-effect-layer="pointer">
       {bursts.flatMap((burst) =>
         Array.from({ length: sparkCount }, (_, index) => {
           const angle = (Math.PI * 2 * index) / sparkCount;

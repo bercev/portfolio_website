@@ -1,9 +1,11 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll, useSpring } from "motion/react";
+import { motion, useScroll, useSpring } from "motion/react";
+
+import { useHydratedReducedMotion } from "@/lib/use-hydrated-reduced-motion";
 
 export function ScrollProgress() {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useHydratedReducedMotion();
   const { scrollYProgress } = useScroll();
   const scaleY = useSpring(scrollYProgress, {
     stiffness: 120,

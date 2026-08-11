@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 
+import { useHydratedReducedMotion } from "@/lib/use-hydrated-reduced-motion";
 import { cn } from "@/lib/utils";
 
 const GLYPHS: Record<string, readonly string[]> = {
@@ -29,7 +30,7 @@ export function AsciiText({
   text: string;
   className?: string;
 }) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useHydratedReducedMotion();
 
   return (
     <span className={cn("relative inline-block", className)} data-ascii-text>

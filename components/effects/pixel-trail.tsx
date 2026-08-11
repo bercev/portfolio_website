@@ -6,12 +6,18 @@ const INTERPOLATE = 2.7;
 const MAX_AGE = 300;
 const GOO_STRENGTH = 1;
 const GRID_SIZE = 90;
+const MAX_TRAIL_POINTS = 512;
 
 type TrailPoint = {
   x: number;
   y: number;
   createdAt: number;
 };
+
+function reserveTrailCapacity(points: TrailPoint[], incomingCount: number) {
+  const overflow = points.length + incomingCount - MAX_TRAIL_POINTS;
+  if (overflow > 0) points.splice(0, overflow);
+}
 
 export function PixelTrail() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,8 +60,14 @@ export function PixelTrail() {
         );
         const cellSize = Math.max(4, width / GRID_SIZE);
         const steps = Math.max(1, Math.ceil(distance / (cellSize * INTERPOLATE)));
+        const firstRetainedStep = Math.max(
+          1,
+          steps - MAX_TRAIL_POINTS + 1,
+        );
+        const incomingCount = steps - firstRetainedStep + 1;
+        reserveTrailCapacity(points, incomingCount);
 
-        for (let step = 1; step <= steps; step += 1) {
+        for (let step = firstRetainedStep; step <= steps; step += 1) {
           const progress = step / steps;
           points.push({
             x: previous.x + (current.x - previous.x) * progress,
@@ -64,6 +76,7 @@ export function PixelTrail() {
           });
         }
       } else {
+        reserveTrailCapacity(points, 1);
         points.push(current);
       }
 
@@ -115,6 +128,7 @@ export function PixelTrail() {
     <canvas
       ref={canvasRef}
       data-effect="pixel-trail"
+      data-pixel-trail
       data-effect-layer="pointer"
     />
   );
