@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Retained Playwright HTML reports contain generated third-party bundles.
+    "playwright-report/**",
   ]),
 ]);
 
