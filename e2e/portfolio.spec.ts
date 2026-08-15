@@ -91,22 +91,31 @@ test("renders every approved role, project, and skill category", async ({
   }
 });
 
-test("uses a divided chronology and one featured project card", async ({
+test("uses a divided chronology and two chromatic project cards", async ({
   page,
 }) => {
   await page.goto("/");
 
   await expect(page.locator("#experience [data-portfolio-card]")).toHaveCount(0);
-  await expect(page.locator("#projects [data-portfolio-card]")).toHaveCount(1);
+  await expect(page.locator("#projects [data-portfolio-card]")).toHaveCount(2);
+  await expect(page.locator("#projects [data-chroma-card]")).toHaveCount(2);
   await expect(page.locator("#experience [data-experience-row]")).toHaveCount(4);
   await expect(page.locator("#projects [data-project-featured]")).toHaveCount(1);
   await expect(page.locator("#projects [data-project-supporting]")).toHaveCount(1);
-  await expect(page.locator("main [data-portfolio-card]")).toHaveCount(1);
+  await expect(page.locator("main [data-portfolio-card]")).toHaveCount(2);
   await expect(page.locator("#skills [data-skills-marquee]")).toHaveCount(1);
   await expect(page.locator('#projects a[href="https://vitae.tools/"]')).toHaveCount(1);
   await expect(
     page.getByRole("heading", { name: "AI Discord Chatbot", exact: true }),
   ).not.toHaveRole("link");
+
+  const cards = await page.locator("#projects [data-portfolio-card]").all();
+  const [featuredBox, supportingBox] = await Promise.all(
+    cards.map((card) => card.boundingBox()),
+  );
+  expect(featuredBox).not.toBeNull();
+  expect(supportingBox).not.toBeNull();
+  expect(featuredBox!.width).toBeGreaterThan(supportingBox!.width);
 });
 
 test("keeps approved profile links only in Contact", async ({ page }) => {

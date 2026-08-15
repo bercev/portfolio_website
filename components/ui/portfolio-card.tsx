@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { BorderGlow } from "@/components/effects/border-glow";
+import { ChromaCard } from "@/components/effects/chroma-card";
 import { cn } from "@/lib/utils";
 
 export function PortfolioCard({
@@ -12,7 +12,9 @@ export function PortfolioCard({
 }) {
   return (
     <div data-portfolio-card className={cn("h-full", className)}>
-      <BorderGlow className="h-full p-6 sm:p-7">{children}</BorderGlow>
+      <ChromaCard>
+        <div className="h-full p-6 sm:p-7">{children}</div>
+      </ChromaCard>
     </div>
   );
 }

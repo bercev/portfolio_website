@@ -99,7 +99,7 @@ test("keeps every multi-column section readable at 390px", async ({
   }
 
   const contentBlocks = page.locator(
-    "#about [data-education-panel], #publications [data-publication-row], #experience article, #projects [data-portfolio-card], #projects [data-project-supporting]",
+    "#about [data-education-panel], #publications [data-publication-row], #experience article, #projects [data-portfolio-card]",
   );
   await expect(contentBlocks).toHaveCount(9);
 

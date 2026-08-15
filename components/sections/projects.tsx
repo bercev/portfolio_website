@@ -53,7 +53,7 @@ export function Projects({ content, heading }: ProjectsProps) {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading title={heading} />
 
-        <div className="mt-12 grid gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] md:items-end lg:mt-16 lg:gap-12">
+        <div className="mt-12 grid gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] md:items-stretch lg:mt-16 lg:gap-12">
           {featured ? (
             <PortfolioCard>
               <article data-project-featured>
@@ -63,12 +63,11 @@ export function Projects({ content, heading }: ProjectsProps) {
           ) : null}
 
           {supporting ? (
-            <article
-              data-project-supporting
-              className="border-t border-border pt-8 md:border-l md:border-t-0 md:pl-10 md:pt-0"
-            >
-              <ProjectDetails project={supporting} />
-            </article>
+            <PortfolioCard>
+              <article data-project-supporting>
+                <ProjectDetails project={supporting} />
+              </article>
+            </PortfolioCard>
           ) : null}
         </div>
       </div>
