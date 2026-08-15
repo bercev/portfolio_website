@@ -36,14 +36,14 @@ function SkillCopy({
           key={category.category}
           className="flex w-full min-w-0 flex-wrap items-center gap-2"
         >
-          <h3 className="mr-1 font-serif text-2xl leading-none tracking-[-0.02em] text-foreground">
+          <h3 className="mr-2 font-serif text-2xl font-extrabold leading-none tracking-[-0.02em] text-foreground">
             {category.category}
           </h3>
           {category.items.map((item) => (
             <span
               key={item}
               data-skill
-              className="whitespace-nowrap rounded-full border border-border bg-card px-3 py-1.5 font-mono text-xs text-card-foreground shadow-[0_1px_2px_color-mix(in_srgb,var(--shadow-color)_var(--shadow-opacity),transparent)]"
+              className="whitespace-nowrap rounded-full border border-border bg-card px-3 py-1.5 text-xs text-card-foreground shadow-[0_1px_2px_color-mix(in_srgb,var(--shadow-color)_var(--shadow-opacity),transparent)]"
             >
               {item}
             </span>

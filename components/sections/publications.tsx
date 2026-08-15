@@ -21,11 +21,11 @@ export function Publications({ content, heading }: PublicationsProps) {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading title={heading} />
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:mt-14 lg:gap-7">
+        <div className="mt-12 grid gap-10 md:grid-cols-2 lg:mt-16 lg:gap-12">
           {content.map((publication, index) => (
             <PortfolioCard
               key={publication.href}
-              className={index === 1 ? "md:mt-10" : undefined}
+              className={index % 2 === 1 ? "md:mt-16" : undefined}
             >
               <article className="flex h-full flex-col">
                 <div className="relative aspect-[16/10] overflow-hidden rounded-lg border border-border bg-muted">
@@ -38,10 +38,13 @@ export function Publications({ content, heading }: PublicationsProps) {
                     loading={index === 0 ? "eager" : "lazy"}
                     className="h-full w-full object-cover"
                   />
+                  <span className="absolute left-4 top-4 rounded-full bg-background/85 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                 </div>
 
                 <div className="flex flex-1 flex-col pt-6">
-                  <p className="font-mono text-xs text-muted-foreground">
+                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                     {publication.venue}
                     <span aria-hidden="true"> / </span>
                     {publication.date}

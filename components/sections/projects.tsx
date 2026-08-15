@@ -19,9 +19,12 @@ export function Projects({ content, heading }: ProjectsProps) {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading title={heading} />
 
-        <div className="mt-10 grid gap-5 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:mt-14 lg:gap-7">
-          {content.map((project) => (
-            <PortfolioCard key={project.title}>
+        <div className="mt-12 grid gap-5 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:mt-16 lg:gap-7">
+          {content.map((project, index) => (
+            <PortfolioCard
+              key={project.title}
+              className={index % 2 === 1 ? "md:mt-14" : undefined}
+            >
               <article className="flex h-full flex-col">
                 <header className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
                   <h3
@@ -39,8 +42,8 @@ export function Projects({ content, heading }: ProjectsProps) {
                       project.title
                     )}
                   </h3>
-                  <p className="shrink-0 font-mono text-xs text-muted-foreground">
-                    {project.dates}
+                  <p className="shrink-0 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    {String(index + 1).padStart(2, "0")} — {project.dates}
                   </p>
                 </header>
 
@@ -51,7 +54,7 @@ export function Projects({ content, heading }: ProjectsProps) {
                   {project.technologies.map((technology) => (
                     <li
                       key={technology}
-                      className="rounded-full border border-border bg-secondary px-3 py-1.5 font-mono text-xs text-secondary-foreground"
+                      className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs text-secondary-foreground"
                     >
                       {technology}
                     </li>

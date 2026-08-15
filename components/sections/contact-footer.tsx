@@ -30,7 +30,7 @@ export function ContactFooter({
                   <ExternalLink
                     href={link.href}
                     download={link.download}
-                    className="min-h-11 rounded-full border border-border bg-card px-5 font-mono text-sm font-semibold text-card-foreground no-underline transition-transform hover:-translate-y-0.5 hover:text-card-foreground hover:no-underline active:translate-y-px"
+                    className="min-h-11 rounded-full border border-border bg-card px-5 font-medium text-sm text-card-foreground no-underline transition-transform hover:-translate-y-0.5 hover:text-card-foreground hover:no-underline active:translate-y-px"
                   >
                     {link.label}
                   </ExternalLink>

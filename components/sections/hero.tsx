@@ -19,23 +19,23 @@ export function Hero({ content }: { content: HeroContent }) {
       aria-labelledby="home-heading"
       className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] items-center justify-center"
     >
-      <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-6 px-4 pb-16 pt-24 text-center sm:gap-8 sm:px-6 sm:pb-20 sm:pt-24">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-8 px-4 pb-16 pt-24 text-center sm:gap-10 sm:px-6 sm:pb-20 sm:pt-24">
         <h1
           id="home-heading"
           aria-label={identity.name}
-          className="flex flex-col items-center gap-3 font-serif text-foreground"
+          className="flex flex-col items-center gap-5 font-serif text-foreground"
         >
-          <span className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          <AsciiText text={identity.shortName} className="block" />
+          <span className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground sm:text-sm">
             {identity.name}
           </span>
-          <AsciiText text={identity.shortName} className="block" />
         </h1>
 
-        <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+        <p className="max-w-3xl font-serif text-2xl leading-tight text-foreground sm:text-3xl sm:leading-tight lg:text-4xl">
           <ScrambledText text={hero.tagline} />
         </p>
 
-        <p className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:text-sm">
           <TraitRotator traits={hero.traits} />
         </p>
 
@@ -47,8 +47,8 @@ export function Hero({ content }: { content: HeroContent }) {
               download={link.download}
               className={
                 index === 0
-                  ? "min-h-11 border border-foreground bg-foreground px-5 font-mono text-sm font-semibold text-background no-underline transition-transform hover:-translate-y-0.5 active:translate-y-px"
-                  : "min-h-11 border border-border bg-transparent px-5 font-mono text-sm font-semibold text-foreground no-underline transition-transform hover:-translate-y-0.5 active:translate-y-px"
+                  ? "min-h-11 border border-foreground bg-foreground px-6 font-medium text-sm text-background no-underline transition-transform hover:-translate-y-0.5 active:translate-y-px"
+                  : "min-h-11 border border-border bg-transparent px-6 font-medium text-sm text-foreground no-underline transition-transform hover:-translate-y-0.5 active:translate-y-px"
               }
             >
               {link.label}
