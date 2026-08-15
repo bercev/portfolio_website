@@ -47,4 +47,3 @@ test-results/
 scripts/
 playwright-report/
 .playwright-mcp/
-e2e/

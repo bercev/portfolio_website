@@ -1,0 +1,74 @@
+import {
+  attachRuntimeErrorCollector,
+  expect,
+  test,
+} from "./runtime-errors";
+
+test("keeps the ASCII identity and project action semantically stable", async ({
+  page,
+}) => {
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(
+    "Berat Ercevik",
+  );
+  await expect(
+    page.locator("#home .sr-only", { hasText: /^Berat$/ }),
+  ).toBeAttached();
+  await expect(
+    page.locator("#about .sr-only", { hasText: /^About$/ }),
+  ).toBeAttached();
+
+  const action = page
+    .locator("#home")
+    .getByRole("link", { name: "View projects" });
+  await expect(action).toHaveAttribute("href", "#projects");
+  await expect(action).not.toHaveAttribute("target");
+
+  runtimeErrors.assertEmpty();
+});
+
+test("renders one stable ASCII frame for reduced motion", async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+
+  const root = page.locator("[data-ascii-root]");
+  const output = root.locator("pre[data-ascii-output]");
+  await expect(root).toHaveAttribute("data-ascii-mode", "static");
+  await expect(root).toHaveAttribute("data-ascii-profile", "static");
+  await expect(output).not.toHaveText("");
+
+  const firstFrame = await output.textContent();
+  await page.waitForTimeout(200);
+  await expect(output).toHaveText(firstFrame ?? "");
+
+  runtimeErrors.assertEmpty();
+  await context.close();
+});
+
+test("renders the hero name through canvas-generated ASCII output", async ({
+  page,
+}) => {
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+
+  const root = page.locator("[data-ascii-root]");
+  await expect(root.locator("canvas[data-ascii-canvas]")).toBeAttached();
+  await expect(root.locator("pre[data-ascii-output]")).not.toHaveText("");
+  await expect(root).toHaveAttribute("data-ascii-mode", /^(animated|static)$/);
+
+  const canvases = page.locator("canvas");
+  expect(await canvases.count()).toBeGreaterThanOrEqual(3);
+  for (const canvas of await canvases.all()) {
+    expect(
+      await canvas.evaluate(
+        (element) => element.closest('[aria-hidden="true"]') !== null,
+      ),
+    ).toBe(true);
+  }
+
+  runtimeErrors.assertEmpty();
+});
