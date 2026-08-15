@@ -12,6 +12,7 @@ export default defineConfig({
   outputDir:
     process.env.PLAYWRIGHT_OUTPUT_DIR ?? `test-results/${artifactRunId}`,
   retries: 0,
+  workers: 1,
   reporter: [
     ["line"],
     [
