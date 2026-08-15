@@ -48,7 +48,6 @@ export interface PortfolioContent {
     readonly name: string;
     readonly shortName: string;
     readonly role: string;
-    readonly links: readonly ExternalLink[];
   };
   readonly navigation: readonly {
     readonly id: SectionId;
@@ -57,8 +56,6 @@ export interface PortfolioContent {
   readonly hero: {
     readonly tagline: string;
     readonly bio: string;
-    readonly traits: readonly string[];
-    readonly links: readonly ExternalLink[];
   };
   readonly about: {
     readonly bio: readonly string[];
@@ -107,7 +104,6 @@ export const portfolio = {
     name: "Berat Ercevik",
     shortName: "Berat",
     role: "Software Engineer",
-    links: profileLinks,
   },
   navigation: [
     { id: "home", label: "Home" },
@@ -121,8 +117,6 @@ export const portfolio = {
   hero: {
     tagline: "I build software that reasons, adapts, and ships.",
     bio: "I’m a software engineer building full-stack applications, developing agentic systems, and conducting AI research while studying Computer Science at UC Santa Cruz.",
-    traits: ["Curious", "Rigorous", "Collaborative", "Resourceful"],
-    links: profileLinks,
   },
   about: {
     bio: [
