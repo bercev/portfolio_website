@@ -29,6 +29,38 @@ test("keeps the ASCII identity and project action semantically stable", async ({
   runtimeErrors.assertEmpty();
 });
 
+test("keeps the ASCII name dense and readable in both themes", async ({
+  browser,
+}) => {
+  for (const theme of ["light", "dark"] as const) {
+    const context = await browser.newContext({ colorScheme: theme });
+    const page = await context.newPage();
+    const runtimeErrors = attachRuntimeErrorCollector(page);
+    await page.addInitScript((value) => {
+      localStorage.setItem("theme", value);
+    }, theme);
+    await page.goto("/");
+
+    const output = page.locator("[data-ascii-output]");
+    await expect(output).not.toHaveText("");
+    const glyphMetrics = await output.evaluate((element) => {
+      const text = element.textContent ?? "";
+      const cells = text.replace(/\n/g, "").length;
+      const glyphs = text.replace(/\s/g, "");
+      const strongGlyphs = glyphs.match(/[@&#B9]/g)?.length ?? 0;
+      return {
+        density: cells === 0 ? 0 : glyphs.length / cells,
+        strongRatio: glyphs.length === 0 ? 0 : strongGlyphs / glyphs.length,
+      };
+    });
+    expect(glyphMetrics.density).toBeGreaterThan(0.05);
+    expect(glyphMetrics.strongRatio).toBeGreaterThan(0.5);
+
+    runtimeErrors.assertEmpty();
+    await context.close();
+  }
+});
+
 test("renders one stable ASCII frame for reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();

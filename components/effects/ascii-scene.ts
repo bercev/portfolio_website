@@ -172,7 +172,8 @@ export class AsciiScene {
 
   private drawTextTexture() {
     const fontFamily = cssValue(this.root, "--font-archivo", "sans-serif");
-    const foreground = cssValue(this.root, "--foreground", "currentColor");
+    const mask = cssValue(this.root, "--effect-ascii-mask", "");
+    if (!mask) throw new Error("ASCII mask token is unavailable.");
     const fontSize = 240;
     const font = `800 ${fontSize}px ${fontFamily}`;
 
@@ -188,7 +189,7 @@ export class AsciiScene {
     this.textCanvas.height = height;
     this.textContext.clearRect(0, 0, width, height);
     this.textContext.font = font;
-    this.textContext.fillStyle = foreground;
+    this.textContext.fillStyle = mask;
     this.textContext.textBaseline = "alphabetic";
     this.textContext.fillText(
       this.text,

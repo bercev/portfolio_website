@@ -58,9 +58,14 @@
   --effect-trail: var(--portfolio-accent);
   --effect-spark: var(--portfolio-accent);
   --effect-glow: var(--portfolio-accent);
+  --effect-ascii-mask: #ffffff;
+  --effect-chroma-cyan: #00d8ff;
+  --effect-chroma-emerald: #20d98b;
+  --effect-chroma-amber: #ffbf3f;
+  --effect-chroma-coral: #ff6b57;
   --effect-ascii-primary: var(--foreground);
-  --effect-ascii-secondary: var(--portfolio-accent);
-  --effect-ascii-tertiary: var(--effect-prismatic-secondary);
+  --effect-ascii-secondary: var(--effect-chroma-cyan);
+  --effect-ascii-tertiary: var(--effect-chroma-coral);
 
   --z-effect-background: 0;
   --z-page-content: 10;
@@ -277,8 +282,11 @@ textarea {
   background-image: radial-gradient(
     circle at 50% 45%,
     var(--effect-ascii-primary) 0%,
-    var(--effect-ascii-secondary) 58%,
-    var(--effect-ascii-tertiary) 100%
+    var(--effect-ascii-primary) 48%,
+    var(--effect-chroma-cyan) 66%,
+    var(--effect-chroma-emerald) 78%,
+    var(--effect-chroma-amber) 90%,
+    var(--effect-chroma-coral) 100%
   );
   background-attachment: fixed;
   background-clip: text;
