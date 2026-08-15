@@ -3,7 +3,6 @@ import Image from "next/image";
 import type { PortfolioContent } from "@/data/content";
 
 import { ExternalLink } from "@/components/ui/external-link";
-import { PortfolioCard } from "@/components/ui/portfolio-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 
 type PublicationsProps = {
@@ -21,45 +20,41 @@ export function Publications({ content, heading }: PublicationsProps) {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading title={heading} />
 
-        <div className="mt-12 grid gap-10 md:grid-cols-2 lg:mt-16 lg:gap-12">
+        <div className="mt-12 border-t border-border lg:mt-16">
           {content.map((publication, index) => (
-            <PortfolioCard
+            <article
               key={publication.href}
-              className={index % 2 === 1 ? "md:mt-16" : undefined}
+              data-publication-row
+              className="grid gap-6 border-b border-border py-8 md:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.2fr)] md:items-center md:gap-12 lg:py-12"
             >
-              <article className="flex h-full flex-col">
-                <div className="relative aspect-[16/10] overflow-hidden rounded-lg border border-border bg-muted">
-                  <Image
-                    src={publication.preview.src}
-                    alt={publication.preview.alt}
-                    width={publication.preview.width}
-                    height={publication.preview.height}
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    loading={index === 0 ? "eager" : "lazy"}
-                    className="h-full w-full object-cover"
-                  />
-                  <span className="absolute left-4 top-4 rounded-full bg-background/85 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                </div>
+              <div className="relative aspect-[16/10] overflow-hidden rounded-lg border border-border bg-muted">
+                <Image
+                  src={publication.preview.src}
+                  alt={publication.preview.alt}
+                  width={publication.preview.width}
+                  height={publication.preview.height}
+                  sizes="(min-width: 768px) 42vw, 100vw"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  className="h-full w-full object-cover"
+                />
+              </div>
 
-                <div className="flex flex-1 flex-col pt-6">
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                    {publication.venue}
-                    <span aria-hidden="true"> / </span>
-                    {publication.date}
-                  </p>
-                  <h3 className="mt-3 font-serif text-2xl leading-[1.05] tracking-[-0.02em] text-foreground sm:text-3xl">
-                    <ExternalLink
-                      href={publication.href}
-                      className="items-start gap-2 decoration-portfolio-accent"
-                    >
-                      {publication.title}
-                    </ExternalLink>
-                  </h3>
-                </div>
-              </article>
-            </PortfolioCard>
+              <div className="flex flex-col justify-center">
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  {publication.venue}
+                  <span aria-hidden="true"> / </span>
+                  {publication.date}
+                </p>
+                <h3 className="mt-4 max-w-[24ch] text-3xl font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-4xl">
+                  <ExternalLink
+                    href={publication.href}
+                    className="items-start gap-2 decoration-portfolio-accent"
+                  >
+                    {publication.title}
+                  </ExternalLink>
+                </h3>
+              </div>
+            </article>
           ))}
         </div>
       </div>
