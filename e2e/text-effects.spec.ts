@@ -61,6 +61,52 @@ test("keeps the ASCII name dense and readable in both themes", async ({
   }
 });
 
+test("tracks scroll with one Signal Spine and replays section headings", async ({
+  page,
+}) => {
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+
+  const spine = page.locator("[data-signal-spine]");
+  const fill = spine.locator("[data-signal-fill]");
+  await expect(spine).toHaveCount(1);
+  await expect(spine).toHaveAttribute("data-signal-mode", "enhanced");
+  await expect(page.locator('[data-warp-replay="true"]')).toHaveCount(6);
+
+  const initialTransform = await fill.evaluate(
+    (element) => getComputedStyle(element).transform,
+  );
+  await page.locator("#contact").scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => fill.evaluate((element) => getComputedStyle(element).transform))
+    .not.toBe(initialTransform);
+
+  const experience = page.locator("#experience");
+  const experienceHeading = experience.getByRole("heading", {
+    level: 2,
+    name: "Experience",
+  });
+  const glyph = experience.locator("[data-warp-glyph]").first();
+  await experienceHeading.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => glyph.evaluate((element) => getComputedStyle(element).transform))
+    .toBe("none");
+  await expect(glyph).toHaveCSS("opacity", "1");
+
+  await page.locator("#home").scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => glyph.evaluate((element) => getComputedStyle(element).transform))
+    .not.toBe("none");
+  await expect(glyph).toHaveCSS("opacity", "1");
+
+  await experienceHeading.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => glyph.evaluate((element) => getComputedStyle(element).transform))
+    .toBe("none");
+
+  runtimeErrors.assertEmpty();
+});
+
 test("renders one stable ASCII frame for reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();

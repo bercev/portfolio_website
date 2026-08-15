@@ -225,6 +225,12 @@ test("renders static, fully visible content for reduced motion", async ({
     "data-effect-mode",
     "static",
   );
+  await expect(page.locator("[data-signal-spine]")).toHaveAttribute(
+    "data-signal-mode",
+    "static",
+  );
+  await expect(page.locator('[data-warp-replay="static"]')).toHaveCount(6);
+  await expect(page.locator("[data-signal-fill]")).toHaveCount(0);
   await expect(page.locator("[data-pixel-trail]")).toHaveCount(0);
   await expect(page.locator("[data-click-spark]")).toHaveCount(0);
 

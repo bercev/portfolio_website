@@ -17,21 +17,21 @@ export function WarpText({
   const reducedMotion = useHydratedReducedMotion();
 
   return (
-    <Component className={cn("relative inline-block", className)}>
+    <Component
+      data-warp-replay={reducedMotion ? "static" : "true"}
+      className={cn("relative inline-block", className)}
+    >
       <span className="sr-only">{text}</span>
       <span aria-hidden="true" className="inline-flex">
         {[...text].map((character, index) => (
           <motion.span
             key={`${character}-${index}`}
+            data-warp-glyph
             className="inline-block whitespace-pre"
-            initial={reducedMotion ? false : { opacity: 0, y: 12, rotate: 2 }}
-            animate={
-              reducedMotion ? { opacity: 1, y: 0, rotate: 0 } : undefined
-            }
-            whileInView={
-              reducedMotion ? undefined : { opacity: 1, y: 0, rotate: 0 }
-            }
-            viewport={{ once: true, amount: 0.75 }}
+            initial={reducedMotion ? false : { y: 10, rotate: 1.5 }}
+            animate={reducedMotion ? { y: 0, rotate: 0 } : undefined}
+            whileInView={reducedMotion ? undefined : { y: 0, rotate: 0 }}
+            viewport={{ once: false, amount: 0.72 }}
             transition={{
               duration: reducedMotion ? 0 : 0.45,
               delay: reducedMotion ? 0 : Math.min(index * 0.025, 0.28),
