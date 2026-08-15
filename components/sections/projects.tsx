@@ -12,7 +12,7 @@ type ProjectsProps = {
 function ProjectDetails({ project }: { readonly project: Project }) {
   return (
     <>
-      <p className="text-sm font-semibold text-muted-foreground">
+      <p className="text-base font-semibold text-muted-foreground">
         {project.dates}
       </p>
       <h3
@@ -30,10 +30,10 @@ function ProjectDetails({ project }: { readonly project: Project }) {
           project.title
         )}
       </h3>
-      <p className="mt-6 max-w-[65ch] text-base leading-7 text-muted-foreground">
+      <p className="mt-6 max-w-[65ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
         {project.description}
       </p>
-      <p className="mt-6 text-sm leading-6 text-muted-foreground">
+      <p className="mt-6 text-base leading-7 text-muted-foreground">
         <span className="font-semibold text-foreground">Built with: </span>
         {project.technologies.join(", ")}
       </p>

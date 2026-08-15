@@ -12,7 +12,7 @@ export function SectionHeading({
 }) {
   return (
     <div className={cn("max-w-3xl", className)}>
-      <h2 className="font-serif text-4xl leading-[0.95] tracking-[-0.035em] text-foreground sm:text-5xl lg:text-6xl">
+      <h2 className="font-serif text-5xl leading-[0.92] tracking-[-0.04em] text-foreground sm:text-6xl lg:text-7xl">
         <WarpText text={title} />
       </h2>
       {description ? (

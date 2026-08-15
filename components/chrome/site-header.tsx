@@ -6,7 +6,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] lg:pl-[max(2rem,env(safe-area-inset-left))] lg:pr-[max(2rem,env(safe-area-inset-right))]">
         <a
           href="#home"
-          className="inline-flex size-10 items-center justify-center rounded-full font-serif text-sm font-extrabold tracking-tight text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="inline-flex size-10 items-center justify-center rounded-[var(--radius)] font-serif text-base font-extrabold tracking-tight text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           aria-label="Berat Ercevik, home"
         >
           BE

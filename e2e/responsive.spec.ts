@@ -113,6 +113,55 @@ test("keeps every multi-column section readable at 390px", async ({
   await context.close();
 });
 
+test("uses one restrained rectangle language and an editorial mobile type scale", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: MOBILE_VIEWPORT,
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Open section navigation" })
+    .tap();
+
+  const rectangles = [
+    page.getByRole("button", { name: "Open section navigation" }),
+    page.getByRole("navigation", { name: "Section navigation" }),
+    page.locator("#contact a").first(),
+    page.locator("[data-skill]").first(),
+    page.locator("[data-chroma-card]").first(),
+    page.locator("[data-publication-row] > div").first(),
+  ];
+
+  for (const rectangle of rectangles) {
+    await expect(rectangle).toHaveCSS("border-radius", "6px");
+  }
+
+  const educationSize = await page
+    .locator("[data-education-panel] h3")
+    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+  const experienceSize = await page
+    .locator("[data-experience-row] h3")
+    .first()
+    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+  const experienceBodySize = await page
+    .locator("[data-experience-row] > div > p")
+    .first()
+    .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+
+  expect(educationSize).toBeGreaterThanOrEqual(44);
+  expect(experienceSize).toBeGreaterThanOrEqual(36);
+  expect(experienceBodySize).toBeGreaterThanOrEqual(16);
+
+  runtimeErrors.assertEmpty();
+  await context.close();
+});
+
 test("keeps the mobile menu above the safe area and keyboard accessible", async ({
   browser,
 }) => {

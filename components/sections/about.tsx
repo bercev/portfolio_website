@@ -28,16 +28,16 @@ export function About({ content, heading }: AboutProps) {
             data-education-panel
             className="border-t border-border pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0"
           >
-            <p className="text-sm font-semibold text-muted-foreground">
+            <p className="text-base font-semibold text-muted-foreground">
               Education
             </p>
-            <h3 className="mt-4 text-4xl font-extrabold leading-[0.95] tracking-[-0.03em] text-foreground">
+            <h3 className="mt-4 text-[clamp(2.75rem,7vw,4.5rem)] font-extrabold leading-[0.92] tracking-[-0.035em] text-foreground">
               {content.education.institution}
             </h3>
-            <p className="mt-4 text-base text-muted-foreground">
+            <p className="mt-5 text-lg leading-8 text-muted-foreground">
               {content.education.degree}
             </p>
-            <div className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <div className="mt-5 flex flex-wrap items-baseline gap-x-5 gap-y-2 text-base text-muted-foreground">
               <span>{content.education.dates}</span>
               <span className="font-semibold text-foreground">
                 {content.education.gpa}
@@ -45,10 +45,10 @@ export function About({ content, heading }: AboutProps) {
             </div>
 
             <div className="mt-8 border-t border-border pt-6">
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-base font-semibold text-foreground">
                 Selected coursework
               </p>
-              <ul className="mt-4 grid gap-x-6 gap-y-2 text-sm leading-6 text-muted-foreground sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <ul className="mt-4 grid gap-x-6 gap-y-3 text-base leading-7 text-muted-foreground sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                 {content.education.coursework.map((course) => (
                   <li key={course}>{course}</li>
                 ))}

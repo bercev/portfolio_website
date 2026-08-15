@@ -34,7 +34,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
       <motion.nav
         layout={reducedMotion ? false : true}
         aria-label="Section navigation"
-        className="pointer-events-auto flex max-h-[min(70dvh,34rem)] max-w-full flex-col overflow-y-auto rounded-[var(--radius-xl)] border border-border bg-popover/95 p-2 text-popover-foreground shadow-lg shadow-foreground/10 backdrop-blur-md"
+        className="pointer-events-auto flex max-h-[min(70dvh,34rem)] max-w-full flex-col overflow-y-auto rounded-[var(--radius)] border border-border bg-popover/95 p-2 text-popover-foreground shadow-lg shadow-foreground/10 backdrop-blur-md"
         transition={{
           layout: reducedMotion
             ? { duration: 0 }
@@ -48,7 +48,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
             aria-label="Open section navigation"
             aria-controls="section-navigation-links"
             aria-expanded={isOpen}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-[background-color,color,transform] hover:bg-foreground hover:text-background active:scale-[0.98]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius)] bg-primary px-5 py-2 text-base font-medium text-primary-foreground transition-[background-color,color,transform] hover:bg-foreground hover:text-background active:scale-[0.98]"
             onClick={() => setIsOpen((open) => !open)}
           >
             {isOpen ? (
@@ -83,7 +83,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
                   <a
                     key={item.id}
                     href={`#${item.id}`}
-                    className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-lg)] bg-secondary px-4 py-2 text-sm text-secondary-foreground transition-[background-color,color,transform] hover:bg-accent hover:text-accent-foreground active:scale-[0.98]"
+                    className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius)] bg-secondary px-4 py-2 text-base text-secondary-foreground transition-[background-color,color,transform] hover:bg-accent hover:text-accent-foreground active:scale-[0.98]"
                     onClick={() => setIsOpen(false)}
                   >
                     {item.label}

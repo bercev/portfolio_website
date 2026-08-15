@@ -27,7 +27,7 @@ export function Publications({ content, heading }: PublicationsProps) {
               data-publication-row
               className="grid gap-6 border-b border-border py-8 md:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.2fr)] md:items-center md:gap-12 lg:py-12"
             >
-              <div className="relative aspect-[16/10] overflow-hidden rounded-lg border border-border bg-muted">
+              <div className="relative aspect-[16/10] overflow-hidden rounded-[var(--radius)] border border-border bg-muted">
                 <Image
                   src={publication.preview.src}
                   alt={publication.preview.alt}
@@ -40,7 +40,7 @@ export function Publications({ content, heading }: PublicationsProps) {
               </div>
 
               <div className="flex flex-col justify-center">
-                <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                <p className="text-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   {publication.venue}
                   <span aria-hidden="true"> / </span>
                   {publication.date}

@@ -25,24 +25,24 @@ export function Experience({ content, heading }: ExperienceProps) {
                 className="grid gap-5 border-b border-border py-8 md:grid-cols-[minmax(11rem,0.42fr)_minmax(0,1.58fr)] md:gap-12 lg:py-12"
               >
                 <header>
-                  <p className="text-sm font-semibold text-muted-foreground">
+                  <p className="text-base font-semibold text-muted-foreground">
                     {experience.dates}
                   </p>
                   {experience.organization ? (
-                    <p className="mt-2 text-sm text-foreground">
+                    <p className="mt-2 text-base text-foreground">
                       {experience.organization}
                     </p>
                   ) : null}
                 </header>
 
                 <div>
-                  <h3 className="text-3xl font-bold leading-none tracking-[-0.025em] text-foreground sm:text-4xl">
+                  <h3 className="text-4xl font-bold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-5xl">
                     {experience.role}
                   </h3>
-                  <p className="mt-5 max-w-[72ch] text-base leading-7 text-muted-foreground">
+                  <p className="mt-6 max-w-[72ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
                     {experience.summary}
                   </p>
-                  <p className="mt-5 text-sm leading-6 text-muted-foreground">
+                  <p className="mt-6 text-base leading-7 text-muted-foreground">
                     <span className="font-semibold text-foreground">Tools: </span>
                     {experience.technologies.join(", ")}
                   </p>

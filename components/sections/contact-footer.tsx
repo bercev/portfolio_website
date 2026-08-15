@@ -18,7 +18,7 @@ export function ContactFooter({
         <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-[max(7rem,calc(5rem+env(safe-area-inset-bottom)))] pt-12 sm:px-6 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16 lg:px-8 lg:pt-20">
           <div>
             <SectionHeading title={content.heading} />
-            <p className="mt-5 max-w-[52ch] text-base leading-7 text-muted-foreground sm:text-lg">
+            <p className="mt-6 max-w-[52ch] text-lg leading-8 text-muted-foreground">
               {content.message}
             </p>
           </div>
@@ -30,7 +30,7 @@ export function ContactFooter({
                   <ExternalLink
                     href={link.href}
                     download={link.download}
-                    className="min-h-11 rounded-full border border-border bg-card px-5 font-medium text-sm text-card-foreground no-underline transition-transform hover:-translate-y-0.5 hover:text-card-foreground hover:no-underline active:translate-y-px"
+                    className="min-h-11 rounded-[var(--radius)] border border-border bg-card px-5 text-base font-medium text-card-foreground no-underline transition-transform hover:-translate-y-0.5 hover:text-card-foreground hover:no-underline active:translate-y-px"
                   >
                     {link.label}
                   </ExternalLink>

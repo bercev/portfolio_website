@@ -31,7 +31,7 @@ export function Hero({ content }: { content: HeroContent }) {
 
         <a
           href="#projects"
-          className="inline-flex min-h-11 items-center justify-center border border-foreground bg-foreground px-6 text-sm font-semibold text-background no-underline transition-transform hover:-translate-y-0.5 active:translate-y-px"
+          className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius)] border border-foreground bg-foreground px-6 text-base font-semibold text-background no-underline transition-transform hover:-translate-y-0.5 active:translate-y-px"
         >
           View projects
         </a>
