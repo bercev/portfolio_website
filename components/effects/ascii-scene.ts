@@ -249,7 +249,7 @@ export class AsciiScene {
     this.mesh.rotation.y += (targetY - this.mesh.rotation.y) * 0.06;
   }
 
-  renderOnce(time = performance.now()) {
+  renderOnce(time = this.animated ? performance.now() : 0) {
     if (this.disposed || this.width <= 0 || this.height <= 0) return;
 
     this.material.uniforms.uTime.value = time * 0.001;
