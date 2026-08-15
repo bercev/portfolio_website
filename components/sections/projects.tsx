@@ -15,7 +15,10 @@ function ProjectDetails({ project }: { readonly project: Project }) {
       <p className="text-sm font-semibold text-muted-foreground">
         {project.dates}
       </p>
-      <h3 className="mt-4 text-4xl font-extrabold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-5xl">
+      <h3
+        aria-label={project.title}
+        className="mt-4 text-4xl font-extrabold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-5xl"
+      >
         {project.href ? (
           <ExternalLink
             href={project.href}
