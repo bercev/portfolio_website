@@ -11,8 +11,8 @@ export function PortfolioCard({
   className?: string;
 }) {
   return (
-    <BorderGlow className={cn("h-full p-6 sm:p-7", className)}>
-      {children}
-    </BorderGlow>
+    <div data-portfolio-card className={cn("h-full", className)}>
+      <BorderGlow className="h-full p-6 sm:p-7">{children}</BorderGlow>
+    </div>
   );
 }
