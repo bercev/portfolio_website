@@ -44,10 +44,10 @@ Icon-only controls may remain circular when the circle communicates the compact 
 
 Add hand-editable effect tokens for:
 
-- cyan
-- emerald
-- amber
-- coral
+- cyan `#00d8ff`
+- emerald `#20d98b`
+- amber `#ffbf3f`
+- coral `#ff6b57`
 
 The palette appears only in signature effects: the ASCII highlights, Signal Spine, and project-card edges. Card surfaces, page backgrounds, body text, and structural borders continue to use the Chalk Slate theme tokens. Chroma must not become a broad page gradient or reduce text contrast.
 
