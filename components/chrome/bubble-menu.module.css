@@ -68,9 +68,16 @@
 
 .safeArea {
   position: absolute;
-  inset: 0 0 -0.5rem;
+  inset: 0 0 -3.75rem;
   pointer-events: none;
-  clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
+  clip-path: polygon(
+    20% 0,
+    80% 0,
+    100% 66.6667%,
+    58% 100%,
+    42% 100%,
+    0 66.6667%
+  );
 }
 
 .list {

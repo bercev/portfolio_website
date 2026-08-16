@@ -339,6 +339,44 @@ test("navigation stays open inside its hover-safe area and closes outside it", a
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
+test("navigation stays open along a slow diagonal path to an outer bubble", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const trigger = page.getByRole("button", {
+    name: "Open section navigation",
+  });
+  await trigger.hover();
+
+  const outerBubble = page.getByRole("link", { name: "Home", exact: true });
+  const triggerBox = await trigger.boundingBox();
+  const bubbleBox = await outerBubble.boundingBox();
+  expect(triggerBox).not.toBeNull();
+  expect(bubbleBox).not.toBeNull();
+
+  const start = {
+    x: triggerBox!.x + triggerBox!.width / 2,
+    y: triggerBox!.y + triggerBox!.height / 2,
+  };
+  const end = {
+    x: bubbleBox!.x + bubbleBox!.width / 2,
+    y: bubbleBox!.y + bubbleBox!.height / 2,
+  };
+
+  for (let step = 1; step <= 30; step += 1) {
+    const progress = step / 30;
+    await page.mouse.move(
+      start.x + (end.x - start.x) * progress,
+      start.y + (end.y - start.y) * progress,
+    );
+    await page.waitForTimeout(12);
+  }
+
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(outerBubble).toBeVisible();
+});
+
 test("navigation blooms locally around its bottom-center trigger", async ({
   page,
 }) => {
