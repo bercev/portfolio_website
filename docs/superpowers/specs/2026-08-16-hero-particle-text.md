@@ -4,7 +4,7 @@
 
 - Replace the hero's ASCII-rendered `BERAT` with React Bits Pro Particle Text.
 - Keep the existing hero layout, biography, semantic heading, and accessible name.
-- Install the Tailwind registry item through the authenticated shadcn registry.
+- Recreate the documented Particle Text experience without using proprietary source.
 - Match the portfolio's current color tokens in both light and dark themes.
 - Preserve a readable static fallback for reduced motion, mobile, and WebGL failure.
 - Avoid changing or staging work owned by other active Codex sessions.
@@ -18,11 +18,12 @@
 
 ## Design
 
-Install the registry component without modifying its public behavior, then wrap it
-in a hero-specific client component. The wrapper owns portfolio policy: theme-aware
-colors, responsive dimensions, pointer capability, reduced-motion behavior, and a
-plain-text fallback. The server-rendered `Hero` retains its semantic `h1` and passes
-the short name to the wrapper, keeping the client boundary narrow.
+Implement an original WebGL particle renderer with the project's existing Three.js
+dependency, then wrap it in a hero-specific client component. The wrapper owns
+portfolio policy: theme-aware colors, responsive dimensions, pointer capability,
+reduced-motion behavior, and a plain-text fallback. The server-rendered `Hero`
+retains its semantic `h1` and passes the short name to the wrapper, keeping the
+client boundary narrow.
 
 The hero wrapper exposes stable data attributes for end-to-end verification. It
 renders the canvas as decorative because the heading already provides the accessible
@@ -38,8 +39,9 @@ coverage followed by lint, unit tests, type checking, and a production build.
 
 ## Decision log
 
-- Use a thin wrapper instead of editing registry code so future installs stay easy to
-  compare and portfolio-specific policy remains local.
+- Use a clean-room Three.js implementation because the licensed registry component
+  is unavailable; do not copy or represent it as React Bits Pro source.
+- Separate the WebGL scene from the hero wrapper so portfolio policy remains local.
 - Keep `Hero` as a Server Component and isolate WebGL inside a Client Component.
 - Disable interactivity for reduced motion and unsuitable pointer/device profiles.
 - Preserve static visible text as the resilient fallback.
