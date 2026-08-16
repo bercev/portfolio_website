@@ -4,7 +4,7 @@ import {
   test,
 } from "./runtime-errors";
 
-test("keeps the ASCII identity and project action semantically stable", async ({
+test("keeps the ASCII identity semantically stable", async ({
   page,
 }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
@@ -20,11 +20,7 @@ test("keeps the ASCII identity and project action semantically stable", async ({
     page.locator("#about .sr-only", { hasText: /^About$/ }),
   ).toBeAttached();
 
-  const action = page
-    .locator("#home")
-    .getByRole("link", { name: "View projects" });
-  await expect(action).toHaveAttribute("href", "#projects");
-  await expect(action).not.toHaveAttribute("target");
+  await expect(page.locator("#home a")).toHaveCount(0);
 
   runtimeErrors.assertEmpty();
 });

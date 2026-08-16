@@ -71,9 +71,7 @@ test("keeps every multi-column section readable at 390px", async ({
   }));
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
   await expect(page.locator("#home")).toHaveCSS("min-height", "844px");
-  await expect(
-    page.locator("#home").getByRole("link", { name: "View projects" }),
-  ).toBeInViewport({ ratio: 1 });
+  await expect(page.locator("#home a")).toHaveCount(0);
 
   const asciiBounds = await page.locator("[data-ascii-root]").boundingBox();
   expect(asciiBounds).not.toBeNull();

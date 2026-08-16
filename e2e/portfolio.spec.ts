@@ -133,7 +133,7 @@ test("keeps approved profile links only in Contact", async ({ page }) => {
   await expect(page.locator('a[href^="mailto:"]:visible')).toHaveCount(0);
 });
 
-test("keeps action contrast and typography intentional in both themes", async ({
+test("keeps navigation contrast and typography intentional in both themes", async ({
   browser,
 }) => {
   for (const colorScheme of ["light", "dark"] as const) {
@@ -142,7 +142,7 @@ test("keeps action contrast and typography intentional in both themes", async ({
     const runtimeErrors = attachRuntimeErrorCollector(page);
     await page.goto("/");
 
-    const action = page.locator("#home a").first();
+    const action = page.locator("[data-bubble-menu-trigger]");
     const styles = await action.evaluate((element) => {
       const style = getComputedStyle(element);
       return {
@@ -163,7 +163,7 @@ test("keeps action contrast and typography intentional in both themes", async ({
   }
 });
 
-test("keeps the hero heading and project action in the initial viewport", async ({
+test("keeps the hero focused on the identity without a project action", async ({
   browser,
 }) => {
   for (const viewport of [
@@ -184,7 +184,7 @@ test("keeps the hero heading and project action in the initial viewport", async 
     });
     await expect(
       page.locator("#home").getByRole("link", { name: "View projects" }),
-    ).toBeInViewport({ ratio: 1 });
+    ).toHaveCount(0);
     await expect(page.locator('#home a[href^="https://"]')).toHaveCount(0);
     await expect(page.locator('#home a[href="/resume.pdf"]')).toHaveCount(0);
 

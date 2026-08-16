@@ -28,13 +28,6 @@ export function Hero({ content }: { content: HeroContent }) {
         <p className="max-w-3xl text-lg font-medium leading-relaxed text-foreground sm:text-xl sm:leading-relaxed lg:text-2xl">
           {hero.bio}
         </p>
-
-        <a
-          href="#projects"
-          className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius)] border border-foreground bg-foreground px-6 text-base font-semibold text-background no-underline transition-transform hover:-translate-y-0.5 active:translate-y-px"
-        >
-          View projects
-        </a>
       </div>
     </section>
   );
