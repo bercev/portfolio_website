@@ -9,59 +9,74 @@ type Burst = {
   y: number;
 };
 
+export type ClickSparkProps = {
+  sparkColor?: string
+  sparkSize?: number
+  sparkRadius?: number
+  sparkCount?: number
+  duration?: number
+}
+
+export const CLICK_SPARK_DEFAULTS = {
+  sparkColor: "#00ffff",
+  sparkSize: 10,
+  sparkRadius: 20,
+  sparkCount: 7,
+  duration: 600,
+} satisfies Required<ClickSparkProps>
+
 export function ClickSpark({
-  sparkCount = 6,
-  sparkSize = 7,
-}: {
-  sparkCount?: number;
-  sparkSize?: number;
-}) {
-  const [bursts, setBursts] = useState<Burst[]>([]);
-  const nextId = useRef(0);
-  const cleanupTimers = useRef(new Set<number>());
+  sparkColor = CLICK_SPARK_DEFAULTS.sparkColor,
+  sparkSize = CLICK_SPARK_DEFAULTS.sparkSize,
+  sparkRadius = CLICK_SPARK_DEFAULTS.sparkRadius,
+  sparkCount = CLICK_SPARK_DEFAULTS.sparkCount,
+  duration = CLICK_SPARK_DEFAULTS.duration,
+}: ClickSparkProps) {
+  const [bursts, setBursts] = useState<Burst[]>([])
+  const nextId = useRef(0)
+  const cleanupTimers = useRef(new Set<number>())
 
   useEffect(() => {
-    const timers = cleanupTimers.current;
+    const timers = cleanupTimers.current
 
     const handlePointerDown = (event: PointerEvent) => {
       const burst = {
         id: nextId.current,
         x: event.clientX,
         y: event.clientY,
-      };
-      nextId.current += 1;
-      setBursts((current) => [...current, burst]);
+      }
+      nextId.current += 1
+      setBursts((current) => [...current, burst])
 
       const timer = window.setTimeout(() => {
-        setBursts((current) =>
-          current.filter((candidate) => candidate.id !== burst.id),
-        );
-        timers.delete(timer);
-      }, 520);
-      timers.add(timer);
-    };
+        setBursts((current) => current.filter((candidate) => candidate.id !== burst.id))
+        timers.delete(timer)
+      }, duration)
+      timers.add(timer)
+    }
 
-    window.addEventListener("pointerdown", handlePointerDown, { passive: true });
+    window.addEventListener("pointerdown", handlePointerDown, { passive: true })
 
     return () => {
-      window.removeEventListener("pointerdown", handlePointerDown);
-      for (const timer of timers) window.clearTimeout(timer);
-      timers.clear();
-    };
-  }, []);
+      window.removeEventListener("pointerdown", handlePointerDown)
+      for (const timer of timers) window.clearTimeout(timer)
+      timers.clear()
+    }
+  }, [duration])
 
   return (
     <div data-effect="click-spark" data-click-spark data-effect-layer="pointer">
       {bursts.flatMap((burst) =>
         Array.from({ length: sparkCount }, (_, index) => {
-          const angle = (Math.PI * 2 * index) / sparkCount;
-          const distance = sparkSize * 3.5;
+          const angle = (Math.PI * 2 * index) / sparkCount
+          const distance = sparkRadius
 
           return (
             <motion.span
               key={`${burst.id}-${index}`}
-              className="fixed block origin-left rounded-full bg-effect-spark"
+              className="fixed block origin-left rounded-full"
               style={{
+                backgroundColor: sparkColor,
                 left: burst.x,
                 top: burst.y,
                 width: sparkSize,
@@ -74,11 +89,14 @@ export function ClickSpark({
                 x: Math.cos(angle) * distance,
                 y: Math.sin(angle) * distance,
               }}
-              transition={{ duration: 0.46, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                duration: duration / 1000,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             />
-          );
+          )
         }),
       )}
     </div>
-  );
+  )
 }
