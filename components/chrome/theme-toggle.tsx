@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 
 const toggleClassName =
-  "inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-wait";
+  "cursor-target inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-wait";
 
 const subscribe = () => () => undefined;
 

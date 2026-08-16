@@ -54,10 +54,10 @@ The main customization points are:
 
 - Base surface and text tokens: `--background`, `--foreground`, `--card`, `--muted`, `--border`, and related variables.
 - Portfolio accent: `--portfolio-accent` and `--portfolio-accent-foreground`.
-- Effect colors: `--effect-prismatic-primary`, `--effect-prismatic-secondary`, `--effect-trail`, `--effect-spark`, and `--effect-glow`.
+- Effect colors: `--effect-prismatic-primary`, `--effect-prismatic-secondary`, `--effect-cursor`, `--effect-spark`, and `--effect-glow`.
 - Effect layering: the `--z-*` variables.
 
-Effect capability policy is centralized in [`lib/effect-policy.ts`](lib/effect-policy.ts): reduced-motion users receive a static profile, mobile or coarse-pointer devices receive a throttled profile, and fine-pointer desktop devices receive the enhanced profile. Pixel-trail behavior is configured by named constants in [`components/effects/pixel-trail.tsx`](components/effects/pixel-trail.tsx); its intended settings are `INTERPOLATE = 2.7`, `MAX_AGE = 300`, `GOO_STRENGTH = 1`, and `GRID_SIZE = 90`. Keep pointer effects gated by `(hover: hover) and (pointer: fine)` and preserve reduced-motion behavior.
+Effect capability policy is centralized in [`lib/effect-policy.ts`](lib/effect-policy.ts): reduced-motion users receive a static profile, mobile or coarse-pointer devices receive a throttled profile, and fine-pointer desktop devices receive the enhanced profile. The GSAP-powered Target Cursor is configured in [`components/effects/effect-stage.tsx`](components/effects/effect-stage.tsx), and meaningful interactive elements opt in with the `.cursor-target` class. Keep pointer effects gated by `(hover: hover) and (pointer: fine)` and preserve reduced-motion behavior.
 
 ## Replace publication placeholders
 

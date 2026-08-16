@@ -15,8 +15,8 @@ Next.js 16.3.0 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS v
 - Stack: shadcn/ui · `motion` v13 · `next-themes` · react-bits components (ported from brief URLs) · deploy **Netlify**.
 - **Theme:** Chalk Slate (21st.dev) light+dark; default follows system; single toggle in header (class strategy).
 - **Colors are hand-editable:** all theme + accent + effect colors live as CSS vars in `globals.css`; components never hardcode hex. One var change reskins the site.
-- Accent = cyan `#00d8ff` (prismatic-burst bg + pixel-trail cursor, which keeps its exact URL settings: interpolate=2.7, maxAge=300, gooStrength=1, gridSize=90).
-- Vision: **creative but tasteful, mobile-first.** Mouse effects (pixel-trail, click-spark) desktop-only (`hover:hover` + `pointer:fine`); background throttled on mobile; respect `prefers-reduced-motion`.
+- Accent = cyan `#00d8ff` (prismatic-burst background + Target Cursor).
+- Vision: **creative but tasteful, mobile-first.** Mouse effects (target cursor, click-spark) desktop-only (`hover:hover` + `pointer:fine`); background throttled on mobile; respect `prefers-reduced-motion`.
 - Typography: serif display (headings) + sans body + mono labels.
 - Sections: Hero → About → Publications → Experience → Projects → Skills → Contact.
 - Content: all copy in `data/content.ts`, first-person, **no stats** — rotating character-trait line in hero. Publication cards get a screenshot placeholder (user fills later). Other cards text/tags/links only.

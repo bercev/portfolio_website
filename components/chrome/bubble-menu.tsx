@@ -177,7 +177,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
           aria-label="Open section navigation"
           aria-controls="section-navigation-links"
           aria-expanded={isOpen}
-          className={styles.trigger}
+          className={`cursor-target ${styles.trigger}`}
           data-bubble-menu-trigger
           onClick={handleTriggerClick}
         >
@@ -219,7 +219,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
                       bubbleRefs.current[index] = element;
                     }}
                     href={`#${item.id}`}
-                    className={styles.link}
+                    className={`cursor-target ${styles.link}`}
                     data-bubble-menu-item
                     onClick={closeMenu}
                   >

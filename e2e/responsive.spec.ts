@@ -239,6 +239,7 @@ test("renders static, fully visible content for reduced motion", async ({
   );
   await expect(page.locator('[data-warp-replay="static"]')).toHaveCount(6);
   await expect(page.locator("[data-signal-fill]")).toHaveCount(0);
+  await expect(page.locator("[data-target-cursor]")).toHaveCount(0);
   await expect(page.locator("[data-pixel-trail]")).toHaveCount(0);
   await expect(page.locator("[data-click-spark]")).toHaveCount(0);
 
@@ -292,7 +293,8 @@ test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
     "data-effect-mode",
     "enhanced",
   );
-  await expect(finePage.locator("[data-pixel-trail]")).toHaveCount(1);
+  await expect(finePage.locator("[data-target-cursor]")).toHaveCount(1);
+  await expect(finePage.locator("[data-pixel-trail]")).toHaveCount(0);
   await expect(finePage.locator("[data-click-spark]")).toHaveCount(1);
   fineRuntimeErrors.assertEmpty();
   await fineContext.close();
@@ -309,6 +311,7 @@ test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
     "data-effect-mode",
     "mobile",
   );
+  await expect(coarsePage.locator("[data-target-cursor]")).toHaveCount(0);
   await expect(coarsePage.locator("[data-pixel-trail]")).toHaveCount(0);
   await expect(coarsePage.locator("[data-click-spark]")).toHaveCount(0);
   coarseRuntimeErrors.assertEmpty();

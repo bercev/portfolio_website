@@ -11,7 +11,10 @@ export function PortfolioCard({
   className?: string;
 }) {
   return (
-    <div data-portfolio-card className={cn("h-full", className)}>
+    <div
+      data-portfolio-card
+      className={cn("cursor-target h-full", className)}
+    >
       <ChromaCard>
         <div className="h-full p-6 sm:p-7">{children}</div>
       </ChromaCard>

@@ -55,7 +55,7 @@
   --portfolio-accent-foreground: #060a12;
   --effect-prismatic-primary: var(--portfolio-accent);
   --effect-prismatic-secondary: #9cf1ff;
-  --effect-trail: var(--portfolio-accent);
+  --effect-cursor: var(--portfolio-accent);
   --effect-spark: var(--portfolio-accent);
   --effect-glow: var(--portfolio-accent);
   --effect-ascii-mask: #ffffff;
@@ -169,7 +169,7 @@
   --color-portfolio-accent-foreground: var(--portfolio-accent-foreground);
   --color-effect-prismatic-primary: var(--effect-prismatic-primary);
   --color-effect-prismatic-secondary: var(--effect-prismatic-secondary);
-  --color-effect-trail: var(--effect-trail);
+  --color-effect-cursor: var(--effect-cursor);
   --color-effect-spark: var(--effect-spark);
   --color-effect-glow: var(--effect-glow);
 
@@ -526,6 +526,11 @@ textarea {
   [data-skills-row]:focus-within
   [data-skills-track] {
   animation-play-state: paused;
+}
+
+html.target-cursor-hide-default,
+html.target-cursor-hide-default * {
+  cursor: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

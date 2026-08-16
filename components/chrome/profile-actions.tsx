@@ -65,7 +65,7 @@ export function ProfileActions({ links }: ProfileActionsProps) {
                     ? "Download resume"
                     : `Open ${link.label} profile in a new tab`
                 }
-                className="inline-flex min-h-10 min-w-10 items-center justify-center gap-2 rounded-[var(--radius)] border border-transparent px-2.5 text-sm font-medium text-foreground no-underline transition-colors hover:border-border hover:bg-accent hover:text-accent-foreground sm:px-3"
+                className="cursor-target inline-flex min-h-10 min-w-10 items-center justify-center gap-2 rounded-[var(--radius)] border border-transparent px-2.5 text-sm font-medium text-foreground no-underline transition-colors hover:border-border hover:bg-accent hover:text-accent-foreground sm:px-3"
                 onClick={(event) => {
                   if (!link.download || reducedMotion) return;
 

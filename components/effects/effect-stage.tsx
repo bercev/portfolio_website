@@ -11,8 +11,8 @@ import {
 } from "@/lib/effect-policy";
 
 import { ClickSpark } from "./click-spark";
-import { PixelTrail } from "./pixel-trail";
 import { PrismaticBurst } from "./prismatic-burst";
+import { TargetCursor } from "./target-cursor";
 
 const STATIC_PROFILE: EffectProfile = {
   mode: "static",
@@ -59,7 +59,10 @@ export function EffectStage() {
       <PrismaticBurst profile={profile} />
       {profile.pointerEffects ? (
         <>
-          <PixelTrail />
+          <TargetCursor
+            cursorColor="var(--effect-cursor)"
+            cursorColorOnTarget="var(--effect-cursor)"
+          />
           <ClickSpark />
         </>
       ) : null}
