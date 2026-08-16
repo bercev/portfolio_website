@@ -118,19 +118,54 @@ test("uses a divided chronology and two chromatic project cards", async ({
   expect(featuredBox!.width).toBeGreaterThan(supportingBox!.width);
 });
 
-test("keeps approved profile links only in Contact", async ({ page }) => {
+test("keeps icon-led profile actions only in the site header", async ({
+  page,
+}) => {
   await page.goto("/");
 
+  const header = page.locator("header");
   const contact = page.locator("#contact");
-  await expect(contact.locator('a[href="https://github.com/bercev"]')).toHaveCount(1);
-  await expect(
-    contact.locator('a[href="https://linkedin.com/in/berat-ercevik"]'),
-  ).toHaveCount(1);
-  await expect(contact.locator('a[href="/resume.pdf"]')).toHaveCount(1);
+  for (const href of [
+    "https://github.com/bercev",
+    "https://linkedin.com/in/berat-ercevik",
+    "/resume.pdf",
+  ]) {
+    const action = header.locator(`a[href=${JSON.stringify(href)}]`);
+    await expect(action).toHaveCount(1);
+    await expect(action.locator("svg")).toHaveCount(1);
+    await expect(contact.locator(`a[href=${JSON.stringify(href)}]`)).toHaveCount(
+      0,
+    );
+  }
   await expect(page.locator('main > section:not(#contact) a[href="https://github.com/bercev"]')).toHaveCount(0);
   await expect(page.locator('main > section:not(#contact) a[href="https://linkedin.com/in/berat-ercevik"]')).toHaveCount(0);
   await expect(page.locator('main > section:not(#contact) a[href="/resume.pdf"]')).toHaveCount(0);
   await expect(page.locator('a[href^="mailto:"]:visible')).toHaveCount(0);
+});
+
+test("resume download fires the Magic UI confetti canvas", async ({ page }) => {
+  await page.goto("/");
+
+  const resume = page.locator('header a[href="/resume.pdf"]');
+  const canvas = page.locator("canvas[data-confetti-canvas]");
+  await expect(canvas).toHaveCount(1);
+
+  const download = page.waitForEvent("download");
+  await resume.click();
+  expect((await download).suggestedFilename()).toBe("resume.pdf");
+
+  await expect
+    .poll(() =>
+      canvas.evaluate((element) => {
+        const target = element as HTMLCanvasElement;
+        const context = target.getContext("2d");
+        if (!context || target.width === 0 || target.height === 0) return false;
+        return context
+          .getImageData(0, 0, target.width, target.height)
+          .data.some((channel, index) => index % 4 === 3 && channel > 0);
+      }),
+    )
+    .toBe(true);
 });
 
 test("keeps navigation contrast and typography intentional in both themes", async ({
@@ -503,17 +538,23 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
     page.getByRole("link", { name: "Berat Ercevik, home" }),
   );
 
+  for (const href of [
+    "https://github.com/bercev",
+    "https://linkedin.com/in/berat-ercevik",
+    "/resume.pdf",
+  ] as const) {
+    await page.keyboard.press("Tab");
+    const focused = page.locator(":focus");
+    await expectVisibleFocus(focused);
+    await expect(focused).toHaveAttribute("href", href);
+  }
+
   await page.keyboard.press("Tab");
   const themeToggle = page.getByRole("button", {
     name: /Switch to (light|dark) theme/,
   });
   await expectVisibleFocus(themeToggle);
   await expect(themeToggle).toHaveAccessibleName(/Switch to (light|dark) theme/);
-
-  await page.keyboard.press("Tab");
-  const heroAction = page.locator(":focus");
-  await expectVisibleFocus(heroAction);
-  await expect(heroAction).toHaveAttribute("href", "#projects");
 
   const expectedContentHrefs = [
     "https://openreview.net/forum?id=nZYF0aPAMP",
@@ -533,17 +574,6 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
   for (const skillRow of await skillRows.all()) {
     await page.keyboard.press("Tab");
     await expectVisibleFocus(skillRow);
-  }
-
-  for (const href of [
-    "https://github.com/bercev",
-    "https://linkedin.com/in/berat-ercevik",
-    "/resume.pdf",
-  ] as const) {
-    await page.keyboard.press("Tab");
-    const focused = page.locator(":focus");
-    await expectVisibleFocus(focused);
-    await expect(focused).toHaveAttribute("href", href);
   }
 
   await page.keyboard.press("Tab");
@@ -588,9 +618,7 @@ test("keeps document semantics stable and hides decorative canvases", async ({
     ).toHaveCount(1);
   }
 
-  await expect(
-    page.locator("#home").getByRole("link", { name: "View projects" }),
-  ).toHaveAttribute("href", "#projects");
+  await expect(page.locator("#home a")).toHaveCount(0);
   await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
     "data-effect-mode",
     "enhanced",

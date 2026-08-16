@@ -90,7 +90,6 @@ test("keeps every multi-column section readable at 390px", async ({
   await expectSingleColumn(
     page.locator("#projects > div > div:nth-child(2) > *"),
   );
-  await expectSingleColumn(page.locator("#contact footer > div > *"));
 
   for (const article of await page.locator("#experience article").all()) {
     await expectSingleColumn(article.locator(":scope > *"));
@@ -141,7 +140,7 @@ test("keeps restrained content rectangles and distinct bubble navigation", async
   }
 
   const rectangles = [
-    page.locator("#contact a").first(),
+    page.locator('header a[href="https://github.com/bercev"]'),
     page.locator("[data-skill]").first(),
     page.locator("[data-chroma-card]").first(),
     page.locator("[data-publication-row] > div").first(),

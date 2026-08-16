@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <>
       <EffectStage />
-      <SiteHeader />
+      <SiteHeader links={portfolio.contact.links} />
 
       <main className="relative z-[var(--z-page-content)]">
         <Hero content={{ identity: portfolio.identity, hero: portfolio.hero }} />
