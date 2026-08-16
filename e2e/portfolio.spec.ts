@@ -278,6 +278,58 @@ test("navigation opens by click and exposes every approved section", async ({
   }
 });
 
+test("navigation blooms locally around its bottom-center trigger", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const viewport = page.viewportSize();
+  const trigger = page.getByRole("button", {
+    name: "Open section navigation",
+  });
+  const triggerBox = await trigger.boundingBox();
+
+  expect(viewport).not.toBeNull();
+  expect(triggerBox).not.toBeNull();
+  expect(triggerBox!.x + triggerBox!.width / 2).toBeCloseTo(
+    viewport!.width / 2,
+    0,
+  );
+
+  await trigger.click();
+
+  const triggerCenter = {
+    x: triggerBox!.x + triggerBox!.width / 2,
+    y: triggerBox!.y + triggerBox!.height / 2,
+  };
+  const bubbleBoxes = await page.locator("[data-bubble-menu-item]").evaluateAll(
+    (elements) =>
+      elements.map((element) => {
+        const { height, width, x, y } = element.getBoundingClientRect();
+        return { height, width, x, y };
+      }),
+  );
+
+  expect(bubbleBoxes).toHaveLength(navigationItems.length);
+  for (const bubble of bubbleBoxes) {
+    const bubbleCenter = {
+      x: bubble.x + bubble.width / 2,
+      y: bubble.y + bubble.height / 2,
+    };
+    expect(Math.hypot(
+      bubbleCenter.x - triggerCenter.x,
+      bubbleCenter.y - triggerCenter.y,
+    )).toBeLessThan(360);
+  }
+
+  const menuBounds = await page
+    .locator("#section-navigation-links")
+    .boundingBox();
+  expect(menuBounds).not.toBeNull();
+  expect(menuBounds!.width).toBeLessThan(viewport!.width * 0.75);
+  expect(menuBounds!.height).toBeLessThan(viewport!.height * 0.55);
+});
+
 test("navigation opens from the keyboard and Escape restores trigger focus", async ({
   page,
 }) => {
@@ -319,7 +371,7 @@ test("navigation anchors update the hash and bring each target into view", async
   }
 });
 
-test("navigation keeps a single-column menu throughout the mobile range", async ({
+test("navigation keeps a compact local cloud throughout the mobile range", async ({
   browser,
 }) => {
   const context = await browser.newContext({
@@ -336,31 +388,24 @@ test("navigation keeps a single-column menu throughout the mobile range", async 
     .getByRole("button", { name: "Open section navigation" })
     .tap();
 
-  const homeLink = page.getByRole("link", { name: "Home", exact: true });
-  const aboutLink = page.getByRole("link", { name: "About", exact: true });
-  await expect(homeLink).toBeVisible();
-  await expect(aboutLink).toBeVisible();
-  await expect
-    .poll(async () => {
-      const [home, about] = await Promise.all([
-        homeLink.boundingBox(),
-        aboutLink.boundingBox(),
-      ]);
-      return Boolean(
-        home &&
-          about &&
-          Math.abs(home.x - about.x) < 1 &&
-          about.y >= home.y + home.height,
-      );
-    })
-    .toBe(true);
+  const triggerBox = await page
+    .getByRole("button", { name: "Open section navigation" })
+    .boundingBox();
+  const bubbleBoxes = await page.locator("[data-bubble-menu-item]").evaluateAll(
+    (elements) =>
+      elements.map((element) => {
+        const { height, width, x, y } = element.getBoundingClientRect();
+        return { height, width, x, y };
+      }),
+  );
 
-  const homeBox = await homeLink.boundingBox();
-  const aboutBox = await aboutLink.boundingBox();
-
-  expect(homeBox).not.toBeNull();
-  expect(aboutBox).not.toBeNull();
-  expect(aboutBox!.y).toBeGreaterThanOrEqual(homeBox!.y + homeBox!.height);
+  expect(triggerBox).not.toBeNull();
+  expect(bubbleBoxes).toHaveLength(navigationItems.length);
+  for (const bubble of bubbleBoxes) {
+    expect(bubble.x).toBeGreaterThanOrEqual(16);
+    expect(bubble.x + bubble.width).toBeLessThanOrEqual(684);
+    expect(bubble.y + bubble.height).toBeLessThan(triggerBox!.y);
+  }
 
   runtimeErrors.assertEmpty();
   await context.close();
