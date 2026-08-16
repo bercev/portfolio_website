@@ -1,0 +1,28 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-effect-pointer);
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-200px, -200px, 0);
+  transition: opacity 120ms ease-out;
+  will-change: transform, opacity;
+}
+
+.overlay[data-specular-active="true"] {
+  opacity: 1;
+}
+
+.overlay canvas {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    display: none;
+  }
+}

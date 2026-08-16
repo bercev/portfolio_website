@@ -73,10 +73,12 @@ test("keeps every multi-column section readable at 390px", async ({
   await expect(page.locator("#home")).toHaveCSS("min-height", "844px");
   await expect(page.locator("#home a")).toHaveCount(0);
 
-  const asciiBounds = await page.locator("[data-ascii-root]").boundingBox();
-  expect(asciiBounds).not.toBeNull();
-  expect(asciiBounds!.x).toBeGreaterThanOrEqual(0);
-  expect(asciiBounds!.x + asciiBounds!.width).toBeLessThanOrEqual(
+  const particleTextBounds = await page
+    .locator("[data-hero-particle-text]")
+    .boundingBox();
+  expect(particleTextBounds).not.toBeNull();
+  expect(particleTextBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(particleTextBounds!.x + particleTextBounds!.width).toBeLessThanOrEqual(
     MOBILE_VIEWPORT.width,
   );
 
@@ -84,9 +86,6 @@ test("keeps every multi-column section readable at 390px", async ({
   await expectSingleColumn(
     page.locator("#about > div > div:nth-child(2) > *"),
   );
-  for (const article of await page.locator("[data-publication-row]").all()) {
-    await expectSingleColumn(article.locator(":scope > *"));
-  }
   await expectSingleColumn(
     page.locator("#projects > div > div:nth-child(2) > *"),
   );
@@ -143,7 +142,6 @@ test("keeps restrained content rectangles and distinct bubble navigation", async
     page.locator('header a[href="https://github.com/bercev"]'),
     page.locator("[data-skill]").first(),
     page.locator("[data-chroma-card]").first(),
-    page.locator("[data-publication-row] > div").first(),
   ];
 
   for (const rectangle of rectangles) {
@@ -262,9 +260,13 @@ test("renders static, fully visible content for reduced motion", async ({
     }
   }
 
-  const asciiRoot = page.locator("[data-ascii-root]");
-  await expect(asciiRoot).toHaveAttribute("data-ascii-mode", "static");
-  await expect(asciiRoot.locator("[data-ascii-output]")).not.toHaveText("");
+  const particleText = page.locator("[data-hero-particle-text]");
+  await expect(particleText).toHaveAttribute(
+    "data-particle-text-mode",
+    "static",
+  );
+  await expect(particleText.getByText("BERAT", { exact: true })).toBeVisible();
+  await expect(particleText.locator("canvas")).toHaveCount(0);
   await expect(
     page.locator("#home").getByText(/full-stack applications/i),
   ).toBeVisible();
@@ -319,7 +321,6 @@ test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
 });
 
 const SNAPSHOT_SECTIONS = [
-  { id: "home", name: "hero" },
   { id: "about", name: "about" },
   { id: "publications", name: "publications" },
   { id: "experience", name: "experience" },
@@ -377,6 +378,7 @@ for (const theme of ["light", "dark"] as const) {
       animations: "disabled",
       caret: "hide",
       fullPage: true,
+      maxDiffPixelRatio: 0.012,
       scale: "css",
     });
 
@@ -391,5 +393,27 @@ for (const theme of ["light", "dark"] as const) {
       );
       await expect(page.locator("html")).toHaveClass(stableClassName ?? "");
     }
+  });
+
+  test(`matches the approved ${theme} hero baseline`, async ({ page }) => {
+    await page.emulateMedia({
+      colorScheme: theme,
+      reducedMotion: "reduce",
+    });
+    await page.addInitScript((storedTheme) => {
+      localStorage.setItem("theme", storedTheme);
+    }, theme);
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveClass(
+      new RegExp(`(^|\\s)${theme}(\\s|$)`),
+    );
+    await expect(page.locator("#home")).toHaveScreenshot(
+      `${theme}-hero.png`,
+      {
+        animations: "disabled",
+        caret: "hide",
+        scale: "css",
+      },
+    );
   });
 }

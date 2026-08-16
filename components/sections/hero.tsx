@@ -1,6 +1,6 @@
 import type { PortfolioContent } from "@/data/content";
 
-import { AsciiText } from "@/components/effects/ascii-text";
+import { HeroParticleText } from "@/components/effects/hero-particle-text";
 
 type HeroContent = {
   readonly identity: PortfolioContent["identity"];
@@ -22,7 +22,7 @@ export function Hero({ content }: { content: HeroContent }) {
           aria-label={identity.name}
           className="w-full text-foreground"
         >
-          <AsciiText text={identity.shortName} />
+          <HeroParticleText text={identity.shortName} />
         </h1>
 
         <p className="max-w-3xl text-lg font-medium leading-relaxed text-foreground sm:text-xl sm:leading-relaxed lg:text-2xl">

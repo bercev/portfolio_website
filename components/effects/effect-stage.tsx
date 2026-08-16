@@ -12,6 +12,7 @@ import {
 
 import { ClickSpark } from "./click-spark";
 import { PrismaticBurst } from "./prismatic-burst";
+import { SpecularControls } from "./specular-controls";
 import { TargetCursor } from "./target-cursor";
 
 const STATIC_PROFILE: EffectProfile = {
@@ -59,6 +60,7 @@ export function EffectStage() {
       <PrismaticBurst profile={profile} />
       {profile.pointerEffects ? (
         <>
+          <SpecularControls />
           <TargetCursor
             cursorColor="var(--effect-cursor)"
             cursorColorOnTarget="var(--effect-cursor)"

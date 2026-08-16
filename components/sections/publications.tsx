@@ -1,8 +1,6 @@
-import Image from "next/image";
-
 import type { PortfolioContent } from "@/data/content";
 
-import { ExternalLink } from "@/components/ui/external-link";
+import { HoverPreview } from "@/components/ui/hover-preview";
 import { SectionHeading } from "@/components/ui/section-heading";
 
 type PublicationsProps = {
@@ -25,33 +23,25 @@ export function Publications({ content, heading }: PublicationsProps) {
             <article
               key={publication.href}
               data-publication-row
-              className="grid gap-6 border-b border-border py-8 md:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.2fr)] md:items-center md:gap-12 lg:py-12"
+              className="border-b border-border py-10 sm:py-12 lg:py-16"
             >
-              <div className="relative aspect-[16/10] overflow-hidden rounded-[var(--radius)] border border-border bg-muted">
-                <Image
-                  src={publication.preview.src}
-                  alt={publication.preview.alt}
-                  width={publication.preview.width}
-                  height={publication.preview.height}
-                  sizes="(min-width: 768px) 42vw, 100vw"
-                  loading={index === 0 ? "eager" : "lazy"}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="flex flex-col justify-center">
+              <div className="flex max-w-5xl flex-col justify-center">
                 <p className="text-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   {publication.venue}
                   <span aria-hidden="true"> / </span>
                   {publication.date}
                 </p>
-                <h3 className="mt-4 max-w-[24ch] text-3xl font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-4xl">
-                  <ExternalLink
+                <h3 className="mt-4 w-full max-w-[32ch] text-3xl font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-4xl">
+                  <HoverPreview
                     href={publication.href}
-                    className="items-start gap-2 decoration-portfolio-accent"
+                    imageUrl={publication.preview.src}
+                    imageWidth={publication.preview.width}
+                    imageHeight={publication.preview.height}
+                    rotation={index % 2 === 0 ? -2 : 2}
+                    className="w-full items-start gap-2 decoration-portfolio-accent"
                   >
                     {publication.title}
-                  </ExternalLink>
+                  </HoverPreview>
                 </h3>
               </div>
             </article>

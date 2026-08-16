@@ -4,7 +4,7 @@ import {
   test,
 } from "./runtime-errors";
 
-test("keeps the ASCII identity semantically stable", async ({
+test("keeps the particle identity semantically stable", async ({
   page,
 }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
@@ -14,7 +14,7 @@ test("keeps the ASCII identity semantically stable", async ({
     "Berat Ercevik",
   );
   await expect(
-    page.locator("#home .sr-only", { hasText: /^Berat$/ }),
+    page.locator("#home .sr-only", { hasText: /^BERAT$/ }),
   ).toBeAttached();
   await expect(
     page.locator("#about .sr-only", { hasText: /^About$/ }),
@@ -25,7 +25,7 @@ test("keeps the ASCII identity semantically stable", async ({
   runtimeErrors.assertEmpty();
 });
 
-test("keeps the ASCII name dense and readable in both themes", async ({
+test("renders the Particle Text canvas in both themes", async ({
   browser,
 }) => {
   for (const theme of ["light", "dark"] as const) {
@@ -37,20 +37,28 @@ test("keeps the ASCII name dense and readable in both themes", async ({
     }, theme);
     await page.goto("/");
 
-    const output = page.locator("[data-ascii-output]");
-    await expect(output).not.toHaveText("");
-    const glyphMetrics = await output.evaluate((element) => {
-      const text = element.textContent ?? "";
-      const cells = text.replace(/\n/g, "").length;
-      const glyphs = text.replace(/\s/g, "");
-      const strongGlyphs = glyphs.match(/[@&#B9]/g)?.length ?? 0;
-      return {
-        density: cells === 0 ? 0 : glyphs.length / cells,
-        strongRatio: glyphs.length === 0 ? 0 : strongGlyphs / glyphs.length,
-      };
-    });
-    expect(glyphMetrics.density).toBeGreaterThan(0.05);
-    expect(glyphMetrics.strongRatio).toBeGreaterThan(0.5);
+    const particleText = page.locator("[data-hero-particle-text]");
+    const canvas = particleText.locator("canvas");
+    await expect(particleText).toHaveAttribute(
+      "data-particle-text-mode",
+      "enhanced",
+    );
+    await expect(canvas).toBeVisible();
+    const canvasBounds = await canvas.boundingBox();
+    expect(canvasBounds).not.toBeNull();
+    expect(canvasBounds!.width).toBeGreaterThan(800);
+    expect(canvasBounds!.height).toBeGreaterThan(200);
+    expect(
+      await canvas.evaluate(
+        (element) => {
+          const canvasElement = element as HTMLCanvasElement;
+          return Boolean(
+            canvasElement.getContext("webgl2") ??
+              canvasElement.getContext("webgl"),
+          );
+        },
+      ),
+    ).toBe(true);
 
     runtimeErrors.assertEmpty();
     await context.close();
@@ -103,46 +111,63 @@ test("tracks scroll with one Signal Spine and replays section headings", async (
   runtimeErrors.assertEmpty();
 });
 
-test("renders one stable ASCII frame for reduced motion", async ({ browser }) => {
+test("renders static Particle Text for reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
   const runtimeErrors = attachRuntimeErrorCollector(page);
   await page.goto("/");
 
-  const root = page.locator("[data-ascii-root]");
-  const output = root.locator("pre[data-ascii-output]");
-  await expect(root).toHaveAttribute("data-ascii-mode", "static");
-  await expect(root).toHaveAttribute("data-ascii-profile", "static");
-  await expect(output).not.toHaveText("");
-
-  const firstFrame = await output.textContent();
-  await page.waitForTimeout(200);
-  await expect(output).toHaveText(firstFrame ?? "");
+  const root = page.locator("[data-hero-particle-text]");
+  await expect(root).toHaveAttribute("data-particle-text-mode", "static");
+  await expect(root.getByText("BERAT", { exact: true })).toBeVisible();
+  await expect(root.locator("canvas")).toHaveCount(0);
 
   runtimeErrors.assertEmpty();
   await context.close();
 });
 
-test("renders the hero name through canvas-generated ASCII output", async ({
+test("previews publication images from pointer and keyboard intent", async ({
   page,
 }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
   await page.goto("/");
 
-  const root = page.locator("[data-ascii-root]");
-  await expect(root.locator("canvas[data-ascii-canvas]")).toBeAttached();
-  await expect(root.locator("pre[data-ascii-output]")).not.toHaveText("");
-  await expect(root).toHaveAttribute("data-ascii-mode", /^(animated|static)$/);
+  const previewTargets = page.locator("[data-hover-preview]");
+  const skillPreview = previewTargets.filter({ hasText: "SkillOptimizer" });
+  const grokSetPreview = previewTargets.filter({ hasText: "@GrokSet" });
+  const skillOptimizer = skillPreview.getByRole("link", {
+    name: /SkillOptimizer/,
+  });
+  const grokSet = grokSetPreview.getByRole("link", { name: /@GrokSet/ });
 
-  const canvases = page.locator("canvas");
-  expect(await canvases.count()).toBeGreaterThanOrEqual(3);
-  for (const canvas of await canvases.all()) {
-    expect(
-      await canvas.evaluate(
-        (element) => element.closest('[aria-hidden="true"]') !== null,
-      ),
-    ).toBe(true);
-  }
+  await expect(previewTargets).toHaveCount(2);
+  await expect(page.locator("#publications img")).toHaveCount(0);
+
+  const titleBox = await skillOptimizer.boundingBox();
+  expect(titleBox).not.toBeNull();
+  expect(titleBox!.width).toBeGreaterThan(500);
+
+  await skillOptimizer.hover();
+  const skillImage = skillPreview.locator("[data-hover-preview-image]");
+  await expect(skillImage).toBeVisible();
+  await expect
+    .poll(async () => (await skillImage.boundingBox())?.width ?? 0)
+    .toBeGreaterThanOrEqual(520);
+
+  await page.mouse.move(0, 0);
+  await grokSet.focus();
+  await expect(
+    grokSetPreview.locator("[data-hover-preview-image]"),
+  ).toBeVisible();
+
+  await expect(skillOptimizer).toHaveAttribute(
+    "href",
+    "https://openreview.net/forum?id=nZYF0aPAMP",
+  );
+  await expect(grokSet).toHaveAttribute(
+    "href",
+    "https://arxiv.org/abs/2602.21236",
+  );
 
   runtimeErrors.assertEmpty();
 });
