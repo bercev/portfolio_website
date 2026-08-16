@@ -313,6 +313,32 @@ test("navigation opens by click and exposes every approved section", async ({
   }
 });
 
+test("navigation stays open inside its hover-safe area and closes outside it", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const trigger = page.getByRole("button", {
+    name: "Open section navigation",
+  });
+
+  await trigger.hover();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+  const safeArea = page.locator("[data-bubble-menu-safe-area]");
+  const safeAreaBox = await safeArea.boundingBox();
+  expect(safeAreaBox).not.toBeNull();
+
+  await page.mouse.move(
+    safeAreaBox!.x + safeAreaBox!.width / 2,
+    safeAreaBox!.y + safeAreaBox!.height / 2,
+  );
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+  await page.mouse.move(0, 0);
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+});
+
 test("navigation blooms locally around its bottom-center trigger", async ({
   page,
 }) => {

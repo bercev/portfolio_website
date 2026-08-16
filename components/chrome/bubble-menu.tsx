@@ -3,7 +3,7 @@
 import { ListIcon, XIcon } from "@phosphor-icons/react";
 import { gsap } from "gsap";
 import { useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 
 import type { PortfolioContent } from "@/data/content";
 
@@ -16,6 +16,7 @@ type BubbleMenuProps = {
 const ITEM_ROTATIONS = [-7, 5, -4, 6, -5, 4, -3] as const;
 const ANIMATION_DURATION = 0.46;
 const STAGGER_DELAY = 0.07;
+const HOVER_CLOSE_DELAY = 120;
 
 export function BubbleMenu({ items }: BubbleMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,13 +25,59 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const bubbleRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const labelRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reducedMotion = useReducedMotion();
 
-  const handleToggle = () => {
-    const nextState = !isOpen;
-    if (nextState) setShowItems(true);
-    setIsOpen(nextState);
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current === null) return;
+    clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
   };
+
+  const openMenu = () => {
+    clearCloseTimer();
+    setShowItems(true);
+    setIsOpen(true);
+  };
+
+  const closeMenu = () => {
+    clearCloseTimer();
+    setIsOpen(false);
+  };
+
+  const handleTriggerClick = (event: MouseEvent<HTMLButtonElement>) => {
+    const supportsHover = window.matchMedia(
+      "(hover: hover) and (pointer: fine)",
+    ).matches;
+
+    if (event.detail > 0 && supportsHover) {
+      openMenu();
+      return;
+    }
+
+    if (isOpen) closeMenu();
+    else openMenu();
+  };
+
+  const handlePointerEnter = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse") return;
+    openMenu();
+  };
+
+  const handlePointerLeave = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse") return;
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(closeMenu, HOVER_CLOSE_DELAY);
+  };
+
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current !== null) {
+        clearTimeout(closeTimerRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -38,6 +85,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
 
+      clearCloseTimer();
       setIsOpen(false);
       triggerRef.current?.focus();
     };
@@ -117,7 +165,12 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
 
   return (
     <div className={styles.anchor}>
-      <nav aria-label="Section navigation" className={styles.navigation}>
+      <nav
+        aria-label="Section navigation"
+        className={styles.navigation}
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
+      >
         <button
           ref={triggerRef}
           type="button"
@@ -126,7 +179,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
           aria-expanded={isOpen}
           className={styles.trigger}
           data-bubble-menu-trigger
-          onClick={handleToggle}
+          onClick={handleTriggerClick}
         >
           {isOpen ? (
             <XIcon className={styles.icon} weight="regular" aria-hidden="true" />
@@ -147,6 +200,11 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
             aria-hidden={!isOpen}
             inert={!isOpen}
           >
+            <div
+              className={styles.safeArea}
+              data-bubble-menu-safe-area
+              aria-hidden="true"
+            />
             <ul className={styles.list}>
               {items.map((item, index) => (
                 <li
@@ -163,7 +221,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
                     href={`#${item.id}`}
                     className={styles.link}
                     data-bubble-menu-item
-                    onClick={() => setIsOpen(false)}
+                    onClick={closeMenu}
                   >
                     <span
                       ref={(element) => {
