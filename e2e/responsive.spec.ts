@@ -113,7 +113,7 @@ test("keeps every multi-column section readable at 390px", async ({
   await context.close();
 });
 
-test("uses one restrained rectangle language and an editorial mobile type scale", async ({
+test("keeps restrained content rectangles and distinct bubble navigation", async ({
   browser,
 }) => {
   const context = await browser.newContext({
@@ -129,9 +129,20 @@ test("uses one restrained rectangle language and an editorial mobile type scale"
     .getByRole("button", { name: "Open section navigation" })
     .tap();
 
+  const navigation = page.getByRole("navigation", {
+    name: "Section navigation",
+  });
+  await expect(navigation).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(navigation).toHaveCSS("border-top-width", "0px");
+  await expect(navigation).toHaveCSS("box-shadow", "none");
+
+  const bubbleLinks = page.locator("[data-bubble-menu-item]");
+  await expect(bubbleLinks).toHaveCount(7);
+  for (const bubbleLink of await bubbleLinks.all()) {
+    await expect(bubbleLink).toHaveCSS("border-radius", "9999px");
+  }
+
   const rectangles = [
-    page.getByRole("button", { name: "Open section navigation" }),
-    page.getByRole("navigation", { name: "Section navigation" }),
     page.locator("#contact a").first(),
     page.locator("[data-skill]").first(),
     page.locator("[data-chroma-card]").first(),

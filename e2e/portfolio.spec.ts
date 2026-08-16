@@ -268,6 +268,9 @@ test("navigation opens by click and exposes every approved section", async ({
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
 
+  const bubbleItems = page.locator("[data-bubble-menu-item]");
+  await expect(bubbleItems).toHaveCount(navigationItems.length);
+
   for (const item of navigationItems) {
     await expect(
       page.getByRole("link", { name: item.label, exact: true }),

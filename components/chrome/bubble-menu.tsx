@@ -1,19 +1,36 @@
 "use client";
 
 import { ListIcon, XIcon } from "@phosphor-icons/react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { gsap } from "gsap";
+import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import type { PortfolioContent } from "@/data/content";
+
+import styles from "./bubble-menu.module.css";
 
 type BubbleMenuProps = {
   items: PortfolioContent["navigation"];
 };
 
+const ITEM_ROTATIONS = [-7, 5, -4, 6, -5, 4, -3] as const;
+const ANIMATION_DURATION = 0.46;
+const STAGGER_DELAY = 0.07;
+
 export function BubbleMenu({ items }: BubbleMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showItems, setShowItems] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const bubbleRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const labelRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const reducedMotion = useReducedMotion();
+
+  const handleToggle = () => {
+    const nextState = !isOpen;
+    if (nextState) setShowItems(true);
+    setIsOpen(nextState);
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -29,71 +46,140 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-[var(--z-site-navigation)] flex justify-center pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
-      <motion.nav
-        layout={reducedMotion ? false : true}
-        aria-label="Section navigation"
-        className="pointer-events-auto flex max-h-[min(70dvh,34rem)] max-w-full flex-col overflow-y-auto rounded-[var(--radius)] border border-border bg-popover/95 p-2 text-popover-foreground shadow-lg shadow-foreground/10 backdrop-blur-md"
-        transition={{
-          layout: reducedMotion
-            ? { duration: 0 }
-            : { type: "spring", stiffness: 360, damping: 32 },
-        }}
-      >
-        <div className="order-2 flex justify-center">
-          <button
-            ref={triggerRef}
-            type="button"
-            aria-label="Open section navigation"
-            aria-controls="section-navigation-links"
-            aria-expanded={isOpen}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius)] bg-primary px-5 py-2 text-base font-medium text-primary-foreground transition-[background-color,color,transform] hover:bg-foreground hover:text-background active:scale-[0.98]"
-            onClick={() => setIsOpen((open) => !open)}
-          >
-            {isOpen ? (
-              <XIcon className="size-5" weight="regular" aria-hidden="true" />
-            ) : (
-              <ListIcon
-                className="size-5"
-                weight="regular"
-                aria-hidden="true"
-              />
-            )}
-            Menu
-          </button>
-        </div>
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    const bubbles = bubbleRefs.current.filter(
+      (bubble): bubble is HTMLAnchorElement => bubble !== null,
+    );
+    const labels = labelRefs.current.filter(
+      (label): label is HTMLSpanElement => label !== null,
+    );
 
-        <div id="section-navigation-links" className="order-1">
-          <AnimatePresence initial={false}>
-            {isOpen ? (
-              <motion.div
-                key="navigation-items"
-                className="grid w-[min(calc(100vw-3rem),52rem)] max-w-full grid-cols-1 gap-2 pb-2 md:grid-cols-4"
-                initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reducedMotion ? undefined : { opacity: 0, y: 8 }}
-                transition={
-                  reducedMotion
-                    ? { duration: 0 }
-                    : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
-                }
-              >
-                {items.map((item) => (
+    if (!overlay || bubbles.length === 0) return;
+
+    const context = gsap.context(() => {
+      gsap.killTweensOf([...bubbles, ...labels]);
+
+      if (reducedMotion) {
+        gsap.set(bubbles, { clearProps: "transform", opacity: 1 });
+        gsap.set(labels, { clearProps: "transform,opacity,visibility" });
+        if (!isOpen) setShowItems(false);
+        return;
+      }
+
+      if (isOpen) {
+        gsap.set(bubbles, {
+          scale: 0,
+          transformOrigin: "50% 50%",
+          opacity: 1,
+        });
+        gsap.set(labels, { y: 20, autoAlpha: 0 });
+
+        bubbles.forEach((bubble, index) => {
+          const timeline = gsap.timeline({ delay: index * STAGGER_DELAY });
+          timeline.to(bubble, {
+            scale: 1,
+            duration: ANIMATION_DURATION,
+            ease: "back.out(1.5)",
+          });
+
+          if (labels[index]) {
+            timeline.to(
+              labels[index],
+              {
+                y: 0,
+                autoAlpha: 1,
+                duration: ANIMATION_DURATION,
+                ease: "power3.out",
+              },
+              `-=${ANIMATION_DURATION * 0.9}`,
+            );
+          }
+        });
+      } else {
+        gsap.to(labels, {
+          y: 20,
+          autoAlpha: 0,
+          duration: 0.18,
+          ease: "power3.in",
+        });
+        gsap.to(bubbles, {
+          scale: 0,
+          duration: 0.18,
+          ease: "power3.in",
+          onComplete: () => setShowItems(false),
+        });
+      }
+    }, overlay);
+
+    return () => context.revert();
+  }, [isOpen, reducedMotion, showItems]);
+
+  return (
+    <div className={styles.anchor}>
+      <nav aria-label="Section navigation" className={styles.navigation}>
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label="Open section navigation"
+          aria-controls="section-navigation-links"
+          aria-expanded={isOpen}
+          className={styles.trigger}
+          data-bubble-menu-trigger
+          onClick={handleToggle}
+        >
+          {isOpen ? (
+            <XIcon className={styles.icon} weight="regular" aria-hidden="true" />
+          ) : (
+            <ListIcon
+              className={styles.icon}
+              weight="regular"
+              aria-hidden="true"
+            />
+          )}
+        </button>
+
+        {showItems ? (
+          <div
+            ref={overlayRef}
+            id="section-navigation-links"
+            className={styles.overlay}
+            aria-hidden={!isOpen}
+            inert={!isOpen}
+          >
+            <ul className={styles.list}>
+              {items.map((item, index) => (
+                <li
+                  key={item.id}
+                  className={styles.item}
+                  style={{
+                    "--bubble-rotation": `${ITEM_ROTATIONS[index % ITEM_ROTATIONS.length]}deg`,
+                  } as React.CSSProperties}
+                >
                   <a
-                    key={item.id}
+                    ref={(element) => {
+                      bubbleRefs.current[index] = element;
+                    }}
                     href={`#${item.id}`}
-                    className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius)] bg-secondary px-4 py-2 text-base text-secondary-foreground transition-[background-color,color,transform] hover:bg-accent hover:text-accent-foreground active:scale-[0.98]"
+                    className={styles.link}
+                    data-bubble-menu-item
                     onClick={() => setIsOpen(false)}
                   >
-                    {item.label}
+                    <span
+                      ref={(element) => {
+                        labelRefs.current[index] = element;
+                      }}
+                      className={styles.label}
+                    >
+                      {item.label}
+                    </span>
                   </a>
-                ))}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
-      </motion.nav>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </nav>
     </div>
   );
 }
