@@ -600,6 +600,7 @@ test("keeps document semantics stable and hides decorative canvases", async ({
 }) => {
   await page.goto("/");
 
+  await expect(page.locator("[data-feedback-toolbar]")).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(
     "Berat Ercevik",

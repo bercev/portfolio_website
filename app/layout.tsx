@@ -1,3 +1,4 @@
+import { Agentation } from "agentation";
 import type { Metadata } from "next";
 import { Archivo, Geist_Mono } from "next/font/google";
 
@@ -69,6 +70,9 @@ export default function RootLayout({
     >
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <ThemeProvider>{children}</ThemeProvider>
+        {process.env.NODE_ENV === "development" ? (
+          <Agentation endpoint="http://localhost:4747" />
+        ) : null}
       </body>
     </html>
   );
