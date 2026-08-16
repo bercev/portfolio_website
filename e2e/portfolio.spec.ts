@@ -354,7 +354,7 @@ test("navigation blooms locally around its bottom-center trigger", async ({
     expect(Math.hypot(
       bubbleCenter.x - triggerCenter.x,
       bubbleCenter.y - triggerCenter.y,
-    )).toBeLessThan(360);
+    )).toBeLessThan(250);
   }
 
   const menuBounds = await page

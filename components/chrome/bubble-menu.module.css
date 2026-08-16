@@ -56,7 +56,7 @@
 
 .overlay {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
+  bottom: calc(env(safe-area-inset-bottom) + 5rem);
   left: 50%;
   z-index: 1;
   width: min(44rem, calc(100vw - 2rem));
@@ -84,38 +84,38 @@
 }
 
 .item:nth-child(1) {
-  --bubble-x: -17.5rem;
-  --bubble-y: -1.5rem;
+  --bubble-x: -13.125rem;
+  --bubble-y: 0rem;
 }
 
 .item:nth-child(2) {
-  --bubble-x: -14rem;
-  --bubble-y: -7.4rem;
+  --bubble-x: -10.3125rem;
+  --bubble-y: -3.75rem;
 }
 
 .item:nth-child(3) {
-  --bubble-x: -7.5rem;
-  --bubble-y: -11.5rem;
+  --bubble-x: -5.625rem;
+  --bubble-y: -7.1875rem;
 }
 
 .item:nth-child(4) {
   --bubble-x: 0rem;
-  --bubble-y: -13.3rem;
+  --bubble-y: -10.75rem;
 }
 
 .item:nth-child(5) {
-  --bubble-x: 7.5rem;
-  --bubble-y: -11.5rem;
+  --bubble-x: 5.625rem;
+  --bubble-y: -7.1875rem;
 }
 
 .item:nth-child(6) {
-  --bubble-x: 14rem;
-  --bubble-y: -7.4rem;
+  --bubble-x: 10.3125rem;
+  --bubble-y: -3.75rem;
 }
 
 .item:nth-child(7) {
-  --bubble-x: 17.5rem;
-  --bubble-y: -1.5rem;
+  --bubble-x: 13.125rem;
+  --bubble-y: 0rem;
 }
 
 .link {
