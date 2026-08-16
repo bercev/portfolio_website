@@ -354,7 +354,7 @@ test("navigation blooms locally around its bottom-center trigger", async ({
     expect(Math.hypot(
       bubbleCenter.x - triggerCenter.x,
       bubbleCenter.y - triggerCenter.y,
-    )).toBeLessThan(250);
+    )).toBeLessThan(185);
   }
 
   const menuBounds = await page
@@ -362,7 +362,7 @@ test("navigation blooms locally around its bottom-center trigger", async ({
     .boundingBox();
   expect(menuBounds).not.toBeNull();
   expect(menuBounds!.width).toBeLessThan(viewport!.width * 0.75);
-  expect(menuBounds!.height).toBeLessThan(viewport!.height * 0.55);
+  expect(menuBounds!.height).toBeLessThan(viewport!.height * 0.3);
 });
 
 test("navigation opens from the keyboard and Escape restores trigger focus", async ({
