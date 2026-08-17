@@ -55,9 +55,9 @@
   --portfolio-accent-foreground: #060a12;
   --effect-prismatic-primary: var(--portfolio-accent);
   --effect-prismatic-secondary: #9cf1ff;
-  --effect-cursor: var(--portfolio-accent);
-  --effect-spark: var(--portfolio-accent);
-  --effect-glow: var(--portfolio-accent);
+  --effect-cursor: #ffffff;
+  --effect-spark: #ffffff;
+  --effect-glow: #ffffff;
   --effect-ascii-mask: #ffffff;
   --effect-chroma-cyan: #00d8ff;
   --effect-chroma-emerald: #20d98b;

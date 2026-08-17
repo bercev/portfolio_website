@@ -9,12 +9,12 @@ import {
 describe("ClickSpark defaults", () => {
   it("uses the requested cyan spark settings", () => {
     expect(CLICK_SPARK_DEFAULTS).toEqual({
-      sparkColor: "#00ffff",
+      sparkColor: "#fffff",
       sparkSize: 10,
       sparkRadius: 20,
       sparkCount: 7,
       duration: 600,
-    });
+    })
   });
 
   it("moves each spark outward while shrinking its line", () => {

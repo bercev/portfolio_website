@@ -33,12 +33,12 @@ type CanvasSizeInput = {
 };
 
 export const CLICK_SPARK_DEFAULTS = {
-  sparkColor: "#00ffff",
+  sparkColor: "#00d8ff",
   sparkSize: 10,
   sparkRadius: 20,
   sparkCount: 7,
   duration: 600,
-} satisfies Required<ClickSparkProps>;
+} satisfies Required<ClickSparkProps>
 
 export function calculateCanvasSize({
   width,
