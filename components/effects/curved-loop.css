@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 2rem;
+  min-height: 1.25rem;
   overflow: hidden;
   user-select: none;
 }
@@ -14,7 +14,7 @@
   aspect-ratio: 100 / 12;
   overflow: visible;
   fill: var(--foreground);
-  font-size: clamp(1rem, 2.5vw, 2rem);
+  font-size: clamp(0.65rem, 1.25vw, 1rem);
   font-weight: 800;
   line-height: 1;
   user-select: none;
