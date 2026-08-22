@@ -433,19 +433,6 @@ textarea {
   opacity: 0.72;
 }
 
-.signal-spine [data-signal-head] {
-  position: absolute;
-  right: 0;
-  width: 0.5rem;
-  height: 0.75rem;
-  border-radius: 2px 0 0 2px;
-  background: var(--signal-color);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--background) 78%, transparent),
-    0 0 14px color-mix(in srgb, var(--signal-color) 38%, transparent);
-  transform: translateY(-50%);
-}
-
 .signal-spine [data-signal-echo] {
   position: absolute;
   right: 0;

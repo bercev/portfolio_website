@@ -196,6 +196,18 @@ test("uses a monochrome right-edge progress indicator", async ({ browser }) => {
   }
 });
 
+test("renders the custom scroll indicator without endpoint blocks", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await expect(page.locator("[data-signal-spine]")).toHaveAttribute(
+    "data-signal-mode",
+    "enhanced",
+  );
+  await expect(page.locator("[data-signal-head]")).toHaveCount(0);
+});
+
 test("keeps icon-led profile actions only in the site header", async ({
   page,
 }) => {

@@ -4,7 +4,6 @@ import {
   motion,
   useScroll,
   useSpring,
-  useTransform,
 } from "motion/react";
 import { useEffect, useState } from "react";
 
@@ -24,12 +23,6 @@ export function ScrollProgress() {
     damping: 24,
     mass: 0.3,
   });
-  const signalTop = useTransform(
-    scrollYProgress,
-    [0, 1],
-    ["0%", "calc(100% - 0.75rem)"],
-  );
-
   useEffect(() => {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
     const mobile = window.matchMedia(MOBILE_QUERY);
@@ -73,7 +66,6 @@ export function ScrollProgress() {
             data-signal-fill
             style={{ scaleY, transformOrigin: "top" }}
           />
-          <motion.span data-signal-head style={{ top: signalTop }} />
           <span data-signal-echo="leading" />
           <span data-signal-echo="trailing" />
         </>
