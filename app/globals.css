@@ -500,6 +500,20 @@ textarea {
 
 [data-skills-marquee="enhanced"] [data-skills-row] {
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
 }
 
 [data-skills-marquee="enhanced"] [data-skills-track] {

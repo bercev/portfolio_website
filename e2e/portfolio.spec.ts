@@ -332,7 +332,9 @@ test("moves the compact skill-chip rows in opposite directions", async ({
   await expect(page.locator('[data-skills-marquee="enhanced"]')).toHaveCount(1);
 
   const tracks = page.locator("#skills [data-skills-track]");
+  const rows = page.locator("#skills [data-skills-row]");
   await expect(tracks).toHaveCount(2);
+  await expect(rows.first()).toHaveCSS("mask-image", /linear-gradient/);
   await expect(page.locator("#skills [data-skill]").first()).toBeVisible();
   await expect(page.locator("#skills .curved-loop-svg")).toHaveCount(0);
   await expect(tracks.nth(0)).toHaveCSS("animation-name", "skills-marquee");
