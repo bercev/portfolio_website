@@ -335,7 +335,7 @@ test("keeps the skills marquee static in a narrow fine-pointer viewport", async 
   );
 
   const tracks = page.locator("#skills [data-skills-track]");
-  await expect(tracks).toHaveCount(2);
+  await expect(tracks).toHaveCount(1);
   for (const track of await tracks.all()) {
     await expect(track).toHaveCSS("animation-name", "none");
     await expect(track).toHaveCSS("transform", "none");
@@ -345,7 +345,7 @@ test("keeps the skills marquee static in a narrow fine-pointer viewport", async 
   await context.close();
 });
 
-test("renders enhanced curved skill rows in opposite directions", async ({ page }) => {
+test("renders one enhanced curved skills loop", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
@@ -355,11 +355,9 @@ test("renders enhanced curved skill rows in opposite directions", async ({ page 
   await expect(page.locator('[data-skills-marquee="enhanced"]')).toHaveCount(1);
 
   const tracks = page.locator("#skills [data-skills-track]");
-  await expect(tracks).toHaveCount(2);
-  await expect(tracks.nth(0).locator(".curved-loop-svg")).toHaveCount(1);
-  await expect(tracks.nth(1).locator(".curved-loop-svg")).toHaveCount(1);
+  await expect(tracks).toHaveCount(1);
+  await expect(tracks.locator(".curved-loop-svg")).toHaveCount(1);
   await expect(page.locator('#skills [data-direction="forward"]')).toHaveCount(1);
-  await expect(page.locator('#skills [data-direction="reverse"]')).toHaveCount(1);
 });
 
 test("disables continuous skill movement for reduced motion", async ({ browser }) => {
@@ -370,7 +368,7 @@ test("disables continuous skill movement for reduced motion", async ({ browser }
 
   await expect(page.locator('[data-skills-marquee="static"]')).toHaveCount(1);
   const tracks = page.locator("#skills [data-skills-track]");
-  await expect(tracks).toHaveCount(2);
+  await expect(tracks).toHaveCount(1);
   for (const track of await tracks.all()) {
     await expect(track).toHaveCSS("animation-name", "none");
     await expect(track).toHaveCSS("transform", "none");
@@ -725,7 +723,7 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
   }
 
   const skillRows = page.locator("[data-skills-row]");
-  await expect(skillRows).toHaveCount(2);
+  await expect(skillRows).toHaveCount(1);
   for (const skillRow of await skillRows.all()) {
     await page.keyboard.press("Tab");
     await expectVisibleFocus(skillRow);
