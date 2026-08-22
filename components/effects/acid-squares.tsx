@@ -100,10 +100,9 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (profile.mode === "static") return;
-
     const container = containerRef.current;
     if (!container) return;
+    const isStatic = profile.mode === "static";
 
     const renderer = new Renderer({
       webgl: 2,
@@ -161,6 +160,22 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
     let isVisible = true;
     const startedAt = performance.now();
 
+    const draw = (time: number) => {
+      program.uniforms.iTime.value = (time - startedAt) * 0.001;
+      mouseCurrent[0] += (mouseTarget[0] - mouseCurrent[0]) * 0.05;
+      mouseCurrent[1] += (mouseTarget[1] - mouseCurrent[1]) * 0.05;
+      mouseActive += (mouseActiveTarget - mouseActive) * 0.05;
+      const mouse = program.uniforms.uMouse.value as Float32Array;
+      mouse[0] = mouseCurrent[0];
+      mouse[1] = mouseCurrent[1];
+      program.uniforms.uMouseActive.value = mouseActive;
+      renderer.render({ scene: mesh });
+    };
+
+    const redrawStatic = () => {
+      if (isStatic) draw(startedAt);
+    };
+
     const applyTheme = () => {
       const root = document.documentElement;
       const accent = root.hasAttribute("data-palette")
@@ -171,6 +186,7 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
       program.uniforms.uColor2.value = hexToRgb(theme.colors[1]);
       program.uniforms.uColor3.value = hexToRgb(theme.colors[2]);
       program.uniforms.uSpread.value = theme.spread;
+      redrawStatic();
     };
 
     const resize = () => {
@@ -180,6 +196,7 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
       const resolution = program.uniforms.iResolution.value as Float32Array;
       resolution[0] = gl.drawingBufferWidth;
       resolution[1] = gl.drawingBufferHeight;
+      redrawStatic();
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -200,20 +217,12 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
     };
 
     const render = (time: number) => {
-      program.uniforms.iTime.value = (time - startedAt) * 0.001;
-      mouseCurrent[0] += (mouseTarget[0] - mouseCurrent[0]) * 0.05;
-      mouseCurrent[1] += (mouseTarget[1] - mouseCurrent[1]) * 0.05;
-      mouseActive += (mouseActiveTarget - mouseActive) * 0.05;
-      const mouse = program.uniforms.uMouse.value as Float32Array;
-      mouse[0] = mouseCurrent[0];
-      mouse[1] = mouseCurrent[1];
-      program.uniforms.uMouseActive.value = mouseActive;
-      renderer.render({ scene: mesh });
+      draw(time);
       frame = requestAnimationFrame(render);
     };
 
     const start = () => {
-      if (frame === 0 && isVisible && isPageVisible) {
+      if (!isStatic && frame === 0 && isVisible && isPageVisible) {
         frame = requestAnimationFrame(render);
       }
     };
@@ -240,9 +249,11 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
       attributes: true,
       attributeFilter: ["class", "data-palette"],
     });
-    intersectionObserver.observe(container);
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    if (!isStatic) {
+      intersectionObserver.observe(container);
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
     applyTheme();
     resize();
     start();
