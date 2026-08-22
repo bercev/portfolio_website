@@ -1,0 +1,48 @@
+.pixel-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: 100%;
+  min-height: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  transition: border-color 200ms ease, transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pixel-card:hover {
+  transform: translateY(-2px);
+}
+
+.pixel-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--portfolio-accent) 18%, transparent), transparent 85%);
+  opacity: 0;
+  transition: opacity 800ms cubic-bezier(0.5, 1, 0.89, 1);
+}
+
+.pixel-card:hover::before,
+.pixel-card:focus-within::before {
+  opacity: 1;
+}
+
+.pixel-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.pixel-card > :not(.pixel-canvas) {
+  position: relative;
+  z-index: 1;
+}
+
+.pixel-card--experience {
+  border-radius: 0;
+  border-inline: 0;
+}

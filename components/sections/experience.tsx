@@ -1,6 +1,7 @@
 import type { PortfolioContent } from "@/data/content";
 
 import { SectionHeading } from "@/components/ui/section-heading";
+import { PixelCard } from "@/components/effects/pixel-card";
 
 type ExperienceProps = {
   readonly content: PortfolioContent["experience"];
@@ -20,34 +21,36 @@ export function Experience({ content, heading }: ExperienceProps) {
         <ol className="mt-12 border-t border-border lg:mt-16">
           {content.map((experience) => (
             <li key={`${experience.role}-${experience.dates}`}>
-              <article
-                data-experience-row
-                className="grid gap-5 border-b border-border py-8 md:grid-cols-[minmax(11rem,0.42fr)_minmax(0,1.58fr)] md:gap-12 lg:py-12"
-              >
-                <header>
-                  <p className="text-base font-semibold text-muted-foreground">
-                    {experience.dates}
-                  </p>
-                  {experience.organization ? (
-                    <p className="mt-2 text-base text-foreground">
-                      {experience.organization}
+              <PixelCard variant="blue" className="pixel-card--experience">
+                <article
+                  data-experience-row
+                  className="grid gap-5 py-8 md:grid-cols-[minmax(11rem,0.42fr)_minmax(0,1.58fr)] md:gap-12 lg:py-12"
+                >
+                  <header>
+                    <p className="text-base font-semibold text-muted-foreground">
+                      {experience.dates}
                     </p>
-                  ) : null}
-                </header>
+                    {experience.organization ? (
+                      <p className="mt-2 text-base text-foreground">
+                        {experience.organization}
+                      </p>
+                    ) : null}
+                  </header>
 
-                <div>
-                  <h3 className="text-4xl font-bold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-5xl">
-                    {experience.role}
-                  </h3>
-                  <p className="mt-6 max-w-[72ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-                    {experience.summary}
-                  </p>
-                  <p className="mt-6 text-base leading-7 text-muted-foreground">
-                    <span className="font-semibold text-foreground">Tools: </span>
-                    {experience.technologies.join(", ")}
-                  </p>
-                </div>
-              </article>
+                  <div>
+                    <h3 className="text-4xl font-bold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-5xl">
+                      {experience.role}
+                    </h3>
+                    <p className="mt-6 max-w-[72ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+                      {experience.summary}
+                    </p>
+                    <p className="mt-6 text-base leading-7 text-muted-foreground">
+                      <span className="font-semibold text-foreground">Tools: </span>
+                      {experience.technologies.join(", ")}
+                    </p>
+                  </div>
+                </article>
+              </PixelCard>
             </li>
           ))}
         </ol>

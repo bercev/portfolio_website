@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { ChromaCard } from "@/components/effects/chroma-card";
+import { PixelCard } from "@/components/effects/pixel-card";
 import { cn } from "@/lib/utils";
 
 export function PortfolioCard({
@@ -15,9 +16,11 @@ export function PortfolioCard({
       data-portfolio-card
       className={cn("cursor-target h-full", className)}
     >
-      <ChromaCard>
-        <div className="h-full p-6 sm:p-7">{children}</div>
-      </ChromaCard>
+      <PixelCard variant="blue">
+        <ChromaCard>
+          <div className="h-full p-6 sm:p-7">{children}</div>
+        </ChromaCard>
+      </PixelCard>
     </div>
   );
 }
