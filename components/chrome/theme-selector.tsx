@@ -9,7 +9,7 @@ export function ThemeSelector() {
   const { palette, setPalette } = usePalette();
 
   return (
-    <label className="cursor-target inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background px-3 text-foreground transition-colors hover:border-[var(--portfolio-accent)]">
+    <label className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background px-3 text-foreground transition-colors hover:border-[var(--portfolio-accent)]">
       <PaletteIcon className="size-4 shrink-0" weight="regular" aria-hidden="true" />
       <span className="sr-only">Choose a color theme</span>
       <select
