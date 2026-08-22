@@ -30,6 +30,8 @@ uniform vec2 uOffset;
 uniform sampler2D uGradient;
 uniform float uNoiseAmount;
 uniform int uRayCount;
+uniform vec3 uBackground;
+uniform int uLightMode;
 
 float hash21(vec2 p){
   p = floor(p);
@@ -137,7 +139,13 @@ void main() {
   }
   col *= edgeFade(frag, uResolution, uOffset);
   col *= uIntensity;
-  fragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+  if (uLightMode == 1) {
+    float rayAlpha = clamp(length(col) * 0.55, 0.0, 1.0);
+    col = mix(uBackground, clamp(col, 0.0, 1.0), rayAlpha);
+  } else {
+    col = clamp(col, 0.0, 1.0);
+  }
+  fragColor = vec4(col, 1.0);
 }`;
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -195,7 +203,7 @@ export function PrismaticBurst({ profile }: { profile: EffectProfile }) {
         uResolution: { value: [1, 1] }, uTime: { value: 0 }, uIntensity: { value: 3.3 }, uSpeed: { value: 0.4 },
         uAnimType: { value: 1 }, uMouse: { value: [0.5, 0.5] }, uColorCount: { value: 0 },
         uDistort: { value: 10 }, uOffset: { value: [0, 0] }, uGradient: { value: gradientTexture },
-        uNoiseAmount: { value: 0.8 }, uRayCount: { value: 0 },
+        uNoiseAmount: { value: 0.8 }, uRayCount: { value: 0 }, uBackground: { value: [0, 0, 0] }, uLightMode: { value: 0 },
       },
     });
     const mesh = new Mesh(gl, { geometry: new Triangle(gl), program });
@@ -205,9 +213,14 @@ export function PrismaticBurst({ profile }: { profile: EffectProfile }) {
     let frame = 0;
 
     const applyTheme = () => {
-      const palette = getPrismaticPalette(document.documentElement.classList.contains("dark"));
+      const isDark = document.documentElement.classList.contains("dark");
+      const palette = getPrismaticPalette(isDark);
+      const [red, green, blue] = hexToRgb(palette.background);
       updateGradient(gl, gradientTexture, palette.colors);
       program.uniforms.uColorCount.value = palette.colors.length;
+      program.uniforms.uBackground.value = [red, green, blue];
+      program.uniforms.uLightMode.value = isDark ? 0 : 1;
+      canvas.style.mixBlendMode = isDark ? "lighten" : "normal";
     };
     const resize = () => {
       renderer.setSize(container.clientWidth || 1, container.clientHeight || 1);
@@ -231,7 +244,7 @@ export function PrismaticBurst({ profile }: { profile: EffectProfile }) {
       frame = requestAnimationFrame(render);
     };
 
-    canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:lighten";
+    canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block";
     container.addEventListener("pointermove", onPointerMove, { passive: true });
     observer.observe(container);
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
