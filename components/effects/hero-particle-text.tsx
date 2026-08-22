@@ -9,6 +9,7 @@ import {
   REDUCED_MOTION_QUERY,
   getEffectProfile,
 } from "@/lib/effect-policy";
+import { usePalette } from "@/components/providers/palette-provider";
 import { cn } from "@/lib/utils";
 
 import { ParticleTextScene } from "./particle-text-scene";
@@ -16,7 +17,7 @@ import { ParticleTextScene } from "./particle-text-scene";
 type ParticleTextMode = "enhanced" | "static";
 
 const COLOR_TOKENS = [
-  "--foreground",
+  "--portfolio-accent",
   "--effect-chroma-cyan",
   "--effect-chroma-emerald",
   "--effect-chroma-coral",
@@ -43,6 +44,7 @@ export function HeroParticleText({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mode, setMode] = useState<ParticleTextMode>("static");
   const { resolvedTheme } = useTheme();
+  const { palette } = usePalette();
   const displayText = text.toUpperCase();
 
   useEffect(() => {
@@ -108,7 +110,7 @@ export function HeroParticleText({
       resizeObserver.disconnect();
       scene?.dispose();
     };
-  }, [displayText, mode, resolvedTheme]);
+  }, [displayText, mode, palette, resolvedTheme]);
 
   return (
     <span
@@ -124,14 +126,14 @@ export function HeroParticleText({
         <>
           <span className="sr-only">{displayText}</span>
           <canvas
-            key={resolvedTheme}
+            key={`${resolvedTheme}-${palette}`}
             ref={canvasRef}
             aria-hidden="true"
             className="absolute inset-0 size-full touch-none"
           />
         </>
       ) : (
-        <span className="grid size-full place-items-center text-[clamp(4.5rem,18vw,12rem)] font-extrabold leading-[0.8] tracking-[-0.075em] text-foreground">
+        <span className="grid size-full place-items-center text-[clamp(4.5rem,18vw,12rem)] font-extrabold leading-[0.8] tracking-[-0.075em] text-portfolio-accent">
           {displayText}
         </span>
       )}
