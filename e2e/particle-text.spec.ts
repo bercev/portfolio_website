@@ -24,6 +24,29 @@ test("renders BERAT as interactive Particle Text on capable devices", async ({
   runtimeErrors.assertEmpty();
 });
 
+test("keeps Particle Text enhanced after switching themes", async ({ page }) => {
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+
+  const particleText = page.locator("[data-hero-particle-text]");
+  await expect(particleText).toHaveAttribute(
+    "data-particle-text-mode",
+    "enhanced",
+  );
+
+  await page
+    .getByRole("button", { name: /Switch to (light|dark) theme/ })
+    .click();
+
+  await expect(particleText).toHaveAttribute(
+    "data-particle-text-mode",
+    "enhanced",
+  );
+  await expect(particleText.locator('canvas[aria-hidden="true"]')).toBeVisible();
+
+  runtimeErrors.assertEmpty();
+});
+
 test("uses a static BERAT fallback when reduced motion is requested", async ({
   browser,
 }) => {

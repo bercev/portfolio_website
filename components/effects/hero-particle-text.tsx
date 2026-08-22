@@ -124,6 +124,7 @@ export function HeroParticleText({
         <>
           <span className="sr-only">{displayText}</span>
           <canvas
+            key={resolvedTheme}
             ref={canvasRef}
             aria-hidden="true"
             className="absolute inset-0 size-full touch-none"
