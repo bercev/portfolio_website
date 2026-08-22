@@ -556,6 +556,10 @@ html.target-cursor-hide-default * {
   cursor: none !important;
 }
 
+html:has([data-pdf-reader]:hover) [data-target-cursor] {
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
