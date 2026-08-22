@@ -30,6 +30,24 @@ describe("portfolio content", () => {
     ).toBe(true);
   });
 
+  it("uses real paper screenshots for publication previews", () => {
+    expect(
+      portfolio.publications.map((paper) => ({
+        src: paper.preview.src,
+        isPlaceholder: paper.preview.isPlaceholder,
+      })),
+    ).toEqual([
+      {
+        src: "/publications/skilloptimizer.png",
+        isPlaceholder: false,
+      },
+      {
+        src: "/publications/grokset.png",
+        isPlaceholder: false,
+      },
+    ]);
+  });
+
   it("uses only confirmed general contact links", () => {
     expect(portfolio.contact.links.map((link) => link.label)).toEqual([
       "GitHub",

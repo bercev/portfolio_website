@@ -23,7 +23,7 @@ export interface Publication {
     readonly alt: string;
     readonly width: number;
     readonly height: number;
-    readonly isPlaceholder: true;
+    readonly isPlaceholder: boolean;
   };
 }
 
@@ -147,11 +147,11 @@ export const portfolio = {
       date: "2026",
       href: "https://openreview.net/forum?id=nZYF0aPAMP",
       preview: {
-        src: "/publications/skilloptimizer.svg",
-        alt: "Placeholder preview for the SkillOptimizer paper.",
-        width: 1600,
-        height: 1000,
-        isPlaceholder: true,
+        src: "/publications/skilloptimizer.png",
+        alt: "First-page preview of the SkillOptimizer paper.",
+        width: 817,
+        height: 867,
+        isPlaceholder: false,
       },
     },
     {
@@ -160,11 +160,11 @@ export const portfolio = {
       date: "February 2026",
       href: "https://arxiv.org/abs/2602.21236",
       preview: {
-        src: "/publications/grokset.svg",
-        alt: "Placeholder preview for the @GrokSet paper.",
-        width: 1600,
-        height: 1000,
-        isPlaceholder: true,
+        src: "/publications/grokset.png",
+        alt: "First-page preview of the @GrokSet paper.",
+        width: 795,
+        height: 870,
+        isPlaceholder: false,
       },
     },
   ],
