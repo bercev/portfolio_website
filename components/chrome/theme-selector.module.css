@@ -29,6 +29,29 @@
   transform: scale(0.95);
 }
 
+.trigger[data-variant="menu"] {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  color: var(--popover-foreground);
+  font-family: var(--font-archivo), sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: color-mix(in oklab, var(--popover) 96%, transparent);
+  border-color: color-mix(in oklab, var(--border) 80%, transparent);
+  box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+
+.trigger[data-variant="menu"]:hover,
+.trigger[data-variant="menu"][aria-expanded="true"] {
+  color: var(--portfolio-accent-foreground);
+  background: var(--portfolio-accent);
+}
+
 .icon {
   width: 1.05rem;
   height: 1.05rem;
@@ -38,10 +61,15 @@
   position: absolute;
   top: calc(100% + 0.7rem);
   left: 50%;
-  width: 11rem;
-  height: 7rem;
+  width: 9rem;
+  height: 5.5rem;
   pointer-events: none;
   transform: translateX(-50%);
+}
+
+.selector[data-placement="up"] .options {
+  top: auto;
+  bottom: calc(100% + 0.7rem);
 }
 
 .option {
@@ -77,11 +105,17 @@
 }
 
 /* Equal 45-degree steps around a downward semicircle. */
-.option:nth-child(1) { --option-x: -4.2rem; --option-y: 0rem; --option-rotation: -8deg; }
-.option:nth-child(2) { --option-x: -2.97rem; --option-y: 2.97rem; --option-rotation: 5deg; }
-.option:nth-child(3) { --option-x: 0rem; --option-y: 4.2rem; --option-rotation: -4deg; }
-.option:nth-child(4) { --option-x: 2.97rem; --option-y: 2.97rem; --option-rotation: 6deg; }
-.option:nth-child(5) { --option-x: 4.2rem; --option-y: 0rem; --option-rotation: -5deg; }
+.option:nth-child(1) { --option-x: -3.4rem; --option-y: 0rem; --option-rotation: -8deg; }
+.option:nth-child(2) { --option-x: -2.4rem; --option-y: 2.4rem; --option-rotation: 5deg; }
+.option:nth-child(3) { --option-x: 0rem; --option-y: 3.4rem; --option-rotation: -4deg; }
+.option:nth-child(4) { --option-x: 2.4rem; --option-y: 2.4rem; --option-rotation: 6deg; }
+.option:nth-child(5) { --option-x: 3.4rem; --option-y: 0rem; --option-rotation: -5deg; }
+
+.selector[data-placement="up"] .option:nth-child(1) { --option-y: 0rem; }
+.selector[data-placement="up"] .option:nth-child(2) { --option-y: -2.4rem; }
+.selector[data-placement="up"] .option:nth-child(3) { --option-y: -3.4rem; }
+.selector[data-placement="up"] .option:nth-child(4) { --option-y: -2.4rem; }
+.selector[data-placement="up"] .option:nth-child(5) { --option-y: 0rem; }
 
 .option:hover,
 .option:focus-visible {

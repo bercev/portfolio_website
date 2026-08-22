@@ -122,24 +122,24 @@ test("keeps restrained content rectangles and distinct bubble navigation", async
 
   await page.goto("/");
   await page
-    .getByRole("button", { name: "Open section navigation" })
+    .getByRole("button", { name: "Open utility menu" })
     .tap();
 
   const navigation = page.getByRole("navigation", {
-    name: "Section navigation",
+    name: "Utility menu",
   });
   await expect(navigation).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(navigation).toHaveCSS("border-top-width", "0px");
   await expect(navigation).toHaveCSS("box-shadow", "none");
 
   const bubbleLinks = page.locator("[data-bubble-menu-item]");
-  await expect(bubbleLinks).toHaveCount(7);
+  await expect(bubbleLinks).toHaveCount(5);
   for (const bubbleLink of await bubbleLinks.all()) {
     await expect(bubbleLink).toHaveCSS("border-radius", "9999px");
   }
 
   const rectangles = [
-    page.locator('header a[href="https://github.com/bercev"]'),
+    page.locator('a[href="https://github.com/bercev"]'),
     page.locator("[data-skill]").first(),
     page.locator("[data-chroma-card]").first(),
   ];
@@ -182,9 +182,9 @@ test("keeps the mobile menu above the safe area and keyboard accessible", async 
   await page.goto("/");
 
   const trigger = page.getByRole("button", {
-    name: "Open section navigation",
+    name: "Open utility menu",
   });
-  const firstLink = page.getByRole("link", { name: "Home", exact: true });
+  const firstLink = page.getByRole("link", { name: "GitHub", exact: true });
 
   const closedBox = await trigger.boundingBox();
   expect(closedBox).not.toBeNull();
@@ -196,11 +196,11 @@ test("keeps the mobile menu above the safe area and keyboard accessible", async 
   await page.keyboard.press("Enter");
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
   await expect(
-    page.getByRole("link", { name: "Contact", exact: true }),
+    page.getByRole("link", { name: "Resume", exact: true }),
   ).toBeVisible();
 
   const navigationBox = await page
-    .getByRole("navigation", { name: "Section navigation" })
+    .getByRole("navigation", { name: "Utility menu" })
     .boundingBox();
   expect(navigationBox).not.toBeNull();
   expect(

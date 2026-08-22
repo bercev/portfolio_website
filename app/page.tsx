@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <>
       <EffectStage />
-      <SiteHeader links={portfolio.contact.links} />
+      <SiteHeader />
 
       <main className="relative z-[var(--z-page-content)]">
         <Hero
@@ -44,7 +44,7 @@ export default function Home() {
         <ContactFooter content={portfolio.contact} />
       </main>
 
-      <BubbleMenu items={portfolio.navigation} />
+      <BubbleMenu links={portfolio.contact.links} />
       <LineSidebar
         items={portfolio.navigation.filter((item) => item.id !== "skills")}
       />

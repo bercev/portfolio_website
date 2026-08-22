@@ -177,21 +177,27 @@ test("renders the line sidebar as section navigation", async ({ page }) => {
   await expect(sidebar.locator("[data-line-sidebar-marker]")).toHaveCount(7);
 });
 
-test("keeps icon-led profile actions only in the site header", async ({
+test("keeps profile actions only in the utility menu", async ({
   page,
 }) => {
   await page.goto("/");
 
   const header = page.locator("header");
   const contact = page.locator("#contact");
+  await page.getByRole("button", { name: "Open utility menu" }).click();
+  const menu = page.getByRole("navigation", { name: "Utility menu" });
+
   for (const href of [
     "https://github.com/bercev",
     "https://linkedin.com/in/berat-ercevik",
     "/resume.pdf",
   ]) {
-    const action = header.locator(`a[href=${JSON.stringify(href)}]`);
+    const action = menu.locator(`a[href=${JSON.stringify(href)}]`);
     await expect(action).toHaveCount(1);
     await expect(action.locator("svg")).toHaveCount(1);
+    await expect(header.locator(`a[href=${JSON.stringify(href)}]`)).toHaveCount(
+      0,
+    );
     await expect(contact.locator(`a[href=${JSON.stringify(href)}]`)).toHaveCount(
       0,
     );
@@ -200,31 +206,6 @@ test("keeps icon-led profile actions only in the site header", async ({
   await expect(page.locator('main > section:not(#contact) a[href="https://linkedin.com/in/berat-ercevik"]')).toHaveCount(0);
   await expect(page.locator('main > section:not(#contact) a[href="/resume.pdf"]')).toHaveCount(0);
   await expect(page.locator('a[href^="mailto:"]:visible')).toHaveCount(0);
-});
-
-test("resume download fires the Magic UI confetti canvas", async ({ page }) => {
-  await page.goto("/");
-
-  const resume = page.locator('header a[href="/resume.pdf"]');
-  const canvas = page.locator("canvas[data-confetti-canvas]");
-  await expect(canvas).toHaveCount(1);
-
-  const download = page.waitForEvent("download");
-  await resume.click();
-  expect((await download).suggestedFilename()).toBe("resume.pdf");
-
-  await expect
-    .poll(() =>
-      canvas.evaluate((element) => {
-        const target = element as HTMLCanvasElement;
-        const context = target.getContext("2d");
-        if (!context || target.width === 0 || target.height === 0) return false;
-        return context
-          .getImageData(0, 0, target.width, target.height)
-          .data.some((channel, index) => index % 4 === 3 && channel > 0);
-      }),
-    )
-    .toBe(true);
 });
 
 test("keeps navigation contrast and typography intentional in both themes", async ({
@@ -375,13 +356,13 @@ test("disables continuous skill movement for reduced motion", async ({ browser }
   await context.close();
 });
 
-test("navigation opens by click and exposes every approved section", async ({
+test("utility menu opens by click and exposes profile and theme actions", async ({
   page,
 }) => {
   await page.goto("/");
 
   const trigger = page.getByRole("button", {
-    name: "Open section navigation",
+    name: "Open utility menu",
   });
 
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -389,13 +370,12 @@ test("navigation opens by click and exposes every approved section", async ({
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
 
   const bubbleItems = page.locator("[data-bubble-menu-item]");
-  await expect(bubbleItems).toHaveCount(navigationItems.length);
-
-  for (const item of navigationItems) {
-    await expect(
-      page.getByRole("link", { name: item.label, exact: true }),
-    ).toHaveAttribute("href", `#${item.id}`);
-  }
+  await expect(bubbleItems).toHaveCount(5);
+  await expect(page.getByRole("link", { name: "GitHub" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "LinkedIn" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Resume" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Switch to (light|dark) theme/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Color theme:/ })).toBeVisible();
 });
 
 test("navigation stays open inside its hover-safe area and closes outside it", async ({
@@ -404,7 +384,7 @@ test("navigation stays open inside its hover-safe area and closes outside it", a
   await page.goto("/");
 
   const trigger = page.getByRole("button", {
-    name: "Open section navigation",
+    name: "Open utility menu",
   });
 
   await trigger.hover();
@@ -430,11 +410,11 @@ test("navigation stays open along a slow diagonal path to an outer bubble", asyn
   await page.goto("/");
 
   const trigger = page.getByRole("button", {
-    name: "Open section navigation",
+    name: "Open utility menu",
   });
   await trigger.hover();
 
-  const outerBubble = page.getByRole("link", { name: "Home", exact: true });
+  const outerBubble = page.getByRole("link", { name: "GitHub", exact: true });
   const triggerBox = await trigger.boundingBox();
   const bubbleBox = await outerBubble.boundingBox();
   expect(triggerBox).not.toBeNull();
@@ -469,7 +449,7 @@ test("navigation blooms locally around its bottom-center trigger", async ({
 
   const viewport = page.viewportSize();
   const trigger = page.getByRole("button", {
-    name: "Open section navigation",
+    name: "Open utility menu",
   });
   const triggerBox = await trigger.boundingBox();
 
@@ -494,7 +474,7 @@ test("navigation blooms locally around its bottom-center trigger", async ({
       }),
   );
 
-  expect(bubbleBoxes).toHaveLength(navigationItems.length);
+  expect(bubbleBoxes).toHaveLength(5);
   for (const bubble of bubbleBoxes) {
     const bubbleCenter = {
       x: bubble.x + bubble.width / 2,
@@ -507,7 +487,7 @@ test("navigation blooms locally around its bottom-center trigger", async ({
   }
 
   const menuBounds = await page
-    .locator("#section-navigation-links")
+    .locator("#utility-menu-items")
     .boundingBox();
   expect(menuBounds).not.toBeNull();
   expect(menuBounds!.width).toBeLessThan(viewport!.width * 0.75);
@@ -520,9 +500,9 @@ test("navigation opens from the keyboard and Escape restores trigger focus", asy
   await page.goto("/");
 
   const trigger = page.getByRole("button", {
-    name: "Open section navigation",
+    name: "Open utility menu",
   });
-  const firstLink = page.getByRole("link", { name: "Home", exact: true });
+  const firstLink = page.getByRole("link", { name: "GitHub", exact: true });
 
   await trigger.focus();
   await page.keyboard.press("Enter");
@@ -536,26 +516,7 @@ test("navigation opens from the keyboard and Escape restores trigger focus", asy
   await expect(trigger).toBeFocused();
 });
 
-test("navigation anchors update the hash and bring each target into view", async ({
-  page,
-}) => {
-  await page.goto("/");
-
-  for (const item of navigationItems) {
-    const trigger = page.getByRole("button", {
-      name: "Open section navigation",
-    });
-    await trigger.click();
-
-    await page.getByRole("link", { name: item.label, exact: true }).click();
-
-    await expect(page).toHaveURL(new RegExp(`#${item.id}$`));
-    await expect(page.locator(`#${item.id}`)).toBeInViewport();
-    await expect(trigger).toHaveAttribute("aria-expanded", "false");
-  }
-});
-
-test("navigation keeps a compact local cloud throughout the mobile range", async ({
+test("utility menu keeps a compact local cloud throughout the mobile range", async ({
   browser,
 }) => {
   const context = await browser.newContext({
@@ -569,11 +530,11 @@ test("navigation keeps a compact local cloud throughout the mobile range", async
 
   await page.goto("/");
   await page
-    .getByRole("button", { name: "Open section navigation" })
+    .getByRole("button", { name: "Open utility menu" })
     .tap();
 
   const triggerBox = await page
-    .getByRole("button", { name: "Open section navigation" })
+    .getByRole("button", { name: "Open utility menu" })
     .boundingBox();
   const bubbleBoxes = await page.locator("[data-bubble-menu-item]").evaluateAll(
     (elements) =>
@@ -584,7 +545,7 @@ test("navigation keeps a compact local cloud throughout the mobile range", async
   );
 
   expect(triggerBox).not.toBeNull();
-  expect(bubbleBoxes).toHaveLength(navigationItems.length);
+  expect(bubbleBoxes).toHaveLength(5);
   for (const bubble of bubbleBoxes) {
     expect(bubble.x).toBeGreaterThanOrEqual(16);
     expect(bubble.x + bubble.width).toBeLessThanOrEqual(684);
@@ -595,7 +556,7 @@ test("navigation keeps a compact local cloud throughout the mobile range", async
   await context.close();
 });
 
-test("navigation remains operable in a touch-sized viewport", async ({
+test("utility menu remains operable in a touch-sized viewport", async ({
   browser,
 }) => {
   const context = await browser.newContext({
@@ -609,20 +570,17 @@ test("navigation remains operable in a touch-sized viewport", async ({
   await page.goto("/");
 
   const trigger = page.getByRole("button", {
-    name: "Open section navigation",
+    name: "Open utility menu",
   });
   await trigger.tap();
 
   const navigation = page.getByRole("navigation", {
-    name: "Section navigation",
+    name: "Utility menu",
   });
   await expect(navigation).toBeVisible();
-  await expect(page.getByRole("link", { name: "Contact", exact: true })).toBeVisible();
-
-  await page.getByRole("link", { name: "About", exact: true }).tap();
-  await expect(page).toHaveURL(/#about$/);
-  await expect(page.locator("#about")).toBeInViewport();
-  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("link", { name: "GitHub", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Switch to (light|dark) theme/ }).tap();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
 
   runtimeErrors.assertEmpty();
   await context.close();
@@ -687,24 +645,6 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
     page.getByRole("link", { name: "Berat Ercevik, home" }),
   );
 
-  for (const href of [
-    "https://github.com/bercev",
-    "https://linkedin.com/in/berat-ercevik",
-    "/resume.pdf",
-  ] as const) {
-    await page.keyboard.press("Tab");
-    const focused = page.locator(":focus");
-    await expectVisibleFocus(focused);
-    await expect(focused).toHaveAttribute("href", href);
-  }
-
-  await page.keyboard.press("Tab");
-  const themeToggle = page.getByRole("button", {
-    name: /Switch to (light|dark) theme/,
-  });
-  await expectVisibleFocus(themeToggle);
-  await expect(themeToggle).toHaveAccessibleName(/Switch to (light|dark) theme/);
-
   const expectedContentHrefs = [
     "https://openreview.net/forum?id=nZYF0aPAMP",
     "https://arxiv.org/abs/2602.21236",
@@ -727,21 +667,27 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
 
   await page.keyboard.press("Tab");
   const menuTrigger = page.getByRole("button", {
-    name: "Open section navigation",
+    name: "Open utility menu",
   });
   await expectVisibleFocus(menuTrigger);
-  await expect(menuTrigger).toHaveAccessibleName("Open section navigation");
+  await expect(menuTrigger).toHaveAccessibleName("Open utility menu");
   await page.keyboard.press("Enter");
 
-  for (const item of navigationItems) {
+  for (const href of [
+    "https://github.com/bercev",
+    "https://linkedin.com/in/berat-ercevik",
+    "/resume.pdf",
+  ] as const) {
     await page.keyboard.press("Tab");
-    const sectionLink = page.getByRole("link", {
-      name: item.label,
-      exact: true,
-    });
-    await expectVisibleFocus(sectionLink);
-    await expect(sectionLink).toHaveAttribute("href", `#${item.id}`);
+    const utilityLink = page.locator(":focus");
+    await expectVisibleFocus(utilityLink);
+    await expect(utilityLink).toHaveAttribute("href", href);
   }
+
+  await page.keyboard.press("Tab");
+  await expectVisibleFocus(page.getByRole("button", { name: /Switch to (light|dark) theme/ }));
+  await page.keyboard.press("Tab");
+  await expectVisibleFocus(page.getByRole("button", { name: /Color theme:/ }));
 });
 
 test("keeps document semantics stable and hides decorative canvases", async ({

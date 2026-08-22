@@ -1,30 +1,43 @@
 "use client";
 
-import { ListIcon, XIcon } from "@phosphor-icons/react";
+import {
+  FilePdfIcon,
+  GithubLogoIcon,
+  LinkedinLogoIcon,
+  ListIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { gsap } from "gsap";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 
 import type { PortfolioContent } from "@/data/content";
+import { ThemeSelector } from "@/components/chrome/theme-selector";
+import { ThemeToggle } from "@/components/chrome/theme-toggle";
 
 import styles from "./bubble-menu.module.css";
 
 type BubbleMenuProps = {
-  items: PortfolioContent["navigation"];
+  links: PortfolioContent["contact"]["links"];
 };
 
-const ITEM_ROTATIONS = [-7, 5, -4, 6, -5, 4, -3] as const;
+const ITEM_ROTATIONS = [-7, 5, -4, 6, -5] as const;
 const ANIMATION_DURATION = 0.46;
 const STAGGER_DELAY = 0.07;
 const HOVER_CLOSE_DELAY = 120;
 
-export function BubbleMenu({ items }: BubbleMenuProps) {
+const PROFILE_ICONS = {
+  GitHub: GithubLogoIcon,
+  LinkedIn: LinkedinLogoIcon,
+  Resume: FilePdfIcon,
+} as const;
+
+export function BubbleMenu({ links }: BubbleMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showItems, setShowItems] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const bubbleRefs = useRef<Array<HTMLAnchorElement | null>>([]);
-  const labelRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const bubbleRefs = useRef<Array<HTMLLIElement | null>>([]);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reducedMotion = useReducedMotion();
 
@@ -97,20 +110,15 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
   useEffect(() => {
     const overlay = overlayRef.current;
     const bubbles = bubbleRefs.current.filter(
-      (bubble): bubble is HTMLAnchorElement => bubble !== null,
+      (bubble): bubble is HTMLLIElement => bubble !== null,
     );
-    const labels = labelRefs.current.filter(
-      (label): label is HTMLSpanElement => label !== null,
-    );
-
     if (!overlay || bubbles.length === 0) return;
 
     const context = gsap.context(() => {
-      gsap.killTweensOf([...bubbles, ...labels]);
+      gsap.killTweensOf(bubbles);
 
       if (reducedMotion) {
         gsap.set(bubbles, { clearProps: "transform", opacity: 1 });
-        gsap.set(labels, { clearProps: "transform,opacity,visibility" });
         if (!isOpen) setShowItems(false);
         return;
       }
@@ -121,8 +129,6 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
           transformOrigin: "50% 50%",
           opacity: 1,
         });
-        gsap.set(labels, { y: 20, autoAlpha: 0 });
-
         bubbles.forEach((bubble, index) => {
           const timeline = gsap.timeline({ delay: index * STAGGER_DELAY });
           timeline.to(bubble, {
@@ -131,26 +137,8 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
             ease: "back.out(1.5)",
           });
 
-          if (labels[index]) {
-            timeline.to(
-              labels[index],
-              {
-                y: 0,
-                autoAlpha: 1,
-                duration: ANIMATION_DURATION,
-                ease: "power3.out",
-              },
-              `-=${ANIMATION_DURATION * 0.9}`,
-            );
-          }
         });
       } else {
-        gsap.to(labels, {
-          y: 20,
-          autoAlpha: 0,
-          duration: 0.18,
-          ease: "power3.in",
-        });
         gsap.to(bubbles, {
           scale: 0,
           duration: 0.18,
@@ -166,7 +154,7 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
   return (
     <div className={styles.anchor}>
       <nav
-        aria-label="Section navigation"
+        aria-label="Utility menu"
         className={styles.navigation}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
@@ -174,8 +162,8 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
         <button
           ref={triggerRef}
           type="button"
-          aria-label="Open section navigation"
-          aria-controls="section-navigation-links"
+          aria-label="Open utility menu"
+          aria-controls="utility-menu-items"
           aria-expanded={isOpen}
           className={`cursor-target ${styles.trigger}`}
           data-bubble-menu-trigger
@@ -195,8 +183,9 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
         {showItems ? (
           <div
             ref={overlayRef}
-            id="section-navigation-links"
+            id="utility-menu-items"
             className={styles.overlay}
+            data-open={isOpen}
             aria-hidden={!isOpen}
             inert={!isOpen}
           >
@@ -206,34 +195,72 @@ export function BubbleMenu({ items }: BubbleMenuProps) {
               aria-hidden="true"
             />
             <ul className={styles.list}>
-              {items.map((item, index) => (
-                <li
-                  key={item.id}
-                  className={styles.item}
-                  style={{
-                    "--bubble-rotation": `${ITEM_ROTATIONS[index % ITEM_ROTATIONS.length]}deg`,
-                  } as React.CSSProperties}
-                >
-                  <a
+              {links.map((link, index) => {
+                const Icon =
+                  PROFILE_ICONS[link.label as keyof typeof PROFILE_ICONS];
+                return (
+                  <li
+                    key={link.href}
                     ref={(element) => {
                       bubbleRefs.current[index] = element;
                     }}
-                    href={`#${item.id}`}
-                    className={`cursor-target ${styles.link}`}
-                    data-bubble-menu-item
-                    onClick={closeMenu}
+                    className={styles.item}
+                    style={
+                      {
+                        "--bubble-rotation": `${ITEM_ROTATIONS[index % ITEM_ROTATIONS.length]}deg`,
+                      } as React.CSSProperties
+                    }
                   >
-                    <span
-                      ref={(element) => {
-                        labelRefs.current[index] = element;
-                      }}
-                      className={styles.label}
+                    <a
+                      href={link.href}
+                      download={link.download}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={link.label}
+                      className={`cursor-target ${styles.link}`}
+                      data-bubble-menu-item
+                      onClick={closeMenu}
                     >
-                      {item.label}
-                    </span>
-                  </a>
-                </li>
-              ))}
+                      {Icon ? (
+                        <Icon
+                          className={styles.itemIcon}
+                          weight="regular"
+                          aria-hidden="true"
+                        />
+                      ) : null}
+                    </a>
+                  </li>
+                );
+              })}
+              <li
+                ref={(element) => {
+                  bubbleRefs.current[3] = element;
+                }}
+                className={styles.item}
+                style={
+                  {
+                    "--bubble-rotation": `${ITEM_ROTATIONS[3]}deg`,
+                  } as React.CSSProperties
+                }
+              >
+                <ThemeToggle
+                  className={`cursor-target ${styles.link}`}
+                  menuItem
+                />
+              </li>
+              <li
+                ref={(element) => {
+                  bubbleRefs.current[4] = element;
+                }}
+                className={styles.item}
+                style={
+                  {
+                    "--bubble-rotation": `${ITEM_ROTATIONS[4]}deg`,
+                  } as React.CSSProperties
+                }
+              >
+                <ThemeSelector variant="menu" />
+              </li>
             </ul>
           </div>
         ) : null}

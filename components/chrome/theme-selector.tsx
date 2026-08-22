@@ -8,7 +8,11 @@ import { usePalette } from "@/components/providers/palette-provider";
 
 import styles from "./theme-selector.module.css";
 
-export function ThemeSelector() {
+type ThemeSelectorProps = {
+  readonly variant?: "compact" | "menu";
+};
+
+export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
   const { palette, setPalette } = usePalette();
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
@@ -34,10 +38,17 @@ export function ThemeSelector() {
   }, [isOpen]);
 
   return (
-    <div ref={selectorRef} className={styles.selector} data-theme-selector>
+    <div
+      ref={selectorRef}
+      className={styles.selector}
+      data-placement={variant === "menu" ? "up" : "down"}
+      data-theme-selector
+    >
       <button
         type="button"
         className={`cursor-target ${styles.trigger}`}
+        data-variant={variant}
+        data-bubble-menu-item={variant === "menu" ? "" : undefined}
         aria-label={`Color theme: ${THEME_PALETTES[palette].label}`}
         aria-controls="theme-palette-options"
         aria-expanded={isOpen}
