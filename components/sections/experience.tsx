@@ -21,7 +21,10 @@ export function Experience({ content, heading }: ExperienceProps) {
         <ol className="mt-12 border-t border-border lg:mt-16">
           {content.map((experience) => (
             <li key={`${experience.role}-${experience.dates}`}>
-              <PixelCard variant="blue" className="pixel-card--experience">
+              <PixelCard
+                variant="blue"
+                className="pixel-card--experience cursor-target"
+              >
                 <article
                   data-experience-row
                   className="grid gap-5 py-8 md:grid-cols-[minmax(11rem,0.42fr)_minmax(0,1.58fr)] md:gap-12 lg:py-12"
