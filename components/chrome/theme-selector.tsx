@@ -1,29 +1,90 @@
 "use client";
 
-import { PaletteIcon } from "@phosphor-icons/react";
+import { CheckIcon, PaletteIcon } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
 
 import { THEME_PALETTES, type ThemePalette } from "@/lib/theme-palette";
 import { usePalette } from "@/components/providers/palette-provider";
 
+import styles from "./theme-selector.module.css";
+
 export function ThemeSelector() {
   const { palette, setPalette } = usePalette();
+  const [isOpen, setIsOpen] = useState(false);
+  const selectorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (event.target instanceof Node && !selectorRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen]);
 
   return (
-    <label className="theme-selector cursor-target inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background px-3 text-foreground transition-colors hover:border-[var(--portfolio-accent)]">
-      <PaletteIcon className="size-4 shrink-0" weight="regular" aria-hidden="true" />
-      <span className="sr-only">Choose a color theme</span>
-      <select
-        value={palette}
-        onChange={(event) => setPalette(event.target.value as ThemePalette)}
-        className="max-w-20 cursor-pointer appearance-none bg-transparent text-xs font-semibold outline-none sm:max-w-none"
-        aria-label="Choose a color theme"
+    <div ref={selectorRef} className={styles.selector} data-theme-selector>
+      <button
+        type="button"
+        className={`cursor-target ${styles.trigger}`}
+        aria-label={`Color theme: ${THEME_PALETTES[palette].label}`}
+        aria-controls="theme-palette-options"
+        aria-expanded={isOpen}
+        title="Choose a color theme"
+        onClick={() => setIsOpen((open) => !open)}
       >
-        {Object.entries(THEME_PALETTES).map(([name, option]) => (
-          <option key={name} value={name}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <PaletteIcon className={styles.icon} weight="regular" aria-hidden="true" />
+        <span
+          className={styles.currentSwatch}
+          style={{ backgroundColor: THEME_PALETTES[palette].accent }}
+          aria-hidden="true"
+        />
+      </button>
+      <div
+        id="theme-palette-options"
+        className={styles.options}
+        data-open={isOpen}
+        aria-label="Color theme options"
+        aria-hidden={!isOpen}
+      >
+        {Object.entries(THEME_PALETTES).map(([name, option], index) => {
+          const themeName = name as ThemePalette;
+          const isSelected = themeName === palette;
+          return (
+            <button
+              key={themeName}
+              type="button"
+              className={`cursor-target ${styles.option}`}
+              style={{ "--option-index": index } as React.CSSProperties}
+              aria-label={`${option.label} color theme${isSelected ? ", selected" : ""}`}
+              title={option.label}
+              tabIndex={isOpen ? 0 : -1}
+              onClick={() => {
+                setPalette(themeName);
+                setIsOpen(false);
+              }}
+            >
+              <span
+                className={styles.swatch}
+                style={{ backgroundColor: option.accent }}
+                aria-hidden="true"
+              />
+              {isSelected ? <CheckIcon className={styles.check} weight="bold" aria-hidden="true" /> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
