@@ -1,7 +1,7 @@
 .sidebar {
   position: fixed;
   top: 50%;
-  right: clamp(1rem, 3vw, 3rem);
+  left: clamp(1rem, 3vw, 3rem);
   z-index: var(--z-site-navigation);
   display: none;
   transform: translateY(-50%);
@@ -9,7 +9,7 @@
 
 .list {
   display: grid;
-  gap: 0.75rem;
+  gap: 1.35rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -20,16 +20,15 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  min-height: 1.5rem;
-  transform: translateX(calc(var(--effect) * -1 * 1.5rem));
+  min-height: 1.25rem;
+  transform: translateX(calc(var(--effect) * 1rem));
   transition: transform 100ms ease-out;
 }
 
 .marker {
-  width: 2.75rem;
+  width: 2rem;
   height: 1px;
-  margin-right: 0.5rem;
+  margin-right: 0.4rem;
   background: color-mix(in srgb, var(--foreground) 34%, transparent);
   transform: scaleX(calc(1 + var(--effect) * 0.45));
   transform-origin: right;
@@ -38,16 +37,16 @@
 
 .link {
   display: inline-flex;
-  min-width: 8.5rem;
+  min-width: 6.75rem;
   align-items: baseline;
   gap: 0.65rem;
   color: color-mix(in srgb, var(--foreground) 62%, transparent);
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;
-  transform: translateX(calc(var(--effect) * 0.5rem));
+  transform: translateX(calc(var(--effect) * 0.35rem));
   transition: color 100ms ease-out;
 }
 
@@ -64,7 +63,7 @@
 
 .index {
   color: color-mix(in srgb, var(--foreground) 34%, transparent);
-  font-size: 0.6rem;
+  font-size: 0.52rem;
 }
 
 .item:has(.link:hover) .marker,
