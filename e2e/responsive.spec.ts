@@ -249,7 +249,7 @@ test("renders static, fully visible content for reduced motion", async ({
   }
 
   const sectionHeadings = page.locator("main > section:not(#home) h2");
-  await expect(sectionHeadings).toHaveCount(6);
+  await expect(sectionHeadings).toHaveCount(5);
   for (const heading of await sectionHeadings.all()) {
     const glyphs = heading.locator('span[aria-hidden="true"] > span');
     expect(await glyphs.count()).toBeGreaterThan(0);

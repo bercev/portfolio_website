@@ -8,7 +8,6 @@ import { Experience } from "@/components/sections/experience";
 import { Hero } from "@/components/sections/hero";
 import { Projects } from "@/components/sections/projects";
 import { Publications } from "@/components/sections/publications";
-import { Skills } from "@/components/sections/skills";
 import { portfolio } from "@/data/content";
 
 export default function Home() {
@@ -18,7 +17,14 @@ export default function Home() {
       <SiteHeader links={portfolio.contact.links} />
 
       <main className="relative z-[var(--z-page-content)]">
-        <Hero content={{ identity: portfolio.identity, hero: portfolio.hero }} />
+        <Hero
+          content={{
+            identity: portfolio.identity,
+            hero: portfolio.hero,
+            skills: portfolio.skills,
+          }}
+          skillsHeading={portfolio.navigation[5].label}
+        />
         <About
           content={portfolio.about}
           heading={portfolio.navigation[1].label}
@@ -34,10 +40,6 @@ export default function Home() {
         <Projects
           content={portfolio.projects}
           heading={portfolio.navigation[4].label}
-        />
-        <Skills
-          content={portfolio.skills}
-          heading={portfolio.navigation[5].label}
         />
         <ContactFooter content={portfolio.contact} />
       </main>

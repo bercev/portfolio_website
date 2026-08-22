@@ -27,23 +27,23 @@ function SkillCopy({
       data-skills-original={duplicate ? undefined : "true"}
       aria-hidden={duplicate || undefined}
       className={cn(
-        "flex w-full min-w-0 flex-wrap items-center gap-x-5 gap-y-5",
+        "flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-3",
         duplicate && "hidden",
       )}
     >
       {categories.map((category) => (
         <div
           key={category.category}
-          className="flex w-full min-w-0 flex-wrap items-center gap-2"
+          className="flex w-full min-w-0 flex-wrap items-center gap-1.5"
         >
-          <h3 className="mr-2 font-serif text-3xl font-extrabold leading-none tracking-[-0.02em] text-foreground">
+          <h3 className="mr-1.5 font-serif text-xl font-extrabold leading-none tracking-[-0.02em] text-foreground sm:text-2xl">
             {category.category}
           </h3>
           {category.items.map((item) => (
             <span
               key={item}
               data-skill
-              className="whitespace-nowrap rounded-[var(--radius)] border border-border bg-card px-3 py-1.5 text-sm text-card-foreground shadow-[0_1px_2px_color-mix(in_srgb,var(--shadow-color)_var(--shadow-opacity),transparent)]"
+              className="whitespace-nowrap rounded-[var(--radius)] border border-border bg-card px-2.5 py-1 text-xs text-card-foreground shadow-[0_1px_2px_color-mix(in_srgb,var(--shadow-color)_var(--shadow-opacity),transparent)] sm:text-sm"
             >
               {item}
             </span>
@@ -90,7 +90,7 @@ export function SkillsMarquee({
 
   return (
     <div
-      className="space-y-5"
+      className="space-y-3"
       data-skills-marquee={enhanced ? "enhanced" : "static"}
     >
       {rows.map((categories, index) => (
@@ -99,7 +99,7 @@ export function SkillsMarquee({
           data-skills-row
           data-direction={index === 0 ? "forward" : "reverse"}
           tabIndex={0}
-          className="rounded-[var(--radius)] py-1 focus-visible:outline-none"
+          className="rounded-[var(--radius)] py-0.5 focus-visible:outline-none"
         >
           <div data-skills-track className="flex flex-wrap items-center gap-4">
             <SkillCopy categories={categories} />

@@ -27,7 +27,9 @@ test("renders the approved portfolio structure in semantic order", async ({
   const sectionIds = await page.locator("main > section").evaluateAll((sections) =>
     sections.map((section) => section.id),
   );
-  expect(sectionIds).toEqual(navigationItems.map(({ id }) => id));
+  expect(sectionIds).toEqual(
+    navigationItems.filter(({ id }) => id !== "skills").map(({ id }) => id),
+  );
 });
 
 test("renders exact publications and their canonical destinations", async ({
@@ -116,6 +118,38 @@ test("uses a divided chronology and two chromatic project cards", async ({
   expect(featuredBox).not.toBeNull();
   expect(supportingBox).not.toBeNull();
   expect(featuredBox!.width).toBeGreaterThan(supportingBox!.width);
+});
+
+test("uses monochrome ChromaCard borders in both themes", async ({ browser }) => {
+  for (const theme of ["light", "dark"] as const) {
+    const context = await browser.newContext({
+      colorScheme: theme,
+      reducedMotion: "reduce",
+    });
+    const page = await context.newPage();
+    const runtimeErrors = attachRuntimeErrorCollector(page);
+    await page.addInitScript((storedTheme) => {
+      localStorage.setItem("theme", storedTheme);
+    }, theme);
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveClass(
+      new RegExp(`(^|\\s)${theme}(\\s|$)`),
+    );
+
+    const cards = page.locator("[data-chroma-card]");
+    await expect(cards).toHaveCount(2);
+    for (const card of await cards.all()) {
+      await expect(card).toHaveCSS("background-image", "none");
+      await expect(card).toHaveCSS("border-top-width", "1px");
+      await expect(card).toHaveCSS(
+        "border-top-color",
+        theme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)",
+      );
+    }
+
+    runtimeErrors.assertEmpty();
+    await context.close();
+  }
 });
 
 test("keeps icon-led profile actions only in the site header", async ({
@@ -226,6 +260,32 @@ test("keeps the hero focused on the identity without a project action", async ({
     runtimeErrors.assertEmpty();
     await context.close();
   }
+});
+
+test("places the skills marquee inside the hero without a large heading", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  const hero = page.locator("#home");
+  const particleText = hero.locator("[data-hero-particle-text]");
+  const skills = hero.locator(":scope > div > #skills");
+
+  await expect(skills).toHaveCount(1);
+  await expect(skills.locator("[data-skills-marquee]")).toHaveCount(1);
+  await expect(skills.getByRole("heading", { level: 2 })).toHaveCount(0);
+  await expect(page.locator("main > #skills")).toHaveCount(0);
+
+  const [particleBox, skillsBox] = await Promise.all([
+    particleText.boundingBox(),
+    skills.boundingBox(),
+  ]);
+  expect(particleBox).not.toBeNull();
+  expect(skillsBox).not.toBeNull();
+  expect(skillsBox!.y).toBeGreaterThanOrEqual(
+    particleBox!.y + particleBox!.height - 1,
+  );
 });
 
 test("keeps the skills marquee static in a narrow fine-pointer viewport", async ({
@@ -675,7 +735,6 @@ test("keeps document semantics stable and hides decorative canvases", async ({
     "Publications",
     "Experience",
     "Projects",
-    "Skills",
   ] as const;
   for (const label of headingLabels) {
     await expect(
