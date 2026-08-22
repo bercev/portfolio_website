@@ -1,0 +1,87 @@
+.sidebar {
+  position: fixed;
+  top: 50%;
+  right: clamp(1rem, 3vw, 3rem);
+  z-index: var(--z-site-navigation);
+  display: none;
+  transform: translateY(-50%);
+}
+
+.list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  --effect: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 1.5rem;
+  transform: translateX(calc(var(--effect) * -1 * 1.5rem));
+  transition: transform 100ms ease-out;
+}
+
+.marker {
+  width: 2.75rem;
+  height: 1px;
+  margin-right: 0.5rem;
+  background: color-mix(in srgb, var(--foreground) 34%, transparent);
+  transform: scaleX(calc(1 + var(--effect) * 0.45));
+  transform-origin: right;
+  transition: background 100ms ease-out, transform 100ms ease-out;
+}
+
+.link {
+  display: inline-flex;
+  min-width: 8.5rem;
+  align-items: baseline;
+  gap: 0.65rem;
+  color: color-mix(in srgb, var(--foreground) 62%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transform: translateX(calc(var(--effect) * 0.5rem));
+  transition: color 100ms ease-out;
+}
+
+.link:hover,
+.link:focus-visible,
+.link[aria-current="location"] {
+  color: var(--portfolio-accent);
+}
+
+.link:focus-visible {
+  outline: 1px solid var(--portfolio-accent);
+  outline-offset: 0.35rem;
+}
+
+.index {
+  color: color-mix(in srgb, var(--foreground) 34%, transparent);
+  font-size: 0.6rem;
+}
+
+.item:has(.link:hover) .marker,
+.item:has(.link[aria-current="location"]) .marker {
+  background: var(--portfolio-accent);
+}
+
+@media (min-width: 900px) {
+  .sidebar {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .marker,
+  .link {
+    transition: none;
+  }
+}

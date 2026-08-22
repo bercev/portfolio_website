@@ -1,5 +1,5 @@
 import { BubbleMenu } from "@/components/chrome/bubble-menu";
-import { ScrollProgress } from "@/components/chrome/scroll-progress";
+import { LineSidebar } from "@/components/chrome/line-sidebar";
 import { SiteHeader } from "@/components/chrome/site-header";
 import { EffectStage } from "@/components/effects/effect-stage";
 import { About } from "@/components/sections/about";
@@ -45,7 +45,7 @@ export default function Home() {
       </main>
 
       <BubbleMenu items={portfolio.navigation} />
-      <ScrollProgress />
+      <LineSidebar items={portfolio.navigation} />
     </>
   );
 }

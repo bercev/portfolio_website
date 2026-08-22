@@ -172,53 +172,15 @@ test("gives ChromaCards a frosted glass surface", async ({ page }) => {
   expect(styles.boxShadow).not.toBe("none");
 });
 
-test("uses a monochrome right-edge progress indicator", async ({ browser }) => {
-  for (const theme of ["light", "dark"] as const) {
-    const context = await browser.newContext({ reducedMotion: "reduce" });
-    const page = await context.newPage();
-    await page.addInitScript((storedTheme) => {
-      localStorage.setItem("theme", storedTheme);
-    }, theme);
-    await page.goto("/");
-    await expect(page.locator("html")).toHaveClass(
-      new RegExp(`(^|\\s)${theme}(\\s|$)`),
-    );
-    await expect(page.locator("html")).toHaveCSS("scrollbar-width", "none");
-
-    const indicator = page.locator("[data-signal-static]");
-    await expect(indicator).toHaveCSS("background-image", "none");
-    await expect(indicator).toHaveCSS(
-      "background-color",
-      theme === "dark" ? "rgb(214, 214, 214)" : "rgb(0, 0, 0)",
-    );
-
-    await context.close();
-  }
-});
-
-test("renders the custom scroll indicator without endpoint blocks", async ({
-  page,
-}) => {
+test("renders the line sidebar as section navigation", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.locator("[data-signal-spine]")).toHaveAttribute(
-    "data-signal-mode",
-    "enhanced",
-  );
-  await expect(page.locator("[data-signal-head]")).toHaveCount(0);
-});
-
-test("renders only the larger scroll progress and checkpoints", async ({ page }) => {
-  await page.goto("/");
-
-  await expect(page.locator("[data-signal-spine]")).toHaveCSS("width", "12px");
-  await expect(page.locator("[data-signal-rail]")).toHaveCount(0);
-  await expect(page.locator("[data-signal-fill]")).toHaveCSS("width", "4px");
-
-  const checkpoints = page.locator("[data-signal-echo]");
-  await expect(checkpoints).toHaveCount(2);
-  await expect(checkpoints.first()).toHaveCSS("width", "12px");
-  await expect(checkpoints.first()).toHaveCSS("height", "2px");
+  const sidebar = page.getByRole("navigation", { name: "Section navigation" }).last();
+  await expect(sidebar).toHaveAttribute("data-line-sidebar");
+  await expect(sidebar.locator("a")).toHaveCount(7);
+  await expect(sidebar.locator("a").first()).toHaveAttribute("href", "#home");
+  await expect(sidebar.locator("a").last()).toHaveAttribute("href", "#contact");
+  await expect(sidebar.locator("[data-line-sidebar-marker]")).toHaveCount(7);
 });
 
 test("keeps icon-led profile actions only in the site header", async ({
