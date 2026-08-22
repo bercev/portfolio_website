@@ -19,30 +19,25 @@ export function Publications({ content, heading }: PublicationsProps) {
         <SectionHeading title={heading} />
 
         <div className="mt-12 border-t border-border lg:mt-16">
-          {content.map((publication, index) => (
+          {content.map((publication) => (
             <article
               key={publication.href}
               data-publication-row
               className="border-b border-border py-10 sm:py-12 lg:py-16"
             >
-              <div className="flex max-w-5xl flex-col justify-center">
+              <div className="max-w-5xl">
                 <p className="text-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   {publication.venue}
                   <span aria-hidden="true"> / </span>
                   {publication.date}
                 </p>
-                <h3 className="mt-4 w-full max-w-[32ch] text-3xl font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-4xl">
-                  <HoverPreview
-                    href={publication.href}
-                    imageUrl={publication.preview.src}
-                    imageWidth={publication.preview.width}
-                    imageHeight={publication.preview.height}
-                    rotation={index % 2 === 0 ? -2 : 2}
-                    className="w-full items-start gap-2 decoration-portfolio-accent"
-                  >
-                    {publication.title}
-                  </HoverPreview>
-                </h3>
+                <HoverPreview
+                  title={publication.title}
+                  href={publication.href}
+                  pdfUrl={publication.pdfUrl}
+                  headingClassName="mt-4 w-full max-w-[32ch] text-3xl font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-4xl"
+                  linkClassName="w-full items-start gap-2 decoration-portfolio-accent"
+                />
               </div>
             </article>
           ))}

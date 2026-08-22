@@ -126,7 +126,7 @@ test("renders static Particle Text for reduced motion", async ({ browser }) => {
   await context.close();
 });
 
-test("previews publication images from pointer and keyboard intent", async ({
+test("previews scrollable publication PDFs from pointer and keyboard intent", async ({
   page,
 }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
@@ -142,22 +142,38 @@ test("previews publication images from pointer and keyboard intent", async ({
 
   await expect(previewTargets).toHaveCount(2);
   await expect(page.locator("#publications img")).toHaveCount(0);
+  for (const pdfUrl of [
+    "/publications/skilloptimizer.pdf",
+    "/publications/grokset.pdf",
+  ]) {
+    expect((await page.request.get(pdfUrl)).ok()).toBe(true);
+  }
 
   const titleBox = await skillOptimizer.boundingBox();
   expect(titleBox).not.toBeNull();
   expect(titleBox!.width).toBeGreaterThan(500);
 
   await skillOptimizer.hover();
-  const skillImage = skillPreview.locator("[data-hover-preview-image]");
-  await expect(skillImage).toBeVisible();
+  const skillReader = skillPreview.locator("[data-pdf-reader]");
+  const skillFrame = skillReader.getByTitle("SkillOptimizer PDF preview");
+  await expect(skillReader).toBeVisible();
   await expect
-    .poll(async () => (await skillImage.boundingBox())?.width ?? 0)
+    .poll(async () => (await skillReader.boundingBox())?.width ?? 0)
     .toBeGreaterThanOrEqual(520);
+  await expect(skillFrame).toHaveAttribute(
+    "src",
+    "/publications/skilloptimizer.pdf#page=1&view=FitH&toolbar=0&navpanes=0",
+  );
+  await expect(skillReader).toHaveCSS("pointer-events", "auto");
+
+  await skillReader.hover();
+  await page.waitForTimeout(250);
+  await expect(skillReader).toBeVisible();
 
   await page.mouse.move(0, 0);
   await grokSet.focus();
   await expect(
-    grokSetPreview.locator("[data-hover-preview-image]"),
+    grokSetPreview.getByTitle("@GrokSet PDF preview"),
   ).toBeVisible();
 
   await expect(skillOptimizer).toHaveAttribute(

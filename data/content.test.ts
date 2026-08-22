@@ -48,6 +48,13 @@ describe("portfolio content", () => {
     ]);
   });
 
+  it("keeps local PDFs available for interactive publication readers", () => {
+    expect(portfolio.publications.map((paper) => paper.pdfUrl)).toEqual([
+      "/publications/skilloptimizer.pdf",
+      "/publications/grokset.pdf",
+    ]);
+  });
+
   it("uses only confirmed general contact links", () => {
     expect(portfolio.contact.links.map((link) => link.label)).toEqual([
       "GitHub",

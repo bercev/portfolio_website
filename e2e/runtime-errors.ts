@@ -35,6 +35,18 @@ function isSameOriginRequest(page: Page, request: Request) {
   }
 }
 
+function isPdfViewerHandoff(request: Request) {
+  try {
+    return (
+      request.resourceType() === "document" &&
+      new URL(request.url()).pathname.endsWith(".pdf") &&
+      request.failure()?.errorText === "net::ERR_ABORTED"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function attachRuntimeErrorCollector(page: Page): RuntimeErrorCollector {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
@@ -51,7 +63,7 @@ export function attachRuntimeErrorCollector(page: Page): RuntimeErrorCollector {
   });
 
   page.on("requestfailed", (request) => {
-    if (isSameOriginRequest(page, request)) {
+    if (isSameOriginRequest(page, request) && !isPdfViewerHandoff(request)) {
       failedSameOriginRequests.push(formatFailedRequest(request));
     }
   });

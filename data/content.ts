@@ -18,6 +18,7 @@ export interface Publication {
   readonly venue: string;
   readonly date: string;
   readonly href: string;
+  readonly pdfUrl: string;
   readonly preview: {
     readonly src: string;
     readonly alt: string;
@@ -146,6 +147,7 @@ export const portfolio = {
       venue: "ICML 2026 AIWILD Workshop",
       date: "2026",
       href: "https://openreview.net/forum?id=nZYF0aPAMP",
+      pdfUrl: "/publications/skilloptimizer.pdf",
       preview: {
         src: "/publications/skilloptimizer.png",
         alt: "First-page preview of the SkillOptimizer paper.",
@@ -159,6 +161,7 @@ export const portfolio = {
       venue: "arXiv:2602.21236",
       date: "February 2026",
       href: "https://arxiv.org/abs/2602.21236",
+      pdfUrl: "/publications/grokset.pdf",
       preview: {
         src: "/publications/grokset.png",
         alt: "First-page preview of the @GrokSet paper.",
