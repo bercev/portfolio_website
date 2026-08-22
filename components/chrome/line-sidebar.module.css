@@ -1,15 +1,16 @@
 .sidebar {
   position: fixed;
-  top: 50%;
-  left: clamp(1rem, 3vw, 3rem);
+  top: 12.5vh;
+  left: 0;
   z-index: var(--z-site-navigation);
   display: none;
-  transform: translateY(-50%);
+  height: 75vh;
 }
 
 .list {
   display: grid;
-  gap: 1.35rem;
+  height: 100%;
+  align-content: space-between;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -19,16 +20,17 @@
   --effect: 0;
   position: relative;
   display: flex;
-  align-items: center;
-  min-height: 1.25rem;
+  flex-direction: column;
+  align-items: flex-start;
+  opacity: 0.75;
   transform: translateX(calc(var(--effect) * 1rem));
-  transition: transform 100ms ease-out;
+  transition: opacity 100ms ease-out, transform 100ms ease-out;
 }
 
 .marker {
-  width: 2rem;
+  width: 3.25rem;
   height: 1px;
-  margin-right: 0.4rem;
+  margin-top: 0.25rem;
   background: color-mix(in srgb, var(--foreground) 34%, transparent);
   transform: scaleX(calc(1 + var(--effect) * 0.45));
   transform-origin: right;
@@ -37,7 +39,7 @@
 
 .link {
   display: inline-flex;
-  min-width: 6.75rem;
+  order: -1;
   align-items: baseline;
   gap: 0.65rem;
   color: color-mix(in srgb, var(--foreground) 62%, transparent);
@@ -48,6 +50,12 @@
   text-decoration: none;
   transform: translateX(calc(var(--effect) * 0.35rem));
   transition: color 100ms ease-out;
+}
+
+.item:hover,
+.item:has(.link:focus-visible),
+.item:has(.link[aria-current="location"]) {
+  opacity: 1;
 }
 
 .link:hover,
