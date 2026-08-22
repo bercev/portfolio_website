@@ -345,7 +345,7 @@ test("keeps the skills marquee static in a narrow fine-pointer viewport", async 
   await context.close();
 });
 
-test("moves enhanced desktop skill rows in opposite directions", async ({ page }) => {
+test("renders enhanced curved skill rows in opposite directions", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
@@ -356,10 +356,10 @@ test("moves enhanced desktop skill rows in opposite directions", async ({ page }
 
   const tracks = page.locator("#skills [data-skills-track]");
   await expect(tracks).toHaveCount(2);
-  await expect(tracks.nth(0)).toHaveCSS("animation-name", "skills-marquee");
-  await expect(tracks.nth(0)).toHaveCSS("animation-direction", "normal");
-  await expect(tracks.nth(1)).toHaveCSS("animation-name", "skills-marquee");
-  await expect(tracks.nth(1)).toHaveCSS("animation-direction", "reverse");
+  await expect(tracks.nth(0).locator(".curved-loop-svg")).toHaveCount(1);
+  await expect(tracks.nth(1).locator(".curved-loop-svg")).toHaveCount(1);
+  await expect(page.locator('#skills [data-direction="forward"]')).toHaveCount(1);
+  await expect(page.locator('#skills [data-direction="reverse"]')).toHaveCount(1);
 });
 
 test("disables continuous skill movement for reduced motion", async ({ browser }) => {
