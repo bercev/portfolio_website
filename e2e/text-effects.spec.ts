@@ -160,6 +160,11 @@ test("previews scrollable publication PDFs from pointer and keyboard intent", as
   await expect
     .poll(async () => (await skillReader.boundingBox())?.width ?? 0)
     .toBeGreaterThanOrEqual(520);
+  const readerBox = await skillReader.boundingBox();
+  expect(readerBox).not.toBeNull();
+  const titleToReaderGap = readerBox!.x - (titleBox!.x + titleBox!.width);
+  expect(titleToReaderGap).toBeGreaterThanOrEqual(0);
+  expect(titleToReaderGap).toBeLessThanOrEqual(24);
   await expect(skillFrame).toHaveAttribute(
     "src",
     "/publications/skilloptimizer.pdf#page=1&view=FitH&toolbar=0&navpanes=0",

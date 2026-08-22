@@ -68,7 +68,7 @@ export function HoverPreview({
   return (
     <motion.span
       data-hover-preview
-      className="relative block"
+      className="relative block w-fit max-w-full"
       onPointerEnter={() => {
         hasPointerRef.current = true;
         openPreview();
