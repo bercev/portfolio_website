@@ -640,11 +640,6 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
     ).toBe(true);
   };
 
-  await page.keyboard.press("Tab");
-  await expectVisibleFocus(
-    page.getByRole("link", { name: "Berat Ercevik, home" }),
-  );
-
   const expectedContentHrefs = [
     "https://openreview.net/forum?id=nZYF0aPAMP",
     "https://arxiv.org/abs/2602.21236",
