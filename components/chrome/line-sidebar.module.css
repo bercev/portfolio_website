@@ -1,7 +1,7 @@
 .sidebar {
   position: fixed;
   top: 12.5vh;
-  left: 0;
+  left: 0.75rem;
   z-index: var(--z-site-navigation);
   display: none;
   height: 75vh;

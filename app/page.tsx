@@ -45,7 +45,9 @@ export default function Home() {
       </main>
 
       <BubbleMenu items={portfolio.navigation} />
-      <LineSidebar items={portfolio.navigation} />
+      <LineSidebar
+        items={portfolio.navigation.filter((item) => item.id !== "skills")}
+      />
     </>
   );
 }

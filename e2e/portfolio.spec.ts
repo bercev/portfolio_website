@@ -177,7 +177,7 @@ test("renders the line sidebar as section navigation", async ({ page }) => {
 
   const sidebar = page.getByRole("navigation", { name: "Section navigation" }).last();
   await expect(sidebar).toHaveAttribute("data-line-sidebar");
-  await expect(sidebar.locator("a")).toHaveCount(7);
+  await expect(sidebar.locator("a")).toHaveCount(6);
   await expect(sidebar.locator("a").first()).toHaveAttribute("href", "#home");
   await expect(sidebar.locator("a").last()).toHaveAttribute("href", "#contact");
   await expect(sidebar.locator("[data-line-sidebar-marker]")).toHaveCount(7);
