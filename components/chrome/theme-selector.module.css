@@ -38,8 +38,8 @@
   position: absolute;
   top: calc(100% + 0.7rem);
   left: 50%;
-  width: 14rem;
-  height: 9rem;
+  width: 11rem;
+  height: 7rem;
   pointer-events: none;
   transform: translateX(-50%);
 }
@@ -49,8 +49,8 @@
   top: 0;
   left: 50%;
   display: inline-flex;
-  width: 2.8rem;
-  height: 2.8rem;
+  width: 2.3rem;
+  height: 2.3rem;
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -77,11 +77,11 @@
 }
 
 /* Equal 45-degree steps around a downward semicircle. */
-.option:nth-child(1) { --option-x: -5.4rem; --option-y: 0rem; --option-rotation: -8deg; }
-.option:nth-child(2) { --option-x: -3.82rem; --option-y: 3.82rem; --option-rotation: 5deg; }
-.option:nth-child(3) { --option-x: 0rem; --option-y: 5.4rem; --option-rotation: -4deg; }
-.option:nth-child(4) { --option-x: 3.82rem; --option-y: 3.82rem; --option-rotation: 6deg; }
-.option:nth-child(5) { --option-x: 5.4rem; --option-y: 0rem; --option-rotation: -5deg; }
+.option:nth-child(1) { --option-x: -4.2rem; --option-y: 0rem; --option-rotation: -8deg; }
+.option:nth-child(2) { --option-x: -2.97rem; --option-y: 2.97rem; --option-rotation: 5deg; }
+.option:nth-child(3) { --option-x: 0rem; --option-y: 4.2rem; --option-rotation: -4deg; }
+.option:nth-child(4) { --option-x: 2.97rem; --option-y: 2.97rem; --option-rotation: 6deg; }
+.option:nth-child(5) { --option-x: 4.2rem; --option-y: 0rem; --option-rotation: -5deg; }
 
 .option:hover,
 .option:focus-visible {
