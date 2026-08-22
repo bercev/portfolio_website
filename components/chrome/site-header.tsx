@@ -2,6 +2,7 @@ import type { PortfolioContent } from "@/data/content";
 
 import { ProfileActions } from "@/components/chrome/profile-actions";
 import { ThemeToggle } from "@/components/chrome/theme-toggle";
+import { ThemeSelector } from "@/components/chrome/theme-selector";
 
 export function SiteHeader({
   links,
@@ -20,6 +21,7 @@ export function SiteHeader({
         </a>
         <div className="flex items-center gap-1">
           <ProfileActions links={links} />
+          <ThemeSelector />
           <ThemeToggle />
         </div>
       </div>

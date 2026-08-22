@@ -214,7 +214,10 @@ export function PrismaticBurst({ profile }: { profile: EffectProfile }) {
 
     const applyTheme = () => {
       const isDark = document.documentElement.classList.contains("dark");
-      const palette = getPrismaticPalette(isDark);
+      const accent = getComputedStyle(document.documentElement)
+        .getPropertyValue("--portfolio-accent")
+        .trim();
+      const palette = getPrismaticPalette(isDark, accent);
       const [red, green, blue] = hexToRgb(palette.background);
       updateGradient(gl, gradientTexture, palette.colors);
       program.uniforms.uColorCount.value = palette.colors.length;
@@ -247,7 +250,10 @@ export function PrismaticBurst({ profile }: { profile: EffectProfile }) {
     canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block";
     container.addEventListener("pointermove", onPointerMove, { passive: true });
     observer.observe(container);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-palette"],
+    });
     applyTheme();
     resize();
     frame = requestAnimationFrame(render);

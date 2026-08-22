@@ -3,9 +3,12 @@
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import { useLayoutEffect } from "react";
 
+import { PaletteProvider } from "./palette-provider";
+
 const THEMES = ["light", "dark"];
 const VALID_THEME_NAMES = new Set([...THEMES, "system"]);
 const STORED_THEME_GUARD_SCRIPT = `try{var theme=localStorage.getItem("theme");if(theme!==null&&theme!=="light"&&theme!=="dark"&&theme!=="system")localStorage.setItem("theme","system")}catch(error){}`;
+const STORED_PALETTE_GUARD_SCRIPT = `try{var palette=localStorage.getItem("theme-palette");var valid=["ocean","orchid","citrus","forest","rose"];if(palette!==null&&valid.indexOf(palette)===-1)localStorage.removeItem("theme-palette");if(palette!==null&&valid.indexOf(palette)!==-1)document.documentElement.dataset.palette=palette}catch(error){}`;
 
 function StoredThemeGuard() {
   const { setTheme, theme } = useTheme();
@@ -41,6 +44,11 @@ export function ThemeProvider({
         nonce={typeof window === "undefined" ? nonce : ""}
         dangerouslySetInnerHTML={{ __html: STORED_THEME_GUARD_SCRIPT }}
       />
+      <script
+        suppressHydrationWarning
+        nonce={typeof window === "undefined" ? nonce : ""}
+        dangerouslySetInnerHTML={{ __html: STORED_PALETTE_GUARD_SCRIPT }}
+      />
       <NextThemesProvider
         attribute="class"
         defaultTheme="system"
@@ -50,7 +58,7 @@ export function ThemeProvider({
         themes={THEMES}
       >
         <StoredThemeGuard />
-        {children}
+        <PaletteProvider>{children}</PaletteProvider>
       </NextThemesProvider>
     </>
   );

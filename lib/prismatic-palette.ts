@@ -3,14 +3,14 @@ export type PrismaticPalette = {
   colors: string[];
 };
 
-export function getPrismaticPalette(isDark: boolean): PrismaticPalette {
+export function getPrismaticPalette(isDark: boolean, accent = "#00d8ff"): PrismaticPalette {
   return isDark
     ? {
         background: "#000000",
-        colors: ["#000000", "#00d8ff", "#000000"],
+        colors: ["#000000", accent, "#000000"],
       }
     : {
         background: "#ffffff",
-        colors: ["#ffffff", "#00d8ff", "#ffffff"],
+        colors: ["#ffffff", accent, "#ffffff"],
       };
 }

@@ -137,6 +137,79 @@
   color-scheme: dark;
 }
 
+/* Palette accents are intentionally mode-independent: light/dark still owns surfaces. */
+[data-palette="ocean"] {
+  --portfolio-accent: #00d8ff;
+  --portfolio-accent-foreground: #060a12;
+  --effect-prismatic-secondary: #9cf1ff;
+  --effect-cursor: #00d8ff;
+  --effect-spark: #00d8ff;
+  --effect-glow: #9cf1ff;
+  --effect-chroma-cyan: #00d8ff;
+  --effect-chroma-emerald: #20d98b;
+  --effect-chroma-amber: #ffbf3f;
+  --effect-chroma-coral: #ff6b57;
+}
+
+[data-palette="orchid"] {
+  --portfolio-accent: #a855f7;
+  --portfolio-accent-foreground: #ffffff;
+  --effect-prismatic-secondary: #d8b4fe;
+  --effect-cursor: #a855f7;
+  --effect-spark: #a855f7;
+  --effect-glow: #d8b4fe;
+  --effect-chroma-cyan: #a855f7;
+  --effect-chroma-emerald: #c084fc;
+  --effect-chroma-amber: #f0abfc;
+  --effect-chroma-coral: #e879f9;
+}
+
+[data-palette="citrus"] {
+  --portfolio-accent: #f59e0b;
+  --portfolio-accent-foreground: #17120a;
+  --effect-prismatic-secondary: #fcd34d;
+  --effect-cursor: #f59e0b;
+  --effect-spark: #f59e0b;
+  --effect-glow: #fcd34d;
+  --effect-chroma-cyan: #f59e0b;
+  --effect-chroma-emerald: #fbbf24;
+  --effect-chroma-amber: #fcd34d;
+  --effect-chroma-coral: #fb923c;
+}
+
+[data-palette="forest"] {
+  --portfolio-accent: #10b981;
+  --portfolio-accent-foreground: #06130e;
+  --effect-prismatic-secondary: #6ee7b7;
+  --effect-cursor: #10b981;
+  --effect-spark: #10b981;
+  --effect-glow: #6ee7b7;
+  --effect-chroma-cyan: #10b981;
+  --effect-chroma-emerald: #34d399;
+  --effect-chroma-amber: #a3e635;
+  --effect-chroma-coral: #facc15;
+}
+
+[data-palette="rose"] {
+  --portfolio-accent: #f43f5e;
+  --portfolio-accent-foreground: #ffffff;
+  --effect-prismatic-secondary: #fda4af;
+  --effect-cursor: #f43f5e;
+  --effect-spark: #f43f5e;
+  --effect-glow: #fda4af;
+  --effect-chroma-cyan: #f43f5e;
+  --effect-chroma-emerald: #fb7185;
+  --effect-chroma-amber: #fda4af;
+  --effect-chroma-coral: #fb7185;
+}
+
+[data-palette] {
+  --accent: color-mix(in srgb, var(--portfolio-accent) 16%, var(--background));
+  --accent-foreground: var(--portfolio-accent-foreground);
+  --ring: var(--portfolio-accent);
+  --selection-background: var(--portfolio-accent);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

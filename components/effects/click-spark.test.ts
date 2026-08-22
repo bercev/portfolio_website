@@ -19,8 +19,8 @@ describe("ClickSpark defaults", () => {
   });
 
   it("uses black sparks in light mode and white sparks in dark mode", () => {
-    expect(getClickSparkColor("light")).toBe("#000000");
-    expect(getClickSparkColor("dark")).toBe("#ffffff");
+    expect(getClickSparkColor("#f43f5e")).toBe("#f43f5e");
+    expect(getClickSparkColor(undefined)).toBe("#000000");
   });
 
   it("moves each spark outward while shrinking its line", () => {
