@@ -57,7 +57,7 @@
   --selection-foreground: #ffffff;
   --effect-prismatic-primary: var(--portfolio-accent);
   --effect-prismatic-secondary: #9cf1ff;
-  --prismatic-background: #f7fbfd;
+  --prismatic-background: #ffffff;
   --effect-cursor: #ffffff;
   --effect-spark: #ffffff;
   --effect-glow: #ffffff;
@@ -133,7 +133,7 @@
   --spacing: 0.25rem;
 
   --effect-prismatic-secondary: #00788f;
-  --prismatic-background: #05090d;
+  --prismatic-background: #000000;
   color-scheme: dark;
 }
 

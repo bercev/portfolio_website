@@ -122,8 +122,8 @@ export function PrismaticBurst({ profile }: { profile: EffectProfile }) {
       vertex: vertexShader,
       fragment: fragmentShader,
       uniforms: {
-        uResolution: { value: [1, 1] }, uTime: { value: 0 }, uIntensity: { value: 1.25 }, uSpeed: { value: 0.42 },
-        uMouse: { value: [0.5, 0.5] }, uDistort: { value: 0.8 }, uRayCount: { value: 24 }, uColorCount: { value: 0 },
+        uResolution: { value: [1, 1] }, uTime: { value: 0 }, uIntensity: { value: 3.3 }, uSpeed: { value: 0.4 },
+        uMouse: { value: [0.5, 0.5] }, uDistort: { value: 10 }, uRayCount: { value: 0 }, uColorCount: { value: 0 },
         uGradient: { value: gradientTexture }, uBackground: { value: [0, 0, 0] },
       },
     });
