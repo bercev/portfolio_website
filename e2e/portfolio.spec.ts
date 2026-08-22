@@ -93,7 +93,7 @@ test("renders every approved role, project, and skill category", async ({
   }
 });
 
-test("uses a divided chronology and a chromatic project carousel", async ({
+test("uses a divided chronology and two chromatic project cards", async ({
   page,
 }) => {
   await page.goto("/");
@@ -111,18 +111,7 @@ test("uses a divided chronology and a chromatic project carousel", async ({
     page.getByRole("heading", { name: "AI Discord Chatbot", exact: true }),
   ).not.toHaveRole("link");
 
-  const gallery = page.getByRole("region", { name: "Projects carousel" });
-  await expect(gallery).toHaveAttribute("aria-roledescription", "carousel");
-  await expect(gallery.getByRole("group")).toHaveCount(2);
-
-  const initialActiveIndex = await gallery.getAttribute("data-active-index");
-  const nextButton = gallery.getByRole("button", { name: "Next project" });
-  await expect(nextButton).toHaveClass(/cursor-target/);
-  await nextButton.click();
-  await expect(gallery).not.toHaveAttribute(
-    "data-active-index",
-    initialActiveIndex ?? "",
-  );
+  await expect(page.locator("#projects [data-circular-gallery]")).toHaveCount(0);
 });
 
 test("uses monochrome ChromaCard borders in both themes", async ({ browser }) => {

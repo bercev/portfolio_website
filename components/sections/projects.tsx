@@ -1,7 +1,6 @@
 import type { PortfolioContent, Project } from "@/data/content";
 
 import { ExternalLink } from "@/components/ui/external-link";
-import { CircularGallery } from "@/components/ui/circular-gallery";
 import { PortfolioCard } from "@/components/ui/portfolio-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 
@@ -43,6 +42,8 @@ function ProjectDetails({ project }: { readonly project: Project }) {
 }
 
 export function Projects({ content, heading }: ProjectsProps) {
+  const [featured, supporting] = content;
+
   return (
     <section
       id="projects"
@@ -52,24 +53,22 @@ export function Projects({ content, heading }: ProjectsProps) {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading title={heading} />
 
-        <div className="mt-12 lg:mt-16">
-          <CircularGallery
-            ariaLabel={`${heading} carousel`}
-            items={content.map((project, index) => ({
-              id: project.href ?? project.title,
-              label: project.title,
-              content: (
-                <PortfolioCard>
-                  <article
-                    data-project-featured={index === 0 ? "" : undefined}
-                    data-project-supporting={index === 1 ? "" : undefined}
-                  >
-                    <ProjectDetails project={project} />
-                  </article>
-                </PortfolioCard>
-              ),
-            }))}
-          />
+        <div className="mt-12 grid gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] md:items-stretch lg:mt-16 lg:gap-12">
+          {featured ? (
+            <PortfolioCard>
+              <article data-project-featured>
+                <ProjectDetails project={featured} />
+              </article>
+            </PortfolioCard>
+          ) : null}
+
+          {supporting ? (
+            <PortfolioCard>
+              <article data-project-supporting>
+                <ProjectDetails project={supporting} />
+              </article>
+            </PortfolioCard>
+          ) : null}
         </div>
       </div>
     </section>
