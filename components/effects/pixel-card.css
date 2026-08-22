@@ -32,7 +32,7 @@
 .pixel-canvas {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   display: block;
   pointer-events: none;
 }
