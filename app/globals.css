@@ -53,6 +53,8 @@
 
   --portfolio-accent: #00d8ff;
   --portfolio-accent-foreground: #060a12;
+  --selection-background: #000000;
+  --selection-foreground: #ffffff;
   --effect-prismatic-primary: var(--portfolio-accent);
   --effect-prismatic-secondary: #9cf1ff;
   --effect-cursor: #ffffff;
@@ -109,6 +111,8 @@
   --sidebar-accent-foreground: #e5ecf1;
   --sidebar-border: #25303e;
   --sidebar-ring: #6e7c8c;
+  --selection-background: #ffffff;
+  --selection-foreground: #000000;
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
     sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
@@ -213,8 +217,8 @@ textarea {
 }
 
 ::selection {
-  background: var(--portfolio-accent);
-  color: var(--portfolio-accent-foreground);
+  background: var(--selection-background);
+  color: var(--selection-foreground);
 }
 
 :focus-visible {

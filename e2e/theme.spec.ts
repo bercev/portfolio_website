@@ -112,6 +112,34 @@ for (const theme of ["light", "dark"] as const) {
   });
 }
 
+for (const theme of ["light", "dark"] as const) {
+  test(`uses a monochrome text selection in ${theme} mode`, async ({
+    browser,
+  }) => {
+    const { context, page, runtimeErrors } = await openSystemThemePage(
+      browser,
+      theme,
+    );
+
+    const selection = await page.locator("body").evaluate((element) => {
+      const styles = window.getComputedStyle(element, "::selection");
+      return {
+        backgroundColor: styles.backgroundColor,
+        color: styles.color,
+      };
+    });
+
+    expect(selection).toEqual(
+      theme === "dark"
+        ? { backgroundColor: "rgb(255, 255, 255)", color: "rgb(0, 0, 0)" }
+        : { backgroundColor: "rgb(0, 0, 0)", color: "rgb(255, 255, 255)" },
+    );
+
+    runtimeErrors.assertEmpty();
+    await context.close();
+  });
+}
+
 test("rejects an unexpected stored theme and falls back to the system scheme", async ({
   browser,
 }) => {
