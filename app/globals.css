@@ -467,16 +467,6 @@ textarea {
   }
 }
 
-@keyframes chroma-card-sweep {
-  from {
-    transform: translate3d(-180%, 0, 0) skewX(-18deg);
-  }
-
-  to {
-    transform: translate3d(520%, 0, 0) skewX(-18deg);
-  }
-}
-
 .chroma-card {
   overflow: hidden;
   border: 1px solid #000000;
@@ -516,53 +506,6 @@ textarea {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-}
-
-.chroma-card [data-chroma-glow],
-.chroma-card [data-chroma-sweep] {
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.chroma-card [data-chroma-glow] {
-  inset: 0;
-  background: radial-gradient(
-    420px circle at var(--chroma-x) var(--chroma-y),
-    color-mix(in srgb, var(--effect-chroma-amber) 72%, transparent),
-    color-mix(in srgb, var(--effect-chroma-cyan) 34%, transparent) 42%,
-    transparent 68%
-  );
-  opacity: 0;
-  transition: opacity 180ms ease-out;
-}
-
-.chroma-card[data-chroma-mode="enhanced"]:hover [data-chroma-glow] {
-  opacity: 1;
-}
-
-.chroma-card [data-chroma-sweep] {
-  inset-block: -25%;
-  left: 0;
-  width: 28%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--effect-chroma-coral) 88%, transparent),
-    color-mix(in srgb, var(--effect-chroma-amber) 92%, transparent),
-    transparent
-  );
-  filter: blur(6px);
-  opacity: 0;
-}
-
-.chroma-card[data-chroma-mode="mobile"] [data-chroma-sweep] {
-  filter: none;
-}
-
-.chroma-card[data-chroma-active="true"] [data-chroma-sweep] {
-  animation: chroma-card-sweep 900ms cubic-bezier(0.16, 1, 0.3, 1);
-  opacity: 0.9;
 }
 
 @keyframes skills-marquee {

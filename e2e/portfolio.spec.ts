@@ -157,6 +157,9 @@ test("gives ChromaCards a frosted glass surface", async ({ page }) => {
   await page.goto("/");
 
   const surface = page.locator("[data-chroma-surface]").first();
+  await expect(
+    page.locator("[data-chroma-glow], [data-chroma-sweep]"),
+  ).toHaveCount(0);
   const styles = await surface.evaluate((element) => {
     const computed = getComputedStyle(element);
     return {
