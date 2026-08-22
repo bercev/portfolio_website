@@ -208,11 +208,11 @@ test("renders the custom scroll indicator without endpoint blocks", async ({
   await expect(page.locator("[data-signal-head]")).toHaveCount(0);
 });
 
-test("renders a larger custom scroll track and checkpoints", async ({ page }) => {
+test("renders only the larger scroll progress and checkpoints", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.locator("[data-signal-spine]")).toHaveCSS("width", "12px");
-  await expect(page.locator("[data-signal-rail]")).toHaveCSS("width", "4px");
+  await expect(page.locator("[data-signal-rail]")).toHaveCount(0);
   await expect(page.locator("[data-signal-fill]")).toHaveCSS("width", "4px");
 
   const checkpoints = page.locator("[data-signal-echo]");

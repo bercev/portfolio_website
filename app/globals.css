@@ -416,17 +416,12 @@ textarea {
   --signal-color: #d6d6d6;
 }
 
-.signal-spine [data-signal-rail],
 .signal-spine [data-signal-fill],
 .signal-spine [data-signal-static] {
   position: absolute;
   inset-block: 0;
   right: 0;
   width: 4px;
-}
-
-.signal-spine [data-signal-rail] {
-  background: color-mix(in srgb, var(--signal-color) 24%, transparent);
 }
 
 .signal-spine [data-signal-fill],

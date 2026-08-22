@@ -57,7 +57,6 @@ export function ScrollProgress() {
       data-signal-mode={mode}
       className="signal-spine pointer-events-none fixed inset-y-0 right-0 z-[var(--z-site-navigation)]"
     >
-      <span data-signal-rail />
       {mode === "static" ? (
         <span data-signal-static />
       ) : (
