@@ -15,6 +15,8 @@ import { PrismaticBurst } from "./prismatic-burst";
 import { SpecularControls } from "./specular-controls";
 import { TargetCursor } from "./target-cursor";
 
+const ENABLE_BACKGROUND_EFFECT = false;
+
 const STATIC_PROFILE: EffectProfile = {
   mode: "static",
   pointerEffects: false,
@@ -57,7 +59,7 @@ export function EffectStage() {
       className="pointer-events-none"
       data-effect-mode={profile.mode}
     >
-      <PrismaticBurst profile={profile} />
+      {ENABLE_BACKGROUND_EFFECT ? <PrismaticBurst profile={profile} /> : null}
       {profile.pointerEffects ? (
         <>
           <SpecularControls />
