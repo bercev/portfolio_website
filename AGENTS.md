@@ -8,3 +8,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 Please commit after every change with a meaningful commit message.
+Please dont do too much testing or spend too much time on it. At the very most be CONCISE.
