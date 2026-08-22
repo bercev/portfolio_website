@@ -55,9 +55,6 @@
   --portfolio-accent-foreground: #060a12;
   --selection-background: #000000;
   --selection-foreground: #ffffff;
-  --effect-prismatic-primary: var(--portfolio-accent);
-  --effect-prismatic-secondary: #9cf1ff;
-  --prismatic-background: #ffffff;
   --effect-cursor: #ffffff;
   --effect-spark: #ffffff;
   --effect-glow: #ffffff;
@@ -132,8 +129,6 @@
   --letter-spacing: 0em;
   --spacing: 0.25rem;
 
-  --effect-prismatic-secondary: #00788f;
-  --prismatic-background: #000000;
   color-scheme: dark;
 }
 
@@ -141,7 +136,6 @@
 [data-palette="ocean"] {
   --portfolio-accent: #00d8ff;
   --portfolio-accent-foreground: #060a12;
-  --effect-prismatic-secondary: #9cf1ff;
   --effect-cursor: #00d8ff;
   --effect-spark: #00d8ff;
   --effect-glow: #9cf1ff;
@@ -154,7 +148,6 @@
 [data-palette="orchid"] {
   --portfolio-accent: #a855f7;
   --portfolio-accent-foreground: #ffffff;
-  --effect-prismatic-secondary: #d8b4fe;
   --effect-cursor: #a855f7;
   --effect-spark: #a855f7;
   --effect-glow: #d8b4fe;
@@ -167,7 +160,6 @@
 [data-palette="citrus"] {
   --portfolio-accent: #f59e0b;
   --portfolio-accent-foreground: #17120a;
-  --effect-prismatic-secondary: #fcd34d;
   --effect-cursor: #f59e0b;
   --effect-spark: #f59e0b;
   --effect-glow: #fcd34d;
@@ -180,7 +172,6 @@
 [data-palette="forest"] {
   --portfolio-accent: #10b981;
   --portfolio-accent-foreground: #06130e;
-  --effect-prismatic-secondary: #6ee7b7;
   --effect-cursor: #10b981;
   --effect-spark: #10b981;
   --effect-glow: #6ee7b7;
@@ -193,7 +184,6 @@
 [data-palette="rose"] {
   --portfolio-accent: #f43f5e;
   --portfolio-accent-foreground: #ffffff;
-  --effect-prismatic-secondary: #fda4af;
   --effect-cursor: #f43f5e;
   --effect-spark: #f43f5e;
   --effect-glow: #fda4af;
@@ -245,8 +235,6 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-portfolio-accent: var(--portfolio-accent);
   --color-portfolio-accent-foreground: var(--portfolio-accent-foreground);
-  --color-effect-prismatic-primary: var(--effect-prismatic-primary);
-  --color-effect-prismatic-secondary: var(--effect-prismatic-secondary);
   --color-effect-cursor: var(--effect-cursor);
   --color-effect-spark: var(--effect-spark);
   --color-effect-glow: var(--effect-glow);

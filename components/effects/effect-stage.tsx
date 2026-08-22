@@ -11,11 +11,9 @@ import {
 } from "@/lib/effect-policy";
 
 import { ClickSpark } from "./click-spark";
-import { PrismaticBurst } from "./prismatic-burst";
+import { AcidSquares } from "./acid-squares";
 import { SpecularControls } from "./specular-controls";
 import { TargetCursor } from "./target-cursor";
-
-const ENABLE_BACKGROUND_EFFECT = false;
 
 const STATIC_PROFILE: EffectProfile = {
   mode: "static",
@@ -59,7 +57,7 @@ export function EffectStage() {
       className="pointer-events-none"
       data-effect-mode={profile.mode}
     >
-      {ENABLE_BACKGROUND_EFFECT ? <PrismaticBurst profile={profile} /> : null}
+      <AcidSquares profile={profile} />
       {profile.pointerEffects ? (
         <>
           <SpecularControls />
