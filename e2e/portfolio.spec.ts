@@ -152,6 +152,46 @@ test("uses monochrome ChromaCard borders in both themes", async ({ browser }) =>
   }
 });
 
+test("gives ChromaCards a frosted glass surface", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  const surface = page.locator("[data-chroma-surface]").first();
+  const styles = await surface.evaluate((element) => {
+    const computed = getComputedStyle(element);
+    return {
+      backdropFilter: computed.backdropFilter,
+      boxShadow: computed.boxShadow,
+    };
+  });
+
+  expect(styles.backdropFilter).toContain("blur(18px)");
+  expect(styles.boxShadow).not.toBe("none");
+});
+
+test("uses a monochrome right-edge progress indicator", async ({ browser }) => {
+  for (const theme of ["light", "dark"] as const) {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.addInitScript((storedTheme) => {
+      localStorage.setItem("theme", storedTheme);
+    }, theme);
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveClass(
+      new RegExp(`(^|\\s)${theme}(\\s|$)`),
+    );
+
+    const indicator = page.locator("[data-signal-static]");
+    await expect(indicator).toHaveCSS("background-image", "none");
+    await expect(indicator).toHaveCSS(
+      "background-color",
+      theme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)",
+    );
+
+    await context.close();
+  }
+});
+
 test("keeps icon-led profile actions only in the site header", async ({
   page,
 }) => {
