@@ -65,3 +65,35 @@ test("changes the display mode and color palette from the utility menu", async (
 
   runtimeErrors.assertEmpty();
 });
+
+test("keeps every utility icon close to the main menu trigger", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const trigger = page.getByRole("button", { name: "Open utility menu" });
+  await trigger.click();
+
+  const triggerBox = await trigger.boundingBox();
+  expect(triggerBox).not.toBeNull();
+  const triggerCenter = {
+    x: triggerBox!.x + triggerBox!.width / 2,
+    y: triggerBox!.y + triggerBox!.height / 2,
+  };
+
+  const iconCenters = await page
+    .locator("[data-bubble-menu-item]")
+    .evaluateAll((elements) =>
+      elements.map((element) => {
+        const box = element.getBoundingClientRect();
+        return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      }),
+    );
+
+  expect(iconCenters).toHaveLength(5);
+  for (const center of iconCenters) {
+    expect(
+      Math.hypot(center.x - triggerCenter.x, center.y - triggerCenter.y),
+    ).toBeLessThanOrEqual(76);
+  }
+});
