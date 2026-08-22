@@ -70,6 +70,7 @@
 .selector[data-placement="up"] .options {
   top: auto;
   bottom: calc(100% + 0.7rem);
+  transform: translateX(calc(-50% - 3.875rem));
 }
 
 .option {

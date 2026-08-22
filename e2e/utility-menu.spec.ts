@@ -97,3 +97,25 @@ test("keeps every utility icon close to the main menu trigger", async ({
     ).toBeLessThanOrEqual(76);
   }
 });
+
+test("centers the expanded color themes over the main menu trigger", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  const menuTrigger = page.getByRole("button", { name: "Open utility menu" });
+  await menuTrigger.click();
+  await page.getByRole("button", { name: /Color theme:/ }).click();
+
+  const menuTriggerBox = await menuTrigger.boundingBox();
+  const centerThemeBox = await page
+    .getByRole("button", { name: "Citrus color theme" })
+    .boundingBox();
+  expect(menuTriggerBox).not.toBeNull();
+  expect(centerThemeBox).not.toBeNull();
+
+  const menuCenterX = menuTriggerBox!.x + menuTriggerBox!.width / 2;
+  const centerThemeX = centerThemeBox!.x + centerThemeBox!.width / 2;
+  expect(Math.abs(centerThemeX - menuCenterX)).toBeLessThanOrEqual(16);
+});
