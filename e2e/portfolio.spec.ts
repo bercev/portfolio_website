@@ -183,12 +183,13 @@ test("uses a monochrome right-edge progress indicator", async ({ browser }) => {
     await expect(page.locator("html")).toHaveClass(
       new RegExp(`(^|\\s)${theme}(\\s|$)`),
     );
+    await expect(page.locator("html")).toHaveCSS("scrollbar-width", "none");
 
     const indicator = page.locator("[data-signal-static]");
     await expect(indicator).toHaveCSS("background-image", "none");
     await expect(indicator).toHaveCSS(
       "background-color",
-      theme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)",
+      theme === "dark" ? "rgb(214, 214, 214)" : "rgb(0, 0, 0)",
     );
 
     await context.close();

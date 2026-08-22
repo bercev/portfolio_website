@@ -269,7 +269,12 @@ html {
   min-height: 100%;
   overflow-x: clip;
   scroll-behavior: smooth;
+  scrollbar-width: none;
   background: var(--background);
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 body {
@@ -403,7 +408,7 @@ textarea {
 }
 
 .dark .signal-spine {
-  --signal-color: #ffffff;
+  --signal-color: #d6d6d6;
 }
 
 .signal-spine [data-signal-rail],
