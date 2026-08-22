@@ -242,7 +242,7 @@ test("renders static, fully visible content for reduced motion", async ({
   await expect(page.locator("[data-click-spark]")).toHaveCount(0);
 
   const skillTracks = page.locator("[data-skills-track]");
-  await expect(skillTracks).toHaveCount(1);
+  await expect(skillTracks).toHaveCount(2);
   for (const track of await skillTracks.all()) {
     await expect(track).toHaveCSS("animation-name", "none");
     await expect(track).toHaveCSS("transform", "none");
@@ -274,7 +274,7 @@ test("renders static, fully visible content for reduced motion", async ({
   for (const id of SECTION_IDS) {
     await expect(page.locator(`#${id}`)).toBeVisible();
   }
-  await expect(page.locator("[data-skills-original]")).toHaveCount(1);
+  await expect(page.locator("[data-skills-original]")).toHaveCount(2);
   for (const skillsRow of await page.locator("[data-skills-original]").all()) {
     await expect(skillsRow).toBeVisible();
   }

@@ -18,6 +18,7 @@ export function SkillsMarquee({
   skills: PortfolioContent["skills"];
 }) {
   const [enhanced, setEnhanced] = useState(false);
+  const rows = [skills.slice(0, 2), skills.slice(2)] as const;
 
   useEffect(() => {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
@@ -50,25 +51,28 @@ export function SkillsMarquee({
       className="space-y-3"
       data-skills-marquee={enhanced ? "enhanced" : "static"}
     >
-      <div
-        data-skills-row
-        data-direction="forward"
-        tabIndex={0}
-        className="curved-loop-row rounded-[var(--radius)] py-0.5 focus-visible:outline-none"
-      >
-        <div data-skills-track className="curved-loop-track">
-          <div data-skills-original>
-            <CurvedLoop
-              marqueeText={skills.map(formatCurvedSkillText).join("  •  ")}
-              speed={enhanced ? 1.25 : 0}
-              curveAmount={80}
-              direction="left"
-              interactive={enhanced}
-              className="curved-loop-text"
-            />
+      {rows.map((categories, index) => (
+        <div
+          key={categories.map((category) => category.category).join("-")}
+          data-skills-row
+          data-direction={index === 0 ? "forward" : "reverse"}
+          tabIndex={0}
+          className="curved-loop-row rounded-[var(--radius)] py-0.5 focus-visible:outline-none"
+        >
+          <div data-skills-track className="curved-loop-track">
+            <div data-skills-original>
+              <CurvedLoop
+                marqueeText={categories.map(formatCurvedSkillText).join("  •  ")}
+                speed={enhanced ? 1.25 : 0}
+                curveAmount={0}
+                direction={index === 0 ? "left" : "right"}
+                interactive={enhanced}
+                className="curved-loop-text"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }

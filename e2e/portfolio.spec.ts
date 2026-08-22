@@ -93,7 +93,7 @@ test("renders every approved role, project, and skill category", async ({
   }
 });
 
-test("uses a divided chronology and two chromatic project cards", async ({
+test("uses a divided chronology and a chromatic project carousel", async ({
   page,
 }) => {
   await page.goto("/");
@@ -111,13 +111,18 @@ test("uses a divided chronology and two chromatic project cards", async ({
     page.getByRole("heading", { name: "AI Discord Chatbot", exact: true }),
   ).not.toHaveRole("link");
 
-  const cards = await page.locator("#projects [data-portfolio-card]").all();
-  const [featuredBox, supportingBox] = await Promise.all(
-    cards.map((card) => card.boundingBox()),
+  const gallery = page.getByRole("region", { name: "Projects carousel" });
+  await expect(gallery).toHaveAttribute("aria-roledescription", "carousel");
+  await expect(gallery.getByRole("group")).toHaveCount(2);
+
+  const initialActiveIndex = await gallery.getAttribute("data-active-index");
+  const nextButton = gallery.getByRole("button", { name: "Next project" });
+  await expect(nextButton).toHaveClass(/cursor-target/);
+  await nextButton.click();
+  await expect(gallery).not.toHaveAttribute(
+    "data-active-index",
+    initialActiveIndex ?? "",
   );
-  expect(featuredBox).not.toBeNull();
-  expect(supportingBox).not.toBeNull();
-  expect(featuredBox!.width).toBeGreaterThan(supportingBox!.width);
 });
 
 test("uses monochrome ChromaCard borders in both themes", async ({ browser }) => {
@@ -335,7 +340,7 @@ test("keeps the skills marquee static in a narrow fine-pointer viewport", async 
   );
 
   const tracks = page.locator("#skills [data-skills-track]");
-  await expect(tracks).toHaveCount(1);
+  await expect(tracks).toHaveCount(2);
   for (const track of await tracks.all()) {
     await expect(track).toHaveCSS("animation-name", "none");
     await expect(track).toHaveCSS("transform", "none");
@@ -345,7 +350,7 @@ test("keeps the skills marquee static in a narrow fine-pointer viewport", async 
   await context.close();
 });
 
-test("renders one enhanced curved skills loop", async ({ page }) => {
+test("renders two enhanced straight skills loops", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
@@ -355,9 +360,11 @@ test("renders one enhanced curved skills loop", async ({ page }) => {
   await expect(page.locator('[data-skills-marquee="enhanced"]')).toHaveCount(1);
 
   const tracks = page.locator("#skills [data-skills-track]");
-  await expect(tracks).toHaveCount(1);
-  await expect(tracks.locator(".curved-loop-svg")).toHaveCount(1);
+  await expect(tracks).toHaveCount(2);
+  await expect(tracks.nth(0).locator(".curved-loop-svg")).toHaveCount(1);
+  await expect(tracks.nth(1).locator(".curved-loop-svg")).toHaveCount(1);
   await expect(page.locator('#skills [data-direction="forward"]')).toHaveCount(1);
+  await expect(page.locator('#skills [data-direction="reverse"]')).toHaveCount(1);
 });
 
 test("disables continuous skill movement for reduced motion", async ({ browser }) => {
@@ -368,7 +375,7 @@ test("disables continuous skill movement for reduced motion", async ({ browser }
 
   await expect(page.locator('[data-skills-marquee="static"]')).toHaveCount(1);
   const tracks = page.locator("#skills [data-skills-track]");
-  await expect(tracks).toHaveCount(1);
+  await expect(tracks).toHaveCount(2);
   for (const track of await tracks.all()) {
     await expect(track).toHaveCSS("animation-name", "none");
     await expect(track).toHaveCSS("transform", "none");
@@ -723,7 +730,7 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
   }
 
   const skillRows = page.locator("[data-skills-row]");
-  await expect(skillRows).toHaveCount(1);
+  await expect(skillRows).toHaveCount(2);
   for (const skillRow of await skillRows.all()) {
     await page.keyboard.press("Tab");
     await expectVisibleFocus(skillRow);
