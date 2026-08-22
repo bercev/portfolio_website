@@ -42,14 +42,13 @@ export function ThemeSelector() {
         aria-controls="theme-palette-options"
         aria-expanded={isOpen}
         title="Choose a color theme"
+        style={{
+          color: THEME_PALETTES[palette].foreground,
+          backgroundColor: THEME_PALETTES[palette].accent,
+        }}
         onClick={() => setIsOpen((open) => !open)}
       >
         <PaletteIcon className={styles.icon} weight="regular" aria-hidden="true" />
-        <span
-          className={styles.currentSwatch}
-          style={{ backgroundColor: THEME_PALETTES[palette].accent }}
-          aria-hidden="true"
-        />
       </button>
       <div
         id="theme-palette-options"
@@ -66,7 +65,13 @@ export function ThemeSelector() {
               key={themeName}
               type="button"
               className={`cursor-target ${styles.option}`}
-              style={{ "--option-index": index } as React.CSSProperties}
+              style={
+                {
+                  "--option-index": index,
+                  color: option.foreground,
+                  backgroundColor: option.accent,
+                } as React.CSSProperties
+              }
               aria-label={`${option.label} color theme${isSelected ? ", selected" : ""}`}
               title={option.label}
               tabIndex={isOpen ? 0 : -1}
@@ -75,11 +80,6 @@ export function ThemeSelector() {
                 setIsOpen(false);
               }}
             >
-              <span
-                className={styles.swatch}
-                style={{ backgroundColor: option.accent }}
-                aria-hidden="true"
-              />
               {isSelected ? <CheckIcon className={styles.check} weight="bold" aria-hidden="true" /> : null}
             </button>
           );
