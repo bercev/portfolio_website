@@ -120,7 +120,11 @@ export function CurvedLoop({
       aria-hidden="true"
     >
       <svg className="curved-loop-svg" viewBox="0 0 1440 120">
-        <text ref={measureRef} className={className}>
+        <text
+          ref={measureRef}
+          className={className}
+          style={{ visibility: "hidden", opacity: 0, pointerEvents: "none" }}
+        >
           {text}
         </text>
         <defs>
