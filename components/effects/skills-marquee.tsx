@@ -48,7 +48,7 @@ export function SkillsMarquee({
 
   return (
     <div
-      className="space-y-1"
+      className="space-y-3"
       data-skills-marquee={enhanced ? "enhanced" : "static"}
     >
       {rows.map((categories, index) => (
