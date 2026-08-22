@@ -4,17 +4,23 @@ import {
   CLICK_SPARK_DEFAULTS,
   calculateCanvasSize,
   calculateSparkSegment,
+  getClickSparkColor,
 } from "./click-spark";
 
 describe("ClickSpark defaults", () => {
-  it("uses the requested cyan spark settings", () => {
+  it("uses the light theme spark color as its fallback", () => {
     expect(CLICK_SPARK_DEFAULTS).toEqual({
-      sparkColor: "#fffff",
+      sparkColor: "#000000",
       sparkSize: 10,
       sparkRadius: 20,
       sparkCount: 7,
       duration: 600,
-    })
+    });
+  });
+
+  it("uses black sparks in light mode and white sparks in dark mode", () => {
+    expect(getClickSparkColor("light")).toBe("#000000");
+    expect(getClickSparkColor("dark")).toBe("#ffffff");
   });
 
   it("moves each spark outward while shrinking its line", () => {

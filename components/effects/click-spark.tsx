@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 
 type Spark = {
   x: number;
@@ -33,12 +34,16 @@ type CanvasSizeInput = {
 };
 
 export const CLICK_SPARK_DEFAULTS = {
-  sparkColor: "#00d8ff",
+  sparkColor: "#000000",
   sparkSize: 10,
   sparkRadius: 20,
   sparkCount: 7,
   duration: 600,
 } satisfies Required<ClickSparkProps>
+
+export function getClickSparkColor(theme: string | undefined) {
+  return theme === "dark" ? "#ffffff" : CLICK_SPARK_DEFAULTS.sparkColor;
+}
 
 export function calculateCanvasSize({
   width,
@@ -79,13 +84,16 @@ export function calculateSparkSegment({
 }
 
 export function ClickSpark({
-  sparkColor = CLICK_SPARK_DEFAULTS.sparkColor,
+  sparkColor,
   sparkSize = CLICK_SPARK_DEFAULTS.sparkSize,
   sparkRadius = CLICK_SPARK_DEFAULTS.sparkRadius,
   sparkCount = CLICK_SPARK_DEFAULTS.sparkCount,
   duration = CLICK_SPARK_DEFAULTS.duration,
 }: ClickSparkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { resolvedTheme } = useTheme();
+  const resolvedSparkColor =
+    sparkColor ?? getClickSparkColor(resolvedTheme);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -133,7 +141,7 @@ export function ClickSpark({
           sparkRadius,
         });
 
-        context.strokeStyle = sparkColor;
+        context.strokeStyle = resolvedSparkColor;
         context.lineWidth = 2;
         context.beginPath();
         context.moveTo(segment.startX, segment.startY);
@@ -175,7 +183,7 @@ export function ClickSpark({
       sparks.length = 0;
       context.clearRect(0, 0, viewportWidth, viewportHeight);
     };
-  }, [duration, sparkColor, sparkCount, sparkRadius, sparkSize]);
+  }, [duration, resolvedSparkColor, sparkCount, sparkRadius, sparkSize]);
 
   return (
     <canvas
