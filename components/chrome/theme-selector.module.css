@@ -44,16 +44,17 @@
 .options {
   position: absolute;
   top: calc(100% + 0.7rem);
-  right: -0.35rem;
-  width: 13rem;
+  left: 50%;
+  width: 14rem;
   height: 9rem;
   pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .option {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 50%;
   display: inline-flex;
   width: 2.8rem;
   height: 2.8rem;
@@ -67,7 +68,7 @@
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transform: translate(0, 0) scale(0.25) rotate(-20deg);
+  transform: translate(-50%, 0) scale(0.25) rotate(-20deg);
   transition: opacity 180ms ease, transform 420ms cubic-bezier(0.2, 1.45, 0.4, 1);
   transition-delay: calc(var(--option-index) * 35ms);
 }
@@ -79,19 +80,19 @@
 .options[data-open="true"] .option {
   opacity: 1;
   pointer-events: auto;
-  transform: translate(var(--option-x), var(--option-y)) scale(1) rotate(var(--option-rotation));
+  transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1) rotate(var(--option-rotation));
 }
 
-.option:nth-child(1) { --option-x: -9.4rem; --option-y: 0.2rem; --option-rotation: -8deg; }
-.option:nth-child(2) { --option-x: -7rem; --option-y: 3.6rem; --option-rotation: 5deg; }
-.option:nth-child(3) { --option-x: -3.8rem; --option-y: 5.5rem; --option-rotation: -4deg; }
-.option:nth-child(4) { --option-x: -0.7rem; --option-y: 4.4rem; --option-rotation: 6deg; }
-.option:nth-child(5) { --option-x: 0.2rem; --option-y: 1rem; --option-rotation: -5deg; }
+.option:nth-child(1) { --option-x: -5.2rem; --option-y: 1.1rem; --option-rotation: -8deg; }
+.option:nth-child(2) { --option-x: -2.6rem; --option-y: 2.7rem; --option-rotation: 5deg; }
+.option:nth-child(3) { --option-x: 0rem; --option-y: 3.2rem; --option-rotation: -4deg; }
+.option:nth-child(4) { --option-x: 2.6rem; --option-y: 2.7rem; --option-rotation: 6deg; }
+.option:nth-child(5) { --option-x: 5.2rem; --option-y: 1.1rem; --option-rotation: -5deg; }
 
 .option:hover,
 .option:focus-visible {
   border-color: var(--portfolio-accent);
-  transform: translate(var(--option-x), var(--option-y)) scale(1.12) rotate(0deg) !important;
+  transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1.12) rotate(0deg) !important;
 }
 
 .swatch {
