@@ -88,6 +88,7 @@
   --effect-ascii-tertiary: var(--effect-chroma-coral);
 
   --z-effect-background: 0;
+  --z-content-frost: 5;
   --z-page-content: 10;
   --z-site-header: 40;
   --z-site-navigation: 50;
@@ -578,6 +579,30 @@ html.target-cursor-hide-default * {
 
 html:has([data-pdf-reader]:hover) [data-target-cursor] {
   opacity: 0;
+}
+
+.content-frost {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-content-frost);
+  pointer-events: none;
+  background: color-mix(in srgb, var(--background) 46%, transparent);
+  opacity: 0;
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+  transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.content-frost[data-visible="true"] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .content-frost {
+    background: color-mix(in srgb, var(--background) 88%, transparent);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

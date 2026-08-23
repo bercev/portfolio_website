@@ -13,7 +13,7 @@ export function ContactFooter({
       aria-label={content.heading}
       className="relative scroll-mt-[calc(4rem+env(safe-area-inset-top))] pt-20 sm:pt-24 lg:pt-32"
     >
-      <footer className="border-t border-border bg-background/70 backdrop-blur-sm">
+      <footer className="border-t border-border">
         <div className="mx-auto w-full max-w-7xl px-4 pb-[max(7rem,calc(5rem+env(safe-area-inset-bottom)))] pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pt-20">
           <div>
             <SectionHeading title={content.heading} />

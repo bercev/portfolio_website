@@ -1,5 +1,6 @@
 import { BubbleMenu } from "@/components/chrome/bubble-menu";
 import { LineSidebar } from "@/components/chrome/line-sidebar";
+import { ContentFrost } from "@/components/effects/content-frost";
 import { EffectStage } from "@/components/effects/effect-stage";
 import { About } from "@/components/sections/about";
 import { ContactFooter } from "@/components/sections/contact-footer";
@@ -13,6 +14,7 @@ export default function Home() {
   return (
     <>
       <EffectStage />
+      <ContentFrost />
 
       <main className="relative z-[var(--z-page-content)]">
         <Hero
