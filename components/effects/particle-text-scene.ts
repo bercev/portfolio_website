@@ -12,6 +12,18 @@ const MOUSE_RADIUS = 150;
 const MOUSE_STRENGTH = 5;
 const FRICTION = 0.75;
 const EASE = 0.05;
+const CSS_SRGB_COLOR =
+  /^color\(srgb\s+(-?(?:\d*\.)?\d+)\s+(-?(?:\d*\.)?\d+)\s+(-?(?:\d*\.)?\d+)\s*\)$/i;
+
+export function normalizeParticleColor(color: string) {
+  const match = CSS_SRGB_COLOR.exec(color);
+  if (!match) return color;
+
+  const channels = match.slice(1).map((channel) =>
+    Math.round(Math.min(1, Math.max(0, Number(channel))) * 255),
+  );
+  return `rgb(${channels.join(", ")})`;
+}
 
 export class ParticleTextScene {
   private readonly canvas: HTMLCanvasElement;
@@ -118,7 +130,9 @@ export class ParticleTextScene {
     const particleCount = Math.ceil(samples.length / stride);
     const positions = new Float32Array(particleCount * 3);
     const colorValues = new Float32Array(particleCount * 3);
-    const palette = this.colors.map((color) => new THREE.Color(color));
+    const palette = this.colors.map(
+      (color) => new THREE.Color(normalizeParticleColor(color)),
+    );
 
     let targetIndex = 0;
     for (let sampleIndex = 0; sampleIndex < samples.length; sampleIndex += stride) {
