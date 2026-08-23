@@ -118,3 +118,25 @@ test("darkens BERAT in light mode and lightens it in dark mode", async ({
   expect(darkModeColor).toBe("color(srgb 0.359216 0.878431 0.978039)");
   await context.close();
 });
+
+test("uses black and white BERAT text when no color palette is selected", async ({
+  browser,
+}) => {
+  for (const theme of ["light", "dark"] as const) {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.addInitScript((storedTheme) => {
+      localStorage.setItem("theme", storedTheme);
+      localStorage.setItem("theme-palette", "none");
+    }, theme);
+    await page.goto("/");
+
+    await expect(
+      page
+        .locator("[data-hero-particle-text]")
+        .getByText("BERAT", { exact: true }),
+    ).toHaveCSS("color", theme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)");
+
+    await context.close();
+  }
+});

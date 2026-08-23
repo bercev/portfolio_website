@@ -1,0 +1,36 @@
+.root {
+  --hero-particle-accent: #000000;
+  --hero-particle-cyan: #000000;
+  --hero-particle-emerald: #000000;
+  --hero-particle-coral: #000000;
+}
+
+:global(.dark) .root {
+  --hero-particle-accent: #ffffff;
+  --hero-particle-cyan: #ffffff;
+  --hero-particle-emerald: #ffffff;
+  --hero-particle-coral: #ffffff;
+}
+
+:global([data-palette]) .root {
+  --hero-particle-accent: color-mix(
+    in srgb,
+    var(--portfolio-accent) 60%,
+    var(--foreground)
+  );
+  --hero-particle-cyan: color-mix(
+    in srgb,
+    var(--effect-chroma-cyan) 60%,
+    var(--foreground)
+  );
+  --hero-particle-emerald: color-mix(
+    in srgb,
+    var(--effect-chroma-emerald) 60%,
+    var(--foreground)
+  );
+  --hero-particle-coral: color-mix(
+    in srgb,
+    var(--effect-chroma-coral) 60%,
+    var(--foreground)
+  );
+}

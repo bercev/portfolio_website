@@ -227,6 +227,35 @@ test("tracks the visible section with the active palette color", async ({
   expect(colors.accent).toBe("#f43f5e");
 });
 
+test("uses the display-mode accent for active navigation without a palette", async ({
+  browser,
+}) => {
+  for (const theme of ["light", "dark"] as const) {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.addInitScript((storedTheme) => {
+      localStorage.setItem("theme", storedTheme);
+      localStorage.setItem("theme-palette", "none");
+    }, theme);
+    await page.goto("/");
+
+    const sidebar = page.getByRole("navigation", {
+      name: "Line section navigation",
+    });
+    const activeLink = sidebar.getByRole("link", { name: /Home/ });
+    await expect(activeLink).toHaveAttribute("aria-current", "location");
+
+    const expectedColor =
+      theme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)";
+    await expect(activeLink).toHaveCSS("color", expectedColor);
+    await expect(
+      activeLink.locator("..").locator("[data-line-sidebar-marker]"),
+    ).toHaveCSS("background-color", expectedColor);
+
+    await context.close();
+  }
+});
+
 test("keeps profile actions only in the utility menu", async ({
   page,
 }) => {

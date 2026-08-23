@@ -12,6 +12,7 @@ import {
 import { usePalette } from "@/components/providers/palette-provider";
 import { cn } from "@/lib/utils";
 
+import styles from "./hero-particle-text.module.css";
 import { ParticleTextScene } from "./particle-text-scene";
 
 type ParticleTextMode = "enhanced" | "static";
@@ -116,6 +117,7 @@ export function HeroParticleText({
     <span
       ref={rootRef}
       className={cn(
+        styles.root,
         "relative isolate mx-auto block h-[clamp(13rem,32vw,24rem)] w-full max-w-[68rem] overflow-hidden font-sans max-md:h-[clamp(11rem,52vw,14rem)]",
         className,
       )}
