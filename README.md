@@ -42,7 +42,8 @@ Identity text is not fully centralized. When changing the name, role, or public 
 For other content edits:
 
 - Keep navigation IDs aligned with their section IDs.
-- Use site-relative paths such as `/resume.pdf` for files in `public/`.
+- Use site-relative paths such as `/assets/documents/resume.pdf` for files in
+  `public/assets/`.
 - Include meaningful link labels and image alternative text.
 - Run `npm run verify` after structural or content changes.
 
@@ -61,9 +62,9 @@ Effect capability policy is centralized in [`lib/effect-policy.ts`](lib/effect-p
 
 ## Replace publication placeholders
 
-The current placeholder artwork is in `public/publications/`. To replace one with an authorized paper screenshot:
+Publication assets are in `public/assets/publications/`. To replace one with an authorized paper screenshot:
 
-1. Add an optimized image to `public/publications/`, or replace the existing file in place.
+1. Add an optimized image to `public/assets/publications/`, or replace the existing file in place.
 2. Update that publication's `preview.src`, descriptive `preview.alt`, intrinsic `preview.width`, and intrinsic `preview.height` in `data/content.ts` if the path or dimensions changed.
 3. Keep the typed `isPlaceholder` field while it remains part of the `Publication` interface; it is currently a schema marker and is not rendered.
 4. Rebuild and update the approved screenshots as described below.
@@ -72,7 +73,12 @@ Do not publish an image unless you have permission to use it.
 
 ## Replace the public resume
 
-`public/resume.pdf` is served at `/resume.pdf` and is referenced from `data/content.ts`. Replace that file only with a resume you are authorized to publish publicly. Keeping the same filename requires no code change; if the path changes, update the shared resume link in `data/content.ts`. Review the replacement for private or unintended information before deployment.
+`public/assets/documents/resume.pdf` is served at `/assets/documents/resume.pdf`
+and is referenced from `data/content.ts`. Replace that file only with a resume
+you are authorized to publish publicly. Keeping the same filename requires no
+code change; if the path changes, update the shared resume link in
+`data/content.ts`. Review the replacement for private or unintended information
+before deployment.
 
 ## Update visual-regression screenshots
 
@@ -115,4 +121,7 @@ Do not add another theme resolver or use a fixed nonce. Both the storage guard a
 
 ## Intentionally retained files
 
-The unused create-next-app starter assets `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, and `public/window.svg` have no application source references. They remain intentionally preserved, along with temporary reports and test artifacts, because the current user directive prohibits deleting files or artifacts.
+The unused create-next-app starter assets in `public/assets/icons/` have no
+application source references. They remain intentionally preserved, along with
+temporary reports and test artifacts, because the current user directive
+prohibits deleting files or artifacts.

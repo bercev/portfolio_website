@@ -190,7 +190,7 @@ test("keeps profile actions only in the utility menu", async ({
   for (const href of [
     "https://github.com/bercev",
     "https://linkedin.com/in/berat-ercevik",
-    "/resume.pdf",
+    "/assets/documents/resume.pdf",
   ]) {
     const action = menu.locator(`a[href=${JSON.stringify(href)}]`);
     await expect(action).toHaveCount(1);
@@ -204,7 +204,7 @@ test("keeps profile actions only in the utility menu", async ({
   }
   await expect(page.locator('main > section:not(#contact) a[href="https://github.com/bercev"]')).toHaveCount(0);
   await expect(page.locator('main > section:not(#contact) a[href="https://linkedin.com/in/berat-ercevik"]')).toHaveCount(0);
-  await expect(page.locator('main > section:not(#contact) a[href="/resume.pdf"]')).toHaveCount(0);
+  await expect(page.locator('main > section:not(#contact) a[href="/assets/documents/resume.pdf"]')).toHaveCount(0);
   await expect(page.locator('a[href^="mailto:"]:visible')).toHaveCount(0);
 });
 
@@ -261,7 +261,7 @@ test("keeps the hero focused on the identity without a project action", async ({
       page.locator("#home").getByRole("link", { name: "View projects" }),
     ).toHaveCount(0);
     await expect(page.locator('#home a[href^="https://"]')).toHaveCount(0);
-    await expect(page.locator('#home a[href="/resume.pdf"]')).toHaveCount(0);
+    await expect(page.locator('#home a[href="/assets/documents/resume.pdf"]')).toHaveCount(0);
 
     runtimeErrors.assertEmpty();
     await context.close();
@@ -600,7 +600,7 @@ test("keeps every canonical destination exact and serves the local resume as PDF
   const canonicalDestinations = [
     "https://github.com/bercev",
     "https://linkedin.com/in/berat-ercevik",
-    "/resume.pdf",
+    "/assets/documents/resume.pdf",
     "https://openreview.net/forum?id=nZYF0aPAMP",
     "https://arxiv.org/abs/2602.21236",
     "https://vitae.tools/",
@@ -617,7 +617,7 @@ test("keeps every canonical destination exact and serves the local resume as PDF
     }
   }
 
-  const resumeResponse = await page.request.get("/resume.pdf", {
+  const resumeResponse = await page.request.get("/assets/documents/resume.pdf", {
     failOnStatusCode: false,
   });
   expect(resumeResponse.status()).toBe(200);
@@ -677,7 +677,7 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
   for (const href of [
     "https://github.com/bercev",
     "https://linkedin.com/in/berat-ercevik",
-    "/resume.pdf",
+    "/assets/documents/resume.pdf",
   ] as const) {
     await page.keyboard.press("Tab");
     const utilityLink = page.locator(":focus");

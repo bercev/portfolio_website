@@ -143,8 +143,8 @@ test("previews scrollable publication PDFs from pointer and keyboard intent", as
   await expect(previewTargets).toHaveCount(2);
   await expect(page.locator("#publications img")).toHaveCount(0);
   for (const pdfUrl of [
-    "/publications/skilloptimizer.pdf",
-    "/publications/grokset.pdf",
+    "/assets/publications/skilloptimizer.pdf",
+    "/assets/publications/grokset.pdf",
   ]) {
     expect((await page.request.get(pdfUrl)).ok()).toBe(true);
   }
@@ -167,7 +167,7 @@ test("previews scrollable publication PDFs from pointer and keyboard intent", as
   expect(titleToReaderGap).toBeLessThanOrEqual(24);
   await expect(skillFrame).toHaveAttribute(
     "src",
-    "/publications/skilloptimizer.pdf#page=1&view=FitH&toolbar=0&navpanes=0",
+    "/assets/publications/skilloptimizer.pdf#page=1&view=FitH&toolbar=0&navpanes=0",
   );
   await expect(skillReader).toHaveCSS("pointer-events", "auto");
 

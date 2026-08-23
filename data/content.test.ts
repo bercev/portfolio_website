@@ -19,7 +19,7 @@ describe("portfolio content", () => {
   it("gives previews only to publications", () => {
     expect(
       portfolio.publications.every((paper) =>
-        paper.preview.src.startsWith("/publications/"),
+        paper.preview.src.startsWith("/assets/publications/"),
       ),
     ).toBe(true);
     expect(
@@ -38,11 +38,11 @@ describe("portfolio content", () => {
       })),
     ).toEqual([
       {
-        src: "/publications/skilloptimizer.png",
+        src: "/assets/publications/skilloptimizer.png",
         isPlaceholder: false,
       },
       {
-        src: "/publications/grokset.png",
+        src: "/assets/publications/grokset.png",
         isPlaceholder: false,
       },
     ]);
@@ -50,8 +50,8 @@ describe("portfolio content", () => {
 
   it("keeps local PDFs available for interactive publication readers", () => {
     expect(portfolio.publications.map((paper) => paper.pdfUrl)).toEqual([
-      "/publications/skilloptimizer.pdf",
-      "/publications/grokset.pdf",
+      "/assets/publications/skilloptimizer.pdf",
+      "/assets/publications/grokset.pdf",
     ]);
   });
 
@@ -61,6 +61,9 @@ describe("portfolio content", () => {
       "LinkedIn",
       "Resume",
     ]);
+    expect(
+      portfolio.contact.links.find((link) => link.label === "Resume")?.href,
+    ).toBe("/assets/documents/resume.pdf");
     expect(JSON.stringify(portfolio)).not.toContain("mailto:");
   });
 

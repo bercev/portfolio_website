@@ -31,7 +31,7 @@ test("moves profile and appearance controls into the bubble menu", async ({
   );
   await expect(menu.getByRole("link", { name: "Resume" })).toHaveAttribute(
     "href",
-    "/resume.pdf",
+    "/assets/documents/resume.pdf",
   );
   await expect(
     menu.getByRole("button", { name: "Switch to dark theme" }),

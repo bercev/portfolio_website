@@ -94,7 +94,7 @@ const linkedin = {
 
 const resume = {
   label: "Resume",
-  href: "/resume.pdf",
+  href: "/assets/documents/resume.pdf",
   download: true,
 } as const satisfies ExternalLink;
 
@@ -147,9 +147,9 @@ export const portfolio = {
       venue: "ICML 2026 AIWILD Workshop",
       date: "2026",
       href: "https://openreview.net/forum?id=nZYF0aPAMP",
-      pdfUrl: "/publications/skilloptimizer.pdf",
+      pdfUrl: "/assets/publications/skilloptimizer.pdf",
       preview: {
-        src: "/publications/skilloptimizer.png",
+        src: "/assets/publications/skilloptimizer.png",
         alt: "First-page preview of the SkillOptimizer paper.",
         width: 817,
         height: 867,
@@ -161,9 +161,9 @@ export const portfolio = {
       venue: "arXiv:2602.21236",
       date: "February 2026",
       href: "https://arxiv.org/abs/2602.21236",
-      pdfUrl: "/publications/grokset.pdf",
+      pdfUrl: "/assets/publications/grokset.pdf",
       preview: {
-        src: "/publications/grokset.png",
+        src: "/assets/publications/grokset.png",
         alt: "First-page preview of the @GrokSet paper.",
         width: 795,
         height: 870,
