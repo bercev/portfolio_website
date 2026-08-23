@@ -2,26 +2,21 @@
 
 import { useEffect, useState } from "react";
 
-const HERO_FROST_THRESHOLD = 0.08;
-
 export function ContentFrost() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const hero = document.querySelector("#home");
-    if (!hero) return;
+    const heroText = document.querySelector("[data-hero-particle-text]");
+    if (!heroText) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(
-          !entry.isIntersecting ||
-            entry.intersectionRatio <= HERO_FROST_THRESHOLD,
-        );
+        setIsVisible(!entry.isIntersecting);
       },
-      { threshold: [0, HERO_FROST_THRESHOLD] },
+      { threshold: 0 },
     );
 
-    observer.observe(hero);
+    observer.observe(heroText);
     return () => observer.disconnect();
   }, []);
 

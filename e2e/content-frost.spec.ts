@@ -1,8 +1,6 @@
 import { expect, test } from "./runtime-errors";
 
-test("fades the shared frost in after the hero and out on return", async ({
-  page,
-}) => {
+test("starts the shared frost when the BERAT text leaves view", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
@@ -22,7 +20,20 @@ test("fades the shared frost in after the hero and out on return", async ({
   expect(frostStyles.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
   expect(frostStyles.pointerEvents).toBe("none");
 
-  await page.locator("#about").scrollIntoViewIfNeeded();
+  const heroText = page.locator("[data-hero-particle-text]");
+  await heroText.evaluate((element) => {
+    const { bottom } = element.getBoundingClientRect();
+    window.scrollTo({ top: window.scrollY + bottom + 1 });
+  });
+
+  const boundary = await page.locator("#home").evaluate((hero) => ({
+    heroBottom: hero.getBoundingClientRect().bottom,
+    textBottom: document
+      .querySelector("[data-hero-particle-text]")!
+      .getBoundingClientRect().bottom,
+  }));
+  expect(boundary.textBottom).toBeLessThanOrEqual(0);
+  expect(boundary.heroBottom).toBeGreaterThan(0);
   await expect(frost).toHaveCSS("opacity", "1");
 
   await page.locator("#home").scrollIntoViewIfNeeded();
