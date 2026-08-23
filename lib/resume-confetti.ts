@@ -1,16 +1,20 @@
 import type { Options as ConfettiOptions } from "canvas-confetti";
 
-const TOP_EDGE_ORIGINS = [0.1, 0.3, 0.5, 0.7, 0.9] as const;
+const TOP_EDGE_EMITTER_COUNT = 25;
+const PARTICLES_PER_EMITTER = 8;
 
 export function getResumeConfettiBursts(): ConfettiOptions[] {
-  return TOP_EDGE_ORIGINS.map((x) => ({
-    particleCount: 18,
+  return Array.from({ length: TOP_EDGE_EMITTER_COUNT }, (_, index) => ({
+    particleCount: PARTICLES_PER_EMITTER,
     angle: 270,
-    spread: 55,
+    spread: 32,
     startVelocity: 20,
     gravity: 0.85,
     scalar: 0.8,
     ticks: 220,
-    origin: { x, y: 0 },
+    origin: {
+      x: (index + 0.5) / TOP_EDGE_EMITTER_COUNT,
+      y: 0,
+    },
   }));
 }

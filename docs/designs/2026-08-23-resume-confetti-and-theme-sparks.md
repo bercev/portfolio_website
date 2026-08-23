@@ -10,12 +10,13 @@
 ## Design
 
 Keep the confetti canvas and click handler local to `BubbleMenu`, which owns the
-visible resume action. Generate a small deterministic set of top-edge confetti
-bursts so their geometry can be unit tested. Resolve ClickSpark color from the
-active palette first, then from the resolved light/dark theme.
+visible resume action. Generate 25 evenly spaced top-edge emitters with eight
+particles each so the result reads as one continuous curtain rather than a few
+concentrated bursts. Resolve ClickSpark color from the active palette first,
+then from the resolved light/dark theme.
 
 ## Decision log
 
 - Reuse the existing `canvas-confetti` wrapper instead of adding a dependency.
-- Prefer several top-edge origins over a single center burst for full-width coverage.
+- Prefer a uniform row of small emitters over a few concentrated bursts.
 - Avoid a global event bus because only the utility menu initiates resume downloads.
