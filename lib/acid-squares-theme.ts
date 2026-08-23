@@ -3,6 +3,9 @@ export type AcidSquaresTheme = {
   spread: number;
 };
 
+export const ACID_SQUARES_SPREAD_CEILING = 1.5;
+export const ACID_SQUARES_HIGH_SPREAD_TONE_POWER = 0.1;
+
 export function getAcidSquaresTheme(
   isDark: boolean,
   accent?: string,

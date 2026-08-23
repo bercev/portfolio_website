@@ -4,7 +4,11 @@ import { useEffect, useRef } from "react";
 import { Mesh, Program, Renderer, Triangle } from "ogl";
 
 import type { EffectProfile } from "@/lib/effect-policy";
-import { getAcidSquaresTheme } from "@/lib/acid-squares-theme";
+import {
+  ACID_SQUARES_HIGH_SPREAD_TONE_POWER,
+  ACID_SQUARES_SPREAD_CEILING,
+  getAcidSquaresTheme,
+} from "@/lib/acid-squares-theme";
 
 const vertexShader = `#version 300 es
 in vec2 position;
@@ -53,7 +57,7 @@ void main() {
 
   float travel = sin(iTime * uSpeed) * uWaveDepth;
   float density = max(uDensity, 1.0);
-  float spread = clamp(uSpread, 0.05, 1.5);
+  float spread = clamp(uSpread, 0.05, ${ACID_SQUARES_SPREAD_CEILING.toFixed(1)});
   float stepSize = max(uStepSize, 0.0005);
   float glowGain = max(uGlow, 0.0);
 
@@ -76,6 +80,13 @@ void main() {
     dot(cos(iTime * uColorShift + p), vec3(0.3333));
   float v = tanh(e * uBrightness * mix(0.7, 1.05, shimmer));
   v = clamp((v - 0.5) * uContrast + 0.5, 0.0, 1.0);
+  float highSpreadMix = smoothstep(0.6, 1.17, uSpread);
+  float tonePower = mix(
+    1.0,
+    ${ACID_SQUARES_HIGH_SPREAD_TONE_POWER.toFixed(1)},
+    highSpreadMix
+  );
+  v = pow(v, tonePower);
 
   vec3 col = mix(uColor1, uColor2, smoothstep(0.0, 0.55, v));
   col = mix(col, uColor3, smoothstep(0.55, 1.0, v));

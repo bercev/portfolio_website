@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getAcidSquaresTheme } from "./acid-squares-theme";
+import {
+  ACID_SQUARES_HIGH_SPREAD_TONE_POWER,
+  ACID_SQUARES_SPREAD_CEILING,
+  getAcidSquaresTheme,
+} from "./acid-squares-theme";
 
 describe("getAcidSquaresTheme", () => {
   it("uses the requested light mode colors and spread", () => {
@@ -15,6 +19,11 @@ describe("getAcidSquaresTheme", () => {
       colors: ["#000000", "#ffffff", "#000000"],
       spread: 1.17,
     });
+  });
+
+  it("allows and tone-maps the requested high dark spread", () => {
+    expect(ACID_SQUARES_SPREAD_CEILING).toBeGreaterThanOrEqual(1.17);
+    expect(ACID_SQUARES_HIGH_SPREAD_TONE_POWER).toBe(0.1);
   });
 
   it("replaces all three colors with a theme override", () => {
