@@ -18,9 +18,13 @@ describe("ClickSpark defaults", () => {
     });
   });
 
-  it("uses black sparks in light mode and white sparks in dark mode", () => {
-    expect(getClickSparkColor("#f43f5e")).toBe("#f43f5e");
-    expect(getClickSparkColor(undefined)).toBe("#000000");
+  it("uses the palette accent before the display-mode color", () => {
+    expect(getClickSparkColor("#f43f5e", "dark")).toBe("#f43f5e");
+  });
+
+  it("uses black sparks in base light mode and white sparks in base dark mode", () => {
+    expect(getClickSparkColor(undefined, "light")).toBe("#000000");
+    expect(getClickSparkColor(undefined, "dark")).toBe("#ffffff");
   });
 
   it("moves each spark outward while shrinking its line", () => {

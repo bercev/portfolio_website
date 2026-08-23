@@ -14,6 +14,8 @@ import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 
 import type { PortfolioContent } from "@/data/content";
 import { ThemeSelector } from "@/components/chrome/theme-selector";
 import { ThemeToggle } from "@/components/chrome/theme-toggle";
+import { Confetti, type ConfettiRef } from "@/components/ui/confetti";
+import { getResumeConfettiBursts } from "@/lib/resume-confetti";
 
 import styles from "./bubble-menu.module.css";
 
@@ -39,6 +41,7 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const bubbleRefs = useRef<Array<HTMLLIElement | null>>([]);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const confettiRef = useRef<ConfettiRef>(null);
   const reducedMotion = useReducedMotion();
 
   const clearCloseTimer = () => {
@@ -56,6 +59,15 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
   const closeMenu = () => {
     clearCloseTimer();
     setIsOpen(false);
+  };
+
+  const handleProfileClick = (isDownload: boolean | undefined) => {
+    closeMenu();
+    if (!isDownload || reducedMotion) return;
+
+    for (const burst of getResumeConfettiBursts()) {
+      void confettiRef.current?.fire(burst);
+    }
   };
 
   const handleTriggerClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -153,6 +165,14 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
 
   return (
     <div className={styles.anchor}>
+      <Confetti
+        ref={confettiRef}
+        manualstart
+        globalOptions={{ resize: true, useWorker: false }}
+        data-resume-confetti
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-[calc(var(--z-site-header)+1)] size-full"
+      />
       <nav
         aria-label="Utility menu"
         className={styles.navigation}
@@ -219,7 +239,7 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
                       aria-label={link.label}
                       className={`cursor-target ${styles.link}`}
                       data-bubble-menu-item
-                      onClick={closeMenu}
+                      onClick={() => handleProfileClick(link.download)}
                     >
                       {Icon ? (
                         <Icon

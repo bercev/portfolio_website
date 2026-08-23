@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
+
 import { usePalette } from "@/components/providers/palette-provider";
 import { THEME_PALETTES } from "@/lib/theme-palette";
 
@@ -42,8 +44,14 @@ export const CLICK_SPARK_DEFAULTS = {
   duration: 600,
 } satisfies Required<ClickSparkProps>
 
-export function getClickSparkColor(accent: string | undefined) {
-  return accent ?? CLICK_SPARK_DEFAULTS.sparkColor;
+export function getClickSparkColor(
+  accent: string | undefined,
+  resolvedTheme: string | undefined,
+) {
+  return (
+    accent ??
+    (resolvedTheme === "dark" ? "#ffffff" : CLICK_SPARK_DEFAULTS.sparkColor)
+  );
 }
 
 export function calculateCanvasSize({
@@ -93,9 +101,13 @@ export function ClickSpark({
 }: ClickSparkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { palette } = usePalette();
+  const { resolvedTheme } = useTheme();
   const resolvedSparkColor =
     sparkColor ??
-    getClickSparkColor(THEME_PALETTES[palette ?? "ocean"].accent);
+    getClickSparkColor(
+      palette === null ? undefined : THEME_PALETTES[palette].accent,
+      resolvedTheme,
+    );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -192,6 +204,7 @@ export function ClickSpark({
       ref={canvasRef}
       data-effect="click-spark"
       data-click-spark
+      data-spark-color={resolvedSparkColor}
       data-effect-layer="pointer"
     />
   );
