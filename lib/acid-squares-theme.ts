@@ -18,6 +18,6 @@ export function getAcidSquaresTheme(
 
   return {
     colors,
-    spread: isDark ? 1.17 : 0.24,
+    spread: isDark ? 0.3 : 0.22,
   };
 }
