@@ -243,17 +243,48 @@ test("uses the display-mode accent for active navigation without a palette", asy
       name: "Line section navigation",
     });
     const activeLink = sidebar.getByRole("link", { name: /Home/ });
+    const activeIndex = activeLink.locator("span").first();
     await expect(activeLink).toHaveAttribute("aria-current", "location");
 
     const expectedColor =
       theme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)";
     await expect(activeLink).toHaveCSS("color", expectedColor);
+    await expect(activeIndex).toHaveCSS("color", expectedColor);
     await expect(
       activeLink.locator("..").locator("[data-line-sidebar-marker]"),
     ).toHaveCSS("background-color", expectedColor);
 
     await context.close();
   }
+});
+
+test("keeps line navigation labels and markers comfortably legible", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const sidebar = page.getByRole("navigation", {
+    name: "Line section navigation",
+  });
+  const homeLink = sidebar.getByRole("link", { name: /Home/ });
+  const index = homeLink.locator("span").first();
+  const marker = homeLink.locator("..").locator("[data-line-sidebar-marker]");
+
+  expect(
+    Number.parseFloat(
+      await homeLink.evaluate((node) => getComputedStyle(node).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(12);
+  expect(
+    Number.parseFloat(
+      await index.evaluate((node) => getComputedStyle(node).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(10);
+
+  const markerBox = await marker.boundingBox();
+  expect(markerBox).not.toBeNull();
+  expect(markerBox!.width).toBeGreaterThanOrEqual(64);
+  expect(markerBox!.height).toBeGreaterThanOrEqual(2);
 });
 
 test("keeps profile actions only in the utility menu", async ({

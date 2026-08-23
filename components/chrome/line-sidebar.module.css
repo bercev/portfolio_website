@@ -28,8 +28,8 @@
 }
 
 .marker {
-  width: 3.25rem;
-  height: 1px;
+  width: 4rem;
+  height: 2px;
   margin-top: 0.25rem;
   background: color-mix(in srgb, var(--foreground) 34%, transparent);
   transform: scaleX(calc(1 + var(--effect) * 0.45));
@@ -45,7 +45,7 @@
   gap: 0.65rem;
   color: color-mix(in srgb, var(--foreground) 62%, transparent);
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;
@@ -72,12 +72,20 @@
 
 .index {
   color: color-mix(in srgb, var(--foreground) 34%, transparent);
-  font-size: 0.52rem;
+  font-size: 0.625rem;
+  transition: color 100ms ease-out;
 }
 
 .item:has(.link:hover) .marker,
+.item:has(.link:focus-visible) .marker,
 .item:has(.link[aria-current="location"]) .marker {
   background: var(--line-sidebar-accent);
+}
+
+.link:hover .index,
+.link:focus-visible .index,
+.link[aria-current="location"] .index {
+  color: inherit;
 }
 
 :global(.dark) .sidebar {
