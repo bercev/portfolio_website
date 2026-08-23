@@ -37,6 +37,7 @@ export function Publications({ content, heading }: PublicationsProps) {
                   pdfUrl={publication.pdfUrl}
                   headingClassName="mt-4 w-full max-w-[32ch] text-3xl font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-4xl"
                   linkClassName="w-full items-start gap-2 decoration-portfolio-accent"
+                  linkIconSize={24}
                 />
               </div>
             </article>

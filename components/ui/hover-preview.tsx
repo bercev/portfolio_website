@@ -12,6 +12,7 @@ interface HoverPreviewProps {
   readonly pdfUrl: string;
   readonly headingClassName?: string;
   readonly linkClassName?: string;
+  readonly linkIconSize?: number;
 }
 
 const CLOSE_DELAY_MS = 180;
@@ -22,6 +23,7 @@ export function HoverPreview({
   pdfUrl,
   headingClassName,
   linkClassName,
+  linkIconSize,
 }: HoverPreviewProps) {
   const [isActive, setIsActive] = useState(false);
   const shouldReduceMotion = useReducedMotion();
@@ -92,7 +94,11 @@ export function HoverPreview({
       }}
     >
       <h3 className={headingClassName}>
-        <ExternalLink href={href} className={linkClassName}>
+        <ExternalLink
+          href={href}
+          className={linkClassName}
+          iconSize={linkIconSize}
+        >
           {title}
         </ExternalLink>
       </h3>

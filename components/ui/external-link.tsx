@@ -9,11 +9,13 @@ type ExternalLinkProps = Omit<
 > & {
   children: ReactNode;
   href: string;
+  iconSize?: number;
 };
 
 export function ExternalLink({
   children,
   className,
+  iconSize = 16,
   ...props
 }: ExternalLinkProps) {
   return (
@@ -28,7 +30,12 @@ export function ExternalLink({
       )}
     >
       <span>{children}</span>
-      <ArrowUpRightIcon size={16} weight="bold" aria-hidden="true" />
+      <ArrowUpRightIcon
+        className="shrink-0"
+        size={iconSize}
+        weight="bold"
+        aria-hidden="true"
+      />
       <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );

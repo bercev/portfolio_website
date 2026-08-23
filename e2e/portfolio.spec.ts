@@ -56,6 +56,25 @@ test("renders exact publications and their canonical destinations", async ({
   }
 });
 
+test("renders publication link icons at a legible size", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  const icons = page.locator("#publications h3 a > svg");
+  await expect(icons).toHaveCount(2);
+
+  const iconSizes = await icons.evaluateAll((elements) =>
+    elements.map((element) => {
+      const { height, width } = element.getBoundingClientRect();
+      return { height, width };
+    }),
+  );
+  for (const icon of iconSizes) {
+    expect(icon.width).toBeGreaterThanOrEqual(24);
+    expect(icon.height).toBeGreaterThanOrEqual(24);
+  }
+});
+
 test("uses editorial education and publication structures", async ({ page }) => {
   await page.goto("/");
 
@@ -175,6 +194,37 @@ test("renders the line sidebar as section navigation", async ({ page }) => {
   await expect(sidebar.locator("a").first()).toHaveAttribute("href", "#home");
   await expect(sidebar.locator("a").last()).toHaveAttribute("href", "#contact");
   await expect(sidebar.locator("[data-line-sidebar-marker]")).toHaveCount(7);
+});
+
+test("tracks the visible section with the active palette color", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => {
+    localStorage.setItem("theme-palette", "rose");
+  });
+  await page.goto("/");
+
+  const sidebar = page.getByRole("navigation", {
+    name: "Line section navigation",
+  });
+  const projectsLink = sidebar.getByRole("link", {
+    name: /Projects/,
+  });
+
+  await page.locator("#projects").evaluate((section) => {
+    section.scrollIntoView({ block: "start" });
+  });
+  await expect(projectsLink).toHaveAttribute("aria-current", "location");
+
+  const colors = await projectsLink.evaluate((element) => ({
+    accent: getComputedStyle(document.documentElement)
+      .getPropertyValue("--portfolio-accent")
+      .trim(),
+    link: getComputedStyle(element).color,
+  }));
+  expect(colors.link).toBe("rgb(244, 63, 94)");
+  expect(colors.accent).toBe("#f43f5e");
 });
 
 test("keeps profile actions only in the utility menu", async ({

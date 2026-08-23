@@ -86,6 +86,56 @@ export function LineSidebar({ items }: LineSidebarProps) {
     startLoop();
   };
 
+  const updateActiveSection = useCallback(() => {
+    const activationLine = window.innerHeight * 0.35;
+    let nextIndex = 0;
+
+    items.forEach((item, index) => {
+      const sectionTop = document
+        .getElementById(item.id)
+        ?.getBoundingClientRect().top;
+      if (sectionTop !== undefined && sectionTop <= activationLine) {
+        nextIndex = index;
+      }
+    });
+
+    const documentHeight = document.documentElement.scrollHeight;
+    if (window.scrollY + window.innerHeight >= documentHeight - 2) {
+      nextIndex = items.length - 1;
+    }
+
+    if (activeIndexRef.current === nextIndex) return;
+
+    activeIndexRef.current = nextIndex;
+    setActiveIndex(nextIndex);
+    startLoop();
+  }, [items, startLoop]);
+
+  useEffect(() => {
+    let updateFrame: number | null = null;
+
+    const scheduleUpdate = () => {
+      if (updateFrame !== null) return;
+
+      updateFrame = requestAnimationFrame(() => {
+        updateFrame = null;
+        updateActiveSection();
+      });
+    };
+
+    scheduleUpdate();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("hashchange", scheduleUpdate);
+
+    return () => {
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      window.removeEventListener("hashchange", scheduleUpdate);
+      if (updateFrame !== null) cancelAnimationFrame(updateFrame);
+    };
+  }, [updateActiveSection]);
+
   useEffect(() => {
     runFrameRef.current = runFrame;
     startLoop();
