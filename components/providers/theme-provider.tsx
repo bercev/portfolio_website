@@ -8,7 +8,7 @@ import { PaletteProvider } from "./palette-provider";
 const THEMES = ["light", "dark"];
 const VALID_THEME_NAMES = new Set([...THEMES, "system"]);
 const STORED_THEME_GUARD_SCRIPT = `try{var theme=localStorage.getItem("theme");if(theme!==null&&theme!=="light"&&theme!=="dark"&&theme!=="system")localStorage.setItem("theme","system")}catch(error){}`;
-const STORED_PALETTE_GUARD_SCRIPT = `try{var palette=localStorage.getItem("theme-palette");var valid=["ocean","orchid","citrus","forest","rose"];if(palette!==null&&valid.indexOf(palette)===-1)localStorage.removeItem("theme-palette");if(palette!==null&&valid.indexOf(palette)!==-1)document.documentElement.dataset.palette=palette}catch(error){}`;
+const STORED_PALETTE_GUARD_SCRIPT = `try{var palette=localStorage.getItem("theme-palette");var valid=["ocean","orchid","citrus","forest","rose"];if(palette==="none")delete document.documentElement.dataset.palette;else if(palette!==null&&valid.indexOf(palette)!==-1)document.documentElement.dataset.palette=palette;else if(palette!==null)localStorage.removeItem("theme-palette")}catch(error){}`;
 
 function StoredThemeGuard() {
   const { setTheme, theme } = useTheme();

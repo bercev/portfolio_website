@@ -14,6 +14,7 @@ type ThemeSelectorProps = {
 
 export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
   const { palette, setPalette } = usePalette();
+  const selectedPalette = palette ? THEME_PALETTES[palette] : null;
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
 
@@ -49,14 +50,18 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
         className={`cursor-target ${styles.trigger}`}
         data-variant={variant}
         data-bubble-menu-item={variant === "menu" ? "" : undefined}
-        aria-label={`Color theme: ${THEME_PALETTES[palette].label}`}
+        aria-label={`Color theme: ${selectedPalette?.label ?? "Base"}`}
         aria-controls="theme-palette-options"
         aria-expanded={isOpen}
         title="Choose a color theme"
-        style={{
-          color: THEME_PALETTES[palette].foreground,
-          backgroundColor: THEME_PALETTES[palette].accent,
-        }}
+        style={
+          selectedPalette
+            ? {
+                color: selectedPalette.foreground,
+                backgroundColor: selectedPalette.accent,
+              }
+            : undefined
+        }
         onClick={() => setIsOpen((open) => !open)}
       >
         <PaletteIcon className={styles.icon} weight="regular" aria-hidden="true" />
@@ -87,7 +92,7 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
               title={option.label}
               tabIndex={isOpen ? 0 : -1}
               onClick={() => {
-                setPalette(themeName);
+                setPalette(isSelected ? null : themeName);
                 setIsOpen(false);
               }}
             >

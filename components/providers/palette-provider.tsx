@@ -5,35 +5,58 @@ import { createContext, useContext, useLayoutEffect, useState } from "react";
 import { isThemePalette, type ThemePalette } from "@/lib/theme-palette";
 
 const STORAGE_KEY = "theme-palette";
+const NO_PALETTE_VALUE = "none";
 const DEFAULT_PALETTE: ThemePalette = "ocean";
+export type PaletteSelection = ThemePalette | null;
 
-function getInitialPalette(): ThemePalette {
+function getInitialPalette(): PaletteSelection {
   if (typeof document !== "undefined" && isThemePalette(document.documentElement.dataset.palette)) {
     return document.documentElement.dataset.palette;
+  }
+  if (typeof window !== "undefined") {
+    try {
+      if (window.localStorage.getItem(STORAGE_KEY) === NO_PALETTE_VALUE) {
+        return null;
+      }
+    } catch {
+      // Fall back to the default when persistence is unavailable.
+    }
   }
   return DEFAULT_PALETTE;
 }
 
 const PaletteContext = createContext<{
-  palette: ThemePalette;
-  setPalette: (palette: ThemePalette) => void;
+  palette: PaletteSelection;
+  setPalette: (palette: PaletteSelection) => void;
 }>({
   palette: DEFAULT_PALETTE,
   setPalette: () => undefined,
 });
 
 export function PaletteProvider({ children }: { children: React.ReactNode }) {
-  const [palette, setPaletteState] = useState<ThemePalette>(getInitialPalette);
+  const [palette, setPaletteState] =
+    useState<PaletteSelection>(getInitialPalette);
 
   useLayoutEffect(() => {
-    document.documentElement.dataset.palette = palette;
+    if (palette === null) {
+      delete document.documentElement.dataset.palette;
+    } else {
+      document.documentElement.dataset.palette = palette;
+    }
   }, [palette]);
 
-  const setPalette = (nextPalette: ThemePalette) => {
+  const setPalette = (nextPalette: PaletteSelection) => {
     setPaletteState(nextPalette);
-    document.documentElement.dataset.palette = nextPalette;
+    if (nextPalette === null) {
+      delete document.documentElement.dataset.palette;
+    } else {
+      document.documentElement.dataset.palette = nextPalette;
+    }
     try {
-      window.localStorage.setItem(STORAGE_KEY, nextPalette);
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        nextPalette ?? NO_PALETTE_VALUE,
+      );
     } catch {
       // Keep the current session usable when persistence is unavailable.
     }

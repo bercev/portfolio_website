@@ -93,7 +93,9 @@ export function ClickSpark({
 }: ClickSparkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { palette } = usePalette();
-  const resolvedSparkColor = sparkColor ?? getClickSparkColor(THEME_PALETTES[palette].accent);
+  const resolvedSparkColor =
+    sparkColor ??
+    getClickSparkColor(THEME_PALETTES[palette ?? "ocean"].accent);
 
   useEffect(() => {
     const canvas = canvasRef.current;

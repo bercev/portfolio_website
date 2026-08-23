@@ -66,6 +66,40 @@ test("changes the display mode and color palette from the utility menu", async (
   runtimeErrors.assertEmpty();
 });
 
+test("clears the palette override when its selected swatch is clicked", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => localStorage.setItem("theme-palette", "rose"));
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Open utility menu" }).click();
+  const selector = page.locator("[data-theme-selector]");
+  await selector
+    .locator('button[aria-label="Color theme: Rose"]')
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await selector
+    .locator('button[aria-label="Rose color theme, selected"]')
+    .evaluate((button: HTMLButtonElement) => button.click());
+
+  await expect(page.locator("html")).not.toHaveAttribute("data-palette");
+  await expect(
+    selector.locator('button[aria-label="Color theme: Base"]'),
+  ).toHaveCount(1);
+  expect(await page.evaluate(() => localStorage.getItem("theme-palette"))).toBe(
+    "none",
+  );
+
+  await page.reload();
+  await expect(page.locator("html")).not.toHaveAttribute("data-palette");
+  await page.getByRole("button", { name: "Open utility menu" }).click();
+  await expect(
+    page.locator(
+      '[data-theme-selector] button[aria-label="Color theme: Base"]',
+    ),
+  ).toHaveCount(1);
+});
+
 test("keeps every utility icon close to the main menu trigger", async ({
   page,
 }) => {
