@@ -17,10 +17,10 @@ import { ParticleTextScene } from "./particle-text-scene";
 type ParticleTextMode = "enhanced" | "static";
 
 const COLOR_TOKENS = [
-  "--portfolio-accent",
-  "--effect-chroma-cyan",
-  "--effect-chroma-emerald",
-  "--effect-chroma-coral",
+  "--hero-particle-accent",
+  "--hero-particle-cyan",
+  "--hero-particle-emerald",
+  "--hero-particle-coral",
 ] as const;
 
 function readTokenColor(root: HTMLElement, token: string) {
@@ -133,7 +133,7 @@ export function HeroParticleText({
           />
         </>
       ) : (
-        <span className="grid size-full place-items-center text-[clamp(4.5rem,18vw,12rem)] font-extrabold leading-[0.8] tracking-[-0.075em] text-portfolio-accent">
+        <span className="grid size-full place-items-center text-[clamp(4.5rem,18vw,12rem)] font-extrabold leading-[0.8] tracking-[-0.075em] text-[var(--hero-particle-accent)]">
           {displayText}
         </span>
       )}

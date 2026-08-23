@@ -63,6 +63,26 @@
   --effect-chroma-emerald: #20d98b;
   --effect-chroma-amber: #ffbf3f;
   --effect-chroma-coral: #ff6b57;
+  --hero-particle-accent: color-mix(
+    in srgb,
+    var(--portfolio-accent) 60%,
+    var(--foreground)
+  );
+  --hero-particle-cyan: color-mix(
+    in srgb,
+    var(--effect-chroma-cyan) 60%,
+    var(--foreground)
+  );
+  --hero-particle-emerald: color-mix(
+    in srgb,
+    var(--effect-chroma-emerald) 60%,
+    var(--foreground)
+  );
+  --hero-particle-coral: color-mix(
+    in srgb,
+    var(--effect-chroma-coral) 60%,
+    var(--foreground)
+  );
   --effect-ascii-primary: var(--foreground);
   --effect-ascii-secondary: var(--effect-chroma-cyan);
   --effect-ascii-tertiary: var(--effect-chroma-coral);
