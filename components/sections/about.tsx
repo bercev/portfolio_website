@@ -31,7 +31,7 @@ export function About({ content, heading }: AboutProps) {
             <p className="text-base font-semibold text-muted-foreground">
               Education
             </p>
-            <h3 className="mt-4 text-[clamp(2.75rem,7vw,4.5rem)] font-extrabold leading-[0.92] tracking-[-0.035em] text-foreground">
+            <h3 className="mt-4 text-[clamp(2rem,4vw,2.75rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-foreground">
               {content.education.institution}
             </h3>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">

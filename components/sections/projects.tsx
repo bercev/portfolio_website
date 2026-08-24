@@ -17,7 +17,7 @@ function ProjectDetails({ project }: { readonly project: Project }) {
       </p>
       <h3
         aria-label={project.title}
-        className="mt-4 text-4xl font-extrabold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-5xl"
+        className="mt-4 text-3xl font-extrabold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-4xl"
       >
         {project.href ? (
           <ExternalLink

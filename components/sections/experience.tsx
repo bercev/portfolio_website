@@ -23,6 +23,7 @@ export function Experience({ content, heading }: ExperienceProps) {
             <li key={`${experience.role}-${experience.dates}`}>
               <PixelCard
                 variant="blue"
+                noFocus
                 className="pixel-card--experience cursor-target"
               >
                 <article
@@ -41,7 +42,7 @@ export function Experience({ content, heading }: ExperienceProps) {
                   </header>
 
                   <div>
-                    <h3 className="text-4xl font-bold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-5xl">
+                    <h3 className="text-3xl font-bold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-4xl">
                       {experience.role}
                     </h3>
                     <p className="mt-6 max-w-[72ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
