@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { gsap } from "gsap";
 import { useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 import type { PortfolioContent } from "@/data/content";
 import { ThemeSelector } from "@/components/chrome/theme-selector";
@@ -70,16 +70,7 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
     }
   };
 
-  const handleTriggerClick = (event: MouseEvent<HTMLButtonElement>) => {
-    const supportsHover = window.matchMedia(
-      "(hover: hover) and (pointer: fine)",
-    ).matches;
-
-    if (event.detail > 0 && supportsHover) {
-      openMenu();
-      return;
-    }
-
+  const handleTriggerClick = () => {
     if (isOpen) closeMenu();
     else openMenu();
   };
