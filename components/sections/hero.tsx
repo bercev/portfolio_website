@@ -33,6 +33,12 @@ export function Hero({
           <HeroParticleText text={identity.shortName} />
         </h1>
 
+        {hero.tagline ? (
+          <p className="max-w-3xl text-lg font-medium leading-relaxed text-muted-foreground sm:text-xl sm:leading-relaxed lg:text-2xl">
+            {hero.tagline}
+          </p>
+        ) : null}
+
         <Skills content={skills} heading={skillsHeading} />
 
         <p className="max-w-3xl text-lg font-medium leading-relaxed text-foreground sm:text-xl sm:leading-relaxed lg:text-2xl">
