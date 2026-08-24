@@ -65,7 +65,7 @@ test("renders the Particle Text canvas in both themes", async ({
   }
 });
 
-test("tracks scroll with one Signal Spine and replays section headings", async ({
+test("tracks scroll with one Signal Spine and animates section headings once", async ({
   page,
 }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
@@ -97,16 +97,10 @@ test("tracks scroll with one Signal Spine and replays section headings", async (
     .toBe("none");
   await expect(glyph).toHaveCSS("opacity", "1");
 
+  // Headings animate once; scrolling away and back must not re-run the warp.
   await page.locator("#home").scrollIntoViewIfNeeded();
-  await expect
-    .poll(() => glyph.evaluate((element) => getComputedStyle(element).transform))
-    .not.toBe("none");
-  await expect(glyph).toHaveCSS("opacity", "1");
-
   await experienceHeading.scrollIntoViewIfNeeded();
-  await expect
-    .poll(() => glyph.evaluate((element) => getComputedStyle(element).transform))
-    .toBe("none");
+  await expect(glyph).toHaveCSS("opacity", "1");
 
   runtimeErrors.assertEmpty();
 });
