@@ -139,8 +139,8 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
         uSpeed: { value: 0.75 },
         uWaveDepth: { value: 1 },
         uZoom: { value: 1.5 },
-        uDensity: { value: 10.5 },
-        uSpread: { value: 0.24 },
+        uDensity: { value: 14 },
+        uSpread: { value: 0.22 },
         uStepSize: { value: 0.001 },
         uGlow: { value: 0.95 },
         uExposure: { value: 3450 },
@@ -157,7 +157,7 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
         uMouseRadius: { value: 0.51 },
         uMouseActive: { value: 0 },
       },
-    });
+    })
     const mesh = new Mesh(gl, {
       geometry: new Triangle(gl),
       program,

@@ -116,7 +116,7 @@ export const portfolio = {
     { id: "contact", label: "Contact" },
   ],
   hero: {
-    tagline: "I build software that reasons, adapts, and ships.",
+    tagline: "Persistent and adaptive software engineer",
     bio: "I’m a software engineer building full-stack applications, developing agentic systems, and conducting AI research while studying Computer Science at UC Santa Cruz.",
   },
   about: {
@@ -129,21 +129,12 @@ export const portfolio = {
       degree: "B.S. Computer Science",
       gpa: "4.0/4.0",
       dates: "Sep 2024-Dec 2026",
-      coursework: [
-        "DSA",
-        "AI",
-        "ML",
-        "Computer Architecture",
-        "Compiler Design",
-        "Computer Systems Design",
-        "Software Engineering",
-      ],
+      coursework: ["DSA", "AI", "ML", "Computer Architecture", "Compiler Design", "Computer Systems Design", "Software Engineering"],
     },
   },
   publications: [
     {
-      title:
-        "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision.",
+      title: "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision.",
       venue: "ICML 2026 AIWILD Workshop",
       date: "2026",
       href: "https://openreview.net/forum?id=nZYF0aPAMP",
@@ -185,11 +176,7 @@ export const portfolio = {
       dates: "Apr 2025-Present",
       summary:
         "I support upper-division students through office hours and project guidance, explaining data structures, algorithmic tradeoffs, and debugging strategies while collaborating with faculty and teaching assistants on consistent evaluation.",
-      technologies: [
-        "Student Support",
-        "Collaboration",
-        "Communication",
-      ],
+      technologies: ["Student Support", "Collaboration", "Communication"],
     },
     {
       role: "LLM Researcher",
@@ -197,14 +184,7 @@ export const portfolio = {
       dates: "Jun 2025-Jan 2026",
       summary:
         "I research human-LLM interactions through social-media conversation data, fine-tune BERTopic on conversation-level embeddings, and build concurrent collection and debugging workflows for analysis.",
-      technologies: [
-        "LLMs",
-        "Python",
-        "Hydra",
-        "Tmux",
-        "Runpod",
-        "SQLite",
-      ],
+      technologies: ["LLMs", "Python", "Hydra", "Tmux", "Runpod", "SQLite"],
     },
     {
       role: "SWE Intern",
@@ -212,15 +192,7 @@ export const portfolio = {
       dates: "Oct 2024-Feb 2025",
       summary:
         "I built administrative and REST-backed MongoDB workflows for user-record management, added Zod validation and error handling, and strengthened CI/CD and automated test coverage.",
-      technologies: [
-        "React",
-        "NextJS",
-        "TypeScript",
-        "MongoDB",
-        "AWS",
-        "Git",
-        "SCRUM",
-      ],
+      technologies: ["React", "NextJS", "TypeScript", "MongoDB", "AWS", "Git", "SCRUM"],
     },
   ],
   projects: [
@@ -229,17 +201,7 @@ export const portfolio = {
       dates: "Jan 2026-Jun 2026",
       description:
         "I developed a resume-building and version-control platform with a collaborative Agile/Scrum team, focusing on PostgreSQL persistence, authentication, CI/CD, testing, and reliable delivery.",
-      technologies: [
-        "NextJS",
-        "TypeScript",
-        "Jest",
-        "PostgreSQL",
-        "Docker",
-        "CI/CD",
-        "Neon",
-        "Clerk",
-        "SCRUM",
-      ],
+      technologies: ["NextJS", "TypeScript", "Jest", "PostgreSQL", "Docker", "CI/CD", "Neon", "Clerk", "SCRUM"],
       href: "https://vitae.tools/",
     },
     {
@@ -247,53 +209,21 @@ export const portfolio = {
       dates: "Aug 2024-Sep 2024",
       description:
         "I built a Discord assistant with multi-agent retrieval-augmented generation and self-correction, backed by persistent message storage and deployed tooling.",
-      technologies: [
-        "Python",
-        "discord.py",
-        "Ollama",
-        "AWS",
-        "LangChain",
-        "SQL",
-      ],
+      technologies: ["Python", "discord.py", "Ollama", "AWS", "LangChain", "SQL"],
     },
   ],
   skills: [
     {
       category: "Languages",
-      items: [
-        "Python",
-        "JavaScript",
-        "TypeScript",
-        "C/C++",
-        "PostgreSQL",
-        "NoSQL",
-      ],
+      items: ["Python", "JavaScript", "TypeScript", "C/C++", "PostgreSQL", "NoSQL"],
     },
     {
       category: "Tools",
-      items: [
-        "Linux",
-        "Git",
-        "AWS",
-        "Tmux",
-        "Hydra",
-        "Runpod",
-        "Netlify",
-        "Playwright",
-      ],
+      items: ["Linux", "Git", "AWS", "Tmux", "Hydra", "Runpod", "Netlify", "Playwright"],
     },
     {
       category: "Frameworks",
-      items: [
-        "React",
-        "NextJS",
-        "Express",
-        "React Native",
-        "Expo",
-        "Jest",
-        "LangChain",
-        "Ollama",
-      ],
+      items: ["React", "NextJS", "Express", "React Native", "Expo", "Jest", "LangChain", "Ollama"],
     },
     {
       category: "Knowledge",
@@ -316,4 +246,4 @@ export const portfolio = {
     message: "Explore my work, professional history, and resume.",
     links: profileLinks,
   },
-} as const satisfies PortfolioContent;
+} as const satisfies PortfolioContent
