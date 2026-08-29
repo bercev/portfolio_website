@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portfolio Redesign Mockups — Index</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --ink: #e8eef5;
+    --muted: #8b98a8;
+    --line: rgba(255, 255, 255, 0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6; min-height: 100svh;
+    display: grid; place-items: center; padding: 48px 20px;
+  }
+  .wrap { width: min(960px, 100%); }
+  h1 { font-size: clamp(1.8rem, 5vw, 3rem); letter-spacing: -0.02em; line-height: 1.1; }
+  .sub { color: var(--muted); margin: 12px 0 36px; max-width: 62ch; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  a.card {
+    display: block; text-decoration: none; color: inherit;
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px; background: rgba(255, 255, 255, 0.02);
+    transition: border-color 200ms, transform 200ms, background 200ms;
+  }
+  a.card:hover { border-color: rgba(0, 216, 255, 0.5); background: rgba(0, 216, 255, 0.05); transform: translateY(-3px); }
+  .num { font: 700 11px/1 ui-monospace, Menlo, monospace; letter-spacing: 0.2em; color: var(--muted); }
+  a.card h2 { font-size: 1.35rem; margin: 10px 0 6px; letter-spacing: -0.01em; }
+  a.card p { color: var(--muted); font-size: 0.92rem; }
+  .swatches { display: flex; gap: 6px; margin-top: 16px; }
+  .swatches i { width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line); }
+  footer { margin-top: 36px; color: var(--muted); font-size: 0.85rem; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 0.85em; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="num">PORTFOLIO REDESIGN — 4 DIRECTIONS</p>
+  <h1>Design Mockups</h1>
+  <p class="sub">Four self-contained HTML mockups for the portfolio redesign. Each uses the real site content (Berat Ercevik — Software Engineer) and is fully interactive in the browser. The current production design is untouched.</p>
+
+  <div class="grid">
+    <a class="card" href="./editorial-brutalist.html">
+      <span class="num">01</span>
+      <h2>Editorial Brutalist</h2>
+      <p>Ink-on-paper. Massive black display type, hard 2px rules, numbered sections, hover-invert rows, one orange accent. Zero radius, zero shadows.</p>
+      <div class="swatches">
+        <i style="background:#f5f2ec"></i><i style="background:#0a0a0a"></i><i style="background:#ff4d00"></i>
+      </div>
+    </a>
+    <a class="card" href="./liquid-glass.html">
+      <span class="num">02</span>
+      <h2>Liquid Glass Spatial</h2>
+      <p>Deep space-blue gradient with drifting color orbs, frosted-glass cards, floating pill nav, gradient-clipped hero name. Calm and premium.</p>
+      <div class="swatches">
+        <i style="background:#0a1220"></i><i style="background:#00d8ff"></i><i style="background:#20d98b"></i><i style="background:#ff6b57"></i>
+      </div>
+    </a>
+    <a class="card" href="./immersive-3d.html">
+      <span class="num">03</span>
+      <h2>Immersive 3D Journey</h2>
+      <p>Near-black depth. Hero name tilts with the pointer, sections are stations along a glowing cyan→emerald path, cards tilt in 3D on hover.</p>
+      <div class="swatches">
+        <i style="background:#05070c"></i><i style="background:#00d8ff"></i><i style="background:#20d98b"></i>
+      </div>
+    </a>
+    <a class="card" href="./horizontal-cinema.html">
+      <span class="num">04</span>
+      <h2>Horizontal Cinema</h2>
+      <p>The site as a film: sideways scenes with letterbox bars, film grain, timecode, scene slates, and an amber accent. Arrow keys move scenes.</p>
+      <div class="swatches">
+        <i style="background:#111214"></i><i style="background:#f2efe9"></i><i style="background:#ffbf3f"></i>
+      </div>
+    </a>
+  </div>
+
+  <footer>
+    Mockups only — not linked from the site. Open any file directly, or serve: <code>npx serve docs/designs/mockups</code>
+  </footer>
+</div>
+</body>
+</html>

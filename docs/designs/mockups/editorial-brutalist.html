@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Berat Ercevik — Editorial Brutalist Mockup</title>
+<style>
+  :root {
+    --paper: #f5f2ec;
+    --ink: #000000;
+    --accent: #ff4d00;
+    --display: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0 !important; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--display);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.4;
+  }
+
+  ::selection { background: var(--ink); color: var(--paper); }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ---------- STICKY NAV ---------- */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--paper);
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .nav {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .nav__brand {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    white-space: nowrap;
+  }
+
+  .nav__brand em { font-style: normal; color: var(--accent); }
+
+  .nav__links {
+    display: flex;
+    list-style: none;
+    align-items: stretch;
+  }
+
+  .nav__links a {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    padding: 0 0.9rem;
+    border-left: 2px solid var(--ink);
+    height: 100%;
+  }
+
+  .nav__links a:hover,
+  .nav__links a:focus-visible {
+    background: var(--ink);
+    color: var(--paper);
+    outline: none;
+  }
+
+  /* ---------- TICKER ---------- */
+  .ticker {
+    border-bottom: 2px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .ticker__track {
+    display: inline-block;
+    padding: 0.5rem 0;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    animation: ticker-scroll 28s linear infinite;
+  }
+
+  .ticker__track span { margin: 0 1.5rem; }
+
+  .ticker__track .tick-accent { color: var(--accent); }
+
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ---------- LAYOUT ---------- */
+  main { max-width: 1400px; margin: 0 auto; }
+
+  section {
+    padding: 5rem 1.5rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+  }
+
+  .section-head__num {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    border: 2px solid var(--ink);
+    padding: 0.3rem 0.6rem;
+  }
+
+  .section-head h2 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    line-height: 0.95;
+  }
+
+  .meta-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  .hero__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .hero__title {
+    font-size: clamp(4rem, 14vw, 11rem);
+    font-weight: 900;
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .hero__title .hero__line { display: block; }
+
+  .hero__title .hero__line--accent {
+    color: var(--paper);
+    -webkit-text-stroke: 2px var(--ink);
+  }
+
+  @supports not (-webkit-text-stroke: 2px black) {
+    .hero__title .hero__line--accent { color: var(--ink); }
+  }
+
+  .hero__sub {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 2.5rem;
+    border-top: 2px solid var(--ink);
+    padding-top: 1.5rem;
+  }
+
+  .hero__role {
+    font-size: clamp(1.2rem, 3vw, 2rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+
+  .hero__tagline {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    max-width: 34ch;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.7;
+  }
+
+  /* ---------- ABOUT ---------- */
+  .about__grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 3rem;
+  }
+
+  .about__blurb {
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .about__blurb .accent { color: var(--accent); }
+
+  .about__facts {
+    display: grid;
+    align-content: start;
+  }
+
+  .about__fact {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .about__fact:first-child { border-top: 2px solid var(--ink); }
+
+  .about__fact dt {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    padding-top: 0.2rem;
+  }
+
+  .about__fact dd { font-size: 1rem; font-weight: 600; }
+
+  /* ---------- PUBLICATIONS ---------- */
+  .pub-row {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 1.5rem;
+    align-items: baseline;
+    padding: 2rem 0.5rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .pub-row:first-of-type { border-top: 2px solid var(--ink); }
+
+  .pub-row:hover,
+  .pub-row:focus-within {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .pub-row:hover .pub-row__num,
+  .pub-row:focus-within .pub-row__num { color: var(--accent); }
+
+  .pub-row__num {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+  }
+
+  .pub-row h3 {
+    font-size: clamp(1.3rem, 3vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  .pub-row__tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border: 2px solid currentColor;
+    padding: 0.3rem 0.6rem;
+    white-space: nowrap;
+  }
+
+  /* ---------- EXPERIENCE ---------- */
+  .xp-table { width: 100%; border-collapse: collapse; }
+
+  .xp-table th {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    text-align: left;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .xp-table td {
+    padding: 1.5rem 0.5rem;
+    border-bottom: 2px solid var(--ink);
+    vertical-align: top;
+  }
+
+  .xp-table tr:hover td { background: var(--ink); color: var(--paper); }
+
+  .xp-table tr:hover .xp-accent { color: var(--accent); }
+
+  .xp-role {
+    font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .xp-accent { color: var(--accent); }
+
+  .xp-table .mono {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  /* ---------- PROJECTS ---------- */
+  .projects__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .project-card {
+    border: 2px solid var(--ink);
+    padding: 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 320px;
+  }
+
+  .project-card:hover,
+  .project-card:focus-within {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .project-card:hover .project-card__num,
+  .project-card:focus-within .project-card__num { color: var(--accent); }
+
+  .project-card__num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+  }
+
+  .project-card h3 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+  }
+
+  .project-card p {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.7;
+    margin-top: auto;
+  }
+
+  /* ---------- SKILLS ---------- */
+  .skills-cloud {
+    font-size: clamp(1.2rem, 3.2vw, 2.4rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 1.5;
+    max-width: 1100px;
+  }
+
+  .skills-cloud .sep {
+    color: var(--accent);
+    font-weight: 900;
+    margin: 0 0.35rem;
+  }
+
+  .skills-cloud .dim {
+    color: var(--paper);
+    -webkit-text-stroke: 1.5px var(--ink);
+  }
+
+  @supports not (-webkit-text-stroke: 1.5px black) {
+    .skills-cloud .dim { color: var(--ink); }
+  }
+
+  /* ---------- CONTACT ---------- */
+  .contact { border-bottom: none; }
+
+  .contact h2 {
+    font-size: clamp(4rem, 12vw, 9rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.04em;
+    line-height: 0.85;
+    margin-bottom: 3rem;
+  }
+
+  .contact h2 .accent { color: var(--accent); }
+
+  .contact__links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 2px solid var(--ink);
+  }
+
+  .contact__links a {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    border-left: 2px solid var(--ink);
+  }
+
+  .contact__links a:first-child { border-left: none; }
+
+  .contact__links a:hover,
+  .contact__links a:focus-visible {
+    background: var(--ink);
+    color: var(--paper);
+    outline: none;
+  }
+
+  /* ---------- MOCKUP BADGE ---------- */
+  .mockup-badge {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 200;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid var(--ink);
+  }
+
+  .mockup-badge em { font-style: normal; color: var(--accent); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 900px) {
+    .nav { flex-wrap: wrap; }
+    .nav__links { flex-wrap: wrap; width: 100%; border-top: 2px solid var(--ink); }
+    .nav__links a { padding: 0.75rem 0.9rem; border-left: none; border-right: 2px solid var(--ink); }
+    .nav__links li:last-child a { border-right: none; }
+    .about__grid { grid-template-columns: 1fr; }
+    .projects__grid { grid-template-columns: 1fr; }
+    .contact__links { grid-template-columns: 1fr; }
+    .contact__links a { border-left: none; border-top: 2px solid var(--ink); }
+    .contact__links a:first-child { border-top: none; }
+    .pub-row { grid-template-columns: 1fr; gap: 0.75rem; }
+    .xp-table thead { display: none; }
+    .xp-table tr { display: block; padding: 1.25rem 0.5rem; border-bottom: 2px solid var(--ink); }
+    .xp-table td { display: block; padding: 0.25rem 0; border-bottom: none; }
+    .about__fact { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+
+  /* ---------- REDUCED MOTION ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .ticker__track { animation: none; }
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav" aria-label="Primary">
+    <a class="nav__brand" href="#home">BE<em>&mdash;</em>ERCEVIK.COM</a>
+    <ul class="nav__links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#publications">Publications</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track">
+    <span>Software Engineer</span><span class="tick-accent">///</span>
+    <span>UC Santa Cruz &mdash; B.S. Computer Science</span><span class="tick-accent">///</span>
+    <span>Persistent &amp; Adaptive</span><span class="tick-accent">///</span>
+    <span>LLM Research</span><span class="tick-accent">///</span>
+    <span>Software Engineer</span><span class="tick-accent">///</span>
+    <span>UC Santa Cruz &mdash; B.S. Computer Science</span><span class="tick-accent">///</span>
+    <span>Persistent &amp; Adaptive</span><span class="tick-accent">///</span>
+    <span>LLM Research</span><span class="tick-accent">///</span>
+  </div>
+</div>
+
+<main>
+
+  <!-- 01 HOME / HERO -->
+  <section id="home" class="hero" aria-labelledby="hero-title">
+    <div class="hero__meta">
+      <span class="meta-label">01 &mdash; Home</span>
+      <span class="meta-label">Portfolio &mdash; 2025</span>
+      <span class="meta-label">Santa Cruz, CA</span>
+      <span class="meta-label">Vol. 01</span>
+    </div>
+    <h1 id="hero-title" class="hero__title">
+      <span class="hero__line">Berat</span>
+      <span class="hero__line hero__line--accent">Ercevik</span>
+    </h1>
+    <div class="hero__sub">
+      <p class="hero__role">Software Engineer</p>
+      <p class="hero__tagline">Persistent and adaptive software engineer. Building systems, shipping research, tutoring the next generation.</p>
+    </div>
+  </section>
+
+  <!-- 02 ABOUT -->
+  <section id="about" aria-labelledby="about-title">
+    <div class="section-head">
+      <span class="section-head__num">02</span>
+      <h2 id="about-title">About</h2>
+    </div>
+    <div class="about__grid">
+      <p class="about__blurb">
+        Persistent and adaptive software engineer with a focus on
+        <span class="accent">LLM systems</span>, agent optimization, and
+        shipping software that holds up under real use.
+      </p>
+      <dl class="about__facts">
+        <div class="about__fact">
+          <dt>Name</dt>
+          <dd>Berat Ercevik</dd>
+        </div>
+        <div class="about__fact">
+          <dt>Role</dt>
+          <dd>Software Engineer</dd>
+        </div>
+        <div class="about__fact">
+          <dt>Education</dt>
+          <dd>UC Santa Cruz &mdash; B.S. Computer Science</dd>
+        </div>
+        <div class="about__fact">
+          <dt>Focus</dt>
+          <dd>AI Systems / LLM Research / Full-Stack</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 03 PUBLICATIONS -->
+  <section id="publications" aria-labelledby="pub-title">
+    <div class="section-head">
+      <span class="section-head__num">03</span>
+      <h2 id="pub-title">Publications</h2>
+    </div>
+    <article class="pub-row">
+      <span class="pub-row__num">P.01</span>
+      <h3>SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision</h3>
+      <span class="pub-row__tag">Paper</span>
+    </article>
+    <article class="pub-row">
+      <span class="pub-row__num">P.02</span>
+      <h3>@GrokSet: Multi-party Human-LLM Interactions in Social Media</h3>
+      <span class="pub-row__tag">Paper</span>
+    </article>
+  </section>
+
+  <!-- 04 EXPERIENCE -->
+  <section id="experience" aria-labelledby="xp-title">
+    <div class="section-head">
+      <span class="section-head__num">04</span>
+      <h2 id="xp-title">Experience</h2>
+    </div>
+    <table class="xp-table">
+      <thead>
+        <tr>
+          <th scope="col">Role</th>
+          <th scope="col">Type</th>
+          <th scope="col">Index</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="xp-role">AI Systems Engineer Intern</td>
+          <td class="mono">Internship</td>
+          <td class="mono xp-accent">X.01</td>
+        </tr>
+        <tr>
+          <td class="xp-role">DSA Tutor</td>
+          <td class="mono">Teaching</td>
+          <td class="mono xp-accent">X.02</td>
+        </tr>
+        <tr>
+          <td class="xp-role">LLM Researcher</td>
+          <td class="mono">Research</td>
+          <td class="mono xp-accent">X.03</td>
+        </tr>
+        <tr>
+          <td class="xp-role">SWE Intern</td>
+          <td class="mono">Internship</td>
+          <td class="mono xp-accent">X.04</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 05 PROJECTS -->
+  <section id="projects" aria-labelledby="proj-title">
+    <div class="section-head">
+      <span class="section-head__num">05</span>
+      <h2 id="proj-title">Projects</h2>
+    </div>
+    <div class="projects__grid">
+      <article class="project-card">
+        <span class="project-card__num">PRJ.01</span>
+        <h3>Vitae</h3>
+        <p>Selected build &mdash; end-to-end with a focus on correctness and clean architecture.</p>
+      </article>
+      <article class="project-card">
+        <span class="project-card__num">PRJ.02</span>
+        <h3>AI Discord Chatbot</h3>
+        <p>Selected build &mdash; LLM-powered chatbot for Discord. Real-time interaction, prompt design, deployment.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- 06 SKILLS -->
+  <section id="skills" aria-labelledby="skills-title">
+    <div class="section-head">
+      <span class="section-head__num">06</span>
+      <h2 id="skills-title">Skills</h2>
+    </div>
+    <p class="skills-cloud">
+      Python<span class="sep">/</span>TypeScript<span class="sep">/</span>JavaScript<span class="sep">/</span>React<span class="sep">/</span>Next.js<span class="sep">/</span>Node.js<span class="sep">/</span>PyTorch<span class="sep">/</span>LLMs<span class="sep">/</span><span class="dim">Prompt Engineering</span><span class="sep">/</span>RAG<span class="sep">/</span>Agents<span class="sep">/</span>SQL<span class="sep">/</span>Git<span class="sep">/</span>Docker<span class="sep">/</span><span class="dim">Data Structures</span><span class="sep">/</span><span class="dim">Algorithms</span><span class="sep">/</span>REST APIs<span class="sep">/</span>Testing
+    </p>
+  </section>
+
+  <!-- 07 CONTACT -->
+  <section id="contact" class="contact" aria-labelledby="contact-title">
+    <div class="section-head">
+      <span class="section-head__num">07</span>
+      <span class="meta-label">Contact</span>
+    </div>
+    <h2 id="contact-title">Let's <span class="accent">connect.</span></h2>
+    <div class="contact__links">
+      <a href="#">GitHub</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">Resume</a>
+    </div>
+  </section>
+
+</main>
+
+<div class="mockup-badge" aria-hidden="true">MOCKUP <em>&mdash;</em> Editorial Brutalist</div>
+
+</body>
+</html>

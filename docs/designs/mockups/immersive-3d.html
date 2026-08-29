@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MOCKUP — Immersive 3D Journey</title>
+<style>
+  :root {
+    --bg: #05070c;
+    --ink: #e8eef5;
+    --muted: #8b98a8;
+    --cyan: #00d8ff;
+    --emerald: #20d98b;
+    --line: rgba(255, 255, 255, 0.08);
+    --card: rgba(255, 255, 255, 0.03);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    overflow-x: clip;
+  }
+  ::selection { background: var(--cyan); color: #04121a; }
+  a { color: inherit; }
+
+  .badge {
+    position: fixed; right: 12px; bottom: 12px; z-index: 50;
+    font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    background: rgba(0, 216, 255, 0.12); color: var(--cyan);
+    border: 1px solid rgba(0, 216, 255, 0.4);
+    padding: 8px 10px; border-radius: 999px;
+    pointer-events: none;
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px clamp(16px, 4vw, 48px);
+    background: linear-gradient(to bottom, rgba(5,7,12,0.9), rgba(5,7,12,0));
+    backdrop-filter: blur(8px);
+  }
+  nav .mark {
+    font: 800 14px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  nav .mark span { color: var(--cyan); }
+  nav ul { display: flex; gap: clamp(10px, 2vw, 22px); list-style: none; flex-wrap: wrap; }
+  nav ul a {
+    font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none; padding: 8px 2px;
+  }
+  nav ul a:hover, nav ul a:focus-visible { color: var(--ink); }
+
+  .frame { position: relative; max-width: 1080px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+  .path {
+    position: absolute; left: clamp(4px, 1.5vw, 18px); top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(to bottom, var(--cyan), var(--emerald));
+    opacity: 0.5; border-radius: 2px;
+  }
+  section {
+    position: relative;
+    padding: clamp(72px, 12vh, 128px) 0 clamp(48px, 8vh, 96px) clamp(28px, 6vw, 64px);
+    perspective: 1200px;
+  }
+  .idx {
+    position: absolute; left: clamp(-14px, -0.5vw, -6px); top: clamp(76px, 12vh, 132px);
+    transform: translateX(-50%);
+    font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--bg); background: linear-gradient(135deg, var(--cyan), var(--emerald));
+    padding: 6px 8px; border-radius: 6px; letter-spacing: 0.08em;
+  }
+  .kicker {
+    font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--cyan);
+    margin-bottom: 14px;
+  }
+  h1, h2 { line-height: 1.02; letter-spacing: -0.03em; font-weight: 800; }
+  h2 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 22px; }
+  .lead { color: var(--muted); max-width: 60ch; }
+
+  /* Hero */
+  #home { min-height: 100svh; display: grid; align-content: center; }
+  .hero-stage { perspective: 900px; }
+  .hero-name {
+    font-size: clamp(3.4rem, 12vw, 9.5rem);
+    transform-style: preserve-3d;
+    transition: transform 120ms linear;
+    will-change: transform;
+    background: linear-gradient(120deg, var(--ink) 30%, var(--cyan) 70%, var(--emerald));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-role {
+    margin-top: 18px;
+    font: 500 clamp(0.9rem, 2vw, 1.1rem)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted); letter-spacing: 0.08em;
+  }
+  .hero-role b { color: var(--ink); font-weight: 600; }
+  .scroll-hint {
+    margin-top: 40px; display: inline-flex; align-items: center; gap: 10px;
+    font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+  }
+  .scroll-hint::before {
+    content: ""; width: 42px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--emerald));
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: clamp(20px, 3vw, 32px);
+    transform-style: preserve-3d;
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), border-color 300ms, box-shadow 300ms;
+    will-change: transform;
+  }
+  .card:hover {
+    border-color: rgba(0, 216, 255, 0.35);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 216, 255, 0.12), 0 0 40px rgba(0, 216, 255, 0.08);
+  }
+  .grid { display: grid; gap: 18px; }
+  .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 767px) { .grid.two { grid-template-columns: 1fr; } }
+
+  .pub h3 { font-size: clamp(1.05rem, 2.2vw, 1.35rem); line-height: 1.3; margin-bottom: 8px; }
+  .pub p { color: var(--muted); font-size: 0.95rem; }
+  .tag {
+    display: inline-block; margin-top: 14px;
+    font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--emerald); border: 1px solid rgba(32, 217, 139, 0.35);
+    padding: 6px 10px; border-radius: 999px;
+  }
+
+  /* Experience timeline */
+  .xp { display: grid; gap: 14px; }
+  .xp-item { display: grid; grid-template-columns: 150px 1fr; gap: 18px; align-items: baseline; }
+  @media (max-width: 640px) { .xp-item { grid-template-columns: 1fr; gap: 4px; } }
+  .xp-when {
+    font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--cyan); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .xp-role { font-weight: 700; font-size: clamp(1.05rem, 2.4vw, 1.4rem); }
+  .xp-org { color: var(--muted); font-size: 0.95rem; }
+
+  /* Skills */
+  .skills { display: flex; flex-wrap: wrap; gap: 10px; }
+  .skill {
+    font: 500 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted); border: 1px solid var(--line);
+    padding: 10px 14px; border-radius: 999px;
+    transition: color 200ms, border-color 200ms, transform 200ms;
+  }
+  .skill:hover { color: var(--ink); border-color: rgba(0, 216, 255, 0.4); transform: translateZ(12px); }
+
+  /* Contact */
+  footer { padding: 0 0 96px; }
+  .contact-links { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 26px; }
+  .contact-links a {
+    text-decoration: none;
+    font: 600 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 14px 22px; border-radius: 12px;
+    border: 1px solid var(--line); color: var(--ink);
+    transition: border-color 200ms, background 200ms, transform 200ms;
+  }
+  .contact-links a:hover {
+    border-color: rgba(0, 216, 255, 0.5);
+    background: rgba(0, 216, 255, 0.08);
+    transform: translateY(-2px);
+  }
+
+  /* Reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(36px) rotateX(8deg) translateZ(-60px); }
+  .reveal.in {
+    opacity: 1; transform: none;
+    transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @media (max-width: 767px) {
+    .hero-name { transform: none !important; }
+    .card:hover { transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; }
+    .hero-name { transform: none !important; transition: none; }
+    .card, .skill, .contact-links a { transition: none; }
+    .card:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<nav aria-label="Primary">
+  <a class="mark" href="#home">BE<span>.</span></a>
+  <ul>
+    <li><a href="#home">Home</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#publications">Publications</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<main class="frame">
+  <div class="path" aria-hidden="true"></div>
+
+  <section id="home" aria-labelledby="home-heading">
+    <span class="idx" aria-hidden="true">01</span>
+    <div class="hero-stage">
+      <h1 class="hero-name" id="home-heading" data-tilt-hero>Berat Ercevik</h1>
+    </div>
+    <p class="hero-role"><b>Software Engineer</b> — persistent and adaptive software engineer</p>
+    <span class="scroll-hint">Scroll to begin the journey</span>
+  </section>
+
+  <section id="about" aria-labelledby="about-heading">
+    <span class="idx" aria-hidden="true">02</span>
+    <p class="kicker">Station 02 — About</p>
+    <h2 id="about-heading">About</h2>
+    <div class="card reveal">
+      <p class="lead">I'm a software engineer who studied Computer Science at UC Santa Cruz (B.S.). I care about building adaptive systems, from LLM research to full-stack products, and I keep shipping until the problem is solved.</p>
+    </div>
+  </section>
+
+  <section id="publications" aria-labelledby="publications-heading">
+    <span class="idx" aria-hidden="true">03</span>
+    <p class="kicker">Station 03 — Publications</p>
+    <h2 id="publications-heading">Publications</h2>
+    <div class="grid two">
+      <article class="card pub reveal">
+        <h3>SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision</h3>
+        <p>Decomposing agent skills into subskills to improve capability without direct task supervision.</p>
+        <span class="tag">Research Paper</span>
+      </article>
+      <article class="card pub reveal">
+        <h3>@GrokSet: Multi-party Human-LLM Interactions in Social Media</h3>
+        <p>Studying how humans and LLMs interact across multi-party conversations on social platforms.</p>
+        <span class="tag">Research Paper</span>
+      </article>
+    </div>
+  </section>
+
+  <section id="experience" aria-labelledby="experience-heading">
+    <span class="idx" aria-hidden="true">04</span>
+    <p class="kicker">Station 04 — Experience</p>
+    <h2 id="experience-heading">Experience</h2>
+    <div class="xp">
+      <div class="xp-item reveal"><span class="xp-when">Internship</span><div><div class="xp-role">AI Systems Engineer Intern</div><div class="xp-org">Building and evaluating LLM-powered systems.</div></div></div>
+      <div class="xp-item reveal"><span class="xp-when">Teaching</span><div><div class="xp-role">DSA Tutor</div><div class="xp-org">Coaching students through data structures & algorithms.</div></div></div>
+      <div class="xp-item reveal"><span class="xp-when">Research</span><div><div class="xp-role">LLM Researcher</div><div class="xp-org">Publication-driven research on agent skill optimization.</div></div></div>
+      <div class="xp-item reveal"><span class="xp-when">Internship</span><div><div class="xp-role">SWE Intern</div><div class="xp-org">Shipping production software with a product team.</div></div></div>
+    </div>
+  </section>
+
+  <section id="projects" aria-labelledby="projects-heading">
+    <span class="idx" aria-hidden="true">05</span>
+    <p class="kicker">Station 05 — Projects</p>
+    <h2 id="projects-heading">Projects</h2>
+    <div class="grid two">
+      <article class="card pub reveal">
+        <h3>Vitae</h3>
+        <p>A resume-building product experience — structured content in, polished documents out.</p>
+        <span class="tag">Featured</span>
+      </article>
+      <article class="card pub reveal">
+        <h3>AI Discord Chatbot</h3>
+        <p>A conversational bot bringing LLM assistance into community servers.</p>
+        <span class="tag">Build</span>
+      </article>
+    </div>
+  </section>
+
+  <section id="skills" aria-labelledby="skills-heading">
+    <span class="idx" aria-hidden="true">06</span>
+    <p class="kicker">Station 06 — Skills</p>
+    <h2 id="skills-heading">Skills</h2>
+    <div class="skills reveal">
+      <span class="skill">TypeScript</span><span class="skill">Python</span><span class="skill">React</span>
+      <span class="skill">Next.js</span><span class="skill">Node.js</span><span class="skill">Three.js</span>
+      <span class="skill">LLMs</span><span class="skill">Prompt Engineering</span><span class="skill">RAG</span>
+      <span class="skill">Data Structures</span><span class="skill">Algorithms</span><span class="skill">Git</span>
+    </div>
+  </section>
+
+  <footer id="contact" aria-labelledby="contact-heading">
+    <section aria-labelledby="contact-heading" style="padding-bottom:0">
+      <span class="idx" aria-hidden="true">07</span>
+      <p class="kicker">Station 07 — Contact</p>
+      <h2 id="contact-heading">Let's connect.</h2>
+      <p class="lead">Open to conversations about engineering, research, and collaboration.</p>
+      <div class="contact-links">
+        <a href="#">GitHub</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">Resume</a>
+      </div>
+    </section>
+  </footer>
+</main>
+
+<div class="badge" aria-hidden="true">Mockup — Immersive 3D</div>
+
+<script>
+  (function () {
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var narrow = window.matchMedia("(max-width: 767px)").matches;
+
+    // Reveal on scroll
+    var revealEls = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window && !reduced) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.18 });
+      revealEls.forEach(function (el) { io.observe(el); });
+    } else {
+      revealEls.forEach(function (el) { el.classList.add("in"); });
+    }
+
+    // Hero 3D tilt
+    var hero = document.querySelector("[data-tilt-hero]");
+    if (hero && !reduced && !narrow) {
+      var tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
+      function loop() {
+        cx += (tx - cx) * 0.08; cy += (ty - cy) * 0.08;
+        hero.style.transform = "rotateX(" + cy.toFixed(2) + "deg) rotateY(" + cx.toFixed(2) + "deg)";
+        raf = (Math.abs(tx - cx) > 0.01 || Math.abs(ty - cy) > 0.01) ? requestAnimationFrame(loop) : 0;
+      }
+      document.addEventListener("pointermove", function (ev) {
+        tx = (ev.clientX / window.innerWidth - 0.5) * 10;
+        ty = (0.5 - ev.clientY / window.innerHeight) * 8;
+        if (!raf) raf = requestAnimationFrame(loop);
+      });
+    }
+
+    // Card tilt toward cursor
+    if (!reduced && !narrow) {
+      document.querySelectorAll(".card").forEach(function (card) {
+        card.addEventListener("pointermove", function (ev) {
+          var r = card.getBoundingClientRect();
+          var px = (ev.clientX - r.left) / r.width - 0.5;
+          var py = (ev.clientY - r.top) / r.height - 0.5;
+          card.style.transform = "rotateY(" + (px * 6).toFixed(2) + "deg) rotateX(" + (-py * 6).toFixed(2) + "deg) translateZ(10px)";
+        });
+        card.addEventListener("pointerleave", function () { card.style.transform = ""; });
+      });
+    }
+  })();
+</script>
+</body>
+</html>

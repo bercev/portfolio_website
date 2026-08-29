@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MOCKUP — Horizontal Cinema</title>
+<style>
+  :root {
+    --bg: #111214;
+    --ink: #f2efe9;
+    --muted: #9a968e;
+    --amber: #ffbf3f;
+    --bar: #0a0b0c;
+    --line: rgba(242, 239, 233, 0.14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+    overflow: hidden;
+  }
+  ::selection { background: var(--amber); color: #171204; }
+  a { color: inherit; }
+
+  /* Letterbox bars */
+  .bar { position: fixed; left: 0; right: 0; height: 52px; background: var(--bar); z-index: 30; }
+  .bar.top { top: 0; border-bottom: 1px solid var(--line); }
+  .bar.bottom { bottom: 0; border-top: 1px solid var(--line); }
+
+  .bar.top { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+  .mark {
+    font: 800 13px/1 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: 0.22em; text-transform: uppercase;
+  }
+  .mark em { color: var(--amber); font-style: normal; }
+  .slate-nav { display: flex; gap: 4px; list-style: none; flex-wrap: wrap; }
+  .slate-nav button {
+    appearance: none; background: none; border: 0; cursor: pointer;
+    font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); padding: 10px 8px;
+  }
+  .slate-nav button:hover, .slate-nav button:focus-visible { color: var(--ink); }
+  .slate-nav button[aria-current="true"] { color: var(--amber); }
+
+  .bar.bottom { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+  .timecode {
+    font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.18em; color: var(--muted);
+  }
+  .timecode b { color: var(--amber); font-weight: 700; }
+  .reel {
+    width: min(320px, 40vw); height: 2px; background: var(--line); position: relative;
+  }
+  .reel i {
+    position: absolute; inset: 0 auto 0 0; width: 14%;
+    background: var(--amber); transition: width 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Film grain + vignette */
+  .grain {
+    position: fixed; inset: 0; z-index: 20; pointer-events: none; opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  }
+  .vignette {
+    position: fixed; inset: 0; z-index: 19; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.5) 100%);
+  }
+
+  /* Horizontal track */
+  .stage { position: fixed; inset: 52px 0; overflow: hidden; }
+  .track {
+    display: flex; height: 100%;
+    transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .scene {
+    flex: 0 0 100vw; height: 100%;
+    display: grid; align-content: center;
+    padding: clamp(24px, 6vw, 96px);
+    position: relative;
+    border-right: 1px solid var(--line);
+  }
+  .scene-num {
+    position: absolute; top: 26px; left: clamp(24px, 6vw, 96px);
+    font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.26em; text-transform: uppercase; color: var(--amber);
+  }
+  .scene-ghost {
+    position: absolute; right: -0.04em; bottom: -0.18em;
+    font-size: clamp(8rem, 26vw, 22rem); font-weight: 800; line-height: 1;
+    color: transparent; -webkit-text-stroke: 1px rgba(242, 239, 233, 0.07);
+    pointer-events: none; user-select: none;
+  }
+  h1, h2 { line-height: 0.98; letter-spacing: -0.02em; font-weight: 800; text-transform: uppercase; }
+  h1 { font-size: clamp(3rem, 11vw, 9rem); }
+  h2 { font-size: clamp(2rem, 6vw, 4.6rem); margin-bottom: 26px; }
+  .kicker {
+    font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .lead { color: var(--muted); max-width: 56ch; font-size: clamp(0.95rem, 1.6vw, 1.15rem); }
+  .amber { color: var(--amber); }
+
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; max-width: 980px; }
+  .card {
+    border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02);
+    padding: clamp(18px, 2.6vw, 30px); aspect-ratio: 16 / 9;
+    display: grid; align-content: end; gap: 8px;
+    transition: border-color 250ms, transform 250ms;
+  }
+  .card:hover { border-color: var(--amber); transform: translateY(-4px); }
+  .card h3 { font-size: clamp(1.1rem, 2.4vw, 1.7rem); text-transform: uppercase; letter-spacing: 0.01em; }
+  .card p { color: var(--muted); font-size: 0.92rem; }
+  .card .slate {
+    font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.2em; color: var(--amber); text-transform: uppercase;
+  }
+
+  .credits { display: grid; gap: 0; max-width: 860px; border-top: 1px solid var(--line); }
+  .credit {
+    display: grid; grid-template-columns: 130px 1fr; gap: 20px; align-items: baseline;
+    padding: 18px 0; border-bottom: 1px solid var(--line);
+  }
+  .credit .role-tag {
+    font: 700 10px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber);
+  }
+  .credit .role { font-size: clamp(1.05rem, 2.4vw, 1.6rem); font-weight: 700; text-transform: uppercase; }
+  .credit .org { color: var(--muted); font-size: 0.92rem; }
+
+  .skill-cloud { display: flex; flex-wrap: wrap; gap: 10px; max-width: 860px; }
+  .skill {
+    font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid var(--line); color: var(--muted);
+    padding: 12px 16px;
+  }
+  .skill:hover { color: var(--ink); border-color: var(--amber); }
+
+  .end-links { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+  .end-links a {
+    text-decoration: none;
+    font: 700 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 16px 26px; border: 1px solid var(--line);
+    transition: background 200ms, color 200ms, border-color 200ms;
+  }
+  .end-links a:hover { background: var(--amber); color: #171204; border-color: var(--amber); }
+
+  .badge {
+    position: fixed; right: 14px; bottom: 64px; z-index: 40;
+    font: 700 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--amber); border: 1px solid rgba(255, 191, 63, 0.5);
+    padding: 7px 9px; pointer-events: none;
+  }
+
+  /* Mobile: vertical fallback */
+  @media (max-width: 860px) {
+    body { overflow: auto; }
+    .stage { position: static; inset: auto; }
+    .track { display: block; height: auto; transform: none !important; transition: none; }
+    .scene { flex: none; width: 100%; height: auto; min-height: 88svh; border-right: 0; border-bottom: 1px solid var(--line); }
+    .bar.top, .bar.bottom { position: sticky; }
+    .bar.top { top: 0; }
+    .bar.bottom { display: none; }
+    .cards { grid-template-columns: 1fr; }
+    .scene-ghost { font-size: 7rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .track { transition: none; }
+    .reel i { transition: none; }
+    .card, .end-links a { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="bar top">
+  <span class="mark">Berat Ercevik <em>—</em> A Portfolio Film</span>
+  <ul class="slate-nav" aria-label="Scenes">
+    <li><button type="button" data-goto="0" aria-current="true">Home</button></li>
+    <li><button type="button" data-goto="1">About</button></li>
+    <li><button type="button" data-goto="2">Publications</button></li>
+    <li><button type="button" data-goto="3">Experience</button></li>
+    <li><button type="button" data-goto="4">Projects</button></li>
+    <li><button type="button" data-goto="5">Skills</button></li>
+    <li><button type="button" data-goto="6">Contact</button></li>
+  </ul>
+</div>
+
+<div class="stage" id="stage">
+  <div class="track" id="track">
+    <section class="scene" aria-label="Scene 1 — Home">
+      <span class="scene-num">Scene 01 — Home</span>
+      <span class="scene-ghost" aria-hidden="true">01</span>
+      <p class="kicker">A portfolio presentation</p>
+      <h1>Berat<br />Ercevik</h1>
+      <p class="lead" style="margin-top:20px"><span class="amber">Software Engineer</span> — persistent and adaptive software engineer.</p>
+    </section>
+
+    <section class="scene" aria-label="Scene 2 — About">
+      <span class="scene-num">Scene 02 — About</span>
+      <span class="scene-ghost" aria-hidden="true">02</span>
+      <p class="kicker">The setup</p>
+      <h2>About</h2>
+      <p class="lead">Computer Science at <span class="amber">UC Santa Cruz</span> (B.S.). I build adaptive systems — from LLM research to full-stack products — and I keep shipping until the problem is solved.</p>
+    </section>
+
+    <section class="scene" aria-label="Scene 3 — Publications">
+      <span class="scene-num">Scene 03 — Publications</span>
+      <span class="scene-ghost" aria-hidden="true">03</span>
+      <p class="kicker">Featured reels</p>
+      <h2>Publications</h2>
+      <div class="cards">
+        <article class="card">
+          <span class="slate">Paper A</span>
+          <h3>SkillOptimizer</h3>
+          <p>Agent Skill Optimization Through Subskills Without Task Supervision.</p>
+        </article>
+        <article class="card">
+          <span class="slate">Paper B</span>
+          <h3>@GrokSet</h3>
+          <p>Multi-party Human-LLM Interactions in Social Media.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="scene" aria-label="Scene 4 — Experience">
+      <span class="scene-num">Scene 04 — Experience</span>
+      <span class="scene-ghost" aria-hidden="true">04</span>
+      <p class="kicker">End credits</p>
+      <h2>Experience</h2>
+      <div class="credits">
+        <div class="credit"><span class="role-tag">Starring</span><div><div class="role">AI Systems Engineer Intern</div><div class="org">Building and evaluating LLM-powered systems.</div></div></div>
+        <div class="credit"><span class="role-tag">Co-star</span><div><div class="role">DSA Tutor</div><div class="org">Coaching students through data structures & algorithms.</div></div></div>
+        <div class="credit"><span class="role-tag">Writer</span><div><div class="role">LLM Researcher</div><div class="org">Publication-driven research on agent skill optimization.</div></div></div>
+        <div class="credit"><span class="role-tag">Crew</span><div><div class="role">SWE Intern</div><div class="org">Shipping production software with a product team.</div></div></div>
+      </div>
+    </section>
+
+    <section class="scene" aria-label="Scene 5 — Projects">
+      <span class="scene-num">Scene 05 — Projects</span>
+      <span class="scene-ghost" aria-hidden="true">05</span>
+      <p class="kicker">Double feature</p>
+      <h2>Projects</h2>
+      <div class="cards">
+        <article class="card">
+          <span class="slate">Feature</span>
+          <h3>Vitae</h3>
+          <p>A resume-building product experience — structured content in, polished documents out.</p>
+        </article>
+        <article class="card">
+          <span class="slate">Short</span>
+          <h3>AI Discord Chatbot</h3>
+          <p>A conversational bot bringing LLM assistance into community servers.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="scene" aria-label="Scene 6 — Skills">
+      <span class="scene-num">Scene 06 — Skills</span>
+      <span class="scene-ghost" aria-hidden="true">06</span>
+      <p class="kicker">The craft</p>
+      <h2>Skills</h2>
+      <div class="skill-cloud">
+        <span class="skill">TypeScript</span><span class="skill">Python</span><span class="skill">React</span>
+        <span class="skill">Next.js</span><span class="skill">Node.js</span><span class="skill">Three.js</span>
+        <span class="skill">LLMs</span><span class="skill">Prompt Engineering</span><span class="skill">RAG</span>
+        <span class="skill">Data Structures</span><span class="skill">Algorithms</span><span class="skill">Git</span>
+      </div>
+    </section>
+
+    <section class="scene" aria-label="Scene 7 — Contact">
+      <span class="scene-num">Scene 07 — Contact</span>
+      <span class="scene-ghost" aria-hidden="true">07</span>
+      <p class="kicker">Fin</p>
+      <h2>Let's connect.</h2>
+      <p class="lead">Open to conversations about engineering, research, and collaboration.</p>
+      <div class="end-links">
+        <a href="#">GitHub</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">Resume</a>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="bar bottom">
+  <span class="timecode"><b id="tc-now">00:01</b> / 00:07</span>
+  <div class="reel" aria-hidden="true"><i id="reel-fill"></i></div>
+</div>
+
+<div class="badge" aria-hidden="true">Mockup — Horizontal Cinema</div>
+
+<script>
+  (function () {
+    var track = document.getElementById("track");
+    var scenes = track.children;
+    var total = scenes.length;
+    var current = 0;
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var mobile = window.matchMedia("(max-width: 860px)").matches;
+    var tcNow = document.getElementById("tc-now");
+    var reelFill = document.getElementById("reel-fill");
+    var navButtons = document.querySelectorAll("[data-goto]");
+
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+    function goTo(i) {
+      current = Math.max(0, Math.min(total - 1, i));
+      if (!mobile) {
+        track.style.transform = "translateX(-" + current * 100 + "vw)";
+      } else {
+        scenes[current].scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+      }
+      tcNow.textContent = "00:" + pad(current + 1);
+      reelFill.style.width = ((current + 1) / total * 100) + "%";
+      navButtons.forEach(function (b) {
+        b.setAttribute("aria-current", Number(b.dataset.goto) === current ? "true" : "false");
+      });
+    }
+
+    navButtons.forEach(function (b) {
+      b.addEventListener("click", function () { goTo(Number(b.dataset.goto)); });
+    });
+
+    if (!mobile) {
+      var lock = false;
+      window.addEventListener("wheel", function (ev) {
+        if (lock) return;
+        var delta = Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : ev.deltaY;
+        if (Math.abs(delta) < 8) return;
+        lock = true;
+        goTo(current + (delta > 0 ? 1 : -1));
+        setTimeout(function () { lock = false; }, reduced ? 60 : 650);
+      }, { passive: true });
+
+      window.addEventListener("keydown", function (ev) {
+        if (["ArrowRight", "PageDown", " "].includes(ev.key)) { ev.preventDefault(); goTo(current + 1); }
+        if (["ArrowLeft", "PageUp"].includes(ev.key)) { ev.preventDefault(); goTo(current - 1); }
+        if (ev.key === "Home") { ev.preventDefault(); goTo(0); }
+        if (ev.key === "End") { ev.preventDefault(); goTo(total - 1); }
+      });
+
+      var startX = null;
+      window.addEventListener("touchstart", function (ev) { startX = ev.touches[0].clientX; }, { passive: true });
+      window.addEventListener("touchend", function (ev) {
+        if (startX === null) return;
+        var dx = ev.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 48) goTo(current + (dx < 0 ? 1 : -1));
+        startX = null;
+      }, { passive: true });
+    }
+
+    goTo(0);
+  })();
+</script>
+</body>
+</html>
