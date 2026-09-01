@@ -88,11 +88,15 @@
   --effect-ascii-tertiary: var(--effect-chroma-coral);
 
   --z-effect-background: 0;
+  --z-journey-scene: 2;
   --z-content-frost: 5;
   --z-page-content: 10;
   --z-site-header: 40;
   --z-site-navigation: 50;
   --z-effect-pointer: 60;
+
+  --journey-space-bg: #eef5fb;
+  --journey-space-fog: #eef5fb;
 
   color-scheme: light;
 }
@@ -149,6 +153,9 @@
   --shadow-offset-y: 1px;
   --letter-spacing: 0em;
   --spacing: 0.25rem;
+
+  --journey-space-bg: #05070c;
+  --journey-space-fog: #05070c;
 
   color-scheme: dark;
 }
@@ -605,6 +612,250 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   }
 }
 
+/* ---------- Immersive 3D Journey ---------- */
+
+.journey-scene {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-journey-scene);
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.journey-vignette,
+.journey-rail {
+  display: none;
+}
+
+html[data-journey="active"] .journey-vignette {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-journey-scene) + 1);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(196, 216, 235, 0.4) 100%
+  );
+}
+
+html[data-journey="active"] .journey-rail {
+  display: block;
+  position: fixed;
+  right: clamp(10px, 2vw, 24px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--z-site-navigation);
+  width: 2px;
+  height: 34vh;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--foreground) 14%, transparent);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.journey-rail-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  background: linear-gradient(to bottom, var(--portfolio-accent), var(--effect-chroma-emerald));
+  transform-origin: top;
+  transform: scaleY(0);
+  border-radius: 2px;
+}
+
+[data-journey-station] {
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1200px;
+  padding: clamp(72px, 12vh, 128px) clamp(16px, 5vw, 64px);
+}
+
+html[data-journey="active"] [data-effect-layer="background"] {
+  display: none;
+}
+
+.journey-kicker {
+  margin-bottom: 14px;
+  font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--portfolio-accent);
+}
+
+.journey-station-heading {
+  margin-bottom: 22px;
+  color: var(--foreground);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.journey-lead {
+  color: var(--muted-foreground);
+  max-width: 62ch;
+}
+
+.journey-panel {
+  background: color-mix(in srgb, var(--card) 58%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: clamp(20px, 3vw, 32px);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--shadow-color) 22%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .journey-panel {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.journey-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.journey-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 767px) {
+  .journey-grid--two {
+    grid-template-columns: 1fr;
+  }
+}
+
+.journey-pub-row {
+  border-bottom: 1px solid var(--border);
+  padding: clamp(16px, 2vw, 24px) 0;
+}
+
+.journey-pub-row:last-child {
+  border-bottom: 0;
+}
+
+.journey-tag {
+  display: inline-flex;
+  margin-top: 14px;
+  font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--effect-chroma-emerald);
+  border: 1px solid color-mix(in srgb, var(--effect-chroma-emerald) 35%, transparent);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.journey-xp-item {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 18px;
+  align-items: baseline;
+  border-bottom: 1px solid var(--border);
+  padding: clamp(16px, 2vw, 24px) 0;
+}
+
+.journey-xp-item:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .journey-xp-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+.journey-xp-when {
+  font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--portfolio-accent);
+}
+
+.journey-project {
+  display: flex;
+  flex-direction: column;
+}
+
+.journey-skill-group h3 {
+  margin-bottom: 12px;
+  font: 700 clamp(1.05rem, 2.2vw, 1.35rem)/1.3 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.journey-skill {
+  display: inline-block;
+  margin: 0 8px 8px 0;
+  font: 500 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 34%, transparent);
+}
+
+.journey-contact-note {
+  margin-top: 18px;
+  font: 600 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Hero: the 3D particle name IS the display; a styled name is the flat fallback. */
+[data-hero-name-fallback] {
+  display: grid;
+  place-items: center;
+  min-height: clamp(8rem, 22vw, 15rem);
+  font-size: clamp(4.5rem, 18vw, 12rem);
+  font-weight: 800;
+  line-height: 0.8;
+  letter-spacing: -0.075em;
+  color: var(--hero-particle-accent);
+  overflow: hidden;
+}
+
+html[data-journey="active"] [data-hero-name-fallback] {
+  display: none;
+}
+
+.journey-scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 32px;
+  font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-scroll-hint::before {
+  content: "";
+  width: 42px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--portfolio-accent), var(--effect-chroma-emerald));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-journey="active"] .journey-rail {
+    display: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

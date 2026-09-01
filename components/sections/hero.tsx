@@ -1,37 +1,32 @@
 import type { PortfolioContent } from "@/data/content";
 
-import { HeroParticleText } from "@/components/effects/hero-particle-text";
-import { Skills } from "@/components/sections/skills";
-
 type HeroContent = {
   readonly identity: PortfolioContent["identity"];
   readonly hero: PortfolioContent["hero"];
-  readonly skills: PortfolioContent["skills"];
 };
 
-export function Hero({
-  content,
-  skillsHeading,
-}: {
-  content: HeroContent;
-  skillsHeading: PortfolioContent["navigation"][number]["label"];
-}) {
-  const { identity, hero, skills } = content;
+export function Hero({ content }: { content: HeroContent }) {
+  const { identity, hero } = content;
 
   return (
     <section
       id="home"
       aria-labelledby="home-heading"
-      className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] items-center"
+      className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] items-end justify-center text-center"
     >
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-4 px-4 pb-12 pt-20 text-center sm:gap-5 sm:px-6 sm:pb-16 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-5 px-4 pb-[16vh] pt-24 sm:px-6 lg:px-8">
         <h1
           id="home-heading"
           aria-label={identity.name}
-          className="w-full text-foreground"
+          className="sr-only"
         >
-          <HeroParticleText text={identity.shortName} />
+          {identity.name}
         </h1>
+
+        {/* The journey canvas renders the name in 3D particles; this is the flat fallback. */}
+        <div data-hero-name-fallback aria-hidden="true">
+          {identity.shortName.toUpperCase()}
+        </div>
 
         {hero.tagline ? (
           <p className="max-w-3xl text-lg font-medium leading-relaxed text-muted-foreground sm:text-xl sm:leading-relaxed lg:text-2xl">
@@ -39,11 +34,13 @@ export function Hero({
           </p>
         ) : null}
 
-        <Skills content={skills} heading={skillsHeading} />
+        {hero.bio ? (
+          <p className="max-w-3xl text-base font-medium leading-relaxed text-muted-foreground sm:text-lg sm:leading-relaxed">
+            {hero.bio}
+          </p>
+        ) : null}
 
-        <p className="max-w-3xl text-lg font-medium leading-relaxed text-foreground sm:text-xl sm:leading-relaxed lg:text-2xl">
-          {hero.bio}
-        </p>
+        <span className="journey-scroll-hint">Scroll to fly the journey</span>
       </div>
     </section>
   );

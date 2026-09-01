@@ -6,8 +6,8 @@ export function ContentFrost() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const heroText = document.querySelector("[data-hero-particle-text]");
-    if (!heroText) return;
+    const hero = document.getElementById("home");
+    if (!hero) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -16,7 +16,7 @@ export function ContentFrost() {
       { threshold: 0 },
     );
 
-    observer.observe(heroText);
+    observer.observe(hero);
     return () => observer.disconnect();
   }, []);
 

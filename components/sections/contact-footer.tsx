@@ -1,6 +1,6 @@
 import type { PortfolioContent } from "@/data/content";
 
-import { SectionHeading } from "@/components/ui/section-heading";
+import { Station } from "@/components/ui/station";
 
 export function ContactFooter({
   content,
@@ -8,21 +8,18 @@ export function ContactFooter({
   content: PortfolioContent["contact"];
 }) {
   return (
-    <section
+    <Station
       id="contact"
-      aria-label={content.heading}
-      className="relative scroll-mt-[calc(4rem+env(safe-area-inset-top))] pt-20 sm:pt-24 lg:pt-32"
+      station={7}
+      kicker="Connect"
+      heading={content.heading}
     >
-      <footer className="border-t border-border">
-        <div className="mx-auto w-full max-w-7xl px-4 pb-[max(7rem,calc(5rem+env(safe-area-inset-bottom)))] pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pt-20">
-          <div>
-            <SectionHeading title={content.heading} />
-            <p className="mt-6 max-w-[52ch] text-lg leading-8 text-muted-foreground">
-              {content.message}
-            </p>
-          </div>
-        </div>
-      </footer>
-    </section>
+      <div className="journey-panel">
+        <p className="journey-lead text-lg leading-8">{content.message}</p>
+        <p className="journey-contact-note">
+          Reach me through the utility menu — GitHub, LinkedIn, and resume.
+        </p>
+      </div>
+    </Station>
   );
 }
