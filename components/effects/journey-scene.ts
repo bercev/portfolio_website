@@ -398,6 +398,12 @@ private readonly handleResize = () => {
     window.addEventListener("scroll", this.handleScroll, { passive: true });
   }
 
+  /** Damped scroll progress, clamped and NaN-safe for the curve lookup. */
+  private journeyT(): number {
+    const t = this.reducedMotion ? 0 : this.smoothT;
+    return Number.isFinite(t) ? THREE.MathUtils.clamp(t, 0, 1) : 0;
+  }
+
   private renderOneFrame(time: number) {
     const t = time / 1000;
     const scatter = this.reducedMotion ? 0 : THREE.MathUtils.smoothstep(this.smoothT, 0.02, 0.16);
@@ -427,9 +433,9 @@ private readonly handleResize = () => {
       this.comet.scale.setScalar(1 + Math.sin(t * 4) * 0.3);
     }
 
-    const pos = this.curve.getPointAt(THREE.MathUtils.clamp(this.smoothT, 0, 1));
+    const pos = this.curve.getPointAt(this.journeyT());
     this.camera.position.copy(pos);
-    this.curve.getTangentAt(THREE.MathUtils.clamp(this.smoothT, 0, 1), this.tangent);
+    this.curve.getTangentAt(this.journeyT(), this.tangent);
     this.lookTarget.copy(pos).add(this.tangent);
     if (!this.reducedMotion) {
       this.lookTarget.x += this.pointer.x * 1.4;

@@ -40,7 +40,19 @@ function readTokenColor(root: HTMLElement, token: string) {
   root.appendChild(probe);
   const color = getComputedStyle(probe).color;
   probe.remove();
-  return color;
+  return normalizeCssColor(color);
+}
+
+/**
+ * THREE.Color cannot parse wide-gamut serializations such as
+ * `color(srgb 0.5 0.6 0.7)` (what color-mix() tokens compute to),
+ * so rescale them into plain rgb().
+ */
+function normalizeCssColor(value: string): string {
+  const srgb = value.match(/color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/i);
+  if (!srgb) return value;
+  const channel = (raw: string) => Math.round(parseFloat(raw) * 255);
+  return `rgb(${channel(srgb[1])}, ${channel(srgb[2])}, ${channel(srgb[3])})`;
 }
 
 export function Journey({
