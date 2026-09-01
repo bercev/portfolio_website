@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Retained Playwright HTML reports contain generated third-party bundles.
     "playwright-report/**",
+    // Three.js vendor bundles bundled into standalone design mockups.
+    "docs/designs/mockups/vendor/**",
   ]),
 ]);
 
