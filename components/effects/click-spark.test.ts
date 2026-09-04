@@ -65,7 +65,7 @@ describe("ClickSpark defaults", () => {
       richer: true,
     });
     expect(richer.sparkCount).toBe(8);
-    expect(richer.sparkRadius).toBe(24);
+    expect(richer.sparkRadius).toBe(27);
     expect(richer.angles).toHaveLength(8);
     // Cardinal-biased: each spark near a page edge (N/E/S/W).
     for (let index = 0; index < richer.angles!.length; index += 1) {

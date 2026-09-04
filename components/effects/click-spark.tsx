@@ -106,18 +106,18 @@ export function resolveSparkBurst({
     return { sparkCount, sparkRadius, angles: null as number[] | null };
   }
 
-  // Peel / edge-flash: cardinal page-edge ticks with light jitter — not a radial confetti burst.
+  // Peel / edge-flash: tight cardinal page-edge ticks — sharper grab flash, not confetti.
   const count = sparkCount + 1;
   const angles: number[] = [];
   for (let index = 0; index < count; index += 1) {
     const edge = (index % 4) * (Math.PI / 2);
-    const jitter = ((index * 0.37) % 1 - 0.5) * 0.28;
+    const jitter = ((index * 0.37) % 1 - 0.5) * 0.16;
     angles.push(edge + jitter);
   }
 
   return {
     sparkCount: count,
-    sparkRadius: Math.round(sparkRadius * 1.2),
+    sparkRadius: Math.round(sparkRadius * 1.35),
     angles,
   };
 }
