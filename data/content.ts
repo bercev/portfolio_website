@@ -122,8 +122,7 @@ export const portfolio = {
   },
   about: {
     bio: [
-      "Day to day I design agent workflows, evidence pipelines, and the full-stack surfaces that make them usable.",
-      "Published research on LLM behavior in the wild (@GrokSet) and agent skill optimization (SkillOptimizer) sits alongside shipping work like Vitae.",
+      "UC Santa Cruz CS (4.0) — agent workflows, evidence pipelines, and published LLM research (@GrokSet, SkillOptimizer) alongside shipping work like Vitae.",
     ],
     education: {
       institution: "UC Santa Cruz",
