@@ -167,7 +167,7 @@ export function Journey({
           fog,
           palette: colors,
           stationCounts,
-          lightTheme: resolvedTheme !== "dark",
+          lightTheme: !root.classList.contains("dark"),
           onProgress: (t) => {
             const rail = railFillRef.current;
             if (rail) rail.style.transform = `scaleY(${t})`;
