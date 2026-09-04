@@ -116,25 +116,35 @@ export const portfolio = {
     { id: "contact", label: "Contact" },
   ],
   hero: {
-    tagline: "Persistent and adaptive software engineer",
-    bio: "I’m a software engineer building full-stack applications, developing agentic systems, and conducting AI research while studying Computer Science at UC Santa Cruz.",
+    tagline:
+      "AI systems engineer — multi-agent products and published LLM research",
+    bio: "I build agentic software systems and study how LLMs behave in the wild. Currently an AI Systems Engineer Intern building multi-agent pipelines, with SkillOptimizer (ICML 2026 AIWILD Workshop) and @GrokSet (arXiv), while finishing CS at UC Santa Cruz (4.0).",
   },
   about: {
     bio: [
-      "I work across a range of programming languages, frameworks, and computer science fundamentals.",
-      "My practical experience spans full-stack applications, agentic systems, and AI research.",
+      "Day to day I design agent workflows, evidence pipelines, and the full-stack surfaces that make them usable.",
+      "Published research on LLM behavior in the wild (@GrokSet) and agent skill optimization (SkillOptimizer) sits alongside shipping work like Vitae.",
     ],
     education: {
       institution: "UC Santa Cruz",
       degree: "B.S. Computer Science",
       gpa: "4.0/4.0",
       dates: "Sep 2024-Dec 2026",
-      coursework: ["DSA", "AI", "ML", "Computer Architecture", "Compiler Design", "Computer Systems Design", "Software Engineering"],
+      coursework: [
+        "DSA",
+        "AI",
+        "ML",
+        "Computer Architecture",
+        "Compiler Design",
+        "Computer Systems Design",
+        "Software Engineering",
+      ],
     },
   },
   publications: [
     {
-      title: "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision.",
+      title:
+        "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision.",
       venue: "ICML 2026 AIWILD Workshop",
       date: "2026",
       href: "https://openreview.net/forum?id=nZYF0aPAMP",
@@ -168,7 +178,7 @@ export const portfolio = {
       organization: "Stealth Startup",
       dates: "Apr 2026-Present",
       summary:
-        "I build a multi-agent system that creates software from multimodal, source-based evidence, with structured handoffs, persistent execution state, inspectable artifacts, iterative discovery, and sandboxed build-and-repair checks.",
+        "Building a multi-agent system that creates software from multimodal, source-based evidence — structured handoffs, persistent execution state, inspectable artifacts, iterative discovery, and sandboxed build-and-repair until acceptance checks pass.",
       technologies: ["Python", "Google ADK", "GCP", "Docker"],
     },
     {
@@ -176,14 +186,14 @@ export const portfolio = {
       dates: "Apr 2025-Present",
       summary:
         "I support upper-division students through office hours and project guidance, explaining data structures, algorithmic tradeoffs, and debugging strategies while collaborating with faculty and teaching assistants on consistent evaluation.",
-      technologies: ["Student Support", "Collaboration", "Communication"],
+      technologies: ["Data Structures", "Algorithms"],
     },
     {
       role: "LLM Researcher",
       organization: "Algoverse",
       dates: "Jun 2025-Jan 2026",
       summary:
-        "I research human-LLM interactions through social-media conversation data, fine-tune BERTopic on conversation-level embeddings, and build concurrent collection and debugging workflows for analysis.",
+        "Built and analyzed @GrokSet (1M+ tweets of public Grok conversations), fine-tuned BERTopic on conversation-level embeddings, and ran concurrent collection/debug workflows that cut API and compute cost ~50%.",
       technologies: ["LLMs", "Python", "Hydra", "Tmux", "Runpod", "SQLite"],
     },
     {
@@ -191,7 +201,7 @@ export const portfolio = {
       organization: "Trustd.ai",
       dates: "Oct 2024-Feb 2025",
       summary:
-        "I built administrative and REST-backed MongoDB workflows for user-record management, added Zod validation and error handling, and strengthened CI/CD and automated test coverage.",
+        "Shipped admin + REST MongoDB workflows for large user-record sets with Zod validation, then hardened Amplify CI/CD and expanded Playwright/Jest coverage (~60%).",
       technologies: ["React", "NextJS", "TypeScript", "MongoDB", "AWS", "Git", "SCRUM"],
     },
   ],
@@ -200,50 +210,71 @@ export const portfolio = {
       title: "Vitae",
       dates: "Jan 2026-Jun 2026",
       description:
-        "I developed a resume-building and version-control platform with a collaborative Agile/Scrum team, focusing on PostgreSQL persistence, authentication, CI/CD, testing, and reliable delivery.",
-      technologies: ["NextJS", "TypeScript", "Jest", "PostgreSQL", "Docker", "CI/CD", "Neon", "Clerk", "SCRUM"],
+        "Resume building and version-control platform shipped with a 5-person Agile team — Postgres (Docker/Neon), Clerk auth, GitHub Actions + Netlify CI/CD; ~30% faster API responses, ~70% fewer merge conflicts, 99.9% uptime.",
+      technologies: [
+        "NextJS",
+        "TypeScript",
+        "Jest",
+        "PostgreSQL",
+        "Docker",
+        "CI/CD",
+        "Neon",
+        "Clerk",
+        "SCRUM",
+      ],
       href: "https://vitae.tools/",
     },
     {
       title: "AI Discord Chatbot",
       dates: "Aug 2024-Sep 2024",
       description:
-        "I built a Discord assistant with multi-agent retrieval-augmented generation and self-correction, backed by persistent message storage and deployed tooling.",
+        "Llama 3 Discord assistant with multi-agent RAG and self-correction (10K+ indexed messages, 50+ community members).",
       technologies: ["Python", "discord.py", "Ollama", "AWS", "LangChain", "SQL"],
     },
   ],
   skills: [
     {
-      category: "Languages",
-      items: ["Python", "JavaScript", "TypeScript", "C/C++", "PostgreSQL", "NoSQL"],
-    },
-    {
-      category: "Tools",
-      items: ["Linux", "Git", "AWS", "Tmux", "Hydra", "Runpod", "Netlify", "Playwright"],
-    },
-    {
-      category: "Frameworks",
-      items: ["React", "NextJS", "Express", "React Native", "Expo", "Jest", "LangChain", "Ollama"],
-    },
-    {
-      category: "Knowledge",
+      category: "AI & agents",
       items: [
-        "OOP",
-        "Data Structures and Algorithms",
-        "Artificial Intelligence",
-        "Machine Learning",
-        "Large Language Models",
+        "Python",
+        "LLMs",
         "Multi-agent systems",
         "RAG",
-        "RESTful APIs",
-        "Concurrency & Parallelism",
-        "Agile SCRUM Methodology",
+        "LangChain",
+        "Ollama",
+        "Google ADK",
+      ],
+    },
+    {
+      category: "Full-stack",
+      items: [
+        "TypeScript",
+        "React",
+        "NextJS",
+        "PostgreSQL",
+        "MongoDB",
+        "Express",
+        "Clerk",
+      ],
+    },
+    {
+      category: "Systems & delivery",
+      items: [
+        "Docker",
+        "GCP",
+        "AWS",
+        "CI/CD",
+        "Jest",
+        "Playwright",
+        "Linux",
+        "Git",
       ],
     },
   ],
   contact: {
-    heading: "Let’s connect.",
-    message: "Explore my work, professional history, and resume.",
+    heading: "Let’s talk AI systems.",
+    message:
+      "Open to AI systems / ML engineering roles — full-stack craft included. Resume, GitHub, or LinkedIn.",
     links: profileLinks,
   },
-} as const satisfies PortfolioContent
+} as const satisfies PortfolioContent;
