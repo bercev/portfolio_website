@@ -8,13 +8,10 @@ type SkillsProps = {
 };
 
 export function Skills({ content, heading }: SkillsProps) {
-  const beat = content.map((category) => category.category).join(" · ");
-
   return (
     <Station
       id="skills"
       station={6}
-      beat={beat}
       heading={heading}
       className="journey-station--vocab"
     >

@@ -51,9 +51,8 @@ function ProjectDetails({
       >
         {project.description}
       </p>
-      <p className="mt-5 text-base leading-7 text-muted-foreground">
-        <span className="font-semibold text-foreground">Built with: </span>
-        {project.technologies.join(", ")}
+      <p className="journey-tech-line mt-5">
+        {project.technologies.join(" · ")}
       </p>
       {deepDive ? (
         <div className="mt-8">

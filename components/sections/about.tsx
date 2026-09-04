@@ -20,7 +20,7 @@ export function About({ content, heading }: AboutProps) {
       className="journey-station--origin"
     >
       <div className="journey-about-column">
-        <div className="journey-copy space-y-6">
+        <div className="journey-copy">
           {content.bio.map((paragraph, index) => (
             <p
               key={paragraph}

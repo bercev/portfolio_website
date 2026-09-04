@@ -40,8 +40,7 @@ export function Experience({ content, heading }: ExperienceProps) {
                 {experience.summary}
               </p>
               <p className="journey-body journey-xp-tools">
-                <span className="font-semibold text-foreground">Tools: </span>
-                {experience.technologies.join(", ")}
+                {experience.technologies.join(" · ")}
               </p>
             </div>
           </article>
