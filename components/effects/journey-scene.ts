@@ -242,7 +242,8 @@ export class JourneyScene {
       new THREE.MeshBasicMaterial({
         color: new THREE.Color(palette.cyan),
         transparent: true,
-        opacity: lightTheme ? 0.55 : 0.4,
+        // Atmosphere only — never a second hero (esp. light mode).
+        opacity: lightTheme ? 0.18 : 0.16,
         blending: particleBlending,
         depthWrite: false,
       }),
