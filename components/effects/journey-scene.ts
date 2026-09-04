@@ -155,12 +155,125 @@ const STATION_BUILDERS: ((color: THREE.Color) => THREE.Object3D)[] = [
   buildLinkedRings,
 ];
 
-function stationMaterial(color: THREE.Color): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({
-    color,
+/**
+ * GLSL port of the vgpu wgsl-std simplex + fbm noise (Ashima 2D simplex),
+ * used by the nebula backdrop shader.
+ */
+const GLSL_NOISE_2D = /* glsl */ `
+  vec3 mod289(vec3 x) { return mod(x, 289.0); }
+  vec3 permute(vec3 x) { return mod289(((x * 34.0) + 1.0) * x); }
+  float snoise(vec2 v) {
+    const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+    vec2 i = floor(v + dot(v, C.yy));
+    vec2 x0 = v - i + dot(i, C.xx);
+    vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+    vec4 x12 = x0.xyxy + C.xxzz;
+    x12.xy -= i1;
+    i = mod(i, 289.0);
+    vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+    vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+    m = m * m;
+    m = m * m;
+    vec3 x = 2.0 * fract(p * C.www) - 1.0;
+    vec3 h = abs(x) - 0.5;
+    vec3 ox = floor(x + 0.5);
+    vec3 a0 = x - ox;
+    m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
+    vec3 g;
+    g.x = a0.x * x0.x + h.x * x0.y;
+    g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+    return 130.0 * dot(m, g);
+  }
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+      v += a * snoise(p);
+      p = p * 2.03 + vec2(11.3, 7.7);
+      a *= 0.5;
+    }
+    return v;
+  }
+`;
+
+/** Blending for station materials — set per theme before buildStations runs. */
+let stationBlending: THREE.Blending = THREE.AdditiveBlending;
+
+/** Sculpture wireframe: breathing pulse + vertical two-tone gradient. */
+function stationMaterial(color: THREE.Color): THREE.ShaderMaterial {
+  const glow = color.clone().lerp(new THREE.Color(0xffffff), 0.45);
+  return new THREE.ShaderMaterial({
     wireframe: true,
     transparent: true,
-    opacity: 0.55,
+    depthWrite: false,
+    blending: stationBlending,
+    uniforms: {
+      uTime: { value: 0 },
+      uSeed: { value: Math.random() * Math.PI * 2 },
+      uOpacity: { value: 0.62 },
+      uColorA: { value: color.clone() },
+      uColorB: { value: glow },
+    },
+    vertexShader: `
+      varying vec3 vPos;
+      void main() {
+        vPos = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uColorA;
+      uniform vec3 uColorB;
+      uniform float uTime;
+      uniform float uSeed;
+      uniform float uOpacity;
+      varying vec3 vPos;
+      void main() {
+        float pulse = 0.72 + 0.28 * sin(uTime * 1.3 + uSeed);
+        vec3 col = mix(uColorA, uColorB, smoothstep(-2.2, 2.2, vPos.y));
+        gl_FragColor = vec4(col, uOpacity * pulse);
+      }
+    `,
+  });
+}
+
+/** Soft fresnel shell over each sculpture mesh — volumetric edge glow. */
+function auraMaterial(color: THREE.Color): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: stationBlending,
+    uniforms: {
+      uTime: { value: 0 },
+      uSeed: { value: Math.random() * Math.PI * 2 },
+      uOpacity: {
+        value: stationBlending === THREE.AdditiveBlending ? 0.5 : 0.3,
+      },
+      uColor: { value: color.clone() },
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vView;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vView = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uTime;
+      uniform float uSeed;
+      uniform float uOpacity;
+      varying vec3 vNormal;
+      varying vec3 vView;
+      void main() {
+        float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 2.5);
+        float pulse = 0.7 + 0.3 * sin(uTime * 1.1 + uSeed);
+        gl_FragColor = vec4(uColor, fresnel * uOpacity * pulse);
+      }
+    `,
   });
 }
 
@@ -367,6 +480,9 @@ export class JourneyScene {
   /** Mouse-look / pointer parallax — home + contact only. */
   private pointerLookEnabled = false;
   private readonly particleBlending: THREE.Blending;
+  /** Every shader material driven by uTime (sculptures, aura, stars, dust, nebula, trail). */
+  private readonly animatedMaterials: THREE.ShaderMaterial[] = [];
+  private trail: { geometry: THREE.BufferGeometry; positions: Float32Array } | null = null;
 
   constructor(options: JourneySceneOptions) {
     const { canvas, quality, reducedMotion, spaceBg, fog, palette, stationCounts, onProgress } = options;
@@ -376,6 +492,7 @@ export class JourneyScene {
     this.reducedMotion = reducedMotion;
     this.palette = palette;
     this.particleBlending = particleBlending;
+    stationBlending = particleBlending;
     this.onProgress = onProgress;
 
     this.renderer = new THREE.WebGLRenderer({
@@ -436,6 +553,109 @@ export class JourneyScene {
     );
     this.scene.add(this.comet);
 
+    if (quality === "full") {
+      // Camera must be part of the graph for its children (nebula) to render.
+      this.scene.add(this.camera);
+
+      // Domain-warped fbm nebula backdrop (noise ported from vgpu wgsl-std).
+      const nebulaMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.NormalBlending,
+        uniforms: {
+          uTime: { value: 0 },
+          uIntensity: { value: lightTheme ? 0.14 : 0.3 },
+          uTintA: {
+            value: new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.55),
+          },
+          uTintB: {
+            value: new THREE.Color(palette.cyan).lerp(new THREE.Color(palette.emerald), 0.5),
+          },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader:
+          GLSL_NOISE_2D +
+          `
+          uniform float uTime;
+          uniform float uIntensity;
+          uniform vec3 uTintA;
+          uniform vec3 uTintB;
+          varying vec2 vUv;
+          void main() {
+            vec2 p = vUv * vec2(4.0, 2.4);
+            p += vec2(uTime * 0.01, -uTime * 0.006);
+            float n = fbm(p + 0.6 * fbm(p * 1.7 + 3.1));
+            float d = smoothstep(-0.35, 0.85, n);
+            vec3 col = mix(uTintA, uTintB, clamp(n * 0.5 + 0.5, 0.0, 1.0));
+            gl_FragColor = vec4(col, d * uIntensity);
+          }
+        `,
+      });
+      const nebula = new THREE.Mesh(new THREE.PlaneGeometry(560, 260), nebulaMat);
+      nebula.position.set(0, 0, -170);
+      nebula.renderOrder = -1;
+      nebula.frustumCulled = false;
+      this.camera.add(nebula);
+      this.animatedMaterials.push(nebulaMat);
+
+      // Fading particle trail behind the comet (ring buffer, newest at index 0).
+      const TRAIL_N = 28;
+      const trailPos = new Float32Array(TRAIL_N * 3);
+      const start = this.curve.getPointAt(0);
+      for (let i = 0; i < TRAIL_N; i++) {
+        trailPos[i * 3] = start.x;
+        trailPos[i * 3 + 1] = start.y;
+        trailPos[i * 3 + 2] = start.z;
+      }
+      const trailAge = new Float32Array(TRAIL_N);
+      for (let i = 0; i < TRAIL_N; i++) trailAge[i] = i / (TRAIL_N - 1);
+      const trailGeo = new THREE.BufferGeometry();
+      trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPos, 3));
+      trailGeo.setAttribute("aAge", new THREE.BufferAttribute(trailAge, 1));
+      const trailMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: particleBlending,
+        uniforms: {
+          uPixelScale: { value: window.innerHeight * 0.5 },
+          uColor: { value: new THREE.Color(palette.accent) },
+        },
+        vertexShader: `
+          attribute float aAge;
+          uniform float uPixelScale;
+          varying float vAge;
+          void main() {
+            vAge = aAge;
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            gl_PointSize = uPixelScale * mix(0.16, 0.04, aAge) / max(1.0, -mv.z);
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          varying float vAge;
+          void main() {
+            float d = length(gl_PointCoord - 0.5);
+            float alpha = smoothstep(0.5, 0.1, d) * (1.0 - vAge) * 0.85;
+            if (alpha < 0.01) discard;
+            gl_FragColor = vec4(uColor, alpha);
+          }
+        `,
+      });
+      const trailPoints = new THREE.Points(trailGeo, trailMat);
+      trailPoints.frustumCulled = false;
+      this.scene.add(trailPoints);
+      this.trail = { geometry: trailGeo, positions: trailPos };
+      this.animatedMaterials.push(trailMat);
+    }
+
     // Bloom + additive glow only reads on dark clears; skip in light theme.
     if (quality === "full" && !lightTheme) {
       this.composer = new EffectComposer(this.renderer);
@@ -464,11 +684,17 @@ export class JourneyScene {
     this.renderOneFrame(0);
     if (!reducedMotion) this.loop(performance.now());
   }
-private buildStarfield(count: number): THREE.Points {
-    const { cyan, emerald, coral } = this.palette;
-    const stops = [new THREE.Color(cyan), new THREE.Color(emerald), new THREE.Color(coral)];
+  private buildStarfield(count: number): THREE.Points {
+    const { cyan, emerald, coral, accent } = this.palette;
+    const stops = [
+      new THREE.Color(cyan),
+      new THREE.Color(emerald),
+      new THREE.Color(coral),
+      new THREE.Color(accent),
+    ];
     const starPos = new Float32Array(count * 3);
     const starCol = new Float32Array(count * 3);
+    const starSeed = new Float32Array(count);
     for (let i = 0; i < count; i++) {
       starPos[i * 3] = (Math.random() - 0.5) * 170;
       starPos[i * 3 + 1] = (Math.random() - 0.5) * 100;
@@ -478,22 +704,48 @@ private buildStarfield(count: number): THREE.Points {
       starCol[i * 3] = c.r * dim;
       starCol[i * 3 + 1] = c.g * dim;
       starCol[i * 3 + 2] = c.b * dim;
+      starSeed[i] = Math.random();
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-    geo.setAttribute("color", new THREE.BufferAttribute(starCol, 3));
-    return new THREE.Points(
-      geo,
-      new THREE.PointsMaterial({
-        size: 0.32,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.9,
-        depthWrite: false,
-        blending: this.particleBlending,
-        sizeAttenuation: true,
-      }),
-    );
+    geo.setAttribute("aColor", new THREE.BufferAttribute(starCol, 3));
+    geo.setAttribute("aSeed", new THREE.BufferAttribute(starSeed, 1));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: this.particleBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uPixelScale: { value: window.innerHeight * 0.5 },
+      },
+      vertexShader: `
+        attribute vec3 aColor;
+        attribute float aSeed;
+        uniform float uTime;
+        uniform float uPixelScale;
+        varying vec3 vColor;
+        varying float vTw;
+        void main() {
+          vColor = aColor;
+          vTw = 0.55 + 0.45 * sin(uTime * (0.5 + fract(aSeed * 3.7) * 1.3) + aSeed * 6.2831);
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = uPixelScale * (0.22 + 0.3 * fract(aSeed * 7.3)) * vTw / max(1.0, -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        varying float vTw;
+        void main() {
+          float d = length(gl_PointCoord - 0.5);
+          float alpha = smoothstep(0.5, 0.1, d) * vTw;
+          if (alpha < 0.01) discard;
+          gl_FragColor = vec4(vColor, alpha);
+        }
+      `,
+    });
+    this.animatedMaterials.push(mat);
+    return new THREE.Points(geo, mat);
   }
 
   /** One glowing wireframe station per chapter + orbiting "content dust" mirroring portfolio scale. */
@@ -519,50 +771,115 @@ private buildStarfield(count: number): THREE.Points {
       this.stations.push(object);
       this.scene.add(object);
 
+      // Wireframe pulse materials + soft fresnel aura shells per mesh.
+      // Collect first — adding children mid-traverse would recurse forever.
+      const meshes: THREE.Mesh[] = [];
+      object.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) meshes.push(child as THREE.Mesh);
+      });
+      for (const mesh of meshes) {
+        const mat = mesh.material as THREE.ShaderMaterial;
+        if (mat?.uniforms?.uTime) this.animatedMaterials.push(mat);
+        const aura = new THREE.Mesh(mesh.geometry, auraMaterial(tintColors[i]));
+        aura.scale.setScalar(1.045);
+        mesh.add(aura);
+        this.animatedMaterials.push(aura.material as THREE.ShaderMaterial);
+      }
+
       const count = Math.min(stationCounts[i] ?? 0, 60);
       if (count > 0) {
-        this.orbitDust.push(this.buildOrbitDust(object.position, count, tintColors[i]));
+        this.orbitDust.push(
+          this.buildOrbitDust(object.position, count, tintColors[i], 0.1 + i * 0.05),
+        );
       }
     }
   }
 
-  private buildOrbitDust(center: THREE.Vector3, count: number, tint: THREE.Color): THREE.Points {
-    const positions = new Float32Array(count * 3);
+  /** Per-particle orbital motion computed in the vertex shader — round soft sprites. */
+  private buildOrbitDust(
+    center: THREE.Vector3,
+    count: number,
+    tint: THREE.Color,
+    speed: number,
+  ): THREE.Points {
     const colors = new Float32Array(count * 3);
+    const angles = new Float32Array(count);
+    const radii = new Float32Array(count);
+    const heights = new Float32Array(count);
+    const seeds = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2 + Math.random() * 0.4;
-      const radius = 3.2 + Math.random() * 1.4;
-      positions[i * 3] = center.x + Math.cos(angle) * radius;
-      positions[i * 3 + 1] = center.y + (Math.random() - 0.5) * 2.2;
-      positions[i * 3 + 2] = center.z + Math.sin(angle) * radius * 0.6;
+      angles[i] = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+      radii[i] = 3.2 + Math.random() * 1.4;
+      heights[i] = (Math.random() - 0.5) * 2.2;
       const dim = 0.5 + Math.random() * 0.5;
       colors[i * 3] = tint.r * dim;
       colors[i * 3 + 1] = tint.g * dim;
       colors[i * 3 + 2] = tint.b * dim;
+      seeds[i] = Math.random();
     }
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    const points = new THREE.Points(
-      geo,
-      new THREE.PointsMaterial({
-        size: 0.22,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.9,
-        depthWrite: false,
-        blending: this.particleBlending,
-        sizeAttenuation: true,
-      }),
-    );
+    geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+    geo.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute("aAngle", new THREE.BufferAttribute(angles, 1));
+    geo.setAttribute("aRadius", new THREE.BufferAttribute(radii, 1));
+    geo.setAttribute("aHeight", new THREE.BufferAttribute(heights, 1));
+    geo.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: this.particleBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uPixelScale: { value: window.innerHeight * 0.5 },
+        uCenter: { value: center.clone() },
+        uSpeed: { value: speed },
+      },
+      vertexShader: `
+        attribute vec3 aColor;
+        attribute float aAngle;
+        attribute float aRadius;
+        attribute float aHeight;
+        attribute float aSeed;
+        uniform float uTime;
+        uniform float uPixelScale;
+        uniform vec3 uCenter;
+        uniform float uSpeed;
+        varying vec3 vColor;
+        void main() {
+          vColor = aColor;
+          float ang = aAngle + uTime * uSpeed * (0.6 + 0.8 * fract(aSeed * 5.1));
+          vec3 p = uCenter + vec3(cos(ang) * aRadius, aHeight, sin(ang) * aRadius * 0.6);
+          vec4 mv = modelViewMatrix * vec4(p, 1.0);
+          gl_PointSize = uPixelScale * 0.2 / max(1.0, -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          float d = length(gl_PointCoord - 0.5);
+          float alpha = smoothstep(0.5, 0.12, d) * 0.9;
+          if (alpha < 0.01) discard;
+          gl_FragColor = vec4(vColor, alpha);
+        }
+      `,
+    });
+    this.animatedMaterials.push(mat);
+    const points = new THREE.Points(geo, mat);
+    // Real positions live in attributes, not `position` — never cull.
+    points.frustumCulled = false;
     this.scene.add(points);
     return points;
   }
-private readonly handleResize = () => {
+  private readonly handleResize = () => {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.composer?.setSize(window.innerWidth, window.innerHeight);
+    const pixelScale = window.innerHeight * 0.5;
+    for (const mat of this.animatedMaterials) {
+      if (mat.uniforms.uPixelScale) mat.uniforms.uPixelScale.value = pixelScale;
+    }
   };
 
   private readonly handlePointerMove = (event: PointerEvent) => {
@@ -609,12 +926,28 @@ private readonly handleResize = () => {
         mesh.rotation.y = t * (0.16 + i * 0.02);
         mesh.position.y += Math.sin(t * 0.6 + i * 1.7) * 0.002;
       });
-      this.orbitDust.forEach((dust, i) => {
-        dust.rotation.y = t * (0.1 + i * 0.05);
-      });
+      // Orbit dust animates per-particle in its own vertex shader.
       const cometT = ((t / 26) % 1 + 1) % 1;
       this.comet.position.copy(this.curve.getPointAt(cometT));
       this.comet.scale.setScalar(1 + Math.sin(t * 4) * 0.3);
+      if (this.trail) {
+        const { geometry, positions } = this.trail;
+        const n = positions.length / 3;
+        for (let i = n - 1; i > 0; i--) {
+          positions[i * 3] = positions[(i - 1) * 3];
+          positions[i * 3 + 1] = positions[(i - 1) * 3 + 1];
+          positions[i * 3 + 2] = positions[(i - 1) * 3 + 2];
+        }
+        positions[0] = this.comet.position.x;
+        positions[1] = this.comet.position.y;
+        positions[2] = this.comet.position.z;
+        (geometry.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
+      }
+    }
+
+    // Drive every uTime-based material (sculpture pulse, aura, stars, dust, nebula).
+    for (const mat of this.animatedMaterials) {
+      if (mat.uniforms.uTime) mat.uniforms.uTime.value = t;
     }
 
     const pos = this.curve.getPointAt(this.journeyT());
