@@ -34,7 +34,9 @@ export function Station({
       )}
     >
       <p className="journey-kicker">
-        Station {String(station).padStart(2, "0")} — {kicker}
+        <span aria-hidden="true">{String(station).padStart(2, "0")}</span>
+        <span aria-hidden="true">—</span>
+        <span>{kicker}</span>
       </p>
       <h2 id={`${id}-heading`} className="journey-station-heading">
         {heading}

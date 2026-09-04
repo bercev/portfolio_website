@@ -24,7 +24,7 @@ export function Skills({ content, heading }: SkillsProps) {
           <div
             key={category.category}
             data-skill-cluster
-            className="journey-panel journey-panel--hard journey-skill-group"
+            className="journey-skill-group"
           >
             <h3 className="journey-skill-heading">{category.category}</h3>
             <div>

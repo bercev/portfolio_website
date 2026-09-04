@@ -21,9 +21,11 @@ export function About({ content, heading }: AboutProps) {
       className="journey-station--origin"
     >
       <div className="journey-grid journey-grid--origin">
-        <div className="journey-copy space-y-6 text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-relaxed">
+        <div className="journey-copy space-y-6">
           {content.bio.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+            <p key={paragraph} className="journey-body journey-body--lede">
+              {paragraph}
+            </p>
           ))}
         </div>
 

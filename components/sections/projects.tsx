@@ -28,8 +28,8 @@ function ProjectDetails({
         aria-label={project.title}
         className={
           quiet
-            ? "mt-4 text-2xl font-bold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-3xl"
-            : "mt-4 text-3xl font-extrabold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-4xl"
+            ? "journey-project-title journey-project-title--quiet"
+            : "journey-project-title journey-project-title--ships"
         }
       >
         {project.href ? (
@@ -43,12 +43,12 @@ function ProjectDetails({
           project.title
         )}
       </h3>
-      {deepDive ? <span className="journey-tag">Ships product</span> : null}
+      {deepDive ? <span className="journey-mark">Ships product</span> : null}
       <p
         className={
           quiet
-            ? "mt-5 max-w-[65ch] text-base leading-7 text-muted-foreground"
-            : "mt-5 max-w-[65ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8"
+            ? "journey-body mt-5 max-w-[58ch] text-base leading-7 text-muted-foreground"
+            : "journey-body mt-5 max-w-[65ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8"
         }
       >
         {project.description}
@@ -104,7 +104,7 @@ export function Projects({ content, heading }: ProjectsProps) {
         {supporting ? (
           <article
             data-project-supporting
-            className="journey-panel journey-panel--hard journey-project journey-project--quiet"
+            className="journey-panel journey-panel--strip journey-project journey-project--quiet"
           >
             <ProjectDetails project={supporting} quiet />
           </article>

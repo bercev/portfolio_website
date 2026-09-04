@@ -29,23 +29,21 @@ export function Experience({ content, heading }: ExperienceProps) {
                 : "journey-xp-item"
             }
           >
-            <span className="journey-xp-when">{experience.dates}</span>
-            <div>
-              {experience.organization ? (
-                <p className="mt-1 text-base text-muted-foreground">
-                  {experience.organization}
-                </p>
-              ) : null}
-              <h3 className="text-2xl font-bold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-3xl">
-                {experience.role}
-              </h3>
+            <div className="journey-xp-outboard">
+              <span className="journey-xp-when">{experience.dates}</span>
               {index === 0 ? (
-                <span className="journey-tag">In production</span>
+                <span className="journey-mark">In production</span>
               ) : null}
-              <p className="mt-4 max-w-[72ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+            </div>
+            <div className="journey-xp-main">
+              {experience.organization ? (
+                <p className="journey-xp-org">{experience.organization}</p>
+              ) : null}
+              <h3 className="journey-xp-title">{experience.role}</h3>
+              <p className="journey-body journey-xp-summary">
                 {experience.summary}
               </p>
-              <p className="mt-4 text-base leading-7 text-muted-foreground">
+              <p className="journey-body journey-xp-tools">
                 <span className="font-semibold text-foreground">Tools: </span>
                 {experience.technologies.join(", ")}
               </p>

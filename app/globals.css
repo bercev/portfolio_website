@@ -497,40 +497,27 @@ textarea {
 
 .chroma-card {
   overflow: hidden;
-  border: 1px solid #000000;
-  border-radius: var(--radius);
+  border: 1px solid var(--foreground);
+  border-radius: 0;
   background: transparent;
   color: var(--card-foreground);
-  box-shadow: 0 1px 3px
-    color-mix(
-      in srgb,
-      var(--shadow-color) var(--shadow-opacity),
-      transparent
-    );
-  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.dark .chroma-card {
-  border-color: #ffffff;
+  box-shadow: none;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .chroma-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .chroma-card [data-chroma-surface] {
-  border-radius: calc(var(--radius) - 1px);
-  background: var(--glass-bg-strong);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  box-shadow: var(--glass-highlight);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  box-shadow: none;
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .chroma-card [data-chroma-surface] {
     background: var(--card);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
   }
 }
 
@@ -643,12 +630,14 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   place-items: center;
   width: 100%;
   min-height: 220px;
-  border: 1px solid var(--glass-border);
-  border-radius: calc(var(--glass-radius) - 4px);
-  background: color-mix(in srgb, var(--glass-bg) 70%, transparent);
+  border: 1px solid var(--foreground);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--glass-bg) 58%, transparent);
   overflow: hidden;
   touch-action: none;
   cursor: grab;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
 .vitae-orbit-hit:active {
@@ -680,8 +669,8 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   display: block;
   width: 100%;
   text-align: left;
-  border: 1px solid var(--glass-border);
-  border-radius: calc(var(--glass-radius) - 4px);
+  border: 1px solid var(--foreground);
+  border-radius: 0;
   background: var(--glass-bg-strong);
   padding: 18px 18px 16px;
   overflow: hidden;
@@ -750,7 +739,7 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   display: inline-flex;
   align-items: center;
   border: 1px solid color-mix(in srgb, var(--effect-chroma-cyan) 40%, transparent);
-  border-radius: 999px;
+  border-radius: 0;
   padding: 5px 9px;
   font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.04em;
@@ -770,7 +759,7 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   display: inline-flex;
   align-items: center;
   border: 1px solid color-mix(in srgb, var(--effect-chroma-emerald) 35%, transparent);
-  border-radius: 999px;
+  border-radius: 0;
   padding: 6px 10px;
   font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.04em;
@@ -863,7 +852,7 @@ html[data-journey="active"] .journey-rail {
   z-index: var(--z-site-navigation);
   width: 2px;
   height: 34vh;
-  border-radius: 2px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--foreground) 14%, transparent);
   pointer-events: none;
   overflow: hidden;
@@ -876,7 +865,7 @@ html[data-journey="active"] .journey-rail {
   background: linear-gradient(to bottom, var(--portfolio-accent), var(--effect-chroma-emerald));
   transform-origin: top;
   transform: scaleY(0);
-  border-radius: 2px;
+  border-radius: 0;
 }
 
 [data-journey-station] {
@@ -923,7 +912,10 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-kicker {
-  margin-bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 18px;
   font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -931,20 +923,23 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-station-heading {
-  margin-bottom: 12px;
+  margin: 0 0 14px;
+  max-width: 11ch;
   color: var(--foreground);
-  font-size: clamp(2.15rem, 5.4vw, 3.65rem);
+  font-size: clamp(2.35rem, 6vw, 4rem);
   font-weight: 800;
-  line-height: 0.98;
-  letter-spacing: -0.035em;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
 }
 
 .journey-beat {
-  margin: 0 0 28px;
-  max-width: 54ch;
+  margin: 0 0 30px;
+  margin-left: clamp(0px, 3.2vw, 2.5rem);
+  max-width: 52ch;
   color: var(--muted-foreground);
-  font: 600 1rem/1.5 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.015em;
+  font: 600 0.92rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.01em;
 }
 
 .journey-station--proof .journey-station-heading {
@@ -972,16 +967,30 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 /* Default station surfaces: hard-edged editorial panels, not frosted cards. */
 .journey-panel {
-  padding: clamp(20px, 3vw, 32px);
+  padding: clamp(18px, 2.6vw, 28px);
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  border-radius: 2px;
+  border: 1px solid var(--foreground);
+  border-radius: 0;
   box-shadow: none;
 }
 
 .journey-panel--hard {
-  background: color-mix(in srgb, var(--card) 42%, transparent);
-  border-color: color-mix(in srgb, var(--foreground) 16%, var(--border));
+  background: transparent;
+  border-color: var(--foreground);
+}
+
+.journey-panel--open {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.journey-panel--ruled {
+  border: 0;
+  border-block: 2px solid var(--foreground);
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .journey-copy {
@@ -1006,8 +1015,11 @@ html[data-journey="active"] [data-effect-layer="background"] {
     box-shadow: var(--glass-shadow);
   }
 
-  .journey-panel--hard {
+  .vitae-orbit-hit,
+  .vitae-static-card {
     background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -1041,8 +1053,8 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-pub-row {
-  border-bottom: 1px solid var(--border);
-  padding: clamp(16px, 2vw, 24px) 0;
+  border-bottom: 1px solid var(--foreground);
+  padding: clamp(20px, 2.6vw, 30px) 0;
 }
 
 .journey-pub-row:last-child {
@@ -1058,16 +1070,16 @@ html[data-journey="active"] [data-effect-layer="background"] {
   color: var(--effect-chroma-emerald);
   border: 1px solid color-mix(in srgb, var(--effect-chroma-emerald) 35%, transparent);
   padding: 6px 10px;
-  border-radius: 2px;
+  border-radius: 0;
 }
 
 .journey-xp-item {
   display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: 18px;
+  grid-template-columns: minmax(120px, 168px) minmax(0, 1fr);
+  gap: clamp(14px, 3vw, 28px);
   align-items: baseline;
-  border-bottom: 1px solid var(--border);
-  padding: clamp(16px, 2vw, 24px) 0;
+  border-bottom: 1px solid var(--foreground);
+  padding: clamp(20px, 2.6vw, 30px) 0;
 }
 
 .journey-xp-item:last-child {
@@ -1103,11 +1115,13 @@ html[data-journey="active"] [data-effect-layer="background"] {
 .journey-skill {
   display: inline-block;
   margin: 0 8px 8px 0;
-  font: 500 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--muted-foreground);
-  border: 1px solid var(--border);
-  padding: 9px 12px;
-  border-radius: 2px;
+  font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--foreground);
+  border: 1px solid var(--foreground);
+  padding: 8px 11px;
+  border-radius: 0;
   background: transparent;
 }
 
@@ -1141,19 +1155,22 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-project--ships {
-  border-color: color-mix(in srgb, var(--portfolio-accent) 32%, var(--glass-border));
+  border-color: color-mix(in srgb, var(--portfolio-accent) 55%, var(--foreground));
 }
 
 .journey-project--quiet {
-  opacity: 0.94;
+  opacity: 1;
   background: transparent;
   box-shadow: none;
+  border-style: dashed;
 }
 
 .journey-skill-clusters {
   display: grid;
-  gap: 18px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(20px, 3vw, 40px);
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.85fr);
+  padding-top: 8px;
+  border-top: 2px solid var(--foreground);
 }
 
 @media (max-width: 900px) {
@@ -1164,6 +1181,8 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 .journey-skill-group {
   margin-bottom: 0;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent);
 }
 
 .journey-contact-note {
@@ -1175,14 +1194,47 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 /* Hero: the 3D particle name IS the display; a styled name is the flat fallback. */
+[data-hero-editorial] {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  padding-inline: clamp(16px, 5vw, 64px);
+  text-align: left;
+}
+
+[data-hero-editorial] [data-hero-meta] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 1.25rem;
+  font: 600 0.68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+[data-hero-editorial] [data-hero-sub] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem 2.5rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--foreground);
+}
+
 [data-hero-name-fallback] {
   display: grid;
-  place-items: center;
-  min-height: clamp(8rem, 22vw, 15rem);
-  font-size: clamp(4.5rem, 18vw, 12rem);
-  font-weight: 800;
-  line-height: 0.8;
-  letter-spacing: -0.075em;
+  place-items: start;
+  justify-items: start;
+  min-height: clamp(7rem, 18vw, 13rem);
+  width: 100%;
+  font-size: clamp(4.5rem, 16vw, 11rem);
+  font-weight: 900;
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
   color: var(--hero-particle-accent);
   overflow: hidden;
 }
@@ -1206,7 +1258,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   content: "";
   width: 42px;
   height: 2px;
-  border-radius: 2px;
+  border-radius: 0;
   background: linear-gradient(90deg, var(--portfolio-accent), var(--effect-chroma-emerald));
 }
 

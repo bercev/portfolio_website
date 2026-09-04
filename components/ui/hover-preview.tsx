@@ -13,6 +13,7 @@ interface HoverPreviewProps {
   readonly headingClassName?: string;
   readonly linkClassName?: string;
   readonly linkIconSize?: number;
+  readonly previewClassName?: string;
 }
 
 const CLOSE_DELAY_MS = 180;
@@ -24,6 +25,7 @@ export function HoverPreview({
   headingClassName,
   linkClassName,
   linkIconSize,
+  previewClassName,
 }: HoverPreviewProps) {
   const [isActive, setIsActive] = useState(false);
   const shouldReduceMotion = useReducedMotion();
@@ -113,7 +115,11 @@ export function HoverPreview({
               data-hover-preview-image
               role="region"
               aria-label={`${title} compact PDF reader`}
-              className="block w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-[var(--radius)] border border-border bg-card p-1 shadow-xl shadow-foreground/10"
+              className={
+                previewClassName
+                  ? previewClassName
+                  : "block w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-[var(--radius)] border border-border bg-card p-1 shadow-xl shadow-foreground/10"
+              }
               initial={
                 shouldReduceMotion
                   ? { opacity: 0 }
