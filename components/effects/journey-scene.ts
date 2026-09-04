@@ -136,14 +136,188 @@ function buildTextPoints(
   return new THREE.Points(geo, mat);
 }
 
-const STATION_SHAPES = [
-  () => new THREE.IcosahedronGeometry(2.4, 0),
-  () => new THREE.TorusKnotGeometry(1.7, 0.5, 96, 12),
-  () => new THREE.OctahedronGeometry(2.2, 0),
-  () => new THREE.TorusGeometry(1.9, 0.6, 12, 40),
-  () => new THREE.ConeGeometry(1.8, 3.6, 5),
-  () => new THREE.DodecahedronGeometry(2.2, 0),
-] as const;
+/**
+ * One signature wireframe object per journey chapter, each nodding to the
+ * section it backs (in station order):
+ *   0 About      — rising spiral: where the path starts
+ *   1 Publications — fanned stack of papers
+ *   2 Experience — ascending career steps
+ *   3 Projects   — git branch graph (Vitae version control)
+ *   4 Skills     — atom: interconnected domains
+ *   5 Contact    — interlocked rings: connection
+ */
+const STATION_BUILDERS: ((color: THREE.Color) => THREE.Object3D)[] = [
+  buildOriginSpiral,
+  buildPaperStack,
+  buildCareerSteps,
+  buildGitGraph,
+  buildSkillAtom,
+  buildLinkedRings,
+];
+
+function stationMaterial(color: THREE.Color): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
+    color,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.55,
+  });
+}
+
+/** About — a rising helix the journey lifts off from. */
+function buildOriginSpiral(color: THREE.Color): THREE.Object3D {
+  const points: THREE.Vector3[] = [];
+  const steps = 96;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const angle = t * Math.PI * 2 * 3;
+    const radius = 0.5 + t * 2.1;
+    points.push(
+      new THREE.Vector3(
+        Math.cos(angle) * radius,
+        -1.8 + t * 3.6,
+        Math.sin(angle) * radius,
+      ),
+    );
+  }
+  const group = new THREE.Group();
+  group.add(
+    new THREE.Mesh(
+      new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(points),
+        120,
+        0.07,
+        6,
+        false,
+      ),
+      stationMaterial(color),
+    ),
+  );
+  return group;
+}
+
+/** Publications — a fanned stack of papers. */
+function buildPaperStack(color: THREE.Color): THREE.Object3D {
+  const group = new THREE.Group();
+  const sheets = 5;
+  for (let i = 0; i < sheets; i++) {
+    const sheet = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 0.05, 3.5),
+      stationMaterial(color),
+    );
+    sheet.position.y = (i - (sheets - 1) / 2) * 0.42;
+    sheet.rotation.y = (i % 2 ? 1 : -1) * (0.08 + i * 0.05);
+    group.add(sheet);
+  }
+  group.rotation.x = 0.35;
+  return group;
+}
+
+/** Experience — ascending career steps. */
+function buildCareerSteps(color: THREE.Color): THREE.Object3D {
+  const group = new THREE.Group();
+  const steps = 5;
+  for (let i = 0; i < steps; i++) {
+    const step = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 0.22, 0.9),
+      stationMaterial(color),
+    );
+    step.position.set(0, -1.6 + i * 0.8, 1.4 - i * 0.7);
+    group.add(step);
+  }
+  return group;
+}
+
+/** Projects — a git branch graph: mainline plus a merged feature branch. */
+function buildGitGraph(color: THREE.Color): THREE.Object3D {
+  const group = new THREE.Group();
+  const nodeGeo = new THREE.SphereGeometry(0.3, 10, 10);
+  const linkGeo = new THREE.CylinderGeometry(0.045, 0.045, 1, 6);
+
+  const addNode = (p: THREE.Vector3) => {
+    const node = new THREE.Mesh(nodeGeo, stationMaterial(color));
+    node.position.copy(p);
+    group.add(node);
+  };
+  const addLink = (from: THREE.Vector3, to: THREE.Vector3) => {
+    const dir = to.clone().sub(from);
+    const link = new THREE.Mesh(linkGeo, stationMaterial(color));
+    link.position.copy(from).addScaledVector(dir, 0.5);
+    link.scale.y = dir.length();
+    link.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      dir.normalize(),
+    );
+    group.add(link);
+  };
+
+  const mainline = [
+    new THREE.Vector3(-1.7, -1.7, 0),
+    new THREE.Vector3(-1.7, -0.4, 0),
+    new THREE.Vector3(-1.7, 0.9, 0),
+    new THREE.Vector3(0, 1.8, 0),
+  ];
+  const branchStart = new THREE.Vector3(1.5, -1.1, 0.5);
+  const branchMid = new THREE.Vector3(1.5, 0.5, 0.5);
+
+  mainline.forEach(addNode);
+  addNode(branchStart);
+  addNode(branchMid);
+
+  addLink(mainline[0], mainline[1]);
+  addLink(mainline[1], mainline[2]);
+  addLink(mainline[2], mainline[3]);
+  addLink(mainline[1], branchStart);
+  addLink(branchStart, branchMid);
+  addLink(branchMid, mainline[3]);
+
+  group.rotation.z = -0.25;
+  return group;
+}
+
+/** Skills — an atom: a core with three crossed orbit rings. */
+function buildSkillAtom(color: THREE.Color): THREE.Object3D {
+  const group = new THREE.Group();
+  group.add(
+    new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.65, 0),
+      stationMaterial(color),
+    ),
+  );
+  for (let i = 0; i < 3; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(1.9, 0.06, 6, 48),
+      stationMaterial(color),
+    );
+    ring.rotation.set((i * Math.PI) / 3, (i * Math.PI) / 2.4, 0);
+    group.add(ring);
+
+    const moon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.16, 8, 8),
+      stationMaterial(color),
+    );
+    const angle = i * 2.1;
+    moon.position
+      .set(Math.cos(angle) * 1.9, Math.sin(angle) * 1.9, 0)
+      .applyEuler(ring.rotation);
+    group.add(moon);
+  }
+  return group;
+}
+
+/** Contact — two interlocked rings. */
+function buildLinkedRings(color: THREE.Color): THREE.Object3D {
+  const group = new THREE.Group();
+  const ringGeo = new THREE.TorusGeometry(1.5, 0.22, 8, 40);
+  const a = new THREE.Mesh(ringGeo, stationMaterial(color));
+  const b = new THREE.Mesh(ringGeo, stationMaterial(color));
+  a.position.x = -0.85;
+  b.position.x = 0.85;
+  b.rotation.y = Math.PI / 2;
+  group.add(a);
+  group.add(b);
+  return group;
+}
 
 export class JourneyScene {
   private readonly renderer: THREE.WebGLRenderer;
@@ -172,7 +346,7 @@ export class JourneyScene {
     new THREE.Vector3(2, 0, -114),
     new THREE.Vector3(0, 0, -128),
   ]);
-  private readonly stations: THREE.Mesh[] = [];
+  private readonly stations: THREE.Object3D[] = [];
   private readonly orbitDust: THREE.Points[] = [];
   private readonly textGroup = new THREE.Group();
   private readonly arrivalGroup = new THREE.Group();
@@ -334,28 +508,20 @@ private buildStarfield(count: number): THREE.Points {
     ];
 
     const stationT = [0.18, 0.34, 0.5, 0.66, 0.82, 0.95];
-    for (let i = 0; i < STATION_SHAPES.length; i++) {
-      const mesh = new THREE.Mesh(
-        STATION_SHAPES[i](),
-        new THREE.MeshBasicMaterial({
-          color: tintColors[i],
-          wireframe: true,
-          transparent: true,
-          opacity: 0.55,
-        }),
-      );
+    for (let i = 0; i < STATION_BUILDERS.length; i++) {
+      const object = STATION_BUILDERS[i](tintColors[i]);
       const p = this.curve.getPointAt(stationT[i]);
-      mesh.position.set(
+      object.position.set(
         p.x + (i % 2 ? 3.5 : -3.5),
         p.y + (i % 3 - 1) * 1.6,
         p.z - 3,
       );
-      this.stations.push(mesh);
-      this.scene.add(mesh);
+      this.stations.push(object);
+      this.scene.add(object);
 
       const count = Math.min(stationCounts[i] ?? 0, 60);
       if (count > 0) {
-        this.orbitDust.push(this.buildOrbitDust(mesh.position, count, tintColors[i]));
+        this.orbitDust.push(this.buildOrbitDust(object.position, count, tintColors[i]));
       }
     }
   }

@@ -49,13 +49,6 @@ test("renders every numbered station in semantic order", async ({ page }) => {
   await expect(kickers.nth(3)).toHaveText("05");
   await expect(kickers.nth(4)).toHaveText("06");
   await expect(kickers.nth(5)).toHaveText("07");
-
-  const beats = page.locator(".journey-beat");
-  await expect(beats).toHaveCount(4);
-  await expect(beats.nth(0)).toContainText("UCSC CS");
-  await expect(beats.nth(1)).toContainText("SkillOptimizer");
-  await expect(beats.nth(2)).toContainText("Multi-agent systems in production");
-  await expect(beats.nth(3)).toContainText("versioned resumes");
 });
 
 test("uses a flat BERAT fallback when reduced motion is requested", async ({

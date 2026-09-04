@@ -1,9 +1,19 @@
 # Portfolio Website — Living Handoff
 
-**Last refreshed:** 2026-09-04 PT · air/hero DONE `e5482ff` · trail `5f40554` · Vision glyph-band confirm pending · Ship=Berat
+**Last refreshed:** 2026-09-04 PT · copy pass + themed 3D stations `e3cebc5`+next · Ship=Berat
 **Chronicle note:** Mac-only living brief — add locks, never delete history; no chat pastes. Keep dense.
 
 ---
+
+## 2026-09-04 copy + station-sculpture pass (Berat request)
+
+- Nav/heading renames (content.ts): Published proof→**Publications**, Versioned resumes→**Projects**, Systems vocab→**Skills**.
+- Station sublines (journey-beat) REMOVED everywhere (Station beat prop deleted; About/Pubs/XP/Projects beats gone). CSS `.journey-beat` + `.journey-contact-note` removed.
+- Contact repetition trimmed: message = "Open to AI systems / ML engineering roles — full-stack craft included."; utility-menu note paragraph deleted.
+- Skills now exhaustive: added discord.py, Hydra, Tmux, Runpod (AI & agents); SQLite, SQL, Neon, Zod (Full-stack); SCRUM (Systems & delivery); new **Foundations** cluster (Data Structures, Algorithms).
+- Pub PDF hover previews enlarged: non-lead 22→27rem, lead 26→32rem, iframe 28→34rem / 58→72vh.
+- Journey 3D: generic STATION_SHAPES replaced by themed wireframe sculptures per chapter (journey-scene.ts STATION_BUILDERS): About=origin spiral, Publications=paper stack, Experience=career steps, Projects=git branch graph, Skills=atom w/ moons, Contact=interlocked rings. Same tint/opacity/positions; stations now Object3D groups.
+- e2e updated (labels, beats block deleted). tsc/eslint/vitest/journey-spec green. Ship verify = Berat.
 
 ## Goal
 

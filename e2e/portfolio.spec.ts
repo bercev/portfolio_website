@@ -7,10 +7,10 @@ import {
 const navigationItems = [
   { id: "home", label: "Home" },
   { id: "about", label: "About" },
-  { id: "publications", label: "Published proof" },
+  { id: "publications", label: "Publications" },
   { id: "experience", label: "Experience" },
-  { id: "projects", label: "Versioned resumes" },
-  { id: "skills", label: "Systems vocab" },
+  { id: "projects", label: "Projects" },
+  { id: "skills", label: "Skills" },
   { id: "contact", label: "Contact" },
 ] as const;
 
@@ -200,7 +200,7 @@ test("tracks the visible section with the active palette color", async ({
     name: "Line section navigation",
   });
   const projectsLink = sidebar.getByRole("link", {
-    name: /Versioned resumes/,
+    name: /Projects/,
   });
 
   await page.locator("#projects").evaluate((section) => {
@@ -767,9 +767,9 @@ test("keeps document semantics stable and hides decorative canvases", async ({
 
   const headingLabels = [
     "About",
-    "Published proof",
+    "Publications",
     "Experience",
-    "Versioned resumes",
+    "Projects",
   ] as const;
   for (const label of headingLabels) {
     await expect(
