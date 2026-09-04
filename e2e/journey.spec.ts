@@ -44,8 +44,17 @@ test("renders every numbered station in semantic order", async ({ page }) => {
   const kickers = page.locator(".journey-kicker");
   await expect(kickers).toHaveCount(6);
   await expect(kickers.nth(0)).toHaveText("Station 02 — Origin");
+  await expect(kickers.nth(1)).toHaveText("Station 03 — Proof");
+  await expect(kickers.nth(2)).toHaveText("Station 04 — Systems");
+  await expect(kickers.nth(3)).toHaveText("Station 05 — Ships");
   await expect(kickers.nth(4)).toHaveText("Station 06 — Toolkit");
   await expect(kickers.nth(5)).toHaveText("Station 07 — Connect");
+
+  const beats = page.locator(".journey-beat");
+  await expect(beats).toHaveCount(6);
+  await expect(beats.nth(0)).toContainText("UC Santa Cruz");
+  await expect(beats.nth(1)).toContainText("SkillOptimizer");
+  await expect(beats.nth(3)).toContainText("ships product");
 });
 
 test("uses a flat BERAT fallback when reduced motion is requested", async ({

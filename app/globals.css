@@ -902,12 +902,28 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-station-heading {
-  margin-bottom: 22px;
+  margin-bottom: 10px;
   color: var(--foreground);
   font-size: clamp(2rem, 5vw, 3.4rem);
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.03em;
+}
+
+.journey-beat {
+  margin: 0 0 22px;
+  max-width: 62ch;
+  color: var(--muted-foreground);
+  font: 600 0.95rem/1.45 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.journey-station--proof .journey-station-heading {
+  font-size: clamp(2.25rem, 5.6vw, 3.8rem);
+}
+
+.journey-station--proof .journey-beat {
+  color: color-mix(in srgb, var(--effect-chroma-emerald) 72%, var(--foreground));
 }
 
 .journey-lead {
@@ -1023,6 +1039,61 @@ html[data-journey="active"] [data-effect-layer="background"] {
   padding: 10px 14px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--card) 34%, transparent);
+}
+
+
+.journey-panel--proof {
+  border-color: color-mix(in srgb, var(--effect-chroma-emerald) 34%, var(--glass-border));
+}
+
+.journey-pub-row--lead {
+  padding-top: clamp(8px, 1vw, 12px);
+  padding-bottom: clamp(22px, 3vw, 32px);
+}
+
+.journey-tag--proof {
+  color: var(--effect-chroma-emerald);
+  border-color: color-mix(in srgb, var(--effect-chroma-emerald) 45%, transparent);
+}
+
+.journey-tag--quiet {
+  color: var(--muted-foreground);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.journey-xp-item--featured {
+  padding-top: clamp(8px, 1vw, 12px);
+  padding-bottom: clamp(22px, 3vw, 32px);
+}
+
+.journey-xp-item--featured h3 {
+  font-size: clamp(1.7rem, 3.2vw, 2.15rem);
+}
+
+.journey-project--ships {
+  border-color: color-mix(in srgb, var(--portfolio-accent) 32%, var(--glass-border));
+}
+
+.journey-project--quiet {
+  opacity: 0.92;
+  background: color-mix(in srgb, var(--glass-bg) 72%, transparent);
+  box-shadow: var(--glass-shadow);
+}
+
+.journey-skill-clusters {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .journey-skill-clusters {
+    grid-template-columns: 1fr;
+  }
+}
+
+.journey-skill-group {
+  margin-bottom: 0;
 }
 
 .journey-contact-note {

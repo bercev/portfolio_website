@@ -8,11 +8,23 @@ type SkillsProps = {
 };
 
 export function Skills({ content, heading }: SkillsProps) {
+  const beat = content.map((category) => category.category).join(" · ");
+
   return (
-    <Station id="skills" station={6} kicker="Toolkit" heading={heading}>
-      <div className="journey-panel">
+    <Station
+      id="skills"
+      station={6}
+      kicker="Toolkit"
+      beat={beat}
+      heading={heading}
+    >
+      <div className="journey-skill-clusters">
         {content.map((category) => (
-          <div key={category.category} className="journey-skill-group mb-9 last:mb-0">
+          <div
+            key={category.category}
+            data-skill-cluster
+            className="journey-panel journey-skill-group"
+          >
             <h3 className="journey-skill-heading">{category.category}</h3>
             <div>
               {category.items.map((item) => (

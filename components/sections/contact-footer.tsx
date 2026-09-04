@@ -12,6 +12,7 @@ export function ContactFooter({
       id="contact"
       station={7}
       kicker="Connect"
+      beat={content.links.map((link) => link.label).join(" · ")}
       heading={content.heading}
     >
       <div className="journey-panel">

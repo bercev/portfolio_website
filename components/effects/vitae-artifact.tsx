@@ -21,7 +21,7 @@ import {
   type EffectProfile,
 } from "@/lib/effect-policy";
 
-import { VITAE_TECH_LINGER_MS } from "./vitae-constants";
+import { VITAE_CASE, VITAE_TECH_LINGER_MS } from "./vitae-constants";
 import { VitaeOrbitScene } from "./vitae-orbit-scene";
 
 export { VITAE_TECH_LINGER_MS } from "./vitae-constants";
@@ -31,15 +31,6 @@ const STATIC_PROFILE: EffectProfile = {
   pointerEffects: false,
   particleCount: 0,
 };
-
-const VITAE_CASE = {
-  premise: "Version-controlled resume builder shipped with a 5-person team.",
-  outcomes: [
-    "~30% faster API responses",
-    "~70% fewer merge conflicts",
-    "99.9% uptime",
-  ],
-} as const;
 
 function readTokenColor(root: HTMLElement, token: string) {
   const probe = document.createElement("span");

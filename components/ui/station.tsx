@@ -1,4 +1,5 @@
 import type { SectionId } from "@/data/content";
+import { cn } from "@/lib/utils";
 
 type StationProps = {
   readonly id: SectionId;
@@ -6,17 +7,31 @@ type StationProps = {
   readonly station: number;
   /** Short chapter label shown as the kicker, e.g. "Origin". */
   readonly kicker: string;
+  /** One-line beat readable without opening overlays. */
+  readonly beat?: string;
   readonly heading: string;
+  readonly className?: string;
   readonly children: React.ReactNode;
 };
 
-export function Station({ id, station, kicker, heading, children }: StationProps) {
+export function Station({
+  id,
+  station,
+  kicker,
+  beat,
+  heading,
+  className,
+  children,
+}: StationProps) {
   return (
     <section
       id={id}
       data-journey-station
       aria-labelledby={`${id}-heading`}
-      className="relative scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+      className={cn(
+        "relative scroll-mt-[calc(4rem+env(safe-area-inset-top))]",
+        className,
+      )}
     >
       <p className="journey-kicker">
         Station {String(station).padStart(2, "0")} — {kicker}
@@ -24,6 +39,7 @@ export function Station({ id, station, kicker, heading, children }: StationProps
       <h2 id={`${id}-heading`} className="journey-station-heading">
         {heading}
       </h2>
+      {beat ? <p className="journey-beat">{beat}</p> : null}
       {children}
     </section>
   );
