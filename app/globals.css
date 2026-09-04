@@ -98,6 +98,16 @@
   --journey-space-bg: #eef5fb;
   --journey-space-fog: #eef5fb;
 
+  --glass-bg: color-mix(in srgb, var(--card) 58%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--card) 76%, transparent);
+  --glass-border: color-mix(in srgb, var(--border) 88%, transparent);
+  --glass-blur: 14px;
+  --glass-saturate: 140%;
+  --glass-radius: 18px;
+  --glass-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 34%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  --glass-shadow: 0 24px 60px color-mix(in srgb, var(--shadow-color) 22%, transparent);
+
   color-scheme: light;
 }
 
@@ -156,6 +166,16 @@
 
   --journey-space-bg: #05070c;
   --journey-space-fog: #05070c;
+
+  --glass-bg: color-mix(in srgb, var(--card) 46%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--card) 68%, transparent);
+  --glass-border: color-mix(in srgb, var(--border) 92%, transparent);
+  --glass-blur: 16px;
+  --glass-saturate: 150%;
+  --glass-radius: 18px;
+  --glass-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #000000 28%, transparent);
+  --glass-shadow: 0 28px 70px color-mix(in srgb, var(--shadow-color) 42%, transparent);
 
   color-scheme: dark;
 }
@@ -500,12 +520,10 @@ textarea {
 
 .chroma-card [data-chroma-surface] {
   border-radius: calc(var(--radius) - 1px);
-  background: color-mix(in srgb, var(--card) 72%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  backdrop-filter: blur(18px) saturate(140%);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 30%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -612,6 +630,111 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   }
 }
 
+
+/* ---------- Vitae deep-dive artifact ---------- */
+
+.vitae-artifact {
+  position: relative;
+}
+
+.vitae-orbit-hit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 220px;
+  border: 1px solid var(--glass-border);
+  border-radius: calc(var(--glass-radius) - 4px);
+  background: color-mix(in srgb, var(--glass-bg) 70%, transparent);
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.vitae-orbit-hit:active {
+  cursor: grabbing;
+}
+
+.vitae-orbit-canvas {
+  display: block;
+  width: 100%;
+  height: 220px;
+  pointer-events: auto;
+}
+
+.vitae-orbit-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.vitae-static-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--glass-border);
+  border-radius: calc(var(--glass-radius) - 4px);
+  background: var(--glass-bg-strong);
+  padding: 18px 18px 16px;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight);
+}
+
+.vitae-outcome-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--effect-chroma-emerald) 35%, transparent);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: var(--effect-chroma-emerald);
+  background: color-mix(in srgb, var(--effect-chroma-emerald) 8%, transparent);
+}
+
+.vitae-case-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-site-navigation) + 20);
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: color-mix(in srgb, var(--background) 55%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+}
+
+.vitae-case-panel {
+  width: min(640px, 100%);
+  max-height: min(84vh, 820px);
+  overflow: auto;
+  padding: clamp(22px, 4vw, 36px);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .vitae-static-card,
+  .vitae-case-overlay {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .vitae-static-card {
+    background: var(--card);
+  }
+
+  .vitae-case-overlay {
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+  }
+}
+
 /* ---------- Immersive 3D Journey ---------- */
 
 .journey-scene {
@@ -703,21 +826,27 @@ html[data-journey="active"] [data-effect-layer="background"] {
   max-width: 62ch;
 }
 
+.liquid-glass,
 .journey-panel {
-  background: color-mix(in srgb, var(--card) 58%, transparent);
-  border: 1px solid var(--border);
-  border-radius: 18px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+.journey-panel {
   padding: clamp(20px, 3vw, 32px);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
-  box-shadow: 0 24px 60px color-mix(in srgb, var(--shadow-color) 22%, transparent);
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .liquid-glass,
   .journey-panel {
     background: var(--card);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+    box-shadow: var(--glass-shadow);
   }
 }
 

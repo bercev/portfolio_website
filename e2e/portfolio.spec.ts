@@ -103,7 +103,7 @@ test("renders every approved role, project, and skill category", async ({
     ).toBeVisible();
   }
 
-  for (const category of ["Languages", "Tools", "Frameworks", "Knowledge"]) {
+  for (const category of ["AI & agents", "Full-stack", "Systems & delivery"]) {
     await expect(
       page.getByRole("heading", { name: category, exact: true }),
     ).toBeVisible();
