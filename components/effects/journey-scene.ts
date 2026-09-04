@@ -22,6 +22,12 @@ export type JourneySceneOptions = {
   readonly palette: JourneyPalette;
   /** Orbit dust count per station — mirrors portfolio content (papers, roles, projects, skills). */
   readonly stationCounts: readonly number[];
+  /**
+   * Light clear colors cannot use additive particle blending — mid/dark glyph
+   * colors add almost nothing on #eef5fb, so BERAT/CONNECT vanish. Normal
+   * blending keeps ink readable; bloom stays dark-only for the same reason.
+   */
+  readonly lightTheme?: boolean;
   readonly onProgress?: (t: number) => void;
 };
 
@@ -31,6 +37,7 @@ function buildTextPoints(
   count: number,
   palette: JourneyPalette,
   worldH = 7,
+  blending: THREE.Blending = THREE.AdditiveBlending,
 ): THREE.Points {
   const c = document.createElement("canvas");
   const ctx = c.getContext("2d");
@@ -87,7 +94,7 @@ function buildTextPoints(
   const mat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    blending,
     uniforms: {
       uTime: { value: 0 },
       uScatter: { value: 0 },
@@ -185,12 +192,16 @@ export class JourneyScene {
   private paused = false;
   /** Mouse-look / pointer parallax — home + contact only. */
   private pointerLookEnabled = false;
+  private readonly particleBlending: THREE.Blending;
 
   constructor(options: JourneySceneOptions) {
     const { canvas, quality, reducedMotion, spaceBg, fog, palette, stationCounts, onProgress } = options;
+    const lightTheme = Boolean(options.lightTheme);
+    const particleBlending = lightTheme ? THREE.NormalBlending : THREE.AdditiveBlending;
     this.quality = quality;
     this.reducedMotion = reducedMotion;
     this.palette = palette;
+    this.particleBlending = particleBlending;
     this.onProgress = onProgress;
 
     this.renderer = new THREE.WebGLRenderer({
@@ -210,12 +221,12 @@ export class JourneyScene {
       220,
     );
 
-    this.textPoints = buildTextPoints("BERAT", quality === "full" ? 7000 : 4200, palette);
+    this.textPoints = buildTextPoints("BERAT", quality === "full" ? 7000 : 4200, palette, 7, particleBlending);
     this.textGroup.add(this.textPoints);
     this.textGroup.position.set(0, 0.4, 0);
     this.scene.add(this.textGroup);
 
-    this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 6000 : 3600, palette, 5);
+    this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 6000 : 3600, palette, 5, particleBlending);
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = 1;
     this.arrivalGroup.add(this.arrivalPoints);
     this.arrivalGroup.position.set(0, 0.4, -142);
@@ -231,8 +242,8 @@ export class JourneyScene {
       new THREE.MeshBasicMaterial({
         color: new THREE.Color(palette.cyan),
         transparent: true,
-        opacity: 0.4,
-        blending: THREE.AdditiveBlending,
+        opacity: lightTheme ? 0.55 : 0.4,
+        blending: particleBlending,
         depthWrite: false,
       }),
     );
@@ -244,13 +255,14 @@ export class JourneyScene {
         color: new THREE.Color(palette.accent),
         transparent: true,
         opacity: 0.95,
-        blending: THREE.AdditiveBlending,
+        blending: particleBlending,
         depthWrite: false,
       }),
     );
     this.scene.add(this.comet);
 
-    if (quality === "full") {
+    // Bloom + additive glow only reads on dark clears; skip in light theme.
+    if (quality === "full" && !lightTheme) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
       this.composer.addPass(
@@ -303,7 +315,7 @@ private buildStarfield(count: number): THREE.Points {
         transparent: true,
         opacity: 0.9,
         depthWrite: false,
-        blending: THREE.AdditiveBlending,
+        blending: this.particleBlending,
         sizeAttenuation: true,
       }),
     );
@@ -372,7 +384,7 @@ private buildStarfield(count: number): THREE.Points {
         transparent: true,
         opacity: 0.9,
         depthWrite: false,
-        blending: THREE.AdditiveBlending,
+        blending: this.particleBlending,
         sizeAttenuation: true,
       }),
     );

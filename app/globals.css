@@ -846,6 +846,14 @@ html[data-journey="active"] .journey-vignette {
   );
 }
 
+html.dark[data-journey="active"] .journey-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(5, 7, 12, 0.55) 100%
+  );
+}
+
 html[data-journey="active"] .journey-rail {
   display: block;
   position: fixed;
