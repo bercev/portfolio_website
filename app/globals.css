@@ -103,7 +103,7 @@
   --glass-border: color-mix(in srgb, var(--border) 88%, transparent);
   --glass-blur: 14px;
   --glass-saturate: 140%;
-  --glass-radius: 18px;
+  --glass-radius: 8px;
   --glass-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 34%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
   --glass-shadow: 0 24px 60px color-mix(in srgb, var(--shadow-color) 22%, transparent);
@@ -172,7 +172,7 @@
   --glass-border: color-mix(in srgb, var(--border) 92%, transparent);
   --glass-blur: 16px;
   --glass-saturate: 150%;
-  --glass-radius: 18px;
+  --glass-radius: 8px;
   --glass-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent),
     inset 0 -1px 0 color-mix(in srgb, #000000 28%, transparent);
   --glass-shadow: 0 28px 70px color-mix(in srgb, var(--shadow-color) 42%, transparent);
@@ -889,6 +889,35 @@ html[data-journey="active"] .journey-rail {
   padding: clamp(72px, 12vh, 128px) clamp(16px, 5vw, 64px);
 }
 
+.journey-station--origin {
+  max-width: 1180px;
+  padding-block: clamp(88px, 14vh, 148px);
+}
+
+.journey-station--proof {
+  max-width: 1040px;
+}
+
+.journey-station--systems {
+  max-width: 1080px;
+  padding-block: clamp(64px, 10vh, 112px);
+}
+
+.journey-station--ships {
+  max-width: 1240px;
+}
+
+.journey-station--vocab {
+  max-width: 1120px;
+  padding-block: clamp(64px, 10vh, 120px);
+}
+
+.journey-station--connect {
+  max-width: 900px;
+  min-height: 72svh;
+  padding-block: clamp(72px, 14vh, 140px);
+}
+
 html[data-journey="active"] [data-effect-layer="background"] {
   display: none;
 }
@@ -902,20 +931,20 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-station-heading {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   color: var(--foreground);
-  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-size: clamp(2.15rem, 5.4vw, 3.65rem);
   font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.03em;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
 }
 
 .journey-beat {
-  margin: 0 0 22px;
-  max-width: 62ch;
+  margin: 0 0 28px;
+  max-width: 54ch;
   color: var(--muted-foreground);
-  font: 600 0.95rem/1.45 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.01em;
+  font: 600 1rem/1.5 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.015em;
 }
 
 .journey-station--proof .journey-station-heading {
@@ -931,8 +960,8 @@ html[data-journey="active"] [data-effect-layer="background"] {
   max-width: 62ch;
 }
 
-.liquid-glass,
-.journey-panel {
+/* Liquid glass is an accent material — Vitae/deep-dive only. */
+.liquid-glass {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--glass-radius);
@@ -941,17 +970,44 @@ html[data-journey="active"] [data-effect-layer="background"] {
   box-shadow: var(--glass-highlight), var(--glass-shadow);
 }
 
+/* Default station surfaces: hard-edged editorial panels, not frosted cards. */
 .journey-panel {
   padding: clamp(20px, 3vw, 32px);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.journey-panel--hard {
+  background: color-mix(in srgb, var(--card) 42%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 16%, var(--border));
+}
+
+.journey-copy {
+  max-width: 54ch;
+}
+
+.journey-copy--connect {
+  max-width: 48ch;
+  padding-top: 8px;
+  border-top: 2px solid color-mix(in srgb, var(--foreground) 28%, transparent);
+}
+
+.journey-rail-list {
+  max-width: 920px;
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .liquid-glass,
-  .journey-panel {
+  .liquid-glass {
     background: var(--card);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     box-shadow: var(--glass-shadow);
+  }
+
+  .journey-panel--hard {
+    background: var(--card);
   }
 }
 
@@ -964,8 +1020,22 @@ html[data-journey="active"] [data-effect-layer="background"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.journey-grid--origin {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: start;
+}
+
+.journey-grid--ships {
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.85fr);
+  gap: clamp(18px, 3vw, 28px);
+  align-items: stretch;
+}
+
 @media (max-width: 767px) {
-  .journey-grid--two {
+  .journey-grid--two,
+  .journey-grid--origin,
+  .journey-grid--ships {
     grid-template-columns: 1fr;
   }
 }
@@ -988,7 +1058,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
   color: var(--effect-chroma-emerald);
   border: 1px solid color-mix(in srgb, var(--effect-chroma-emerald) 35%, transparent);
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: 2px;
 }
 
 .journey-xp-item {
@@ -1036,9 +1106,9 @@ html[data-journey="active"] [data-effect-layer="background"] {
   font: 500 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--muted-foreground);
   border: 1px solid var(--border);
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 34%, transparent);
+  padding: 9px 12px;
+  border-radius: 2px;
+  background: transparent;
 }
 
 
@@ -1075,9 +1145,9 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-project--quiet {
-  opacity: 0.92;
-  background: color-mix(in srgb, var(--glass-bg) 72%, transparent);
-  box-shadow: var(--glass-shadow);
+  opacity: 0.94;
+  background: transparent;
+  box-shadow: none;
 }
 
 .journey-skill-clusters {

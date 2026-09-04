@@ -7,10 +7,10 @@ import {
 const navigationItems = [
   { id: "home", label: "Home" },
   { id: "about", label: "About" },
-  { id: "publications", label: "Publications" },
+  { id: "publications", label: "Published proof" },
   { id: "experience", label: "Experience" },
-  { id: "projects", label: "Projects" },
-  { id: "skills", label: "Skills" },
+  { id: "projects", label: "Versioned resumes" },
+  { id: "skills", label: "Systems vocab" },
   { id: "contact", label: "Contact" },
 ] as const;
 
@@ -156,21 +156,24 @@ test("uses quiet journey-panel borders in both themes", async ({ browser }) => {
   }
 });
 
-test("gives journey panels a frosted glass surface", async ({ page }) => {
+test("keeps liquid-glass as an accent surface on Vitae", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  const surface = page.locator(".journey-panel").first();
+  const surface = page.locator(".liquid-glass").first();
+  await expect(surface).toBeVisible();
   const styles = await surface.evaluate((element) => {
     const computed = getComputedStyle(element);
     return {
       backdropFilter: computed.backdropFilter,
       boxShadow: computed.boxShadow,
+      borderRadius: computed.borderRadius,
     };
   });
 
   expect(styles.backdropFilter).toContain("blur(");
   expect(styles.boxShadow).not.toBe("none");
+  expect(Number.parseFloat(styles.borderRadius)).toBeLessThanOrEqual(12);
 });
 
 test("renders the line sidebar as section navigation", async ({ page }) => {
@@ -197,7 +200,7 @@ test("tracks the visible section with the active palette color", async ({
     name: "Line section navigation",
   });
   const projectsLink = sidebar.getByRole("link", {
-    name: /Projects/,
+    name: /Versioned resumes/,
   });
 
   await page.locator("#projects").evaluate((section) => {
@@ -764,9 +767,9 @@ test("keeps document semantics stable and hides decorative canvases", async ({
 
   const headingLabels = [
     "About",
-    "Publications",
+    "Published proof",
     "Experience",
-    "Projects",
+    "Versioned resumes",
   ] as const;
   for (const label of headingLabels) {
     await expect(
