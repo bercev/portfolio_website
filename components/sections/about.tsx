@@ -22,8 +22,15 @@ export function About({ content, heading }: AboutProps) {
     >
       <div className="journey-grid journey-grid--origin">
         <div className="journey-copy space-y-6">
-          {content.bio.map((paragraph) => (
-            <p key={paragraph} className="journey-body journey-body--lede">
+          {content.bio.map((paragraph, index) => (
+            <p
+              key={paragraph}
+              className={
+                index === 0
+                  ? "journey-body journey-body--lede"
+                  : "journey-body"
+              }
+            >
               {paragraph}
             </p>
           ))}

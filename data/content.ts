@@ -122,8 +122,13 @@ export const portfolio = {
   },
   about: {
     bio: [
-      "UCSC CS · 4.0 · building AI systems",
-    ],
+      "I started coding in seventh grade because I liked making things that actually did something. In high school that grew into CS classes, AP CS, and a hackathon where my team took third. Building with other people clicked for me there, and I wanted more of it.",
+      "After high school I built an AI Discord chatbot for a real community. I was obsessed with it. People actually used it, asked it things, and leaned on it in the server, and watching that land taught me how much it means when software reaches someone outside your own laptop.",
+      "Then I interned at Trustd.ai before college. That was my first real look at professional software. I worked with a mentor, sat in code review, took feedback that made my work sharper, and watched how production systems are designed, tested, and kept alive. A lot of how I think about shipping came from that room.",
+      "When I started at UC Santa Cruz, my curiosity pulled hard toward AI and agents. Through Algoverse I researched how people talk to LLMs in the wild and helped build @GrokSet. I also worked on SkillOptimizer for the ICML 2026 AIWILD Workshop, digging into how agents can get better at skills without heavy task supervision. Alongside that I tutored DSA for upper division students, which forced me to explain hard ideas clearly under real time pressure.",
+      "In my software engineering course I joined four teammates on Vitae. We lived in Scrum for months. Timing slipped, tickets collided, and we spent long sessions tracing bugs that only appeared when two features met. We brainstormed until messy ideas became something we could ship, leaned on each other through the rough weeks, and formed the kind of trust you get from solving hard problems together. That project still sits close to me.",
+      "Now I am an AI Systems Engineer Intern building multi-agent pipelines that turn evidence into software, and I build every day with tools like Codex and Claude. The through line is pretty simple: start curious, put something in front of real people, learn how teams ship, study how agents behave, then build the systems I wanted to exist.",
+    ]
     education: {
       institution: "UC Santa Cruz",
       degree: "B.S. Computer Science",
