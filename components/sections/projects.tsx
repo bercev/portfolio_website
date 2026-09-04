@@ -1,5 +1,6 @@
 import type { PortfolioContent, Project } from "@/data/content";
 
+import { VitaeArtifact } from "@/components/effects/vitae-artifact";
 import { ExternalLink } from "@/components/ui/external-link";
 import { Station } from "@/components/ui/station";
 
@@ -8,7 +9,13 @@ type ProjectsProps = {
   readonly heading: PortfolioContent["navigation"][number]["label"];
 };
 
-function ProjectDetails({ project }: { readonly project: Project }) {
+function ProjectDetails({
+  project,
+  deepDive = false,
+}: {
+  readonly project: Project;
+  readonly deepDive?: boolean;
+}) {
   return (
     <>
       <p className="text-base font-semibold text-muted-foreground">
@@ -36,6 +43,11 @@ function ProjectDetails({ project }: { readonly project: Project }) {
         <span className="font-semibold text-foreground">Built with: </span>
         {project.technologies.join(", ")}
       </p>
+      {deepDive ? (
+        <div className="mt-8">
+          <VitaeArtifact project={project} />
+        </div>
+      ) : null}
     </>
   );
 }
@@ -49,16 +61,16 @@ export function Projects({ content, heading }: ProjectsProps) {
         {featured ? (
           <article
             data-project-featured
-            className="journey-panel journey-project"
+            className="journey-panel journey-project liquid-glass"
           >
-            <ProjectDetails project={featured} />
+            <ProjectDetails project={featured} deepDive />
           </article>
         ) : null}
 
         {supporting ? (
           <article
             data-project-supporting
-            className="journey-panel journey-project"
+            className="journey-panel journey-project liquid-glass"
           >
             <ProjectDetails project={supporting} />
           </article>
