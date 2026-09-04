@@ -177,11 +177,11 @@ export class JourneyScene {
   private readonly tangent = new THREE.Vector3();
   private readonly lookTarget = new THREE.Vector3(0, 0, 0);
   private readonly pointer = { x: 0, y: 0 };
+  private readonly timer = new THREE.Timer();
   private targetT = 0;
   private smoothT = 0;
   private raf = 0;
   private disposed = false;
-  private timer: THREE.Timer | null = null;
 
   constructor(options: JourneySceneOptions) {
     const { canvas, quality, reducedMotion, spaceBg, fog, palette, stationCounts, onProgress } = options;
@@ -390,7 +390,8 @@ private readonly handleResize = () => {
 
   private readonly handleScroll = () => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
-    this.targetT = max > 0 ? window.scrollY / max : 0;
+    const y = Number.isFinite(window.scrollY) ? window.scrollY : 0;
+    this.targetT = max > 0 ? y / max : 0;
   };
 
   private bindScroll() {
@@ -405,7 +406,8 @@ private readonly handleResize = () => {
   }
 
   private renderOneFrame(time: number) {
-    const t = time / 1000;
+    // `time` is elapsed seconds.
+    const t = Math.max(0, time);
     const scatter = this.reducedMotion ? 0 : THREE.MathUtils.smoothstep(this.smoothT, 0.02, 0.16);
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = scatter;
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
@@ -428,7 +430,7 @@ private readonly handleResize = () => {
       this.orbitDust.forEach((dust, i) => {
         dust.rotation.y = t * (0.1 + i * 0.05);
       });
-      const cometT = (t / 26) % 1;
+      const cometT = ((t / 26) % 1 + 1) % 1;
       this.comet.position.copy(this.curve.getPointAt(cometT));
       this.comet.scale.setScalar(1 + Math.sin(t * 4) * 0.3);
     }
@@ -449,13 +451,14 @@ private readonly handleResize = () => {
 
   private loop = (now: number) => {
     if (this.disposed) return;
-    this.timer ??= new THREE.Timer();
     this.timer.update(now);
-    const dt = Math.min(this.timer.getDelta(), 0.05);
-    const t = this.timer.getElapsed();
+    const rawDt = this.timer.getDelta();
+    const dt = Number.isFinite(rawDt) && rawDt > 0 ? Math.min(rawDt, 0.05) : 1 / 60;
+    const t = Math.max(0, this.timer.getElapsed());
     this.smoothT += (this.targetT - this.smoothT) * (1 - Math.exp(-3.2 * dt));
+    if (!Number.isFinite(this.smoothT)) this.smoothT = this.targetT;
     this.renderOneFrame(t);
-    this.onProgress?.(this.smoothT);
+    this.onProgress?.(Number.isFinite(this.smoothT) ? this.smoothT : 0);
     this.raf = requestAnimationFrame(this.loop);
   };
 

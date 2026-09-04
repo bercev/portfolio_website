@@ -4,7 +4,7 @@ import {
   test,
 } from "./runtime-errors";
 
-test("keeps the particle identity semantically stable", async ({
+test("keeps the journey identity semantically stable", async ({
   page,
 }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
@@ -13,19 +13,12 @@ test("keeps the particle identity semantically stable", async ({
   await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(
     "Berat Ercevik",
   );
-  await expect(
-    page.locator("#home .sr-only", { hasText: /^BERAT$/ }),
-  ).toBeAttached();
-  await expect(
-    page.locator("#about .sr-only", { hasText: /^About$/ }),
-  ).toBeAttached();
-
   await expect(page.locator("#home a")).toHaveCount(0);
 
   runtimeErrors.assertEmpty();
 });
 
-test("renders the Particle Text canvas in both themes", async ({
+test("renders the journey canvas in both themes", async ({
   browser,
 }) => {
   for (const theme of ["light", "dark"] as const) {
@@ -37,12 +30,8 @@ test("renders the Particle Text canvas in both themes", async ({
     }, theme);
     await page.goto("/");
 
-    const particleText = page.locator("[data-hero-particle-text]");
-    const canvas = particleText.locator("canvas");
-    await expect(particleText).toHaveAttribute(
-      "data-particle-text-mode",
-      "enhanced",
-    );
+    const canvas = page.locator("[data-journey-scene]");
+    await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
     await expect(canvas).toBeVisible();
     const canvasBounds = await canvas.boundingBox();
     expect(canvasBounds).not.toBeNull();
@@ -65,17 +54,14 @@ test("renders the Particle Text canvas in both themes", async ({
   }
 });
 
-test("tracks scroll with one Signal Spine and animates section headings once", async ({
-  page,
-}) => {
+test("tracks scroll with the journey progress rail", async ({ page }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
   await page.goto("/");
 
-  const spine = page.locator("[data-signal-spine]");
-  const fill = spine.locator("[data-signal-fill]");
-  await expect(spine).toHaveCount(1);
-  await expect(spine).toHaveAttribute("data-signal-mode", "enhanced");
-  await expect(page.locator('[data-warp-replay="true"]')).toHaveCount(6);
+  const rail = page.locator(".journey-rail");
+  const fill = page.locator(".journey-rail-fill");
+  await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
+  await expect(rail).toBeVisible();
 
   const initialTransform = await fill.evaluate(
     (element) => getComputedStyle(element).transform,
@@ -85,36 +71,19 @@ test("tracks scroll with one Signal Spine and animates section headings once", a
     .poll(() => fill.evaluate((element) => getComputedStyle(element).transform))
     .not.toBe(initialTransform);
 
-  const experience = page.locator("#experience");
-  const experienceHeading = experience.getByRole("heading", {
-    level: 2,
-    name: "Experience",
-  });
-  const glyph = experience.locator("[data-warp-glyph]").first();
-  await experienceHeading.scrollIntoViewIfNeeded();
-  await expect
-    .poll(() => glyph.evaluate((element) => getComputedStyle(element).transform))
-    .toBe("none");
-  await expect(glyph).toHaveCSS("opacity", "1");
-
-  // Headings animate once; scrolling away and back must not re-run the warp.
-  await page.locator("#home").scrollIntoViewIfNeeded();
-  await experienceHeading.scrollIntoViewIfNeeded();
-  await expect(glyph).toHaveCSS("opacity", "1");
-
   runtimeErrors.assertEmpty();
 });
 
-test("renders static Particle Text for reduced motion", async ({ browser }) => {
+test("renders a flat hero name for reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
   const runtimeErrors = attachRuntimeErrorCollector(page);
   await page.goto("/");
 
-  const root = page.locator("[data-hero-particle-text]");
-  await expect(root).toHaveAttribute("data-particle-text-mode", "static");
-  await expect(root.getByText("BERAT", { exact: true })).toBeVisible();
-  await expect(root.locator("canvas")).toHaveCount(0);
+  await expect(page.locator("html")).not.toHaveAttribute("data-journey");
+  const fallback = page.locator("[data-hero-name-fallback]");
+  await expect(fallback).toBeVisible();
+  await expect(fallback).toHaveText("BERAT");
 
   runtimeErrors.assertEmpty();
   await context.close();
