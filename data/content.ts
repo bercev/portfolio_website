@@ -230,6 +230,7 @@ export const portfolio = {
       description:
         "Llama 3 Discord assistant with multi-agent RAG and self-correction (10K+ indexed messages, 50+ community members).",
       technologies: ["Python", "discord.py", "Ollama", "AWS", "LangChain", "SQL"],
+      href: "https://github.com/bercev/Discord-Chatbot-AI",
     },
   ],
   skills: [
