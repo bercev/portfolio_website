@@ -33,22 +33,11 @@ const STATIC_PROFILE: EffectProfile = {
 };
 
 const VITAE_CASE = {
-  premise:
-    "Resume building and version-control platform shipped with a 5-person Agile team.",
+  premise: "Version-controlled resume builder shipped with a 5-person team.",
   outcomes: [
     "~30% faster API responses",
     "~70% fewer merge conflicts",
     "99.9% uptime",
-  ],
-  stack: [
-    "NextJS",
-    "TypeScript",
-    "PostgreSQL",
-    "Docker",
-    "Neon",
-    "Clerk",
-    "GitHub Actions",
-    "Netlify",
   ],
 } as const;
 
@@ -99,7 +88,7 @@ function VitaeCaseBody({ project }: { readonly project: Project }) {
           Stack
         </p>
         <p className="mt-3 text-base leading-7 text-muted-foreground">
-          {VITAE_CASE.stack.join(" · ")}
+          {project.technologies.join(" · ")}
         </p>
       </div>
 

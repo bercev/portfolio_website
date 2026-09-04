@@ -14,9 +14,18 @@ export type VitaeOrbitSceneOptions = {
 const PAGE_W = 1.55;
 const PAGE_H = 2.05;
 
+type PageBase = {
+  x: number;
+  y: number;
+  z: number;
+  rotX: number;
+  rotY: number;
+  rotZ: number;
+};
+
 /**
  * Lightweight Vitae deep-dive mesh — stacked versioned pages / layer-diff energy.
- * No EffectComposer. Grab springs back in ~1s; orbit continues while active.
+ * No EffectComposer. Grab springs back in ~1s with page-flutter; orbit continues while active.
  */
 export class VitaeOrbitScene {
   private readonly renderer: THREE.WebGLRenderer;
@@ -27,7 +36,7 @@ export class VitaeOrbitScene {
   private readonly diffMarks: THREE.Group;
   private readonly dust: THREE.Points;
   private readonly pageLayers: THREE.Group[] = [];
-  private readonly pageBases: Array<{ x: number; rotZ: number }> = [];
+  private readonly pageBases: PageBase[] = [];
 
   private readonly pointer = { x: 0, y: 0, grabbing: false };
   private readonly targetRot = { x: 0.28, y: 0.35 };
@@ -39,6 +48,9 @@ export class VitaeOrbitScene {
   private paused = false;
   private lastNow = 0;
   private autoAngle = 0;
+  /** Grab page-flutter envelope; springs toward 0 in ~1s. */
+  private flutter = 0;
+  private flutterVel = 0;
 
   constructor(options: VitaeOrbitSceneOptions) {
     const { canvas, palette } = options;
@@ -80,24 +92,64 @@ export class VitaeOrbitScene {
     emerald: THREE.Color,
   ) {
     const group = new THREE.Group();
+    // 3–4 stacked page planes with yaw/pitch offset so the stack reads as versions.
     const layers: Array<{
       tint: THREE.Color;
-      z: number;
       x: number;
       y: number;
+      z: number;
+      rotX: number;
+      rotY: number;
       rotZ: number;
       opacity: number;
     }> = [
-      { tint: emerald, z: -0.22, x: -0.18, y: 0.1, rotZ: -0.08, opacity: 0.38 },
-      { tint: cyan, z: -0.08, x: -0.06, y: 0.04, rotZ: -0.03, opacity: 0.52 },
-      { tint: accent, z: 0.08, x: 0.08, y: -0.02, rotZ: 0.035, opacity: 0.78 },
+      {
+        tint: emerald,
+        x: -0.22,
+        y: 0.12,
+        z: -0.28,
+        rotX: -0.07,
+        rotY: 0.11,
+        rotZ: -0.09,
+        opacity: 0.32,
+      },
+      {
+        tint: cyan,
+        x: -0.1,
+        y: 0.06,
+        z: -0.14,
+        rotX: -0.03,
+        rotY: 0.05,
+        rotZ: -0.04,
+        opacity: 0.46,
+      },
+      {
+        tint: accent,
+        x: 0.04,
+        y: 0.01,
+        z: 0.0,
+        rotX: 0.015,
+        rotY: -0.02,
+        rotZ: 0.02,
+        opacity: 0.64,
+      },
+      {
+        tint: accent,
+        x: 0.14,
+        y: -0.04,
+        z: 0.14,
+        rotX: 0.05,
+        rotY: -0.08,
+        rotZ: 0.045,
+        opacity: 0.86,
+      },
     ];
 
     for (const layer of layers) {
       const pageGeo = new THREE.PlaneGeometry(PAGE_W, PAGE_H);
       const layerGroup = new THREE.Group();
       layerGroup.position.set(layer.x, layer.y, layer.z);
-      layerGroup.rotation.z = layer.rotZ;
+      layerGroup.rotation.set(layer.rotX, layer.rotY, layer.rotZ);
 
       const page = new THREE.Mesh(
         pageGeo,
@@ -111,6 +163,7 @@ export class VitaeOrbitScene {
       );
       layerGroup.add(page);
 
+      // Edge-diff accent outline.
       const outline = new THREE.LineSegments(
         new THREE.EdgesGeometry(pageGeo),
         new THREE.LineBasicMaterial({
@@ -124,10 +177,17 @@ export class VitaeOrbitScene {
 
       group.add(layerGroup);
       this.pageLayers.push(layerGroup);
-      this.pageBases.push({ x: layer.x, rotZ: layer.rotZ });
+      this.pageBases.push({
+        x: layer.x,
+        y: layer.y,
+        z: layer.z,
+        rotX: layer.rotX,
+        rotY: layer.rotY,
+        rotZ: layer.rotZ,
+      });
     }
 
-    // Front-page "body copy" proxies — read as document lines in ~1s.
+    // Front-page "body copy" proxies — read as document lines.
     const lineMat = new THREE.MeshBasicMaterial({
       color: accent,
       transparent: true,
@@ -140,7 +200,7 @@ export class VitaeOrbitScene {
         new THREE.PlaneGeometry(0.95 * widthScale, 0.045),
         lineMat,
       );
-      line.position.set(0.08 + (1 - widthScale) * -0.2, 0.62 - i * 0.2, 0.1);
+      line.position.set(0.12 + (1 - widthScale) * -0.2, 0.58 - i * 0.2, 0.16);
       group.add(line);
     }
 
@@ -160,9 +220,9 @@ export class VitaeOrbitScene {
       x: number;
       z: number;
     }> = [
-      { color: emerald, y: 0.55, h: 0.28, x: -0.72, z: 0.12 },
-      { color: cyan, y: 0.12, h: 0.42, x: -0.72, z: 0.12 },
-      { color: accent, y: -0.38, h: 0.22, x: -0.72, z: 0.12 },
+      { color: emerald, y: 0.55, h: 0.28, x: -0.72, z: 0.16 },
+      { color: cyan, y: 0.12, h: 0.42, x: -0.72, z: 0.16 },
+      { color: accent, y: -0.38, h: 0.22, x: -0.72, z: 0.16 },
       { color: emerald, y: 0.28, h: 0.18, x: 0.78, z: -0.05 },
       { color: cyan, y: -0.2, h: 0.32, x: 0.78, z: -0.05 },
     ];
@@ -222,10 +282,12 @@ export class VitaeOrbitScene {
 
   private bindPointer(canvas: HTMLCanvasElement) {
     const onDown = (event: PointerEvent) => {
-      if (event.button !== 0) return;
       this.pointer.grabbing = true;
       this.pointer.x = event.clientX;
       this.pointer.y = event.clientY;
+      // Kick page-flutter envelope on grab; spring settles ~1s.
+      this.flutter = 1;
+      this.flutterVel = 2.4;
       canvas.setPointerCapture(event.pointerId);
     };
     const onMove = (event: PointerEvent) => {
@@ -238,6 +300,8 @@ export class VitaeOrbitScene {
       this.velocity.x += dy * 0.004;
       this.targetRot.y += dx * 0.008;
       this.targetRot.x += dy * 0.008;
+      // Keep flutter alive while dragging.
+      this.flutter = Math.min(1, this.flutter + Math.hypot(dx, dy) * 0.01);
     };
     const onUp = (event: PointerEvent) => {
       if (!this.pointer.grabbing) return;
@@ -313,16 +377,34 @@ export class VitaeOrbitScene {
       this.autoAngle += dt * 0.42;
     }
 
+    // Flutter envelope springs toward 0 (~1s settle with stiffness/damping).
+    const flutterAccel =
+      (0 - this.flutter) * this.spring.stiffness -
+      this.flutterVel * this.spring.damping;
+    this.flutterVel += flutterAccel * dt;
+    this.flutter = Math.max(0, this.flutter + this.flutterVel * dt);
+    if (this.flutter < 0.002 && Math.abs(this.flutterVel) < 0.01) {
+      this.flutter = 0;
+      this.flutterVel = 0;
+    }
+
     this.root.rotation.x = this.targetRot.x;
     this.root.rotation.y = this.targetRot.y;
 
-    // Layer-diff breath: pages fan slightly so the stack reads as versions.
+    // Layer-diff breath + grab page-flutter across yaw/pitch/z.
     const fan = 0.5 + 0.5 * Math.sin(this.autoAngle * 0.9);
+    const t = this.autoAngle;
     this.pageLayers.forEach((layer, index) => {
       const base = this.pageBases[index];
-      const spread = (index - 1) * 0.035 * fan;
-      layer.position.x = base.x + spread;
-      layer.rotation.z = base.rotZ + spread * 0.25;
+      const spread = (index - 1.5) * 0.03 * fan;
+      const flutterWave = Math.sin(t * 14 + index * 1.7) * this.flutter;
+      const flutterWave2 = Math.cos(t * 11 + index * 1.1) * this.flutter;
+      layer.position.x = base.x + spread + flutterWave * 0.035;
+      layer.position.y = base.y + flutterWave2 * 0.02;
+      layer.position.z = base.z + flutterWave * 0.05;
+      layer.rotation.x = base.rotX + flutterWave2 * 0.08;
+      layer.rotation.y = base.rotY + flutterWave * 0.07;
+      layer.rotation.z = base.rotZ + spread * 0.25 + flutterWave * 0.04;
     });
     this.diffMarks.rotation.z = Math.sin(this.autoAngle * 0.7) * 0.04;
     this.dust.rotation.y -= dt * 0.15;
