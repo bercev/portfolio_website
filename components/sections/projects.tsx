@@ -44,9 +44,6 @@ function ProjectDetails({
         )}
       </h3>
       {deepDive ? <span className="journey-tag">Ships product</span> : null}
-      {quiet ? (
-        <span className="journey-tag journey-tag--quiet">Quiet card</span>
-      ) : null}
       <p
         className={
           quiet
