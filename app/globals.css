@@ -878,6 +878,17 @@ html[data-journey="active"] .journey-rail {
   padding: clamp(72px, 12vh, 128px) clamp(16px, 5vw, 64px);
 }
 
+
+.journey-about-column {
+  display: grid;
+  gap: clamp(40px, 6vh, 72px);
+  max-width: 68ch;
+}
+
+.journey-about-education {
+  max-width: 54ch;
+}
+
 .journey-station--origin {
   max-width: 1180px;
   padding-block: clamp(96px, 16vh, 168px);

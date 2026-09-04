@@ -20,7 +20,7 @@ export function About({ content, heading }: AboutProps) {
       heading={heading}
       className="journey-station--origin"
     >
-      <div className="journey-grid journey-grid--origin">
+      <div className="journey-about-column">
         <div className="journey-copy space-y-6">
           {content.bio.map((paragraph, index) => (
             <p
@@ -36,7 +36,10 @@ export function About({ content, heading }: AboutProps) {
           ))}
         </div>
 
-        <aside data-education-panel className="journey-panel journey-panel--hard">
+        <aside
+          data-education-panel
+          className="journey-panel journey-panel--ruled journey-about-education"
+        >
           <p className="text-base font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Education
           </p>
@@ -55,7 +58,7 @@ export function About({ content, heading }: AboutProps) {
             <p className="text-base font-semibold text-foreground">
               Selected coursework
             </p>
-            <ul className="mt-4 grid gap-x-6 gap-y-3 text-base leading-7 text-muted-foreground sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <ul className="mt-4 grid gap-x-6 gap-y-3 text-base leading-7 text-muted-foreground sm:grid-cols-2">
               {education.coursework.map((course) => (
                 <li key={course}>{course}</li>
               ))}
