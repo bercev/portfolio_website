@@ -676,6 +676,7 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
 }
 
 .vitae-static-card {
+  position: relative;
   display: block;
   width: 100%;
   text-align: left;
@@ -683,9 +684,86 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   border-radius: calc(var(--glass-radius) - 4px);
   background: var(--glass-bg-strong);
   padding: 18px 18px 16px;
+  overflow: hidden;
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   box-shadow: var(--glass-highlight);
+}
+
+.vitae-static-stack {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 42px;
+  height: 52px;
+  pointer-events: none;
+}
+
+.vitae-static-stack span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--portfolio-accent) 45%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--glass-bg-strong) 80%, transparent);
+}
+
+.vitae-static-stack span:nth-child(1) {
+  transform: translate(-6px, 4px) rotate(-6deg);
+  border-color: color-mix(in srgb, var(--effect-chroma-emerald) 50%, transparent);
+}
+
+.vitae-static-stack span:nth-child(2) {
+  transform: translate(-2px, 2px) rotate(-2deg);
+  border-color: color-mix(in srgb, var(--effect-chroma-cyan) 50%, transparent);
+}
+
+.vitae-static-stack span:nth-child(3) {
+  transform: translate(2px, 0) rotate(2deg);
+}
+
+.vitae-linger-tags {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.vitae-linger-tags[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.vitae-linger-tag {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--effect-chroma-cyan) 40%, transparent);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: var(--effect-chroma-cyan);
+  background: color-mix(in srgb, var(--background) 72%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.vitae-static-card .vitae-linger-tags {
+  top: auto;
+  bottom: 14px;
 }
 
 .vitae-outcome-chip {
@@ -721,7 +799,8 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
 
 @media (prefers-reduced-transparency: reduce) {
   .vitae-static-card,
-  .vitae-case-overlay {
+  .vitae-case-overlay,
+  .vitae-linger-tag {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -730,8 +809,18 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
     background: var(--card);
   }
 
+  .vitae-linger-tag {
+    background: var(--card);
+  }
+
   .vitae-case-overlay {
     background: color-mix(in srgb, var(--background) 92%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vitae-linger-tags {
+    transition: none;
   }
 }
 

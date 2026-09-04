@@ -21,7 +21,10 @@ import {
   type EffectProfile,
 } from "@/lib/effect-policy";
 
+import { VITAE_TECH_LINGER_MS } from "./vitae-constants";
 import { VitaeOrbitScene } from "./vitae-orbit-scene";
+
+export { VITAE_TECH_LINGER_MS } from "./vitae-constants";
 
 const STATIC_PROFILE: EffectProfile = {
   mode: "static",
@@ -114,17 +117,61 @@ function VitaeCaseBody({ project }: { readonly project: Project }) {
   );
 }
 
+function VitaeLingerTags({
+  technologies,
+  visible,
+}: {
+  readonly technologies: readonly string[];
+  readonly visible: boolean;
+}) {
+  if (technologies.length === 0) return null;
+
+  return (
+    <ul
+      className="vitae-linger-tags"
+      data-visible={visible ? "true" : "false"}
+      aria-hidden={!visible}
+    >
+      {technologies.map((tech) => (
+        <li key={tech} className="vitae-linger-tag">
+          {tech}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function VitaeArtifact({ project }: { readonly project: Project }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef({ x: 0, y: 0, moved: false });
+  const lingerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sceneRef = useRef<VitaeOrbitScene | null>(null);
   const { resolvedTheme } = useTheme();
   const { palette } = usePalette();
   const [profile, setProfile] = useState<EffectProfile>(STATIC_PROFILE);
   const [inFocus, setInFocus] = useState(false);
   const [open, setOpen] = useState(false);
+  const [lingerTags, setLingerTags] = useState(false);
   const titleId = useId();
   const enhanced = profile.mode === "enhanced";
+
+  const clearLinger = useCallback(() => {
+    if (lingerTimerRef.current !== null) {
+      clearTimeout(lingerTimerRef.current);
+      lingerTimerRef.current = null;
+    }
+    setLingerTags(false);
+  }, []);
+
+  const startLinger = useCallback(() => {
+    if (lingerTimerRef.current !== null) {
+      clearTimeout(lingerTimerRef.current);
+    }
+    lingerTimerRef.current = setTimeout(() => {
+      lingerTimerRef.current = null;
+      setLingerTags(true);
+    }, VITAE_TECH_LINGER_MS);
+  }, []);
 
   useEffect(() => {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
@@ -213,6 +260,10 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
 
   useEffect(() => {
     if (!open) return;
+    if (lingerTimerRef.current !== null) {
+      clearTimeout(lingerTimerRef.current);
+      lingerTimerRef.current = null;
+    }
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
@@ -224,6 +275,8 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
       document.body.style.overflow = previous;
     };
   }, [open]);
+
+  useEffect(() => () => clearLinger(), [clearLinger]);
 
   const openCase = useCallback(() => setOpen(true), []);
   const closeCase = useCallback(() => setOpen(false), []);
@@ -254,10 +307,13 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
             role="button"
             tabIndex={0}
             className="vitae-orbit-hit cursor-target"
+            data-vitae-hotspot
             aria-label="Open Vitae case study"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
+            onPointerEnter={startLinger}
+            onPointerLeave={clearLinger}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
@@ -271,17 +327,31 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
               className="vitae-orbit-canvas"
               data-vitae-orbit
             />
-            <span className="vitae-orbit-hint">Grab to orbit · click for case</span>
+            <span className="vitae-orbit-hint">
+              Grab to orbit · linger for tech · click for case
+            </span>
+            <VitaeLingerTags
+              technologies={project.technologies}
+              visible={lingerTags && !open}
+            />
           </div>
         ) : (
           <button
             type="button"
             className="vitae-static-card cursor-target"
+            data-vitae-hotspot
             aria-label="Open Vitae case study"
             onClick={openCase}
+            onPointerEnter={startLinger}
+            onPointerLeave={clearLinger}
           >
+            <div className="vitae-static-stack" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-portfolio-accent">
-              Case card
+              Versioned case card
             </p>
             <p className="mt-3 text-base leading-7 text-muted-foreground">
               {VITAE_CASE.premise}
@@ -293,6 +363,10 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
                 </li>
               ))}
             </ul>
+            <VitaeLingerTags
+              technologies={project.technologies}
+              visible={lingerTags && !open}
+            />
           </button>
         )}
       </div>

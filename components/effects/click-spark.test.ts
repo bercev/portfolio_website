@@ -5,6 +5,7 @@ import {
   calculateCanvasSize,
   calculateSparkSegment,
   getClickSparkColor,
+  resolveSparkBurst,
 } from "./click-spark";
 
 describe("ClickSpark defaults", () => {
@@ -56,4 +57,14 @@ describe("ClickSpark defaults", () => {
       scale: 2,
     });
   });
+
+  it("widens the spark burst on Vitae artifact grabs", () => {
+    expect(
+      resolveSparkBurst({ sparkCount: 7, sparkRadius: 20, richer: true }),
+    ).toEqual({ sparkCount: 11, sparkRadius: 27 });
+    expect(
+      resolveSparkBurst({ sparkCount: 7, sparkRadius: 20, richer: false }),
+    ).toEqual({ sparkCount: 7, sparkRadius: 20 });
+  });
+
 });
