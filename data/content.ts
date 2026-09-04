@@ -128,7 +128,7 @@ export const portfolio = {
       "When I started at UC Santa Cruz, my curiosity pulled hard toward AI and agents. Through Algoverse I researched how people talk to LLMs in the wild and helped build @GrokSet. I also worked on SkillOptimizer for the ICML 2026 AIWILD Workshop, digging into how agents can get better at skills without heavy task supervision. Alongside that I tutored DSA for upper division students, which forced me to explain hard ideas clearly under real time pressure.",
       "In my software engineering course I joined four teammates on Vitae. We lived in Scrum for months. Timing slipped, tickets collided, and we spent long sessions tracing bugs that only appeared when two features met. We brainstormed until messy ideas became something we could ship, leaned on each other through the rough weeks, and formed the kind of trust you get from solving hard problems together. That project still sits close to me.",
       "Now I am an AI Systems Engineer Intern building multi-agent pipelines that turn evidence into software, and I build every day with tools like Codex and Claude. The through line is pretty simple: start curious, put something in front of real people, learn how teams ship, study how agents behave, then build the systems I wanted to exist.",
-    ]
+    ],
     education: {
       institution: "UC Santa Cruz",
       degree: "B.S. Computer Science",
