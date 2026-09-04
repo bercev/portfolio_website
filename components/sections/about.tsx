@@ -9,13 +9,11 @@ type AboutProps = {
 
 export function About({ content, heading }: AboutProps) {
   const { education } = content;
-  const beat = "UCSC CS · 4.0 · building AI systems";
 
   return (
     <Station
       id="about"
       station={2}
-      beat={beat}
       heading={heading}
       className="journey-station--origin"
     >

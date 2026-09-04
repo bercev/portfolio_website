@@ -8,20 +8,11 @@ type PublicationsProps = {
   readonly heading: PortfolioContent["navigation"][number]["label"];
 };
 
-function proofLabel(title: string) {
-  if (title.startsWith("SkillOptimizer")) return "SkillOptimizer";
-  if (title.startsWith("@GrokSet")) return "@GrokSet";
-  return title.split(":")[0]?.trim() || title;
-}
-
 export function Publications({ content, heading }: PublicationsProps) {
-  const beat = content.map((paper) => proofLabel(paper.title)).join(" · ");
-
   return (
     <Station
       id="publications"
       station={3}
-      beat={beat}
       heading={heading}
       className="journey-station--proof"
     >

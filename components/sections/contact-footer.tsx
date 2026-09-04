@@ -16,9 +16,6 @@ export function ContactFooter({
     >
       <div className="journey-copy journey-copy--connect">
         <p className="journey-lead text-lg leading-8">{content.message}</p>
-        <p className="journey-contact-note">
-          Reach me through the utility menu — GitHub, LinkedIn, and resume.
-        </p>
       </div>
     </Station>
   );

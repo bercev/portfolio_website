@@ -5,8 +5,6 @@ type StationProps = {
   readonly id: SectionId;
   /** Numbered chapter on the journey, e.g. 2 for the About chapter. */
   readonly station: number;
-  /** One-line beat readable without opening overlays. */
-  readonly beat?: string;
   readonly heading: string;
   readonly className?: string;
   readonly children: React.ReactNode;
@@ -15,7 +13,6 @@ type StationProps = {
 export function Station({
   id,
   station,
-  beat,
   heading,
   className,
   children,
@@ -34,7 +31,6 @@ export function Station({
       <h2 id={`${id}-heading`} className="journey-station-heading">
         {heading}
       </h2>
-      {beat ? <p className="journey-beat">{beat}</p> : null}
       {children}
     </section>
   );

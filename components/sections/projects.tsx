@@ -70,11 +70,6 @@ export function Projects({ content, heading }: ProjectsProps) {
     <Station
       id="projects"
       station={5}
-      beat={
-        featured
-          ? `${featured.title} — versioned resumes that ship`
-          : undefined
-      }
       heading={heading}
       className="journey-station--ships"
     >

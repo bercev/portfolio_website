@@ -109,10 +109,10 @@ export const portfolio = {
   navigation: [
     { id: "home", label: "Home" },
     { id: "about", label: "About" },
-    { id: "publications", label: "Published proof" },
+    { id: "publications", label: "Publications" },
     { id: "experience", label: "Experience" },
-    { id: "projects", label: "Versioned resumes" },
-    { id: "skills", label: "Systems vocab" },
+    { id: "projects", label: "Projects" },
+    { id: "skills", label: "Skills" },
     { id: "contact", label: "Contact" },
   ],
   hero: {
@@ -248,6 +248,10 @@ export const portfolio = {
         "LangChain",
         "Ollama",
         "Google ADK",
+        "discord.py",
+        "Hydra",
+        "Tmux",
+        "Runpod",
       ],
     },
     {
@@ -258,8 +262,12 @@ export const portfolio = {
         "NextJS",
         "PostgreSQL",
         "MongoDB",
+        "SQLite",
+        "SQL",
         "Express",
         "Clerk",
+        "Neon",
+        "Zod",
       ],
     },
     {
@@ -273,13 +281,17 @@ export const portfolio = {
         "Playwright",
         "Linux",
         "Git",
+        "SCRUM",
       ],
+    },
+    {
+      category: "Foundations",
+      items: ["Data Structures", "Algorithms"],
     },
   ],
   contact: {
     heading: "Let’s talk AI systems.",
-    message:
-      "Open to AI systems / ML engineering roles — full-stack craft included. Resume, GitHub, or LinkedIn.",
+    message: "Open to AI systems / ML engineering roles — full-stack craft included.",
     links: profileLinks,
   },
 } as const satisfies PortfolioContent;
