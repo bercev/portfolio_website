@@ -54,6 +54,7 @@ export function Publications({ content, heading }: PublicationsProps) {
               }
               linkClassName="w-full items-start gap-2 decoration-portfolio-accent"
               linkIconSize={24}
+              previewClassName="journey-paper-preview"
             />
             <span className="journey-tag journey-tag--proof">
               {index === 0 ? "Published proof" : "Research paper"}

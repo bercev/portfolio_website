@@ -999,6 +999,20 @@ html[data-journey="active"] [data-effect-layer="background"] {
   box-shadow: none;
 }
 
+.journey-paper-preview {
+  display: block;
+  width: min(36rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--foreground) 22%, var(--border));
+  border-radius: 0;
+  background: var(--card);
+  box-shadow: 6px 8px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.journey-paper-preview iframe {
+  border-radius: 0;
+}
+
 .journey-copy {
   max-width: 54ch;
 }

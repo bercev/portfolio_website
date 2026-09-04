@@ -118,7 +118,7 @@ export function HoverPreview({
               className={
                 previewClassName
                   ? previewClassName
-                  : "block w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-[var(--radius)] border border-border bg-card p-1 shadow-xl shadow-foreground/10"
+                  : "block w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-none border border-border bg-card shadow-[6px_8px_0_color-mix(in_srgb,var(--foreground)_10%,transparent)]"
               }
               initial={
                 shouldReduceMotion
@@ -151,7 +151,7 @@ export function HoverPreview({
                 src={readerSrc}
                 title={`${readerTitle} PDF preview`}
                 loading="lazy"
-                className="h-[min(38rem,70vh)] w-full rounded-[calc(var(--radius)-2px)] bg-white"
+                className="h-[min(38rem,70vh)] w-full rounded-none bg-white"
               />
             </motion.span>
           </span>
