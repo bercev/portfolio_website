@@ -68,7 +68,7 @@ export function Journey({
   const { palette } = usePalette();
   const [profile, setProfile] = useState<EffectProfile>(STATIC_PROFILE);
   const [projectsHot, setProjectsHot] = useState(false);
-  const [pointerLookHot, setPointerLookHot] = useState(true);
+  const [pointerLookHot, setPointerLookHot] = useState(false);
 
   useEffect(() => {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
