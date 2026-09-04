@@ -381,7 +381,7 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
               </div>
               <button
                 type="button"
-                className="cursor-target rounded-full border border-border px-3 py-1 text-sm font-semibold text-foreground"
+                className="cursor-target rounded-none border border-foreground px-3 py-1 text-sm font-semibold text-foreground"
                 onClick={closeCase}
               >
                 Close

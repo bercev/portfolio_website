@@ -26,13 +26,13 @@ export function Skills({ content, heading }: SkillsProps) {
             className="journey-skill-group"
           >
             <h3 className="journey-skill-heading">{category.category}</h3>
-            <div>
+            <p className="journey-skill-line">
               {category.items.map((item) => (
                 <span key={item} data-skill className="journey-skill">
                   {item}
                 </span>
               ))}
-            </div>
+            </p>
           </div>
         ))}
       </div>

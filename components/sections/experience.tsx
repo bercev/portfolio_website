@@ -30,9 +30,6 @@ export function Experience({ content, heading }: ExperienceProps) {
           >
             <div className="journey-xp-outboard">
               <span className="journey-xp-when">{experience.dates}</span>
-              {index === 0 ? (
-                <span className="journey-mark">In production</span>
-              ) : null}
             </div>
             <div className="journey-xp-main">
               {experience.organization ? (

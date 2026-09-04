@@ -56,9 +56,6 @@ export function Publications({ content, heading }: PublicationsProps) {
                       : "journey-pub-preview"
                   }
                 />
-                <span className="journey-mark">
-                  {index === 0 ? "Published proof" : "Research paper"}
-                </span>
               </div>
               <aside
                 className="journey-pub-marginalia"

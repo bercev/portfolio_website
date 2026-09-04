@@ -990,7 +990,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-beat {
-  margin: 0 0 30px;
+  margin: 0 0 36px;
   max-width: 48ch;
   color: var(--muted-foreground);
   font: 600 0.92rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1017,16 +1017,6 @@ html[data-journey="active"] [data-effect-layer="background"] {
   font-size: clamp(1.05rem, 1.6vw, 1.28rem);
   line-height: 1.65;
   letter-spacing: -0.01em;
-}
-
-/* Quiet editorial marks — not colored chips. Kicker keeps the one accent. */
-.journey-mark {
-  display: inline-block;
-  margin-top: 14px;
-  font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
 }
 
 /* Liquid glass is an accent material — Vitae/deep-dive only. */
@@ -1099,8 +1089,8 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 .journey-copy--connect {
   max-width: 48ch;
-  padding-top: 8px;
-  border-top: 2px solid color-mix(in srgb, var(--foreground) 28%, transparent);
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
 }
 
 .journey-rail-list {
@@ -1265,18 +1255,6 @@ html[data-journey="active"] [data-effect-layer="background"] {
   background: #fff;
 }
 
-.journey-tag {
-  display: inline-flex;
-  margin-top: 14px;
-  font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-  border: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent);
-  padding: 6px 10px;
-  border-radius: 0;
-}
-
 /* Experience: ~1/3 outboard meta + ~2/3 body. */
 .journey-xp-item {
   display: grid;
@@ -1302,7 +1280,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: 0;
   padding-top: 6px;
 }
 
@@ -1340,26 +1318,31 @@ html[data-journey="active"] [data-effect-layer="background"] {
   flex-direction: column;
 }
 
-.journey-skill-group h3 {
-  margin-bottom: 12px;
+.journey-skill-heading {
+  margin: 0 0 10px;
   font: 700 clamp(1.05rem, 2.2vw, 1.35rem)/1.3 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   color: var(--foreground);
   letter-spacing: -0.01em;
 }
 
-.journey-skill {
-  display: inline-block;
-  margin: 0 8px 8px 0;
-  font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--foreground);
-  border: 1px solid var(--foreground);
-  padding: 8px 11px;
-  border-radius: 0;
-  background: transparent;
+.journey-skill-line {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--muted-foreground);
+  font: 500 0.98rem/1.75 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
 }
 
+.journey-skill {
+  display: inline;
+  color: inherit;
+}
+
+.journey-skill + .journey-skill::before {
+  content: " · ";
+  color: color-mix(in srgb, var(--muted-foreground) 70%, transparent);
+}
 
 .journey-panel--proof {
   border-color: var(--foreground);
@@ -1368,12 +1351,6 @@ html[data-journey="active"] [data-effect-layer="background"] {
 .journey-pub-row--lead {
   padding-top: clamp(6px, 1vw, 10px);
   padding-bottom: clamp(26px, 3.4vw, 40px);
-}
-
-.journey-tag--proof,
-.journey-tag--quiet {
-  color: var(--muted-foreground);
-  border-color: color-mix(in srgb, var(--foreground) 28%, transparent);
 }
 
 .journey-xp-item--featured {
@@ -1418,10 +1395,10 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 .journey-skill-clusters {
   display: grid;
-  gap: clamp(20px, 3vw, 40px);
+  gap: clamp(28px, 4vw, 48px);
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.85fr);
-  padding-top: 8px;
-  border-top: 2px solid var(--foreground);
+  padding-top: clamp(18px, 2.4vw, 28px);
+  border-top: 1px solid var(--foreground);
 }
 
 @media (max-width: 900px) {
@@ -1432,8 +1409,8 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 .journey-skill-group {
   margin-bottom: 0;
-  padding-top: 18px;
-  border-top: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent);
+  padding-top: 0;
+  border-top: 0;
 }
 
 .journey-contact-note {
@@ -1456,10 +1433,10 @@ html[data-journey="active"] [data-effect-layer="background"] {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.75rem 1.5rem;
-  margin-bottom: 1.25rem;
+  gap: 0.85rem 2rem;
+  margin-bottom: 1.5rem;
   font: 600 0.68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }

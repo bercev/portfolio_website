@@ -19,7 +19,7 @@ export function Hero({ content }: { content: HeroContent }) {
         className="flex w-full flex-col gap-2 pb-[14vh] pt-24"
       >
         <div data-hero-meta aria-hidden="true">
-          <span>01 — Home</span>
+          <span>01</span>
           <span>{identity.role}</span>
           <span>Santa Cruz, CA</span>
         </div>

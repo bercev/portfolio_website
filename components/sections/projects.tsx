@@ -1,7 +1,6 @@
 import type { PortfolioContent, Project } from "@/data/content";
 
 import { VitaeArtifact } from "@/components/effects/vitae-artifact";
-import { VITAE_CASE } from "@/components/effects/vitae-constants";
 import { ExternalLink } from "@/components/ui/external-link";
 import { Station } from "@/components/ui/station";
 
@@ -43,7 +42,6 @@ function ProjectDetails({
           project.title
         )}
       </h3>
-      {deepDive ? <span className="journey-mark">Ships product</span> : null}
       <p
         className={
           quiet
@@ -53,15 +51,6 @@ function ProjectDetails({
       >
         {project.description}
       </p>
-      {deepDive ? (
-        <ul className="mt-5 flex flex-wrap gap-2" aria-label="Vitae outcomes">
-          {VITAE_CASE.outcomes.map((outcome) => (
-            <li key={outcome} className="vitae-outcome-chip">
-              {outcome}
-            </li>
-          ))}
-        </ul>
-      ) : null}
       <p className="mt-5 text-base leading-7 text-muted-foreground">
         <span className="font-semibold text-foreground">Built with: </span>
         {project.technologies.join(", ")}
