@@ -38,27 +38,37 @@ export function Publications({ content, heading }: PublicationsProps) {
                 : "journey-pub-row"
             }
           >
-            <p className="text-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              {publication.venue}
-              <span aria-hidden="true"> / </span>
-              {publication.date}
-            </p>
-            <HoverPreview
-              title={publication.title}
-              href={publication.href}
-              pdfUrl={publication.pdfUrl}
-              headingClassName={
-                index === 0
-                  ? "mt-4 w-full max-w-[40ch] text-3xl font-extrabold leading-[1.02] tracking-[-0.03em] text-foreground sm:text-4xl"
-                  : "mt-4 w-full max-w-[36ch] text-2xl font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-3xl"
-              }
-              linkClassName="w-full items-start gap-2 decoration-portfolio-accent"
-              linkIconSize={24}
-              previewClassName="journey-paper-preview"
-            />
-            <span className="journey-tag journey-tag--proof">
-              {index === 0 ? "Published proof" : "Research paper"}
-            </span>
+            <div className="journey-pub-layout">
+              <div className="journey-pub-main">
+                <HoverPreview
+                  title={publication.title}
+                  href={publication.href}
+                  pdfUrl={publication.pdfUrl}
+                  headingClassName={
+                    index === 0
+                      ? "journey-pub-title journey-pub-title--lead"
+                      : "journey-pub-title"
+                  }
+                  linkClassName="w-full items-start gap-2 decoration-portfolio-accent"
+                  linkIconSize={24}
+                  previewClassName={
+                    index === 0
+                      ? "journey-pub-preview journey-pub-preview--lead"
+                      : "journey-pub-preview"
+                  }
+                />
+                <span className="journey-mark">
+                  {index === 0 ? "Published proof" : "Research paper"}
+                </span>
+              </div>
+              <aside
+                className="journey-pub-marginalia"
+                aria-label="Venue and date"
+              >
+                <span className="journey-pub-venue">{publication.venue}</span>
+                <span className="journey-pub-date">{publication.date}</span>
+              </aside>
+            </div>
           </article>
         ))}
       </div>

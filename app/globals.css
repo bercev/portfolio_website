@@ -880,25 +880,29 @@ html[data-journey="active"] .journey-rail {
 
 .journey-station--origin {
   max-width: 1180px;
-  padding-block: clamp(88px, 14vh, 148px);
+  padding-block: clamp(96px, 16vh, 168px);
 }
 
+/* Mid-scroll rhythm A: dense proof stack. */
 .journey-station--proof {
-  max-width: 1040px;
+  max-width: 980px;
+  padding-block: clamp(48px, 7vh, 88px);
 }
 
+/* Mid-scroll rhythm B: airy systems chronology. */
 .journey-station--systems {
-  max-width: 1080px;
-  padding-block: clamp(64px, 10vh, 112px);
+  max-width: 1140px;
+  padding-block: clamp(88px, 14vh, 152px);
 }
 
 .journey-station--ships {
-  max-width: 1240px;
+  max-width: 1260px;
+  padding-block: clamp(72px, 12vh, 136px);
 }
 
 .journey-station--vocab {
   max-width: 1120px;
-  padding-block: clamp(64px, 10vh, 120px);
+  padding-block: clamp(56px, 9vh, 108px);
 }
 
 .journey-station--connect {
@@ -924,35 +928,90 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 .journey-station-heading {
   margin: 0 0 14px;
-  max-width: 11ch;
+  max-width: 12ch;
   color: var(--foreground);
-  font-size: clamp(2.35rem, 6vw, 4rem);
+  font-size: clamp(2.45rem, 6.4vw, 4.25rem);
   font-weight: 800;
-  line-height: 0.92;
-  letter-spacing: -0.04em;
+  line-height: 0.88;
+  letter-spacing: -0.055em;
   text-transform: uppercase;
+}
+
+.journey-station--origin .journey-station-heading {
+  max-width: 10ch;
+  font-size: clamp(2.7rem, 7vw, 4.7rem);
+  letter-spacing: -0.062em;
+}
+
+.journey-station--proof .journey-station-heading {
+  max-width: 13ch;
+  font-size: clamp(2.05rem, 5vw, 3.25rem);
+  letter-spacing: -0.048em;
+}
+
+.journey-station--systems .journey-station-heading {
+  max-width: 11ch;
+  font-size: clamp(2.2rem, 5.4vw, 3.5rem);
+  letter-spacing: -0.05em;
+}
+
+.journey-station--ships .journey-station-heading {
+  max-width: 16ch;
+  font-size: clamp(2.8rem, 7.2vw, 4.9rem);
+  letter-spacing: -0.068em;
+}
+
+.journey-station--vocab .journey-station-heading {
+  max-width: 9ch;
+  font-size: clamp(1.9rem, 4.5vw, 2.95rem);
+  letter-spacing: -0.045em;
+}
+
+.journey-station--connect .journey-station-heading {
+  max-width: 12ch;
+  font-size: clamp(2.35rem, 5.8vw, 3.85rem);
+  letter-spacing: -0.058em;
 }
 
 .journey-beat {
   margin: 0 0 30px;
   margin-left: clamp(0px, 3.2vw, 2.5rem);
-  max-width: 52ch;
+  max-width: 48ch;
   color: var(--muted-foreground);
   font: 600 0.92rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.01em;
-}
-
-.journey-station--proof .journey-station-heading {
-  font-size: clamp(2.25rem, 5.6vw, 3.8rem);
-}
-
-.journey-station--proof .journey-beat {
-  color: color-mix(in srgb, var(--effect-chroma-emerald) 72%, var(--foreground));
+  text-align: left;
 }
 
 .journey-lead {
   color: var(--muted-foreground);
+  max-width: 58ch;
+  text-align: left;
+}
+
+/* Left-ragged body — never justified SaaS blocks. */
+.journey-body {
   max-width: 62ch;
+  text-align: left;
+  text-wrap: pretty;
+  hyphens: manual;
+  color: var(--muted-foreground);
+}
+
+.journey-body--lede {
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+  line-height: 1.65;
+  letter-spacing: -0.01em;
+}
+
+/* Quiet editorial marks — not colored chips. Kicker keeps the one accent. */
+.journey-mark {
+  display: inline-block;
+  margin-top: 14px;
+  font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 /* Liquid glass is an accent material — Vitae/deep-dive only. */
@@ -993,10 +1052,16 @@ html[data-journey="active"] [data-effect-layer="background"] {
   background: transparent;
 }
 
+/* Discord flat editorial strip — not twin glass with Vitae. */
 .journey-panel--strip {
-  border-style: dashed;
+  border: 0;
+  border-block: 1px solid var(--foreground);
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
+  padding-block: clamp(16px, 2.2vw, 26px);
+  padding-inline: 2px;
+  align-self: end;
 }
 
 .journey-paper-preview {
@@ -1059,9 +1124,9 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-grid--ships {
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.85fr);
-  gap: clamp(18px, 3vw, 28px);
-  align-items: stretch;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: end;
 }
 
 @media (max-width: 767px) {
@@ -1073,6 +1138,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-pub-row {
+  position: relative;
   border-bottom: 1px solid var(--foreground);
   padding: clamp(20px, 2.6vw, 30px) 0;
 }
@@ -1081,23 +1147,127 @@ html[data-journey="active"] [data-effect-layer="background"] {
   border-bottom: 0;
 }
 
+/* Pubs: ~2/3 title stack + ~1/3 marginalia. */
+.journey-pub-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(7.5rem, 1fr);
+  gap: clamp(18px, 3vw, 40px);
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .journey-pub-layout {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.journey-pub-main {
+  min-width: 0;
+}
+
+.journey-pub-title {
+  width: 100%;
+  max-width: 28ch;
+  margin: 0;
+  font-size: clamp(1.45rem, 3.2vw, 2.05rem);
+  font-weight: 750;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--foreground);
+}
+
+.journey-pub-title--lead {
+  max-width: 32ch;
+  font-size: clamp(1.85rem, 4.2vw, 2.75rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.journey-pub-marginalia {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding-top: 4px;
+  padding-left: clamp(12px, 2vw, 18px);
+  text-align: right;
+  border-left: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+
+@media (max-width: 720px) {
+  .journey-pub-marginalia {
+    align-items: flex-start;
+    text-align: left;
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+    padding-left: 0;
+    padding-top: 10px;
+  }
+}
+
+.journey-pub-venue,
+.journey-pub-date {
+  font: 500 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-date {
+  letter-spacing: 0.14em;
+  opacity: 0.85;
+}
+
+/* Bold crop / slight overlap publication previews. */
+.journey-pub-preview {
+  display: block;
+  width: min(22rem, calc(100vw - 2.5rem));
+  overflow: hidden;
+  border: 1px solid var(--foreground);
+  border-radius: 0;
+  background: var(--card);
+  box-shadow: 8px 14px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  transform: rotate(-1.25deg) translate(-6%, 8%);
+  margin-left: 4%;
+}
+
+.journey-pub-preview--lead {
+  width: min(26rem, calc(100vw - 2rem));
+  transform: rotate(-1.75deg) translate(-8%, 10%);
+  box-shadow: 10px 18px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.journey-pub-preview iframe {
+  display: block;
+  width: 140%;
+  max-width: none;
+  height: min(28rem, 58vh);
+  margin: -8% 0 0 -12%;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+
 .journey-tag {
   display: inline-flex;
   margin-top: 14px;
   font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--effect-chroma-emerald);
-  border: 1px solid color-mix(in srgb, var(--effect-chroma-emerald) 35%, transparent);
+  color: var(--muted-foreground);
+  border: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent);
   padding: 6px 10px;
   border-radius: 0;
 }
 
+/* Experience: ~1/3 outboard meta + ~2/3 body. */
 .journey-xp-item {
   display: grid;
-  grid-template-columns: minmax(120px, 168px) minmax(0, 1fr);
-  gap: clamp(14px, 3vw, 28px);
-  align-items: baseline;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: clamp(20px, 3.5vw, 48px);
+  align-items: start;
   border-bottom: 1px solid var(--foreground);
   padding: clamp(20px, 2.6vw, 30px) 0;
 }
@@ -1106,18 +1276,48 @@ html[data-journey="active"] [data-effect-layer="background"] {
   border-bottom: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .journey-xp-item {
     grid-template-columns: 1fr;
-    gap: 4px;
+    gap: 8px;
   }
+}
+
+.journey-xp-outboard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 6px;
 }
 
 .journey-xp-when {
   font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--portfolio-accent);
+  color: var(--muted-foreground);
+}
+
+.journey-xp-org {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+}
+
+.journey-xp-title {
+  margin-top: 4px;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 750;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--foreground);
+}
+
+.journey-xp-summary,
+.journey-xp-tools {
+  margin-top: 14px;
+  font-size: 1rem;
+  line-height: 1.7;
 }
 
 .journey-project {
@@ -1147,42 +1347,58 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 
 .journey-panel--proof {
-  border-color: color-mix(in srgb, var(--effect-chroma-emerald) 34%, var(--glass-border));
+  border-color: var(--foreground);
 }
 
 .journey-pub-row--lead {
-  padding-top: clamp(8px, 1vw, 12px);
-  padding-bottom: clamp(22px, 3vw, 32px);
+  padding-top: clamp(6px, 1vw, 10px);
+  padding-bottom: clamp(26px, 3.4vw, 40px);
 }
 
-.journey-tag--proof {
-  color: var(--effect-chroma-emerald);
-  border-color: color-mix(in srgb, var(--effect-chroma-emerald) 45%, transparent);
-}
-
+.journey-tag--proof,
 .journey-tag--quiet {
   color: var(--muted-foreground);
-  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 28%, transparent);
 }
 
 .journey-xp-item--featured {
   padding-top: clamp(8px, 1vw, 12px);
-  padding-bottom: clamp(22px, 3vw, 32px);
+  padding-bottom: clamp(28px, 3.6vw, 44px);
 }
 
-.journey-xp-item--featured h3 {
-  font-size: clamp(1.7rem, 3.2vw, 2.15rem);
+.journey-xp-item--featured .journey-xp-title {
+  font-size: clamp(1.85rem, 3.6vw, 2.45rem);
+  letter-spacing: -0.05em;
 }
 
+/* Vitae glass is the ships-station accent surface. */
 .journey-project--ships {
-  border-color: color-mix(in srgb, var(--portfolio-accent) 55%, var(--foreground));
+  border-color: color-mix(in srgb, var(--portfolio-accent) 40%, var(--foreground));
+}
+
+.journey-project-title {
+  margin-top: 1rem;
+  color: var(--foreground);
+}
+
+.journey-project-title--ships {
+  font-size: clamp(1.9rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
+}
+
+.journey-project-title--quiet {
+  font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
 }
 
 .journey-project--quiet {
   opacity: 1;
   background: transparent;
   box-shadow: none;
-  border-style: dashed;
 }
 
 .journey-skill-clusters {
@@ -1250,10 +1466,10 @@ html[data-journey="active"] [data-effect-layer="background"] {
   justify-items: start;
   min-height: clamp(7rem, 18vw, 13rem);
   width: 100%;
-  font-size: clamp(4.5rem, 16vw, 11rem);
+  font-size: clamp(4.8rem, 17vw, 11.5rem);
   font-weight: 900;
-  line-height: 0.82;
-  letter-spacing: -0.06em;
+  line-height: 0.78;
+  letter-spacing: -0.08em;
   text-transform: uppercase;
   color: var(--hero-particle-accent);
   overflow: hidden;
