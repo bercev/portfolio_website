@@ -26,7 +26,7 @@ export function Publications({ content, heading }: PublicationsProps) {
       heading={heading}
       className="journey-station--proof"
     >
-      <div className="journey-panel journey-panel--proof">
+      <div className="journey-panel journey-panel--hard journey-panel--proof">
         {content.map((publication, index) => (
           <article
             key={publication.href}
@@ -56,7 +56,7 @@ export function Publications({ content, heading }: PublicationsProps) {
               linkIconSize={24}
             />
             <span className="journey-tag journey-tag--proof">
-              {index === 0 ? "Proof" : "Research paper"}
+              {index === 0 ? "Published proof" : "Research paper"}
             </span>
           </article>
         ))}

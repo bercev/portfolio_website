@@ -8,20 +8,16 @@ type ExperienceProps = {
 };
 
 export function Experience({ content, heading }: ExperienceProps) {
-  const lead = content[0];
-  const beat = lead
-    ? `${lead.role}${lead.organization ? ` @ ${lead.organization}` : ""} — multi-agent systems`
-    : undefined;
-
   return (
     <Station
       id="experience"
       station={4}
       kicker="Systems"
-      beat={beat}
+      beat="Multi-agent systems in production"
       heading={heading}
+      className="journey-station--systems"
     >
-      <div className="journey-panel">
+      <div className="journey-rail-list">
         {content.map((experience, index) => (
           <article
             key={`${experience.role}-${experience.dates}`}
@@ -43,7 +39,9 @@ export function Experience({ content, heading }: ExperienceProps) {
               <h3 className="text-2xl font-bold leading-[0.95] tracking-[-0.03em] text-foreground sm:text-3xl">
                 {experience.role}
               </h3>
-              {index === 0 ? <span className="journey-tag">Systems</span> : null}
+              {index === 0 ? (
+                <span className="journey-tag">In production</span>
+              ) : null}
               <p className="mt-4 max-w-[72ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
                 {experience.summary}
               </p>

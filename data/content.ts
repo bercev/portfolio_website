@@ -109,10 +109,10 @@ export const portfolio = {
   navigation: [
     { id: "home", label: "Home" },
     { id: "about", label: "About" },
-    { id: "publications", label: "Publications" },
+    { id: "publications", label: "Published proof" },
     { id: "experience", label: "Experience" },
-    { id: "projects", label: "Projects" },
-    { id: "skills", label: "Skills" },
+    { id: "projects", label: "Versioned resumes" },
+    { id: "skills", label: "Systems vocab" },
     { id: "contact", label: "Contact" },
   ],
   hero: {
@@ -122,7 +122,7 @@ export const portfolio = {
   },
   about: {
     bio: [
-      "UC Santa Cruz CS (4.0) — agent workflows, evidence pipelines, and published LLM research (@GrokSet, SkillOptimizer) alongside shipping work like Vitae.",
+      "UCSC CS · 4.0 · building AI systems",
     ],
     education: {
       institution: "UC Santa Cruz",

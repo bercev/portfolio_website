@@ -14,16 +14,17 @@ export function Skills({ content, heading }: SkillsProps) {
     <Station
       id="skills"
       station={6}
-      kicker="Toolkit"
+      kicker="Vocab"
       beat={beat}
       heading={heading}
+      className="journey-station--vocab"
     >
       <div className="journey-skill-clusters">
         {content.map((category) => (
           <div
             key={category.category}
             data-skill-cluster
-            className="journey-panel journey-skill-group"
+            className="journey-panel journey-panel--hard journey-skill-group"
           >
             <h3 className="journey-skill-heading">{category.category}</h3>
             <div>

@@ -44,7 +44,9 @@ function ProjectDetails({
         )}
       </h3>
       {deepDive ? <span className="journey-tag">Ships product</span> : null}
-      {quiet ? <span className="journey-tag journey-tag--quiet">Supporting</span> : null}
+      {quiet ? (
+        <span className="journey-tag journey-tag--quiet">Quiet card</span>
+      ) : null}
       <p
         className={
           quiet
@@ -84,10 +86,15 @@ export function Projects({ content, heading }: ProjectsProps) {
       id="projects"
       station={5}
       kicker="Ships"
-      beat={featured ? `${featured.title} ships product` : undefined}
+      beat={
+        featured
+          ? `${featured.title} — versioned resumes that ship`
+          : undefined
+      }
       heading={heading}
+      className="journey-station--ships"
     >
-      <div className="journey-grid journey-grid--two">
+      <div className="journey-grid journey-grid--ships">
         {featured ? (
           <article
             data-project-featured
@@ -100,7 +107,7 @@ export function Projects({ content, heading }: ProjectsProps) {
         {supporting ? (
           <article
             data-project-supporting
-            className="journey-panel journey-project journey-project--quiet"
+            className="journey-panel journey-panel--hard journey-project journey-project--quiet"
           >
             <ProjectDetails project={supporting} quiet />
           </article>

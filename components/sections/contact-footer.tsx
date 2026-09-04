@@ -14,8 +14,9 @@ export function ContactFooter({
       kicker="Connect"
       beat={content.links.map((link) => link.label).join(" · ")}
       heading={content.heading}
+      className="journey-station--connect"
     >
-      <div className="journey-panel">
+      <div className="journey-copy journey-copy--connect">
         <p className="journey-lead text-lg leading-8">{content.message}</p>
         <p className="journey-contact-note">
           Reach me through the utility menu — GitHub, LinkedIn, and resume.

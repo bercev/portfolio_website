@@ -9,19 +9,26 @@ type AboutProps = {
 
 export function About({ content, heading }: AboutProps) {
   const { education } = content;
-  const beat = `${education.institution} · ${education.degree} · ${education.gpa}`;
+  const beat = "UCSC CS · 4.0 · building AI systems";
 
   return (
-    <Station id="about" station={2} kicker="Origin" beat={beat} heading={heading}>
-      <div className="journey-grid journey-grid--two">
-        <div className="journey-panel space-y-6 text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-relaxed">
+    <Station
+      id="about"
+      station={2}
+      kicker="Origin"
+      beat={beat}
+      heading={heading}
+      className="journey-station--origin"
+    >
+      <div className="journey-grid journey-grid--origin">
+        <div className="journey-copy space-y-6 text-lg leading-relaxed text-muted-foreground sm:text-xl sm:leading-relaxed">
           {content.bio.map((paragraph) => (
             <p key={paragraph}>{paragraph}</p>
           ))}
         </div>
 
-        <aside data-education-panel className="journey-panel">
-          <p className="text-base font-semibold text-muted-foreground">
+        <aside data-education-panel className="journey-panel journey-panel--hard">
+          <p className="text-base font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Education
           </p>
           <h3 className="mt-4 text-[clamp(1.8rem,3.6vw,2.6rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-foreground">
