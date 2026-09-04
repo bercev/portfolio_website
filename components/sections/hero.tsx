@@ -17,11 +17,11 @@ export function Hero({ content }: { content: HeroContent }) {
     <section
       id="home"
       aria-labelledby="home-heading"
-      className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] items-end"
+      className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] flex-col"
     >
       <motion.div
         data-hero-editorial
-        className="flex w-full flex-col pb-[16vh] pt-28"
+        className="flex w-full flex-1 flex-col"
         initial={reduceMotion ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={
@@ -30,26 +30,31 @@ export function Hero({ content }: { content: HeroContent }) {
             : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.12 }
         }
       >
-        <div data-hero-meta aria-hidden="true">
-          <span>01</span>
-          <span data-hero-meta-sep>·</span>
-          <span>{identity.role}</span>
-          <span data-hero-meta-sep>·</span>
-          <span>Santa Cruz, CA</span>
-        </div>
-
         <h1 id="home-heading" aria-label={identity.name} className="sr-only">
           {identity.name}
         </h1>
 
-        {/* The journey canvas renders the name in 3D particles; this is the flat fallback. */}
-        <div data-hero-name-fallback aria-hidden="true">
-          {identity.shortName.toUpperCase()}
+        {/* Reserves the BERAT particle band so meta never sits over the glyph. */}
+        <div data-hero-glyph-band aria-hidden="true">
+          <div data-hero-name-fallback>
+            {identity.shortName.toUpperCase()}
+          </div>
         </div>
 
-        <div data-hero-sub>
-          {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
-          <span className="journey-scroll-hint">Scroll to fly the journey</span>
+        {/* Role / location / tagline / scroll — always below the glyph band. */}
+        <div data-hero-below>
+          <div data-hero-meta>
+            <span>01</span>
+            <span data-hero-meta-sep>·</span>
+            <span>{identity.role}</span>
+            <span data-hero-meta-sep>·</span>
+            <span>Santa Cruz, CA</span>
+          </div>
+
+          <div data-hero-sub>
+            {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
+            <span className="journey-scroll-hint">Scroll to fly the journey</span>
+          </div>
         </div>
       </motion.div>
     </section>

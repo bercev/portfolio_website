@@ -1432,7 +1432,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 /* Hero: the 3D particle name IS the display; a styled name is the flat fallback.
-   Shared content column lock stays; composition inside is a calmer editorial block. */
+   Shared content column lock stays. Glyph band reserves BERAT; meta sits BELOW it. */
 [data-hero-editorial] {
   width: min(100%, var(--journey-content-max));
   margin-inline: auto;
@@ -1440,39 +1440,15 @@ html[data-journey="active"] [data-effect-layer="background"] {
   text-align: left;
 }
 
-[data-hero-editorial] [data-hero-meta] {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem 0.7rem;
-  margin-bottom: clamp(1.35rem, 3vh, 2rem);
-  max-width: 42rem;
-  font: 500 0.78rem/1.2 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.02em;
-  color: color-mix(in srgb, var(--muted-foreground) 86%, transparent);
-}
-
-[data-hero-editorial] [data-hero-meta-sep] {
-  color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
-}
-
-[data-hero-editorial] [data-hero-sub] {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1.25rem;
-  margin-top: clamp(1.6rem, 4.2vh, 2.8rem);
-  max-width: 34rem;
-}
-
-[data-hero-tagline] {
-  margin: 0;
-  max-width: 28ch;
-  color: var(--foreground);
-  font: 650 clamp(1.35rem, 2.9vw, 1.9rem)/1.22 var(--font-archivo), ui-sans-serif,
-    system-ui, sans-serif;
-  letter-spacing: -0.028em;
-  text-wrap: balance;
+/* Spacer for the BERAT particle glyph — must remain even when fallback is hidden. */
+[data-hero-glyph-band] {
+  flex: 1 1 auto;
+  display: grid;
+  align-content: end;
+  width: 100%;
+  min-height: clamp(42vh, 52vh, 62vh);
+  padding-top: clamp(4.5rem, 12vh, 7.5rem);
+  pointer-events: none;
 }
 
 [data-hero-name-fallback] {
@@ -1491,7 +1467,53 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 html[data-journey="active"] [data-hero-name-fallback] {
-  display: none;
+  visibility: hidden;
+}
+
+/* Role / location / tagline / scroll — clear of the BERAT band (never over it). */
+[data-hero-below] {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(1.1rem, 2.4vh, 1.75rem);
+  padding-bottom: clamp(10vh, 14vh, 18vh);
+  max-width: 34rem;
+}
+
+[data-hero-editorial] [data-hero-meta] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+  margin: 0;
+  max-width: 42rem;
+  font: 500 0.78rem/1.2 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--muted-foreground) 86%, transparent);
+}
+
+[data-hero-editorial] [data-hero-meta-sep] {
+  color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+}
+
+[data-hero-editorial] [data-hero-sub] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin: 0;
+  max-width: 34rem;
+}
+
+[data-hero-tagline] {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--foreground);
+  font: 650 clamp(1.35rem, 2.9vw, 1.9rem)/1.22 var(--font-archivo), ui-sans-serif,
+    system-ui, sans-serif;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
 }
 
 .journey-scroll-hint {

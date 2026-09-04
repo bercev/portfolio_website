@@ -13,6 +13,14 @@
         "shadcn@latest",
         "mcp"
       ]
+    },
+    "vgpu": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "vgpu@latest",
+        "mcp"
+      ]
     }
   }
 }
