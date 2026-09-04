@@ -182,6 +182,7 @@ export class JourneyScene {
   private smoothT = 0;
   private raf = 0;
   private disposed = false;
+  private paused = false;
 
   constructor(options: JourneySceneOptions) {
     const { canvas, quality, reducedMotion, spaceBg, fog, palette, stationCounts, onProgress } = options;
@@ -451,6 +452,10 @@ private readonly handleResize = () => {
 
   private loop = (now: number) => {
     if (this.disposed) return;
+    if (this.paused) {
+      this.raf = 0;
+      return;
+    }
     this.timer.update(now);
     const rawDt = this.timer.getDelta();
     const dt = Number.isFinite(rawDt) && rawDt > 0 ? Math.min(rawDt, 0.05) : 1 / 60;
@@ -464,6 +469,21 @@ private readonly handleResize = () => {
 
   resize() {
     this.handleResize();
+  }
+
+  setPaused(paused: boolean) {
+    if (this.paused === paused) return;
+    this.paused = paused;
+    if (paused) {
+      cancelAnimationFrame(this.raf);
+      this.raf = 0;
+      return;
+    }
+    if (!this.disposed && this.raf === 0) {
+      // Refresh the timer so resume does not ingest a huge delta.
+      this.timer.update(performance.now());
+      this.loop(performance.now());
+    }
   }
 
   dispose() {

@@ -63,9 +63,11 @@ export function Journey({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const railFillRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<JourneyScene | null>(null);
   const { resolvedTheme } = useTheme();
   const { palette } = usePalette();
   const [profile, setProfile] = useState<EffectProfile>(STATIC_PROFILE);
+  const [projectsHot, setProjectsHot] = useState(false);
 
   useEffect(() => {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
@@ -92,6 +94,18 @@ export function Journey({
       mobile.removeEventListener("change", updateProfile);
       reducedMotion.removeEventListener("change", updateProfile);
     };
+  }, []);
+
+  useEffect(() => {
+    const projects = document.getElementById("projects");
+    if (!projects) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setProjectsHot(Boolean(entry?.isIntersecting)),
+      { threshold: 0.35 },
+    );
+    observer.observe(projects);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -133,6 +147,9 @@ export function Journey({
             if (rail) rail.style.transform = `scaleY(${t})`;
           },
         });
+        sceneRef.current = scene;
+        // Pause while Projects/Vitae is the hot enhanced station.
+        scene.setPaused(profile.mode === "enhanced" && projectsHot);
 
         root.dataset.journey = "active";
       } catch {
@@ -147,9 +164,17 @@ export function Journey({
     return () => {
       disposed = true;
       scene?.dispose();
+      if (sceneRef.current === scene) sceneRef.current = null;
       if (root.dataset.journey === "active") delete root.dataset.journey;
     };
+    // projectsHot is applied via the dedicated pause effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, palette, resolvedTheme, stationCounts]);
+
+  useEffect(() => {
+    const shouldPause = profile.mode === "enhanced" && projectsHot;
+    sceneRef.current?.setPaused(shouldPause);
+  }, [profile.mode, projectsHot]);
 
   return (
     <>
