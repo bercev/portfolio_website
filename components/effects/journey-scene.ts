@@ -183,6 +183,8 @@ export class JourneyScene {
   private raf = 0;
   private disposed = false;
   private paused = false;
+  /** Mouse-look / pointer parallax — home + contact only. */
+  private pointerLookEnabled = false;
 
   constructor(options: JourneySceneOptions) {
     const { canvas, quality, reducedMotion, spaceBg, fog, palette, stationCounts, onProgress } = options;
@@ -440,7 +442,7 @@ private readonly handleResize = () => {
     this.camera.position.copy(pos);
     this.curve.getTangentAt(this.journeyT(), this.tangent);
     this.lookTarget.copy(pos).add(this.tangent);
-    if (!this.reducedMotion) {
+    if (!this.reducedMotion && this.pointerLookEnabled) {
       this.lookTarget.x += this.pointer.x * 1.4;
       this.lookTarget.y += this.pointer.y * 0.9;
     }
@@ -483,6 +485,16 @@ private readonly handleResize = () => {
       // Refresh the timer so resume does not ingest a huge delta.
       this.timer.update(performance.now());
       this.loop(performance.now());
+    }
+  }
+
+  /** Enable mouse-moves-camera only on #home and Contact; mid-stations are scroll-driven. */
+  setPointerLookEnabled(enabled: boolean) {
+    if (this.pointerLookEnabled === enabled) return;
+    this.pointerLookEnabled = enabled;
+    if (!enabled) {
+      this.pointer.x = 0;
+      this.pointer.y = 0;
     }
   }
 

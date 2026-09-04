@@ -12,7 +12,6 @@ export function Experience({ content, heading }: ExperienceProps) {
     <Station
       id="experience"
       station={4}
-      kicker="Systems"
       beat="Multi-agent systems in production"
       heading={heading}
       className="journey-station--systems"

@@ -15,7 +15,6 @@ export function About({ content, heading }: AboutProps) {
     <Station
       id="about"
       station={2}
-      kicker="Origin"
       beat={beat}
       heading={heading}
       className="journey-station--origin"

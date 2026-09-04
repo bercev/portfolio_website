@@ -82,7 +82,6 @@ export function Projects({ content, heading }: ProjectsProps) {
     <Station
       id="projects"
       station={5}
-      kicker="Ships"
       beat={
         featured
           ? `${featured.title} — versioned resumes that ship`

@@ -12,7 +12,7 @@
   --secondary: #e7edf6;
   --secondary-foreground: #101723;
   --muted: #e7edf6;
-  --muted-foreground: #636974;
+  --muted-foreground: #3f4856;
   --accent: #e7edf6;
   --accent-foreground: #101723;
   --destructive: oklch(0.577 0.245 27.325);
@@ -51,6 +51,9 @@
   --letter-spacing: 0em;
   --spacing: 0.25rem;
 
+  /* Shared Hero→Contact content column geometry */
+  --journey-content-max: 1200px;
+  --journey-content-inline: clamp(16px, 5vw, 64px);
   --portfolio-accent: #00d8ff;
   --portfolio-accent-foreground: #060a12;
   --selection-background: #000000;
@@ -123,7 +126,7 @@
   --secondary: #243040;
   --secondary-foreground: #e5ecf1;
   --muted: #232d3c;
-  --muted-foreground: #8794a1;
+  --muted-foreground: #b4bfca;
   --accent: #2b3a4d;
   --accent-foreground: #e5ecf1;
   --destructive: oklch(0.704 0.191 22.216);
@@ -874,8 +877,8 @@ html[data-journey="active"] .journey-rail {
   align-content: center;
   margin-inline: auto;
   width: 100%;
-  max-width: 1200px;
-  padding: clamp(72px, 12vh, 128px) clamp(16px, 5vw, 64px);
+  max-width: var(--journey-content-max);
+  padding: clamp(72px, 12vh, 128px) var(--journey-content-inline);
 }
 
 
@@ -890,34 +893,28 @@ html[data-journey="active"] .journey-rail {
 }
 
 .journey-station--origin {
-  max-width: 1180px;
   padding-block: clamp(96px, 16vh, 168px);
 }
 
 /* Mid-scroll rhythm A: dense proof stack. */
 .journey-station--proof {
-  max-width: 980px;
   padding-block: clamp(48px, 7vh, 88px);
 }
 
 /* Mid-scroll rhythm B: airy systems chronology. */
 .journey-station--systems {
-  max-width: 1140px;
   padding-block: clamp(88px, 14vh, 152px);
 }
 
 .journey-station--ships {
-  max-width: 1260px;
   padding-block: clamp(72px, 12vh, 136px);
 }
 
 .journey-station--vocab {
-  max-width: 1120px;
   padding-block: clamp(56px, 9vh, 108px);
 }
 
 .journey-station--connect {
-  max-width: 900px;
   min-height: 72svh;
   padding-block: clamp(72px, 14vh, 140px);
 }
@@ -986,7 +983,6 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 .journey-beat {
   margin: 0 0 30px;
-  margin-left: clamp(0px, 3.2vw, 2.5rem);
   max-width: 48ch;
   color: var(--muted-foreground);
   font: 600 0.92rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1442,9 +1438,9 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 /* Hero: the 3D particle name IS the display; a styled name is the flat fallback. */
 [data-hero-editorial] {
-  width: min(100%, 1180px);
+  width: min(100%, var(--journey-content-max));
   margin-inline: auto;
-  padding-inline: clamp(16px, 5vw, 64px);
+  padding-inline: var(--journey-content-inline);
   text-align: left;
 }
 

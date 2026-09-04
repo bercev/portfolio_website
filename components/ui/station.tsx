@@ -5,8 +5,6 @@ type StationProps = {
   readonly id: SectionId;
   /** Numbered chapter on the journey, e.g. 2 for the About chapter. */
   readonly station: number;
-  /** Short chapter label shown as the kicker, e.g. "Origin". */
-  readonly kicker: string;
   /** One-line beat readable without opening overlays. */
   readonly beat?: string;
   readonly heading: string;
@@ -17,7 +15,6 @@ type StationProps = {
 export function Station({
   id,
   station,
-  kicker,
   beat,
   heading,
   className,
@@ -33,9 +30,7 @@ export function Station({
         className,
       )}
     >
-      <p className="journey-kicker">
-        Station {String(station).padStart(2, "0")} — {kicker}
-      </p>
+      <p className="journey-kicker">{String(station).padStart(2, "0")}</p>
       <h2 id={`${id}-heading`} className="journey-station-heading">
         {heading}
       </h2>

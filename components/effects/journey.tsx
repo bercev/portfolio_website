@@ -68,6 +68,7 @@ export function Journey({
   const { palette } = usePalette();
   const [profile, setProfile] = useState<EffectProfile>(STATIC_PROFILE);
   const [projectsHot, setProjectsHot] = useState(false);
+  const [pointerLookHot, setPointerLookHot] = useState(true);
 
   useEffect(() => {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
@@ -105,6 +106,30 @@ export function Journey({
       { threshold: 0.35 },
     );
     observer.observe(projects);
+    return () => observer.disconnect();
+  }, []);
+
+  // Pointer-look / mouse-moves-camera only on #home and Contact.
+  useEffect(() => {
+    const home = document.getElementById("home");
+    const contact = document.getElementById("contact");
+    if (!home && !contact) return;
+
+    const visible = new Set<string>();
+    const sync = () => setPointerLookHot(visible.size > 0);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).id;
+          if (entry.isIntersecting) visible.add(id);
+          else visible.delete(id);
+        }
+        sync();
+      },
+      { threshold: 0.2 },
+    );
+    if (home) observer.observe(home);
+    if (contact) observer.observe(contact);
     return () => observer.disconnect();
   }, []);
 
@@ -150,6 +175,7 @@ export function Journey({
         sceneRef.current = scene;
         // Pause while Projects/Vitae is the hot enhanced station.
         scene.setPaused(profile.mode === "enhanced" && projectsHot);
+        scene.setPointerLookEnabled(pointerLookHot);
 
         root.dataset.journey = "active";
       } catch {
@@ -167,7 +193,7 @@ export function Journey({
       if (sceneRef.current === scene) sceneRef.current = null;
       if (root.dataset.journey === "active") delete root.dataset.journey;
     };
-    // projectsHot is applied via the dedicated pause effect below.
+    // projectsHot / pointerLookHot applied via dedicated effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, palette, resolvedTheme, stationCounts]);
 
@@ -175,6 +201,10 @@ export function Journey({
     const shouldPause = profile.mode === "enhanced" && projectsHot;
     sceneRef.current?.setPaused(shouldPause);
   }, [profile.mode, projectsHot]);
+
+  useEffect(() => {
+    sceneRef.current?.setPointerLookEnabled(pointerLookHot);
+  }, [pointerLookHot]);
 
   return (
     <>

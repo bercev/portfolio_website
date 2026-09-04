@@ -14,7 +14,6 @@ export function Skills({ content, heading }: SkillsProps) {
     <Station
       id="skills"
       station={6}
-      kicker="Vocab"
       beat={beat}
       heading={heading}
       className="journey-station--vocab"

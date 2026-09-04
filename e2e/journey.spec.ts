@@ -43,12 +43,12 @@ test("renders every numbered station in semantic order", async ({ page }) => {
 
   const kickers = page.locator(".journey-kicker");
   await expect(kickers).toHaveCount(6);
-  await expect(kickers.nth(0)).toHaveText("Station 02 — Origin");
-  await expect(kickers.nth(1)).toHaveText("Station 03 — Proof");
-  await expect(kickers.nth(2)).toHaveText("Station 04 — Systems");
-  await expect(kickers.nth(3)).toHaveText("Station 05 — Ships");
-  await expect(kickers.nth(4)).toHaveText("Station 06 — Vocab");
-  await expect(kickers.nth(5)).toHaveText("Station 07 — Connect");
+  await expect(kickers.nth(0)).toHaveText("02");
+  await expect(kickers.nth(1)).toHaveText("03");
+  await expect(kickers.nth(2)).toHaveText("04");
+  await expect(kickers.nth(3)).toHaveText("05");
+  await expect(kickers.nth(4)).toHaveText("06");
+  await expect(kickers.nth(5)).toHaveText("07");
 
   const beats = page.locator(".journey-beat");
   await expect(beats).toHaveCount(6);

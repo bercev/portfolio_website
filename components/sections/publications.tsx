@@ -21,7 +21,6 @@ export function Publications({ content, heading }: PublicationsProps) {
     <Station
       id="publications"
       station={3}
-      kicker="Proof"
       beat={beat}
       heading={heading}
       className="journey-station--proof"
