@@ -103,12 +103,22 @@ export function resolveSparkBurst({
   richer?: boolean;
 }) {
   if (!richer) {
-    return { sparkCount, sparkRadius };
+    return { sparkCount, sparkRadius, angles: null as number[] | null };
+  }
+
+  // Peel / edge-flash: cardinal page-edge ticks with light jitter — not a radial confetti burst.
+  const count = sparkCount + 1;
+  const angles: number[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const edge = (index % 4) * (Math.PI / 2);
+    const jitter = ((index * 0.37) % 1 - 0.5) * 0.28;
+    angles.push(edge + jitter);
   }
 
   return {
-    sparkCount: sparkCount + 4,
-    sparkRadius: Math.round(sparkRadius * 1.35),
+    sparkCount: count,
+    sparkRadius: Math.round(sparkRadius * 1.2),
+    angles,
   };
 }
 
@@ -206,7 +216,9 @@ export function ClickSpark({
         sparks.push({
           x: event.clientX,
           y: event.clientY,
-          angle: (Math.PI * 2 * index) / burst.sparkCount,
+          angle:
+            burst.angles?.[index] ??
+            (Math.PI * 2 * index) / burst.sparkCount,
           startTime,
           radius: burst.sparkRadius,
         });
