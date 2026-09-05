@@ -38,6 +38,7 @@ function buildTextPoints(
   palette: JourneyPalette,
   worldH = 7,
   blending: THREE.Blending = THREE.AdditiveBlending,
+  ink = false,
 ): THREE.Points {
   const c = document.createElement("canvas");
   const ctx = c.getContext("2d");
@@ -65,12 +66,23 @@ function buildTextPoints(
   const seeds = new Float32Array(count);
   const aspect = c.width / c.height;
   const worldW = worldH * aspect;
-  const colorStops = [
-    new THREE.Color(palette.accent),
-    new THREE.Color(palette.cyan),
-    new THREE.Color(palette.emerald),
-    new THREE.Color(palette.coral),
-  ];
+  /*
+   * Warm stops read as sparkle against a black clear and as dirt against
+   * paper, so the light wordmark stays inside one tonal family.
+   */
+  const colorStops = ink
+    ? [
+        new THREE.Color(palette.accent),
+        new THREE.Color(palette.cyan),
+        new THREE.Color(palette.accent).multiplyScalar(0.7),
+        new THREE.Color(palette.emerald).lerp(new THREE.Color(palette.accent), 0.8),
+      ]
+    : [
+        new THREE.Color(palette.accent),
+        new THREE.Color(palette.cyan),
+        new THREE.Color(palette.emerald),
+        new THREE.Color(palette.coral),
+      ];
   for (let i = 0; i < count; i++) {
     const [px, py] = candidates[(Math.random() * candidates.length) | 0] ?? [
       c.width / 2,
@@ -523,12 +535,12 @@ export class JourneyScene {
       220,
     );
 
-    this.textPoints = buildTextPoints("BERAT", quality === "full" ? 7000 : 4200, palette, 7, particleBlending);
+    this.textPoints = buildTextPoints("BERAT", quality === "full" ? 7000 : 4200, palette, 7, particleBlending, lightTheme);
     this.textGroup.add(this.textPoints);
     this.textGroup.position.set(0, 0.4, 0);
     this.scene.add(this.textGroup);
 
-    this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 6000 : 3600, palette, 5, particleBlending);
+    this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 6000 : 3600, palette, 5, particleBlending, lightTheme);
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = 1;
     this.arrivalGroup.add(this.arrivalPoints);
     this.arrivalGroup.position.set(0, 0.4, -142);
@@ -576,12 +588,13 @@ export class JourneyScene {
         blending: THREE.NormalBlending,
         uniforms: {
           uTime: { value: 0 },
-          uIntensity: { value: lightTheme ? 0.07 : 0.3 },
+          uIntensity: { value: lightTheme ? 0.07 : 0.22 },
           uTintA: {
-            value: new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.55),
+            value: new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.68),
           },
+          // Held near the accent — a heavier emerald mix reads as lava lamp.
           uTintB: {
-            value: new THREE.Color(palette.cyan).lerp(new THREE.Color(palette.emerald), 0.5),
+            value: new THREE.Color(palette.cyan).lerp(new THREE.Color(palette.emerald), 0.22),
           },
         },
         vertexShader: `

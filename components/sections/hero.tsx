@@ -43,18 +43,27 @@ export function Hero({ content }: { content: HeroContent }) {
 
         {/* Role / location / tagline / scroll — always below the glyph band. */}
         <div data-hero-below>
-          <div data-hero-meta>
-            <span>01</span>
-            <span data-hero-meta-sep>·</span>
-            <span>{identity.role}</span>
-            <span data-hero-meta-sep>·</span>
-            <span>Santa Cruz, CA</span>
-          </div>
+          <div data-hero-lede>
+            <div data-hero-meta>
+              <span>01</span>
+              <span data-hero-meta-sep>·</span>
+              <span>{identity.role}</span>
+              <span data-hero-meta-sep>·</span>
+              <span>Santa Cruz, CA</span>
+            </div>
 
-          <div data-hero-sub>
             {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
             <span className="journey-scroll-hint">Scroll to fly the journey</span>
           </div>
+
+          <dl data-hero-signals>
+            {hero.signals.map((signal) => (
+              <div key={signal.label} data-hero-signal>
+                <dt>{signal.label}</dt>
+                <dd>{signal.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </motion.div>
     </section>

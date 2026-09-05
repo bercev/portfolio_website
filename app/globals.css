@@ -1646,15 +1646,28 @@ html[data-journey="active"] [data-hero-name-fallback] {
   visibility: hidden;
 }
 
-/* Role / location / tagline / scroll — clear of the BERAT band (never over it). */
+/*
+ * Role / tagline / scroll — clear of the BERAT band (never over it), and on
+ * the same twelve columns as every station so the hero declares the measure.
+ */
 [data-hero-below] {
   flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
+  column-gap: var(--shell-gap);
+  align-items: end;
+  padding-top: clamp(0.85rem, 1.4vh, 1.25rem);
+  /* Kept shallow so the masthead rule clears the BERAT glyph above it. */
+  padding-bottom: clamp(6vh, 8vh, 11vh);
+  border-top: 1px solid var(--journey-rule);
+}
+
+[data-hero-lede] {
+  grid-column: 1 / span 7;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: clamp(1.1rem, 2.4vh, 1.75rem);
-  padding-bottom: clamp(10vh, 14vh, 18vh);
-  max-width: 34rem;
 }
 
 [data-hero-editorial] [data-hero-meta] {
@@ -1663,32 +1676,73 @@ html[data-journey="active"] [data-hero-name-fallback] {
   align-items: center;
   gap: 0.45rem 0.7rem;
   margin: 0;
-  max-width: 42rem;
-  font: 500 0.78rem/1.2 var(--font-sans);
-  letter-spacing: 0.02em;
-  color: color-mix(in srgb, var(--muted-foreground) 86%, transparent);
+  font: 400 11px/1 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 [data-hero-editorial] [data-hero-meta-sep] {
   color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
 }
 
-[data-hero-editorial] [data-hero-sub] {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1.25rem;
-  margin: 0;
-  max-width: 34rem;
-}
-
 [data-hero-tagline] {
   margin: 0;
-  max-width: 28ch;
+  max-width: 26ch;
   color: var(--foreground);
-  font: 650 clamp(1.35rem, 2.9vw, 1.9rem)/1.22 var(--font-sans);
-  letter-spacing: -0.028em;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: clamp(1.75rem, 3.6vw, 2.9rem);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.018em;
   text-wrap: balance;
+}
+
+/* Three facts, pinned to the right edge — the recruiter's first scan. */
+[data-hero-signals] {
+  grid-column: 9 / span 4;
+  margin: 0;
+  padding-bottom: 0.4rem;
+}
+
+[data-hero-signal] {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--journey-rule-soft);
+}
+
+[data-hero-signal]:last-child {
+  border-bottom: 0;
+}
+
+[data-hero-signal] dt {
+  margin: 0;
+  font: 400 10px/1.7 var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+[data-hero-signal] dd {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--foreground);
+  text-wrap: pretty;
+}
+
+@media (max-width: 900px) {
+  [data-hero-lede],
+  [data-hero-signals] {
+    grid-column: 1 / -1;
+  }
+
+  [data-hero-signals] {
+    margin-top: 1.75rem;
+  }
 }
 
 .journey-scroll-hint {
