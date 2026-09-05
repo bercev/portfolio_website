@@ -6,6 +6,8 @@ type StationProps = {
   /** Numbered chapter on the journey, e.g. 2 for the About chapter. */
   readonly station: number;
   readonly heading: string;
+  /** Scannable fact pinned to the right edge of the masthead rule. */
+  readonly note?: string;
   readonly className?: string;
   readonly children: React.ReactNode;
 };
@@ -14,6 +16,7 @@ export function Station({
   id,
   station,
   heading,
+  note,
   className,
   children,
 }: StationProps) {
@@ -27,10 +30,13 @@ export function Station({
         className,
       )}
     >
-      <p className="journey-kicker">{String(station).padStart(2, "0")}</p>
-      <h2 id={`${id}-heading`} className="journey-station-heading">
-        {heading}
-      </h2>
+      <header className="journey-station-head">
+        <p className="journey-kicker">{String(station).padStart(2, "0")}</p>
+        {note ? <p className="journey-station-note">{note}</p> : null}
+        <h2 id={`${id}-heading`} className="journey-station-heading">
+          {heading}
+        </h2>
+      </header>
       {children}
     </section>
   );

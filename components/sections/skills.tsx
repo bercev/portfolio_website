@@ -8,11 +8,14 @@ type SkillsProps = {
 };
 
 export function Skills({ content, heading }: SkillsProps) {
+  const total = content.reduce((sum, group) => sum + group.items.length, 0);
+
   return (
     <Station
       id="skills"
       station={6}
       heading={heading}
+      note={`${total} tools · ${content.length} clusters`}
       className="journey-station--vocab"
     >
       <div className="journey-skill-clusters">

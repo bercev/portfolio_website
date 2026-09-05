@@ -15,9 +15,10 @@ export function About({ content, heading }: AboutProps) {
       id="about"
       station={2}
       heading={heading}
+      note={`${education.institution} · ${education.gpa}`}
       className="journey-station--origin"
     >
-      <div className="journey-about-column">
+      <div className="journey-col-main journey-about-column">
         <div className="journey-copy">
           {content.bio.map((paragraph, index) => (
             <p
@@ -32,37 +33,42 @@ export function About({ content, heading }: AboutProps) {
             </p>
           ))}
         </div>
-
-        <aside
-          data-education-panel
-          className="journey-panel journey-panel--ruled journey-about-education"
-        >
-          <p className="text-base font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Education
-          </p>
-          <h3 className="mt-4 text-[clamp(1.8rem,3.6vw,2.6rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-foreground">
-            {education.institution}
-          </h3>
-          <p className="mt-5 text-lg leading-8 text-muted-foreground">
-            {education.degree}
-          </p>
-          <div className="mt-5 flex flex-wrap items-baseline gap-x-5 gap-y-2 text-base text-muted-foreground">
-            <span>{education.dates}</span>
-            <span className="font-semibold text-foreground">{education.gpa}</span>
-          </div>
-
-          <div className="mt-8 border-t border-border pt-6">
-            <p className="text-base font-semibold text-foreground">
-              Selected coursework
-            </p>
-            <ul className="mt-4 grid gap-x-6 gap-y-3 text-base leading-7 text-muted-foreground sm:grid-cols-2">
-              {education.coursework.map((course) => (
-                <li key={course}>{course}</li>
-              ))}
-            </ul>
-          </div>
-        </aside>
       </div>
+
+      <aside
+        data-education-panel
+        className="journey-col-rail journey-spec"
+        aria-label="Education"
+      >
+        <p className="journey-spec-label">Education</p>
+        <dl className="journey-spec-list">
+          <div className="journey-spec-row">
+            <dt>School</dt>
+            <dd>{education.institution}</dd>
+          </div>
+          <div className="journey-spec-row">
+            <dt>Degree</dt>
+            <dd>{education.degree}</dd>
+          </div>
+          <div className="journey-spec-row">
+            <dt>GPA</dt>
+            <dd className="journey-spec-figure">{education.gpa}</dd>
+          </div>
+          <div className="journey-spec-row">
+            <dt>Term</dt>
+            <dd>{education.dates}</dd>
+          </div>
+        </dl>
+
+        <p className="journey-spec-label journey-spec-label--inset">
+          Coursework
+        </p>
+        <ul className="journey-spec-tags">
+          {education.coursework.map((course) => (
+            <li key={course}>{course}</li>
+          ))}
+        </ul>
+      </aside>
     </Station>
   );
 }

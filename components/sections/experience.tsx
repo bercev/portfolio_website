@@ -13,9 +13,10 @@ export function Experience({ content, heading }: ExperienceProps) {
       id="experience"
       station={4}
       heading={heading}
+      note={`${content.length} roles · 2024 — present`}
       className="journey-station--systems"
     >
-      <div className="journey-rail-list">
+      <div className="journey-rail-list journey-ledger">
         {content.map((experience, index) => (
           <article
             key={`${experience.role}-${experience.dates}`}
@@ -38,8 +39,10 @@ export function Experience({ content, heading }: ExperienceProps) {
               <p className="journey-body journey-xp-summary">
                 {experience.summary}
               </p>
-              <p className="journey-body journey-xp-tools">
-                {experience.technologies.join(" · ")}
+            </div>
+            <div className="journey-xp-stack">
+              <p className="journey-xp-tools">
+                {experience.technologies.join("\n")}
               </p>
             </div>
           </article>

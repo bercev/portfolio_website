@@ -1,21 +1,33 @@
 import { Agentation } from "agentation";
 import type { Metadata } from "next";
-import { Archivo, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Newsreader, Schibsted_Grotesk } from "next/font/google";
 
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
 import "./globals.css";
 
-const archivo = Archivo({
-  variable: "--font-archivo",
+/** Editorial masthead voice — opsz keeps the display cut sharp at hero sizes. */
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
-  weight: ["400", "500", "700", "800"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+/** Newspaper-derived grotesque: quieter than Inter, still neutral under long reads. */
+const schibsted = Schibsted_Grotesk({
+  variable: "--font-schibsted",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+/** Data rails, kickers, and every figure that must line up in a column. */
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -66,7 +78,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${archivo.variable} ${geistMono.variable}`}
+      className={`${newsreader.variable} ${schibsted.variable} ${plexMono.variable}`}
     >
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <ThemeProvider>{children}</ThemeProvider>

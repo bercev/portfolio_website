@@ -20,9 +20,7 @@ function ProjectDetails({
 }) {
   return (
     <>
-      <p className="text-base font-semibold text-muted-foreground">
-        {project.dates}
-      </p>
+      <p className="journey-project-when">{project.dates}</p>
       <h3
         aria-label={project.title}
         className={
@@ -71,6 +69,7 @@ export function Projects({ content, heading }: ProjectsProps) {
       id="projects"
       station={5}
       heading={heading}
+      note="Shipped · live links"
       className="journey-station--ships"
     >
       <div className="journey-grid journey-grid--ships">

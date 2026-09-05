@@ -139,7 +139,7 @@
   overflow: hidden;
   padding: 0;
   color: var(--popover-foreground);
-  font-family: var(--font-archivo), sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   font-weight: 600;
   line-height: 1;

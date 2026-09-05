@@ -14,9 +14,10 @@ export function Publications({ content, heading }: PublicationsProps) {
       id="publications"
       station={3}
       heading={heading}
+      note={`${content.length} peer-reviewed · hover to read`}
       className="journey-station--proof"
     >
-      <div className="journey-panel journey-panel--ruled">
+      <div className="journey-panel journey-panel--ruled journey-ledger">
         {content.map((publication, index) => (
           <article
             key={publication.href}
@@ -28,34 +29,35 @@ export function Publications({ content, heading }: PublicationsProps) {
                 : "journey-pub-row"
             }
           >
-            <div className="journey-pub-layout">
-              <div className="journey-pub-main">
-                <HoverPreview
-                  title={publication.title}
-                  href={publication.href}
-                  pdfUrl={publication.pdfUrl}
-                  headingClassName={
-                    index === 0
-                      ? "journey-pub-title journey-pub-title--lead"
-                      : "journey-pub-title"
-                  }
-                  linkClassName="w-full items-start gap-2 decoration-portfolio-accent"
-                  linkIconSize={24}
-                  previewClassName={
-                    index === 0
-                      ? "journey-pub-preview journey-pub-preview--lead"
-                      : "journey-pub-preview"
-                  }
-                />
-              </div>
-              <aside
-                className="journey-pub-marginalia"
-                aria-label="Venue and date"
-              >
-                <span className="journey-pub-venue">{publication.venue}</span>
-                <span className="journey-pub-date">{publication.date}</span>
-              </aside>
+            <p className="journey-pub-index" aria-hidden="true">
+              {String(index + 1).padStart(2, "0")}
+            </p>
+            <div className="journey-pub-main">
+              <HoverPreview
+                title={publication.title}
+                href={publication.href}
+                pdfUrl={publication.pdfUrl}
+                headingClassName={
+                  index === 0
+                    ? "journey-pub-title journey-pub-title--lead"
+                    : "journey-pub-title"
+                }
+                linkClassName="w-full items-start gap-2 decoration-portfolio-accent"
+                linkIconSize={24}
+                previewClassName={
+                  index === 0
+                    ? "journey-pub-preview journey-pub-preview--lead"
+                    : "journey-pub-preview"
+                }
+              />
             </div>
+            <aside
+              className="journey-pub-marginalia"
+              aria-label="Venue and date"
+            >
+              <span className="journey-pub-venue">{publication.venue}</span>
+              <span className="journey-pub-date">{publication.date}</span>
+            </aside>
           </article>
         ))}
       </div>

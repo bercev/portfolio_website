@@ -171,7 +171,7 @@ export class AsciiScene {
   }
 
   private drawTextTexture() {
-    const fontFamily = cssValue(this.root, "--font-archivo", "sans-serif");
+    const fontFamily = cssValue(this.root, "--font-sans", "sans-serif");
     const mask = cssValue(this.root, "--effect-ascii-mask", "");
     if (!mask) throw new Error("ASCII mask token is unavailable.");
     const fontSize = 240;
