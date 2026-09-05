@@ -219,6 +219,11 @@ let stationBlending: THREE.Blending = THREE.AdditiveBlending;
  */
 let inkAlpha = 1;
 
+/** Viewport aspect the wordmark world width was authored against. */
+const LANDSCAPE_FIT_ASPECT = 1.35;
+/** World units the glyph rises by at the narrowest portrait viewports. */
+const PORTRAIT_WORDMARK_LIFT = 4.4;
+
 /** Sculpture wireframe: breathing pulse + vertical two-tone gradient. */
 function stationMaterial(color: THREE.Color): THREE.ShaderMaterial {
   const glow = color.clone().lerp(new THREE.Color(0xffffff), 0.45);
@@ -545,6 +550,7 @@ export class JourneyScene {
     this.arrivalGroup.add(this.arrivalPoints);
     this.arrivalGroup.position.set(0, 0.4, -142);
     this.scene.add(this.arrivalGroup);
+    this.fitWordmarks();
 
     this.stars = this.buildStarfield(quality === "full" ? 2600 : 1300);
     this.scene.add(this.stars);
@@ -901,11 +907,27 @@ export class JourneyScene {
     this.scene.add(points);
     return points;
   }
+  /**
+   * The wordmarks are built at a fixed world width, so a portrait frustum
+   * clips them at both ends. Scale them back to the visible width instead.
+   */
+  private fitWordmarks() {
+    const aspect = window.innerWidth / window.innerHeight;
+    const scale = Math.min(1, aspect / LANDSCAPE_FIT_ASPECT);
+    this.textGroup.scale.setScalar(scale);
+    this.arrivalGroup.scale.setScalar(scale);
+    // Portrait stacks the hero copy tall, so lift the glyph clear of it.
+    const lift = (1 - scale) * PORTRAIT_WORDMARK_LIFT;
+    this.textGroup.position.y = 0.4 + lift;
+    this.arrivalGroup.position.y = 0.4 + lift;
+  }
+
   private readonly handleResize = () => {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.composer?.setSize(window.innerWidth, window.innerHeight);
+    this.fitWordmarks();
     const pixelScale = window.innerHeight * 0.5;
     for (const mat of this.animatedMaterials) {
       if (mat.uniforms.uPixelScale) mat.uniforms.uPixelScale.value = pixelScale;

@@ -1482,10 +1482,25 @@ html[data-journey="active"] [data-effect-layer="background"] {
 
 .journey-xp-tools {
   margin: 0;
+  padding: 0;
+  list-style: none;
   font: 400 0.78rem/1.9 var(--font-mono);
   letter-spacing: 0.02em;
   color: var(--muted-foreground);
-  white-space: pre-line;
+}
+
+/* One per line in the rail; a run with separators once the rail collapses. */
+@media (max-width: 900px) {
+  .journey-xp-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+  }
+
+  .journey-xp-tools li + li::before {
+    content: "· ";
+    color: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+  }
 }
 
 .journey-project {

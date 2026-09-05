@@ -41,9 +41,11 @@ export function Experience({ content, heading }: ExperienceProps) {
               </p>
             </div>
             <div className="journey-xp-stack">
-              <p className="journey-xp-tools">
-                {experience.technologies.join("\n")}
-              </p>
+              <ul className="journey-xp-tools" aria-label="Stack">
+                {experience.technologies.map((technology) => (
+                  <li key={technology}>{technology}</li>
+                ))}
+              </ul>
             </div>
           </article>
         ))}
