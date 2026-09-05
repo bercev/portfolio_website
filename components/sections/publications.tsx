@@ -50,6 +50,7 @@ export function Publications({ content, heading }: PublicationsProps) {
                     : "journey-pub-preview"
                 }
               />
+              <p className="journey-pub-gloss">{publication.gloss}</p>
             </div>
             <aside
               className="journey-pub-marginalia"

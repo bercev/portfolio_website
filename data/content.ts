@@ -15,6 +15,8 @@ export interface ExternalLink {
 
 export interface Publication {
   readonly title: string;
+  /** Plain-English gloss — the paper's claim without the title's jargon. */
+  readonly gloss: string;
   readonly venue: string;
   readonly date: string;
   readonly href: string;
@@ -159,6 +161,8 @@ export const portfolio = {
     {
       title:
         "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision.",
+      gloss:
+        "How an agent can get measurably better at a skill by decomposing it into subskills, with no task-level supervision to learn from.",
       venue: "ICML 2026 AIWILD Workshop",
       date: "2026",
       href: "https://openreview.net/forum?id=nZYF0aPAMP",
@@ -173,6 +177,8 @@ export const portfolio = {
     },
     {
       title: "@GrokSet: Multi-party Human-LLM Interactions in Social Media.",
+      gloss:
+        "A dataset and analysis of 1M+ public Grok conversations — what changes when people talk to an LLM in front of an audience instead of alone.",
       venue: "arXiv:2602.21236",
       date: "February 2026",
       href: "https://arxiv.org/abs/2602.21236",
