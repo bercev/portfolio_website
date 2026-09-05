@@ -199,6 +199,14 @@ const GLSL_NOISE_2D = /* glsl */ `
 /** Blending for station materials — set per theme before buildStations runs. */
 let stationBlending: THREE.Blending = THREE.AdditiveBlending;
 
+/**
+ * Every particle alpha here was tuned for additive blending on a near-black
+ * clear, where overlapping sprites stay dim. Normal-blended on paper the same
+ * values stack into flat fill, so light mode draws the whole scene as faint
+ * ink instead.
+ */
+let inkAlpha = 1;
+
 /** Sculpture wireframe: breathing pulse + vertical two-tone gradient. */
 function stationMaterial(color: THREE.Color): THREE.ShaderMaterial {
   const glow = color.clone().lerp(new THREE.Color(0xffffff), 0.45);
@@ -210,7 +218,7 @@ function stationMaterial(color: THREE.Color): THREE.ShaderMaterial {
     uniforms: {
       uTime: { value: 0 },
       uSeed: { value: Math.random() * Math.PI * 2 },
-      uOpacity: { value: 0.62 },
+      uOpacity: { value: 0.62 * inkAlpha },
       uColorA: { value: color.clone() },
       uColorB: { value: glow },
     },
@@ -247,7 +255,7 @@ function auraMaterial(color: THREE.Color): THREE.ShaderMaterial {
       uTime: { value: 0 },
       uSeed: { value: Math.random() * Math.PI * 2 },
       uOpacity: {
-        value: stationBlending === THREE.AdditiveBlending ? 0.5 : 0.3,
+        value: (stationBlending === THREE.AdditiveBlending ? 0.5 : 0.3) * inkAlpha,
       },
       uColor: { value: color.clone() },
     },
@@ -480,6 +488,7 @@ export class JourneyScene {
   /** Mouse-look / pointer parallax — home + contact only. */
   private pointerLookEnabled = false;
   private readonly particleBlending: THREE.Blending;
+  private readonly inkAlpha: number = 1;
   /** Every shader material driven by uTime (sculptures, aura, stars, dust, nebula, trail). */
   private readonly animatedMaterials: THREE.ShaderMaterial[] = [];
   private trail: { geometry: THREE.BufferGeometry; positions: Float32Array } | null = null;
@@ -493,6 +502,8 @@ export class JourneyScene {
     this.palette = palette;
     this.particleBlending = particleBlending;
     stationBlending = particleBlending;
+    inkAlpha = lightTheme ? 0.22 : 1;
+    this.inkAlpha = inkAlpha;
     this.onProgress = onProgress;
 
     this.renderer = new THREE.WebGLRenderer({
@@ -534,7 +545,7 @@ export class JourneyScene {
         color: new THREE.Color(palette.cyan),
         transparent: true,
         // Atmosphere only — never a second hero (esp. light mode).
-        opacity: lightTheme ? 0.18 : 0.16,
+        opacity: lightTheme ? 0.1 : 0.16,
         blending: particleBlending,
         depthWrite: false,
       }),
@@ -565,7 +576,7 @@ export class JourneyScene {
         blending: THREE.NormalBlending,
         uniforms: {
           uTime: { value: 0 },
-          uIntensity: { value: lightTheme ? 0.14 : 0.3 },
+          uIntensity: { value: lightTheme ? 0.07 : 0.3 },
           uTintA: {
             value: new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.55),
           },
@@ -626,6 +637,7 @@ export class JourneyScene {
         uniforms: {
           uPixelScale: { value: window.innerHeight * 0.5 },
           uColor: { value: new THREE.Color(palette.accent) },
+          uInk: { value: inkAlpha },
         },
         vertexShader: `
           attribute float aAge;
@@ -640,10 +652,11 @@ export class JourneyScene {
         `,
         fragmentShader: `
           uniform vec3 uColor;
+          uniform float uInk;
           varying float vAge;
           void main() {
             float d = length(gl_PointCoord - 0.5);
-            float alpha = smoothstep(0.5, 0.1, d) * (1.0 - vAge) * 0.85;
+            float alpha = smoothstep(0.5, 0.1, d) * (1.0 - vAge) * 0.85 * uInk;
             if (alpha < 0.01) discard;
             gl_FragColor = vec4(uColor, alpha);
           }
@@ -717,6 +730,7 @@ export class JourneyScene {
       uniforms: {
         uTime: { value: 0 },
         uPixelScale: { value: window.innerHeight * 0.5 },
+        uInk: { value: this.inkAlpha },
       },
       vertexShader: `
         attribute vec3 aColor;
@@ -734,11 +748,12 @@ export class JourneyScene {
         }
       `,
       fragmentShader: `
+        uniform float uInk;
         varying vec3 vColor;
         varying float vTw;
         void main() {
           float d = length(gl_PointCoord - 0.5);
-          float alpha = smoothstep(0.5, 0.1, d) * vTw;
+          float alpha = smoothstep(0.5, 0.1, d) * vTw * uInk;
           if (alpha < 0.01) discard;
           gl_FragColor = vec4(vColor, alpha);
         }
@@ -833,6 +848,7 @@ export class JourneyScene {
         uPixelScale: { value: window.innerHeight * 0.5 },
         uCenter: { value: center.clone() },
         uSpeed: { value: speed },
+        uInk: { value: this.inkAlpha },
       },
       vertexShader: `
         attribute vec3 aColor;
@@ -855,10 +871,11 @@ export class JourneyScene {
         }
       `,
       fragmentShader: `
+        uniform float uInk;
         varying vec3 vColor;
         void main() {
           float d = length(gl_PointCoord - 0.5);
-          float alpha = smoothstep(0.5, 0.12, d) * 0.9;
+          float alpha = smoothstep(0.5, 0.12, d) * 0.9 * uInk;
           if (alpha < 0.01) discard;
           gl_FragColor = vec4(vColor, alpha);
         }

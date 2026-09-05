@@ -26,10 +26,25 @@ describe("getAcidSquaresTheme", () => {
     expect(ACID_SQUARES_HIGH_SPREAD_TONE_POWER).toBe(0.1);
   });
 
-  it("replaces all three colors with a theme override", () => {
-    expect(getAcidSquaresTheme(false, "#a855f7")).toEqual({
-      colors: ["#a855f7", "#a855f7", "#a855f7"],
-      spread: 0.22,
+  it("tints only the ink stop in dark mode so the tunnel keeps its depth", () => {
+    expect(getAcidSquaresTheme(true, "#a855f7")).toEqual({
+      colors: ["#000000", "#a855f7", "#000000"],
+      spread: 0.3,
     });
+  });
+
+  it("darkens the accent toward ink in light mode so paper stays paper", () => {
+    const { colors } = getAcidSquaresTheme(false, "#00d8ff");
+    expect(colors[0]).toBe("#ffffff");
+    expect(colors[2]).toBe("#ffffff");
+    expect(colors[1]).toBe("#075d75");
+  });
+
+  it("keeps the monochrome stops when no accent is selected", () => {
+    expect(getAcidSquaresTheme(false, undefined).colors).toEqual([
+      "#ffffff",
+      "#000000",
+      "#ffffff",
+    ]);
   });
 });
