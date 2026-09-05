@@ -12,7 +12,7 @@
   --secondary: #e7edf6;
   --secondary-foreground: #101723;
   --muted: #e7edf6;
-  --muted-foreground: #636974;
+  --muted-foreground: #3f4856;
   --accent: #e7edf6;
   --accent-foreground: #101723;
   --destructive: oklch(0.577 0.245 27.325);
@@ -41,7 +41,7 @@
     BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  --radius: 0.375rem;
+  --radius: 0.125rem;
   --shadow-color: oklch(0 0 0);
   --shadow-opacity: 0.1;
   --shadow-blur: 3px;
@@ -51,6 +51,9 @@
   --letter-spacing: 0em;
   --spacing: 0.25rem;
 
+  /* Shared Hero→Contact content column geometry */
+  --journey-content-max: 1200px;
+  --journey-content-inline: clamp(16px, 5vw, 64px);
   --portfolio-accent: #00d8ff;
   --portfolio-accent-foreground: #060a12;
   --selection-background: #000000;
@@ -88,11 +91,25 @@
   --effect-ascii-tertiary: var(--effect-chroma-coral);
 
   --z-effect-background: 0;
+  --z-journey-scene: 2;
   --z-content-frost: 5;
   --z-page-content: 10;
   --z-site-header: 40;
   --z-site-navigation: 50;
   --z-effect-pointer: 60;
+
+  --journey-space-bg: #eef5fb;
+  --journey-space-fog: #eef5fb;
+
+  --glass-bg: color-mix(in srgb, var(--card) 58%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--card) 76%, transparent);
+  --glass-border: color-mix(in srgb, var(--border) 88%, transparent);
+  --glass-blur: 14px;
+  --glass-saturate: 140%;
+  --glass-radius: 4px;
+  --glass-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 34%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  --glass-shadow: 0 24px 60px color-mix(in srgb, var(--shadow-color) 22%, transparent);
 
   color-scheme: light;
 }
@@ -109,7 +126,7 @@
   --secondary: #243040;
   --secondary-foreground: #e5ecf1;
   --muted: #232d3c;
-  --muted-foreground: #8794a1;
+  --muted-foreground: #b4bfca;
   --accent: #2b3a4d;
   --accent-foreground: #e5ecf1;
   --destructive: oklch(0.704 0.191 22.216);
@@ -140,7 +157,7 @@
     BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  --radius: 0.375rem;
+  --radius: 0.125rem;
   --shadow-color: oklch(0 0 0);
   --shadow-opacity: 0.1;
   --shadow-blur: 3px;
@@ -149,6 +166,19 @@
   --shadow-offset-y: 1px;
   --letter-spacing: 0em;
   --spacing: 0.25rem;
+
+  --journey-space-bg: #05070c;
+  --journey-space-fog: #05070c;
+
+  --glass-bg: color-mix(in srgb, var(--card) 46%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--card) 68%, transparent);
+  --glass-border: color-mix(in srgb, var(--border) 92%, transparent);
+  --glass-blur: 16px;
+  --glass-saturate: 150%;
+  --glass-radius: 4px;
+  --glass-highlight: inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #000000 28%, transparent);
+  --glass-shadow: 0 28px 70px color-mix(in srgb, var(--shadow-color) 42%, transparent);
 
   color-scheme: dark;
 }
@@ -470,42 +500,27 @@ textarea {
 
 .chroma-card {
   overflow: hidden;
-  border: 1px solid #000000;
-  border-radius: var(--radius);
+  border: 1px solid var(--foreground);
+  border-radius: 0;
   background: transparent;
   color: var(--card-foreground);
-  box-shadow: 0 1px 3px
-    color-mix(
-      in srgb,
-      var(--shadow-color) var(--shadow-opacity),
-      transparent
-    );
-  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.dark .chroma-card {
-  border-color: #ffffff;
+  box-shadow: none;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .chroma-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .chroma-card [data-chroma-surface] {
-  border-radius: calc(var(--radius) - 1px);
-  background: color-mix(in srgb, var(--card) 72%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  backdrop-filter: blur(18px) saturate(140%);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 30%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  box-shadow: none;
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .chroma-card [data-chroma-surface] {
     background: var(--card);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
   }
 }
 
@@ -605,6 +620,922 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   }
 }
 
+
+/* ---------- Vitae deep-dive artifact ---------- */
+
+.vitae-artifact {
+  position: relative;
+}
+
+.vitae-orbit-hit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 220px;
+  border: 1px solid var(--foreground);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--glass-bg) 58%, transparent);
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.vitae-orbit-hit:active {
+  cursor: grabbing;
+}
+
+.vitae-orbit-canvas {
+  display: block;
+  width: 100%;
+  height: 220px;
+  pointer-events: auto;
+}
+
+.vitae-orbit-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.vitae-static-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--foreground);
+  border-radius: 0;
+  background: var(--glass-bg-strong);
+  padding: 18px 18px 16px;
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight);
+}
+
+.vitae-static-stack {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 42px;
+  height: 52px;
+  pointer-events: none;
+}
+
+.vitae-static-stack span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--portfolio-accent) 45%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--glass-bg-strong) 80%, transparent);
+}
+
+.vitae-static-stack span:nth-child(1) {
+  transform: translate(-6px, 4px) rotate(-6deg);
+  border-color: color-mix(in srgb, var(--effect-chroma-emerald) 50%, transparent);
+}
+
+.vitae-static-stack span:nth-child(2) {
+  transform: translate(-2px, 2px) rotate(-2deg);
+  border-color: color-mix(in srgb, var(--effect-chroma-cyan) 50%, transparent);
+}
+
+.vitae-static-stack span:nth-child(3) {
+  transform: translate(2px, 0) rotate(2deg);
+}
+
+.vitae-linger-tags {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.vitae-linger-tags[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.vitae-linger-tag {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--effect-chroma-cyan) 40%, transparent);
+  border-radius: 0;
+  padding: 5px 9px;
+  font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: var(--effect-chroma-cyan);
+  background: color-mix(in srgb, var(--background) 72%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.vitae-static-card .vitae-linger-tags {
+  top: auto;
+  bottom: 14px;
+}
+
+.vitae-outcome-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--effect-chroma-emerald) 35%, transparent);
+  border-radius: 0;
+  padding: 6px 10px;
+  font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: var(--effect-chroma-emerald);
+  background: color-mix(in srgb, var(--effect-chroma-emerald) 8%, transparent);
+}
+
+.vitae-case-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-site-navigation) + 20);
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: color-mix(in srgb, var(--background) 55%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  backdrop-filter: blur(10px) saturate(120%);
+}
+
+.vitae-case-panel {
+  width: min(640px, 100%);
+  max-height: min(84vh, 820px);
+  overflow: auto;
+  padding: clamp(22px, 4vw, 36px);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .vitae-static-card,
+  .vitae-case-overlay,
+  .vitae-linger-tag {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .vitae-static-card {
+    background: var(--card);
+  }
+
+  .vitae-linger-tag {
+    background: var(--card);
+  }
+
+  .vitae-case-overlay {
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vitae-linger-tags {
+    transition: none;
+  }
+}
+
+/* ---------- Immersive 3D Journey ---------- */
+
+.journey-scene {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-journey-scene);
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.journey-vignette,
+.journey-rail {
+  display: none;
+}
+
+html[data-journey="active"] .journey-vignette {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-journey-scene) + 1);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(196, 216, 235, 0.4) 100%
+  );
+}
+
+html.dark[data-journey="active"] .journey-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(5, 7, 12, 0.55) 100%
+  );
+}
+
+html[data-journey="active"] .journey-rail {
+  display: block;
+  position: fixed;
+  right: clamp(10px, 2vw, 24px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--z-site-navigation);
+  width: 2px;
+  height: 34vh;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--foreground) 14%, transparent);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.journey-rail-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  background: linear-gradient(to bottom, var(--portfolio-accent), var(--effect-chroma-emerald));
+  transform-origin: top;
+  transform: scaleY(0);
+  border-radius: 0;
+}
+
+[data-journey-station] {
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--journey-content-max);
+  padding: clamp(90px, 15vh, 160px) var(--journey-content-inline);
+}
+
+
+.journey-about-column {
+  display: grid;
+  gap: clamp(50px, 7.5vh, 90px);
+  max-width: 68ch;
+}
+
+.journey-about-column .journey-copy {
+  display: grid;
+  gap: clamp(1.75rem, 2.8vh, 2.15rem);
+}
+
+.journey-about-education {
+  max-width: 54ch;
+}
+
+.journey-station--origin {
+  padding-block: clamp(120px, 20vh, 210px);
+}
+
+/* Mid-scroll rhythm A: dense proof stack. */
+.journey-station--proof {
+  padding-block: clamp(60px, 9vh, 110px);
+}
+
+/* Mid-scroll rhythm B: airy systems chronology. */
+.journey-station--systems {
+  padding-block: clamp(110px, 17.5vh, 190px);
+}
+
+.journey-station--ships {
+  padding-block: clamp(90px, 15vh, 170px);
+}
+
+.journey-station--vocab {
+  padding-block: clamp(70px, 11.25vh, 135px);
+}
+
+.journey-station--connect {
+  min-height: 72svh;
+  padding-block: clamp(90px, 17.5vh, 175px);
+}
+
+html[data-journey="active"] [data-effect-layer="background"] {
+  display: none;
+}
+
+.journey-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 18px;
+  font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--portfolio-accent);
+}
+
+.journey-station-heading {
+  margin: 0 0 14px;
+  max-width: 12ch;
+  color: var(--foreground);
+  font-size: clamp(2.45rem, 6.4vw, 4.25rem);
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: -0.055em;
+  text-transform: uppercase;
+}
+
+.journey-station--origin .journey-station-heading {
+  max-width: 10ch;
+  font-size: clamp(2.7rem, 7vw, 4.7rem);
+  letter-spacing: -0.062em;
+}
+
+.journey-station--proof .journey-station-heading {
+  max-width: 13ch;
+  font-size: clamp(2.05rem, 5vw, 3.25rem);
+  letter-spacing: -0.048em;
+}
+
+.journey-station--systems .journey-station-heading {
+  max-width: 11ch;
+  font-size: clamp(2.2rem, 5.4vw, 3.5rem);
+  letter-spacing: -0.05em;
+}
+
+.journey-station--ships .journey-station-heading {
+  max-width: 16ch;
+  font-size: clamp(2.8rem, 7.2vw, 4.9rem);
+  letter-spacing: -0.068em;
+}
+
+.journey-station--vocab .journey-station-heading {
+  max-width: 9ch;
+  font-size: clamp(1.9rem, 4.5vw, 2.95rem);
+  letter-spacing: -0.045em;
+}
+
+.journey-station--connect .journey-station-heading {
+  max-width: 12ch;
+  font-size: clamp(2.35rem, 5.8vw, 3.85rem);
+  letter-spacing: -0.058em;
+}
+
+.journey-lead {
+  color: var(--muted-foreground);
+  max-width: 58ch;
+  text-align: left;
+}
+
+/* Left-ragged body — never justified SaaS blocks. */
+.journey-body {
+  max-width: 62ch;
+  text-align: left;
+  text-wrap: pretty;
+  hyphens: manual;
+  color: var(--muted-foreground);
+}
+
+.journey-body--lede {
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+  line-height: 1.65;
+  letter-spacing: -0.01em;
+}
+
+/* Liquid glass is an accent material — Vitae/deep-dive only. */
+.liquid-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+/* Default station surfaces: hard-edged editorial panels, not frosted cards. */
+.journey-panel {
+  padding: clamp(18px, 2.6vw, 28px);
+  background: transparent;
+  border: 1px solid var(--foreground);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.journey-panel--hard {
+  background: transparent;
+  border-color: var(--foreground);
+}
+
+.journey-panel--open {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.journey-panel--ruled {
+  border: 0;
+  border-block: 2px solid var(--foreground);
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+/* Discord flat editorial strip — not twin glass with Vitae. */
+.journey-panel--strip {
+  border: 0;
+  border-block: 1px solid var(--foreground);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding-block: clamp(16px, 2.2vw, 26px);
+  padding-inline: 2px;
+  align-self: end;
+}
+
+.journey-paper-preview {
+  display: block;
+  width: min(36rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--foreground) 22%, var(--border));
+  border-radius: 0;
+  background: var(--card);
+  box-shadow: 6px 8px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.journey-paper-preview iframe {
+  border-radius: 0;
+}
+
+.journey-copy {
+  max-width: 54ch;
+}
+
+.journey-copy--connect {
+  max-width: 48ch;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+
+.journey-rail-list {
+  max-width: 920px;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: var(--glass-shadow);
+  }
+
+  .vitae-orbit-hit,
+  .vitae-static-card {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.journey-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.journey-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.journey-grid--origin {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: start;
+}
+
+.journey-grid--ships {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: end;
+}
+
+@media (max-width: 767px) {
+  .journey-grid--two,
+  .journey-grid--origin,
+  .journey-grid--ships {
+    grid-template-columns: 1fr;
+  }
+}
+
+.journey-pub-row {
+  position: relative;
+  border-bottom: 1px solid var(--foreground);
+  padding: clamp(20px, 2.6vw, 30px) 0;
+}
+
+.journey-pub-row:last-child {
+  border-bottom: 0;
+}
+
+/* Pubs: ~2/3 title stack + ~1/3 marginalia. */
+.journey-pub-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(7.5rem, 1fr);
+  gap: clamp(18px, 3vw, 40px);
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .journey-pub-layout {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.journey-pub-main {
+  min-width: 0;
+}
+
+.journey-pub-title {
+  width: 100%;
+  max-width: 28ch;
+  margin: 0;
+  font-size: clamp(1.45rem, 3.2vw, 2.05rem);
+  font-weight: 750;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--foreground);
+}
+
+.journey-pub-title--lead {
+  max-width: 32ch;
+  font-size: clamp(1.85rem, 4.2vw, 2.75rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.journey-pub-marginalia {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding-top: 4px;
+  padding-left: clamp(12px, 2vw, 18px);
+  text-align: right;
+  border-left: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+
+@media (max-width: 720px) {
+  .journey-pub-marginalia {
+    align-items: flex-start;
+    text-align: left;
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+    padding-left: 0;
+    padding-top: 10px;
+  }
+}
+
+.journey-pub-venue,
+.journey-pub-date {
+  font: 500 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-date {
+  letter-spacing: 0.14em;
+  opacity: 0.85;
+}
+
+/* Bold crop / slight overlap publication previews. */
+.journey-pub-preview {
+  display: block;
+  width: min(27rem, calc(100vw - 2.5rem));
+  overflow: hidden;
+  border: 1px solid var(--foreground);
+  border-radius: 0;
+  background: var(--card);
+  box-shadow: 8px 14px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  transform: rotate(-1.25deg) translate(-6%, 8%);
+  margin-left: 4%;
+}
+
+.journey-pub-preview--lead {
+  width: min(32rem, calc(100vw - 2rem));
+  transform: rotate(-1.75deg) translate(-8%, 10%);
+  box-shadow: 10px 18px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.journey-pub-preview iframe {
+  display: block;
+  width: 140%;
+  max-width: none;
+  height: min(34rem, 72vh);
+  margin: -8% 0 0 -12%;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+
+/* Experience: ~1/3 outboard meta + ~2/3 body. */
+.journey-xp-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: clamp(20px, 3.5vw, 48px);
+  align-items: start;
+  border-bottom: 1px solid var(--foreground);
+  padding: clamp(20px, 2.6vw, 30px) 0;
+}
+
+.journey-xp-item:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 720px) {
+  .journey-xp-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.journey-xp-outboard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding-top: 6px;
+}
+
+.journey-xp-when {
+  font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-xp-org {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+}
+
+.journey-xp-title {
+  margin-top: 4px;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 750;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--foreground);
+}
+
+.journey-xp-summary,
+.journey-xp-tools {
+  margin-top: 14px;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.journey-xp-tools {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent);
+  letter-spacing: -0.01em;
+}
+
+.journey-project {
+  display: flex;
+  flex-direction: column;
+}
+
+.journey-skill-heading {
+  margin: 0 0 10px;
+  font: 700 clamp(1.05rem, 2.2vw, 1.35rem)/1.3 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.journey-skill-line {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--muted-foreground);
+  font: 500 0.98rem/1.75 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+
+.journey-skill {
+  display: inline;
+  color: inherit;
+}
+
+.journey-skill + .journey-skill::before {
+  content: " · ";
+  color: color-mix(in srgb, var(--muted-foreground) 70%, transparent);
+}
+
+.journey-panel--proof {
+  border-color: var(--foreground);
+}
+
+.journey-pub-row--lead {
+  padding-top: clamp(6px, 1vw, 10px);
+  padding-bottom: clamp(26px, 3.4vw, 40px);
+}
+
+.journey-xp-item--featured {
+  padding-top: clamp(8px, 1vw, 12px);
+  padding-bottom: clamp(28px, 3.6vw, 44px);
+}
+
+.journey-xp-item--featured .journey-xp-title {
+  font-size: clamp(1.85rem, 3.6vw, 2.45rem);
+  letter-spacing: -0.05em;
+}
+
+/* Vitae glass is the ships-station accent surface. */
+.journey-project--ships {
+  border-color: color-mix(in srgb, var(--portfolio-accent) 40%, var(--foreground));
+}
+
+.journey-project-title {
+  margin-top: 1rem;
+  color: var(--foreground);
+}
+
+.journey-project-title--ships {
+  font-size: clamp(1.9rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
+}
+
+.journey-project-title--quiet {
+  font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.journey-project--quiet {
+  opacity: 1;
+  background: transparent;
+  box-shadow: none;
+}
+
+.journey-skill-clusters {
+  display: grid;
+  gap: clamp(28px, 4vw, 48px);
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.85fr);
+  padding-top: clamp(18px, 2.4vw, 28px);
+  border-top: 1px solid var(--foreground);
+}
+
+@media (max-width: 900px) {
+  .journey-skill-clusters {
+    grid-template-columns: 1fr;
+  }
+}
+
+.journey-skill-group {
+  margin-bottom: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Hero: the 3D particle name IS the display; a styled name is the flat fallback.
+   Shared content column lock stays. Glyph band reserves BERAT; meta sits BELOW it. */
+[data-hero-editorial] {
+  width: min(100%, var(--journey-content-max));
+  margin-inline: auto;
+  padding-inline: var(--journey-content-inline);
+  text-align: left;
+}
+
+/* Spacer for the BERAT particle glyph — must remain even when fallback is hidden. */
+[data-hero-glyph-band] {
+  flex: 1 1 auto;
+  display: grid;
+  align-content: end;
+  width: 100%;
+  min-height: clamp(42vh, 52vh, 62vh);
+  padding-top: clamp(4.5rem, 12vh, 7.5rem);
+  pointer-events: none;
+}
+
+[data-hero-name-fallback] {
+  display: grid;
+  place-items: start;
+  justify-items: start;
+  min-height: clamp(7rem, 18vw, 13rem);
+  width: 100%;
+  font-size: clamp(4.8rem, 17vw, 11.5rem);
+  font-weight: 900;
+  line-height: 0.78;
+  letter-spacing: -0.08em;
+  text-transform: uppercase;
+  color: var(--hero-particle-accent);
+  overflow: hidden;
+}
+
+html[data-journey="active"] [data-hero-name-fallback] {
+  visibility: hidden;
+}
+
+/* Role / location / tagline / scroll — clear of the BERAT band (never over it). */
+[data-hero-below] {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(1.1rem, 2.4vh, 1.75rem);
+  padding-bottom: clamp(10vh, 14vh, 18vh);
+  max-width: 34rem;
+}
+
+[data-hero-editorial] [data-hero-meta] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.7rem;
+  margin: 0;
+  max-width: 42rem;
+  font: 500 0.78rem/1.2 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--muted-foreground) 86%, transparent);
+}
+
+[data-hero-editorial] [data-hero-meta-sep] {
+  color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+}
+
+[data-hero-editorial] [data-hero-sub] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin: 0;
+  max-width: 34rem;
+}
+
+[data-hero-tagline] {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--foreground);
+  font: 650 clamp(1.35rem, 2.9vw, 1.9rem)/1.22 var(--font-archivo), ui-sans-serif,
+    system-ui, sans-serif;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+
+.journey-scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 0;
+  font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
+}
+
+.journey-scroll-hint::before {
+  content: "";
+  width: 36px;
+  height: 2px;
+  border-radius: 0;
+  background: linear-gradient(90deg, var(--portfolio-accent), var(--effect-chroma-emerald));
+}
+
+.journey-tech-line {
+  max-width: 58ch;
+  color: var(--muted-foreground);
+  font: 500 0.98rem/1.7 var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-journey="active"] .journey-rail {
+    display: none;
+  }
+
+  [data-hero-editorial] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

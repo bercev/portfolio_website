@@ -1,44 +1,62 @@
-import type { PortfolioContent } from "@/data/content";
+"use client";
 
-import { HeroParticleText } from "@/components/effects/hero-particle-text";
-import { Skills } from "@/components/sections/skills";
+import { motion, useReducedMotion } from "motion/react";
+
+import type { PortfolioContent } from "@/data/content";
 
 type HeroContent = {
   readonly identity: PortfolioContent["identity"];
   readonly hero: PortfolioContent["hero"];
-  readonly skills: PortfolioContent["skills"];
 };
 
-export function Hero({
-  content,
-  skillsHeading,
-}: {
-  content: HeroContent;
-  skillsHeading: PortfolioContent["navigation"][number]["label"];
-}) {
-  const { identity, hero, skills } = content;
+export function Hero({ content }: { content: HeroContent }) {
+  const { identity, hero } = content;
+  const reduceMotion = useReducedMotion();
 
   return (
     <section
       id="home"
       aria-labelledby="home-heading"
-      className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] items-center"
+      className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] flex-col"
     >
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-4 px-4 pb-12 pt-20 text-center sm:gap-5 sm:px-6 sm:pb-16 lg:px-8">
-        <h1
-          id="home-heading"
-          aria-label={identity.name}
-          className="w-full text-foreground"
-        >
-          <HeroParticleText text={identity.shortName} />
+      <motion.div
+        data-hero-editorial
+        className="flex w-full flex-1 flex-col"
+        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={
+          reduceMotion
+            ? { duration: 0 }
+            : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.12 }
+        }
+      >
+        <h1 id="home-heading" aria-label={identity.name} className="sr-only">
+          {identity.name}
         </h1>
 
-        <Skills content={skills} heading={skillsHeading} />
+        {/* Reserves the BERAT particle band so meta never sits over the glyph. */}
+        <div data-hero-glyph-band aria-hidden="true">
+          <div data-hero-name-fallback>
+            {identity.shortName.toUpperCase()}
+          </div>
+        </div>
 
-        <p className="max-w-3xl text-lg font-medium leading-relaxed text-foreground sm:text-xl sm:leading-relaxed lg:text-2xl">
-          {hero.bio}
-        </p>
-      </div>
+        {/* Role / location / tagline / scroll — always below the glyph band. */}
+        <div data-hero-below>
+          <div data-hero-meta>
+            <span>01</span>
+            <span data-hero-meta-sep>·</span>
+            <span>{identity.role}</span>
+            <span data-hero-meta-sep>·</span>
+            <span>Santa Cruz, CA</span>
+          </div>
+
+          <div data-hero-sub>
+            {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
+            <span className="journey-scroll-hint">Scroll to fly the journey</span>
+          </div>
+        </div>
+      </motion.div>
     </section>
   );
 }

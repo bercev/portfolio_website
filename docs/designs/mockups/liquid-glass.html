@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Berat Ercevik — Liquid Glass Spatial Mockup</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2300d8ff'/%3E%3Ccircle cx='32' cy='32' r='11' fill='white'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg-top: #0a1220;
+    --bg-bottom: #101d33;
+    --text: #e8eef5;
+    --text-dim: rgba(232, 238, 245, 0.62);
+    --text-faint: rgba(232, 238, 245, 0.42);
+    --cyan: #00d8ff;
+    --emerald: #20d98b;
+    --coral: #ff6b57;
+    --glass-bg: rgba(255, 255, 255, 0.055);
+    --glass-bg-strong: rgba(255, 255, 255, 0.085);
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --glass-radius: 22px;
+    --shadow-lift: 0 18px 48px rgba(0, 0, 0, 0.42);
+    --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Floating color orbs ---------- */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.32;
+    pointer-events: none;
+    z-index: 0;
+    will-change: transform;
+  }
+  .orb--cyan {
+    width: 480px; height: 480px;
+    background: radial-gradient(circle, var(--cyan) 0%, transparent 70%);
+    top: -120px; left: -100px;
+    animation: drift-a 26s ease-in-out infinite alternate;
+  }
+  .orb--emerald {
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, var(--emerald) 0%, transparent 70%);
+    top: 55%; right: -140px;
+    animation: drift-b 32s ease-in-out infinite alternate;
+  }
+  .orb--coral {
+    width: 380px; height: 380px;
+    background: radial-gradient(circle, var(--coral) 0%, transparent 70%);
+    bottom: -100px; left: 22%;
+    animation: drift-c 38s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift-a {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(140px, 90px) scale(1.15); }
+  }
+  @keyframes drift-b {
+    from { transform: translate(0, 0) scale(1.1); }
+    to   { transform: translate(-120px, -110px) scale(0.92); }
+  }
+  @keyframes drift-c {
+    from { transform: translate(0, 0) scale(0.95); }
+    to   { transform: translate(90px, -130px) scale(1.12); }
+  }
+
+  /* ---------- Glass primitives ---------- */
+  .glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--glass-radius);
+    box-shadow: var(--inner-highlight), 0 8px 28px rgba(0, 0, 0, 0.28);
+  }
+
+  /* ---------- Pill nav ---------- */
+  .nav-wrap {
+    position: sticky;
+    top: 18px;
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    padding: 0 16px;
+  }
+  .nav {
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--inner-highlight), 0 10px 32px rgba(0, 0, 0, 0.35);
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.86rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    padding: 8px 16px;
+    border-radius: 999px;
+    white-space: nowrap;
+    transition: color 0.25s ease, background 0.25s ease;
+  }
+  .nav a:hover { color: var(--text); background: rgba(255, 255, 255, 0.08); }
+  .nav a.active {
+    color: #06121f;
+    background: linear-gradient(135deg, var(--cyan), var(--emerald));
+    font-weight: 600;
+  }
+
+  /* ---------- Layout ---------- */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+
+  section { padding: 88px 0 8px; }
+
+  .panel {
+    padding: 44px 48px;
+    transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+  }
+  .panel:hover {
+    transform: translateY(-4px);
+    background: var(--glass-bg-strong);
+    box-shadow: var(--inner-highlight), var(--shadow-lift), 0 0 42px rgba(0, 216, 255, 0.10);
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 14px;
+  }
+
+  h2 {
+    font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 22px;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    min-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 120px 0 40px;
+  }
+  .hero .eyebrow { color: var(--emerald); }
+  .hero h1 {
+    font-size: clamp(2.8rem, 8vw, 5.4rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+    background: linear-gradient(120deg, #ffffff 8%, var(--cyan) 45%, var(--emerald) 78%, var(--coral) 105%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    margin-bottom: 18px;
+  }
+  .hero .role {
+    font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .hero .tagline {
+    font-size: clamp(0.98rem, 1.8vw, 1.12rem);
+    color: var(--text-dim);
+    max-width: 560px;
+    margin-bottom: 34px;
+  }
+  .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block;
+    padding: 12px 26px;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  }
+  .btn--primary {
+    color: #06121f;
+    background: linear-gradient(135deg, var(--cyan), var(--emerald));
+    box-shadow: 0 8px 26px rgba(0, 216, 255, 0.28);
+  }
+  .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(0, 216, 255, 0.42); }
+  .btn--ghost {
+    color: var(--text);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .btn--ghost:hover { transform: translateY(-2px); background: var(--glass-bg-strong); }
+
+  /* ---------- About ---------- */
+  .about-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
+  .about-grid .panel p { color: var(--text-dim); }
+  .fact-list { list-style: none; display: grid; gap: 14px; }
+  .fact-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+  }
+  .fact-list .k {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .fact-list .v { font-size: 0.95rem; font-weight: 600; }
+
+  /* ---------- Publications ---------- */
+  .pub-list { display: grid; gap: 18px; }
+  .pub {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 26px 30px;
+    transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+  }
+  .pub:hover {
+    transform: translateY(-4px);
+    background: var(--glass-bg-strong);
+    box-shadow: var(--inner-highlight), var(--shadow-lift), 0 0 42px rgba(32, 217, 139, 0.10);
+  }
+  .pub-num {
+    flex: 0 0 auto;
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #06121f;
+    background: linear-gradient(135deg, var(--cyan), var(--emerald));
+  }
+  .pub h3 { font-size: 1.06rem; font-weight: 650; margin-bottom: 6px; letter-spacing: -0.01em; }
+  .pub p { font-size: 0.88rem; color: var(--text-dim); }
+  .pub .meta { margin-top: 10px; font-size: 0.76rem; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* ---------- Experience timeline ---------- */
+  .timeline { position: relative; display: grid; gap: 18px; padding-left: 26px; }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 5px; top: 10px; bottom: 10px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--cyan), var(--emerald), var(--coral));
+    opacity: 0.5;
+    border-radius: 2px;
+  }
+  .job {
+    position: relative;
+    padding: 24px 28px;
+    transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+  }
+  .job:hover {
+    transform: translateY(-3px);
+    background: var(--glass-bg-strong);
+    box-shadow: var(--inner-highlight), var(--shadow-lift);
+  }
+  .job::before {
+    content: "";
+    position: absolute;
+    left: -27px; top: 32px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 216, 255, 0.7);
+  }
+  .job:nth-child(2)::before { background: var(--emerald); box-shadow: 0 0 12px rgba(32, 217, 139, 0.7); }
+  .job:nth-child(3)::before { background: var(--coral); box-shadow: 0 0 12px rgba(255, 107, 87, 0.7); }
+  .job:nth-child(4)::before { background: var(--cyan); box-shadow: 0 0 12px rgba(0, 216, 255, 0.7); }
+  .job h3 { font-size: 1.05rem; font-weight: 650; }
+  .job .where { font-size: 0.85rem; color: var(--cyan); margin: 2px 0 8px; }
+  .job p { font-size: 0.9rem; color: var(--text-dim); }
+
+  /* ---------- Projects ---------- */
+  .projects-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .project {
+    padding: 34px 36px;
+    transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+  }
+  .project:hover {
+    transform: translateY(-6px);
+    background: var(--glass-bg-strong);
+    box-shadow: var(--inner-highlight), var(--shadow-lift), 0 0 48px rgba(255, 107, 87, 0.12);
+  }
+  .project .icon {
+    width: 48px; height: 48px;
+    display: grid; place-items: center;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    font-size: 1.3rem;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--glass-border);
+  }
+  .project h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .project p { font-size: 0.92rem; color: var(--text-dim); margin-bottom: 16px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* ---------- Skills ---------- */
+  .skills-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .skill-group { padding: 26px 28px; transition: transform 0.35s ease, box-shadow 0.35s ease; }
+  .skill-group:hover { transform: translateY(-3px); box-shadow: var(--inner-highlight), var(--shadow-lift); }
+  .skill-group h3 {
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--emerald);
+    margin-bottom: 14px;
+  }
+  .skill-group .tags .tag { font-size: 0.78rem; }
+
+  /* ---------- Contact ---------- */
+  .contact { text-align: center; padding-bottom: 0; }
+  .contact .panel { padding: 64px 48px; }
+  .contact h2 { margin-bottom: 10px; }
+  .contact p { color: var(--text-dim); max-width: 480px; margin: 0 auto 30px; }
+  .contact-links { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+
+  footer {
+    text-align: center;
+    padding: 40px 24px 32px;
+    font-size: 0.8rem;
+    color: var(--text-faint);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---------- Mockup badge ---------- */
+  .mockup-badge {
+    position: fixed;
+    right: 18px; bottom: 18px;
+    z-index: 60;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.09);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--inner-highlight), 0 6px 20px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+  }
+
+  /* ---------- Reveal on scroll ---------- */
+  .reveal {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px) {
+    .about-grid, .projects-grid { grid-template-columns: 1fr; }
+    .skills-grid { grid-template-columns: 1fr; }
+    .panel { padding: 32px 26px; }
+    .hero { min-height: 70vh; }
+  }
+  @media (max-width: 560px) {
+    .nav a { padding: 7px 12px; font-size: 0.8rem; }
+    section { padding: 64px 0 4px; }
+    .pub { flex-direction: column; gap: 12px; padding: 22px; }
+  }
+
+  /* ---------- Reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .orb { animation: none; opacity: 0.18; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .panel, .pub, .job, .project, .skill-group, .btn { transition: none; }
+    .panel:hover, .pub:hover, .job:hover, .project:hover, .skill-group:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Floating color orbs -->
+  <div class="orb orb--cyan" aria-hidden="true"></div>
+  <div class="orb orb--emerald" aria-hidden="true"></div>
+  <div class="orb orb--coral" aria-hidden="true"></div>
+
+  <!-- Floating glass pill nav -->
+  <div class="nav-wrap">
+    <nav class="nav" aria-label="Primary">
+      <a href="#home" class="active">Home</a>
+      <a href="#about">About</a>
+      <a href="#publications">Publications</a>
+      <a href="#experience">Experience</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <!-- Hero -->
+    <section id="home" class="hero">
+      <span class="eyebrow">Portfolio — Liquid Glass Spatial</span>
+      <h1>Berat Ercevik</h1>
+      <p class="role">Software Engineer</p>
+      <p class="tagline">Persistent and adaptive software engineer — building intelligent systems, from LLM research to production tooling.</p>
+      <div class="hero-cta">
+        <a class="btn btn--primary" href="#projects">View Projects</a>
+        <a class="btn btn--ghost" href="#contact">Get in Touch</a>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section id="about" aria-labelledby="about-heading">
+      <div class="about-grid">
+        <div class="glass panel reveal">
+          <span class="eyebrow">About</span>
+          <h2 id="about-heading">Who I Am</h2>
+          <p>I'm a persistent and adaptive software engineer who thrives on turning ambiguous problems into working systems. My work spans AI systems engineering, LLM research, and hands-on teaching — always with an eye toward clarity, craft, and measurable impact.</p>
+        </div>
+        <div class="glass panel reveal">
+          <ul class="fact-list">
+            <li><span class="k">Role</span><span class="v">Software Engineer</span></li>
+            <li><span class="k">Education</span><span class="v">UC Santa Cruz — B.S. Computer Science</span></li>
+            <li><span class="k">Focus</span><span class="v">AI Systems · LLMs · Full-Stack</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Publications -->
+    <section id="publications" aria-labelledby="pubs-heading">
+      <span class="eyebrow">Research</span>
+      <h2 id="pubs-heading">Publications</h2>
+      <div class="pub-list">
+        <article class="glass pub reveal">
+          <div class="pub-num" aria-hidden="true">01</div>
+          <div>
+            <h3>SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision</h3>
+            <p>Optimizing agent skills through decomposed subskills — without requiring task-level supervision.</p>
+            <div class="meta">Publication · Research Paper</div>
+          </div>
+        </article>
+        <article class="glass pub reveal">
+          <div class="pub-num" aria-hidden="true">02</div>
+          <div>
+            <h3>@GrokSet: Multi-party Human-LLM Interactions in Social Media</h3>
+            <p>Studying multi-party interactions between humans and LLMs in real social media contexts.</p>
+            <div class="meta">Publication · Research Paper</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Experience -->
+    <section id="experience" aria-labelledby="exp-heading">
+      <span class="eyebrow">Career</span>
+      <h2 id="exp-heading">Experience</h2>
+      <div class="timeline">
+        <article class="glass job reveal">
+          <h3>AI Systems Engineer Intern</h3>
+          <div class="where">Most Recent</div>
+          <p>Engineered AI system components, integrating LLM pipelines into reliable, production-grade workflows.</p>
+        </article>
+        <article class="glass job reveal">
+          <h3>DSA Tutor</h3>
+          <div class="where">UC Santa Cruz</div>
+          <p>Guided students through data structures and algorithms, strengthening fundamentals through one-on-one instruction.</p>
+        </article>
+        <article class="glass job reveal">
+          <h3>LLM Researcher</h3>
+          <div class="where">Research</div>
+          <p>Conducted research on large language model behavior and optimization, contributing to published work.</p>
+        </article>
+        <article class="glass job reveal">
+          <h3>SWE Intern</h3>
+          <div class="where">Software Engineering</div>
+          <p>Shipped features across the stack, collaborating with teams on code quality and delivery.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section id="projects" aria-labelledby="proj-heading">
+      <span class="eyebrow">Work</span>
+      <h2 id="proj-heading">Projects</h2>
+      <div class="projects-grid">
+        <article class="glass project reveal">
+          <div class="icon" aria-hidden="true">📄</div>
+          <h3>Vitae</h3>
+          <p>An intelligent resume-building experience — crafting polished, tailored documents with AI-assisted refinement.</p>
+          <div class="tags"><span class="tag">AI</span><span class="tag">Web App</span><span class="tag">Tooling</span></div>
+        </article>
+        <article class="glass project reveal">
+          <div class="icon" aria-hidden="true">🤖</div>
+          <h3>AI Discord Chatbot</h3>
+          <p>A conversational Discord bot powered by LLMs — context-aware replies, moderation helpers, and community features.</p>
+          <div class="tags"><span class="tag">LLM</span><span class="tag">Discord API</span><span class="tag">Python</span></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Skills -->
+    <section id="skills" aria-labelledby="skills-heading">
+      <span class="eyebrow">Toolkit</span>
+      <h2 id="skills-heading">Skills</h2>
+      <div class="skills-grid">
+        <div class="glass skill-group reveal">
+          <h3>Languages</h3>
+          <div class="tags"><span class="tag">Python</span><span class="tag">TypeScript</span><span class="tag">JavaScript</span><span class="tag">C++</span></div>
+        </div>
+        <div class="glass skill-group reveal">
+          <h3>AI &amp; ML</h3>
+          <div class="tags"><span class="tag">LLMs</span><span class="tag">Prompt Engineering</span><span class="tag">RAG</span><span class="tag">Agents</span></div>
+        </div>
+        <div class="glass skill-group reveal">
+          <h3>Tools &amp; Frameworks</h3>
+          <div class="tags"><span class="tag">React</span><span class="tag">Next.js</span><span class="tag">Node.js</span><span class="tag">Git</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="contact" aria-labelledby="contact-heading">
+      <div class="glass panel reveal">
+        <span class="eyebrow">Contact</span>
+        <h2 id="contact-heading">Let's connect.</h2>
+        <p>Open to opportunities, collaborations, and conversations about AI systems and software engineering.</p>
+        <div class="contact-links">
+          <a class="btn btn--primary" href="#">GitHub</a>
+          <a class="btn btn--ghost" href="#">LinkedIn</a>
+          <a class="btn btn--ghost" href="#">Resume</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>© 2026 Berat Ercevik · Designed in Liquid Glass Spatial</footer>
+
+  <div class="mockup-badge">Mockup — Liquid Glass</div>
+
+  <script>
+    // Reveal-on-scroll via IntersectionObserver
+    var revealEls = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      revealEls.forEach(function (el) { io.observe(el); });
+    } else {
+      revealEls.forEach(function (el) { el.classList.add('visible'); });
+    }
+
+    // Nav active state on scroll
+    var navLinks = document.querySelectorAll('.nav a');
+    var sections = Array.prototype.map.call(navLinks, function (a) {
+      return document.querySelector(a.getAttribute('href'));
+    }).filter(Boolean);
+
+    function setActive(id) {
+      navLinks.forEach(function (a) {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+      });
+    }
+
+    if ('IntersectionObserver' in window) {
+      var navIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        });
+      }, { rootMargin: '-40% 0px -55% 0px' });
+      sections.forEach(function (s) { navIo.observe(s); });
+    }
+  </script>
+</body>
+</html>

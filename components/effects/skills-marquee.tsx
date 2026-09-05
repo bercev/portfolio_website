@@ -98,8 +98,7 @@ export function SkillsMarquee({
           key={categories.map((category) => category.category).join("-")}
           data-skills-row
           data-direction={index === 0 ? "forward" : "reverse"}
-          tabIndex={0}
-          className="rounded-[var(--radius)] py-0.5 focus-visible:outline-none"
+          className="rounded-[var(--radius)] py-0.5"
         >
           <div data-skills-track className="flex flex-wrap items-center gap-4">
             <SkillCopy categories={categories} />

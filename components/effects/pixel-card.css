@@ -5,7 +5,7 @@
   height: 100%;
   min-height: 100%;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 0;
   background: transparent;
   transition: border-color 200ms ease, transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }

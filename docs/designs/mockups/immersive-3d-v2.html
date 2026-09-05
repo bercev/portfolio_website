@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MOCKUP v2 — Immersive 3D Journey (Three.js)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2300d8ff'/%3E%3Ccircle cx='32' cy='32' r='11' fill='white'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #05070c;
+    --ink: #e8eef5;
+    --muted: #8b98a8;
+    --cyan: #00d8ff;
+    --emerald: #20d98b;
+    --line: rgba(255, 255, 255, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: auto; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    overflow-x: clip;
+  }
+  ::selection { background: var(--cyan); color: #04121a; }
+  a { color: inherit; }
+
+  /* Fixed WebGL canvas behind everything */
+  #gl {
+    position: fixed; inset: 0; z-index: 0;
+    display: block; width: 100%; height: 100%;
+  }
+  /* Vignette over the 3D scene */
+  .vignette {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(5, 7, 12, 0.75) 100%);
+  }
+
+  .badge {
+    position: fixed; right: 12px; bottom: 12px; z-index: 50;
+    font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    background: rgba(0, 216, 255, 0.12); color: var(--cyan);
+    border: 1px solid rgba(0, 216, 255, 0.4);
+    padding: 8px 10px; border-radius: 999px;
+    pointer-events: none;
+  }
+  .gl-status {
+    position: fixed; left: 12px; bottom: 12px; z-index: 50;
+    font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); pointer-events: none;
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px clamp(16px, 4vw, 48px);
+    background: linear-gradient(to bottom, rgba(5,7,12,0.85), rgba(5,7,12,0));
+  }
+  nav .mark {
+    font: 800 14px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none;
+  }
+  nav .mark span { color: var(--cyan); }
+  nav ul { display: flex; gap: clamp(10px, 2vw, 22px); list-style: none; flex-wrap: wrap; }
+  nav ul a {
+    font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none; padding: 8px 2px;
+  }
+  nav ul a:hover, nav ul a:focus-visible { color: var(--ink); }
+
+  /* Content scrolls above the canvas; sections are transparent windows into the scene */
+  main { position: relative; z-index: 10; }
+  section {
+    min-height: 100svh;
+    display: grid; align-content: center;
+    padding: clamp(72px, 12vh, 128px) clamp(16px, 5vw, 64px);
+    max-width: 1200px; margin: 0 auto;
+  }
+  .kicker {
+    font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--cyan);
+    margin-bottom: 14px;
+  }
+  h1, h2 { line-height: 1.02; letter-spacing: -0.03em; font-weight: 800; }
+  h2 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 22px; }
+  .lead { color: var(--muted); max-width: 60ch; }
+
+  /* Hero: the 3D particle text IS the name; HTML provides accessible label + role */
+  #home { align-content: end; padding-bottom: 16vh; }
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .hero-role {
+    font: 500 clamp(0.9rem, 2vw, 1.1rem)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted); letter-spacing: 0.08em;
+  }
+  .hero-role b { color: var(--ink); font-weight: 600; }
+  .scroll-hint {
+    margin-top: 32px; display: inline-flex; align-items: center; gap: 10px;
+    font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+  }
+  .scroll-hint::before {
+    content: ""; width: 42px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--emerald));
+  }
+
+  /* Glass panels floating over the scene */
+  .panel {
+    background: rgba(10, 16, 26, 0.55);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: clamp(20px, 3vw, 32px);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+  .grid { display: grid; gap: 18px; }
+  .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 767px) { .grid.two { grid-template-columns: 1fr; } }
+
+  .pub h3 { font-size: clamp(1.05rem, 2.2vw, 1.35rem); line-height: 1.3; margin-bottom: 8px; }
+  .pub p { color: var(--muted); font-size: 0.95rem; }
+  .tag {
+    display: inline-block; margin-top: 14px;
+    font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--emerald); border: 1px solid rgba(32, 217, 139, 0.35);
+    padding: 6px 10px; border-radius: 999px;
+  }
+
+  .xp { display: grid; gap: 14px; }
+  .xp-item { display: grid; grid-template-columns: 150px 1fr; gap: 18px; align-items: baseline; }
+  @media (max-width: 640px) { .xp-item { grid-template-columns: 1fr; gap: 4px; } }
+  .xp-when {
+    font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--cyan); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .xp-role { font-weight: 700; font-size: clamp(1.05rem, 2.4vw, 1.4rem); }
+  .xp-org { color: var(--muted); font-size: 0.95rem; }
+
+  .skills { display: flex; flex-wrap: wrap; gap: 10px; }
+  .skill {
+    font: 500 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted); border: 1px solid var(--line);
+    padding: 10px 14px; border-radius: 999px;
+    transition: color 200ms, border-color 200ms;
+  }
+  .skill:hover { color: var(--ink); border-color: rgba(0, 216, 255, 0.4); }
+
+  footer { position: relative; z-index: 10; padding: 0 0 96px; }
+  footer section { min-height: 80svh; }
+  .contact-links { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 26px; }
+  .contact-links a {
+    text-decoration: none;
+    font: 600 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 14px 22px; border-radius: 12px;
+    border: 1px solid var(--line); color: var(--ink);
+    transition: border-color 200ms, background 200ms, transform 200ms;
+  }
+  .contact-links a:hover {
+    border-color: rgba(0, 216, 255, 0.5);
+    background: rgba(0, 216, 255, 0.08);
+    transform: translateY(-2px);
+  }
+
+  /* Scroll progress rail */
+  .rail {
+    position: fixed; right: clamp(10px, 2vw, 24px); top: 50%; transform: translateY(-50%);
+    z-index: 40; width: 2px; height: 34vh;
+    background: rgba(255, 255, 255, 0.08); border-radius: 2px;
+  }
+  .rail i {
+    position: absolute; inset: 0 auto 0 0; width: 100%;
+    background: linear-gradient(to bottom, var(--cyan), var(--emerald));
+    transform-origin: top; transform: scaleY(0); border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact-links a, .skill { transition: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<nav aria-label="Primary">
+  <a class="mark" href="#home">BE<span>.</span></a>
+  <ul>
+    <li><a href="#home">Home</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#publications">Publications</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<div class="rail" aria-hidden="true"><i id="rail-fill"></i></div>
+
+<main>
+  <section id="home" aria-label="Home">
+    <h1 class="visually-hidden">Berat Ercevik — Software Engineer</h1>
+    <div id="particle-text" aria-hidden="true"></div>
+    <p class="hero-role"><b>Software Engineer</b> — persistent and adaptive software engineer</p>
+    <span class="scroll-hint">Scroll to fly through the journey</span>
+  </section>
+
+  <section id="about" aria-labelledby="about-heading">
+    <p class="kicker">Station 02 — About</p>
+    <h2 id="about-heading">About</h2>
+    <div class="panel">
+      <p class="lead">I'm a software engineer who studied Computer Science at UC Santa Cruz (B.S.). I care about building adaptive systems, from LLM research to full-stack products, and I keep shipping until the problem is solved.</p>
+    </div>
+  </section>
+
+  <section id="publications" aria-labelledby="publications-heading">
+    <p class="kicker">Station 03 — Publications</p>
+    <h2 id="publications-heading">Publications</h2>
+    <div class="grid two">
+      <article class="panel pub">
+        <h3>SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision</h3>
+        <p>Decomposing agent skills into subskills to improve capability without direct task supervision.</p>
+        <span class="tag">Research Paper</span>
+      </article>
+      <article class="panel pub">
+        <h3>@GrokSet: Multi-party Human-LLM Interactions in Social Media</h3>
+        <p>Studying how humans and LLMs interact across multi-party conversations on social platforms.</p>
+        <span class="tag">Research Paper</span>
+      </article>
+    </div>
+  </section>
+
+  <section id="experience" aria-labelledby="experience-heading">
+    <p class="kicker">Station 04 — Experience</p>
+    <h2 id="experience-heading">Experience</h2>
+    <div class="panel">
+      <div class="xp">
+        <div class="xp-item"><span class="xp-when">Internship</span><div><div class="xp-role">AI Systems Engineer Intern</div><div class="xp-org">Building and evaluating LLM-powered systems.</div></div></div>
+        <div class="xp-item"><span class="xp-when">Teaching</span><div><div class="xp-role">DSA Tutor</div><div class="xp-org">Coaching students through data structures & algorithms.</div></div></div>
+        <div class="xp-item"><span class="xp-when">Research</span><div><div class="xp-role">LLM Researcher</div><div class="xp-org">Publication-driven research on agent skill optimization.</div></div></div>
+        <div class="xp-item"><span class="xp-when">Internship</span><div><div class="xp-role">SWE Intern</div><div class="xp-org">Shipping production software with a product team.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="projects" aria-labelledby="projects-heading">
+    <p class="kicker">Station 05 — Projects</p>
+    <h2 id="projects-heading">Projects</h2>
+    <div class="grid two">
+      <article class="panel pub">
+        <h3>Vitae</h3>
+        <p>A resume-building product experience — structured content in, polished documents out.</p>
+        <span class="tag">Featured</span>
+      </article>
+      <article class="panel pub">
+        <h3>AI Discord Chatbot</h3>
+        <p>A conversational bot bringing LLM assistance into community servers.</p>
+        <span class="tag">Build</span>
+      </article>
+    </div>
+  </section>
+
+  <section id="skills" aria-labelledby="skills-heading">
+    <p class="kicker">Station 06 — Skills</p>
+    <h2 id="skills-heading">Skills</h2>
+    <div class="panel">
+      <div class="skills">
+        <span class="skill">TypeScript</span><span class="skill">Python</span><span class="skill">React</span>
+        <span class="skill">Next.js</span><span class="skill">Node.js</span><span class="skill">Three.js</span>
+        <span class="skill">LLMs</span><span class="skill">Prompt Engineering</span><span class="skill">RAG</span>
+        <span class="skill">Data Structures</span><span class="skill">Algorithms</span><span class="skill">Git</span>
+      </div>
+    </div>
+  </section>
+
+  <footer id="contact" aria-labelledby="contact-heading">
+    <section>
+      <p class="kicker">Station 07 — Contact</p>
+      <h2 id="contact-heading">Let's connect.</h2>
+      <p class="lead">Open to conversations about engineering, research, and collaboration.</p>
+      <div class="contact-links">
+        <a href="#">GitHub</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">Resume</a>
+      </div>
+    </section>
+  </footer>
+</main>
+
+<div class="badge" aria-hidden="true">Mockup v2 — Immersive 3D · Three.js</div>
+<div class="gl-status" id="gl-status" aria-hidden="true">WebGL: init…</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/"
+  }
+}
+</script>
+
+<script type="module">
+  import * as THREE from "three";
+  import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+  import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+  import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+
+  const statusEl = document.getElementById("gl-status");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  try {
+    const canvas = document.getElementById("gl");
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x05070c, 0.028);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 220);
+
+    /* ---------- Palette ---------- */
+    const CYAN = new THREE.Color(0x00d8ff);
+    const EMERALD = new THREE.Color(0x20d98b);
+    const CORAL = new THREE.Color(0xff6b57);
+    const INK = new THREE.Color(0x9fb4c8);
+
+    /* ---------- 1. Particle text: sample canvas-rendered name into points ---------- */
+    function buildTextPoints(text, count, worldH = 7) {
+      const c = document.createElement("canvas");
+      const ctx = c.getContext("2d");
+      const fontPx = 220;
+      ctx.font = `800 ${fontPx}px ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif`;
+      const m = ctx.measureText(text);
+      c.width = Math.ceil(m.width) + 40;
+      c.height = fontPx * 1.4;
+      ctx.font = `800 ${fontPx}px ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif`;
+      ctx.fillStyle = "#fff";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, 20, c.height / 2);
+
+      const data = ctx.getImageData(0, 0, c.width, c.height).data;
+      const candidates = [];
+      for (let y = 0; y < c.height; y += 2) {
+        for (let x = 0; x < c.width; x += 2) {
+          if (data[(y * c.width + x) * 4 + 3] > 128) candidates.push([x, y]);
+        }
+      }
+
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+      const seeds = new Float32Array(count);
+      const aspect = c.width / c.height;
+      const worldW = worldH * aspect;
+      const colorStops = [CYAN, EMERALD, CORAL, INK];
+      for (let i = 0; i < count; i++) {
+        const [px, py] = candidates[(Math.random() * candidates.length) | 0] || [c.width / 2, c.height / 2];
+        positions[i * 3] = (px / c.width - 0.5) * worldW + (Math.random() - 0.5) * 0.06;
+        positions[i * 3 + 1] = -(py / c.height - 0.5) * worldH + (Math.random() - 0.5) * 0.06;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 0.9;
+        const col = colorStops[(Math.random() * colorStops.length) | 0];
+        colors[i * 3] = col.r; colors[i * 3 + 1] = col.g; colors[i * 3 + 2] = col.b;
+        seeds[i] = Math.random() * Math.PI * 2;
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      geo.setAttribute("seed", new THREE.BufferAttribute(seeds, 1));
+
+      const mat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: {
+          uTime: { value: 0 },
+          uScatter: { value: 0 }, // 0 = formed text, 1 = dispersed into the journey
+        },
+        vertexShader: `
+          attribute float seed;
+          attribute vec3 color;
+          varying vec3 vColor;
+          varying float vFade;
+          uniform float uTime;
+          uniform float uScatter;
+          void main() {
+            vColor = color;
+            vec3 p = position;
+            // Disperse outward along a pseudo-random direction as uScatter rises
+            vec3 dir = normalize(vec3(sin(seed * 3.1), cos(seed * 2.3), sin(seed * 5.7)));
+            p += dir * uScatter * (9.0 + seed * 2.0);
+            // Gentle idle drift
+            p.y += sin(uTime * 0.8 + seed) * 0.05;
+            p.x += cos(uTime * 0.6 + seed * 1.7) * 0.04;
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            float dist = -mv.z;
+            gl_PointSize = min((1.1 + 1.3 * fract(seed)) * (60.0 / dist), 7.0);
+            // Fade far points into fog AND near points to prevent additive blowout
+            vFade = smoothstep(70.0, 18.0, dist) * smoothstep(1.5, 7.0, dist);
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vColor;
+          varying float vFade;
+          void main() {
+            vec2 uv = gl_PointCoord - 0.5;
+            float d = length(uv);
+            float alpha = smoothstep(0.5, 0.05, d) * vFade;
+            if (alpha < 0.01) discard;
+            gl_FragColor = vec4(vColor, alpha);
+          }
+        `,
+      });
+
+      return new THREE.Points(geo, mat);
+    }
+
+    const textPoints = buildTextPoints("BERAT", 7000);
+    const textGroup = new THREE.Group();
+    textGroup.add(textPoints);
+    scene.add(textGroup);
+
+    // Arrival text: "CONNECT" forms as you approach the final station
+    const arrivalPoints = buildTextPoints("CONNECT", 6000, 5);
+    arrivalPoints.material.uniforms.uScatter.value = 1; // starts fully dispersed
+    const arrivalGroup = new THREE.Group();
+    arrivalGroup.add(arrivalPoints);
+    arrivalGroup.position.set(0, 0.4, -142); // framed ~14 units past the final curve point
+    scene.add(arrivalGroup);
+
+    /* ---------- 2. Starfield (covers the FULL journey: z +40 → -170) ---------- */
+    const starCount = 2600;
+    const starPos = new Float32Array(starCount * 3);
+    const starCol = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      starPos[i * 3] = (Math.random() - 0.5) * 170;
+      starPos[i * 3 + 1] = (Math.random() - 0.5) * 100;
+      starPos[i * 3 + 2] = 40 - Math.random() * 210;
+      const c = Math.random() < 0.75 ? CYAN : (Math.random() < 0.5 ? EMERALD : CORAL);
+      const dim = 0.35 + Math.random() * 0.65;
+      starCol[i * 3] = c.r * dim; starCol[i * 3 + 1] = c.g * dim; starCol[i * 3 + 2] = c.b * dim;
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
+    starGeo.setAttribute("color", new THREE.BufferAttribute(starCol, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
+      size: 0.32, vertexColors: true, transparent: true, opacity: 0.9,
+      depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+    }));
+    scene.add(stars);
+
+    /* ---------- 3. Floating wireframe "stations" along the path ---------- */
+    const stationGeos = [
+      new THREE.IcosahedronGeometry(2.4, 0),
+      new THREE.TorusKnotGeometry(1.7, 0.5, 96, 12),
+      new THREE.OctahedronGeometry(2.2, 0),
+      new THREE.TorusGeometry(1.9, 0.6, 12, 40),
+      new THREE.DodecahedronGeometry(2.2, 0),
+      new THREE.ConeGeometry(1.8, 3.6, 5),
+    ];
+    const stations = stationGeos.map((geo, i) => {
+      const mat = new THREE.MeshBasicMaterial({
+        color: i % 2 ? EMERALD : CYAN,
+        wireframe: true, transparent: true, opacity: 0.55,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      scene.add(mesh);
+      return mesh;
+    });
+
+    /* ---------- 4. Camera path: a winding journey through the stations ---------- */
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.4, 15),    // start: dead-center on the particle text
+      new THREE.Vector3(0, 0.4, 7),     // opening tangent aims straight at the text
+      new THREE.Vector3(6, 2, 0),
+      new THREE.Vector3(9, -1, -8),     // station 0 zone
+      new THREE.Vector3(3, 3, -18),
+      new THREE.Vector3(-6, 1, -24),    // station 1
+      new THREE.Vector3(-10, -2, -34),
+      new THREE.Vector3(-2, 2, -44),    // station 2
+      new THREE.Vector3(8, 0, -54),
+      new THREE.Vector3(10, -2, -66),   // station 3
+      new THREE.Vector3(0, 1, -78),
+      new THREE.Vector3(-8, 0, -90),    // station 4
+      new THREE.Vector3(-4, 2, -102),
+      new THREE.Vector3(2, 0, -114),    // station 5
+      new THREE.Vector3(0, 0, -128),    // final approach
+    ]);
+    const tangent = new THREE.Vector3();
+    const lookTarget = new THREE.Vector3(0, 0, 0);
+
+    // Place stations at fractions of the curve
+    const stationT = [0.18, 0.34, 0.5, 0.66, 0.82, 0.95];
+    stations.forEach((mesh, i) => {
+      const p = curve.getPointAt(stationT[i]);
+      mesh.position.set(p.x + (i % 2 ? 3.5 : -3.5), p.y + (i % 3 - 1) * 1.6, p.z - 3);
+    });
+
+    // Glowing light-trail along the whole route — the "spine" you travel
+    const tube = new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 220, 0.05, 8, false),
+      new THREE.MeshBasicMaterial({
+        color: CYAN, transparent: true, opacity: 0.4,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }),
+    );
+    scene.add(tube);
+
+    // Particle text sits at the start, facing the initial camera
+    textGroup.position.set(0, 0.4, 0);
+
+    /* ---------- 5. Scroll → damped journey progress ---------- */
+    let targetT = 0;
+    let smoothT = 0;
+    function readScroll() {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      targetT = max > 0 ? window.scrollY / max : 0;
+    }
+    readScroll();
+    window.addEventListener("scroll", readScroll, { passive: true });
+
+    const railFill = document.getElementById("rail-fill");
+
+    /* ---------- 6. Render loop ---------- */
+    const timer = new THREE.Timer();
+    let raf = 0;
+
+    function frame(timestamp) {
+      timer.update(timestamp);
+      const dt = Math.min(timer.getDelta(), 0.05);
+      const t = timer.getElapsed();
+
+      // Frame-rate independent damping
+      smoothT += (targetT - smoothT) * (1 - Math.exp(-3.2 * dt));
+
+      // Camera along the curve
+      const pos = curve.getPointAt(THREE.MathUtils.clamp(smoothT, 0, 1));
+      camera.position.copy(pos);
+      curve.getTangentAt(THREE.MathUtils.clamp(smoothT, 0, 1), tangent);
+      lookTarget.copy(pos).add(tangent);
+      // Subtle pointer parallax
+      if (!reduced) {
+        lookTarget.x += pointer.x * 1.4;
+        lookTarget.y += pointer.y * 0.9;
+      }
+      camera.lookAt(lookTarget);
+
+      // Text: formed at start, disperses as we fly away
+      const scatter = THREE.MathUtils.smoothstep(smoothT, 0.02, 0.16);
+      textPoints.material.uniforms.uScatter.value = reduced ? 0 : scatter;
+      textPoints.material.uniforms.uTime.value = reduced ? 0 : t;
+      textGroup.rotation.y = Math.sin(t * 0.15) * 0.06;
+
+      // Arrival text: condenses from the void near the journey's end
+      const arrive = 1 - THREE.MathUtils.smoothstep(smoothT, 0.8, 0.95);
+      arrivalPoints.material.uniforms.uScatter.value = reduced ? 0 : arrive;
+      arrivalPoints.material.uniforms.uTime.value = reduced ? 0 : t;
+      arrivalGroup.rotation.y = Math.sin(t * 0.12 + 2) * 0.05;
+
+      // Ambient motion
+      if (!reduced) {
+        stars.rotation.y = t * 0.008;
+        stations.forEach((mesh, i) => {
+          mesh.rotation.x = t * (0.12 + i * 0.03);
+          mesh.rotation.y = t * (0.16 + i * 0.02);
+          mesh.position.y += Math.sin(t * 0.6 + i * 1.7) * 0.002;
+        });
+      }
+
+      // Progress rail
+      railFill.style.transform = `scaleY(${smoothT})`;
+
+      composer.render();
+      raf = requestAnimationFrame(frame);
+    }
+
+    /* ---------- 7. Pointer parallax ---------- */
+    const pointer = { x: 0, y: 0 };
+    window.addEventListener("pointermove", (ev) => {
+      pointer.x = (ev.clientX / window.innerWidth - 0.5) * 2;
+      pointer.y = -(ev.clientY / window.innerHeight - 0.5) * 2;
+    }, { passive: true });
+
+    /* ---------- 8. Resize ---------- */
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight, false);
+    });
+
+    /* ---------- 9. Bloom postprocessing ---------- */
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      0.35, // strength
+      0.4,  // radius
+      0.55, // threshold — only true highlights bloom
+    );
+    composer.addPass(bloom);
+    composer.setSize(window.innerWidth, window.innerHeight);
+
+    window.addEventListener("resize", () => {
+      composer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    statusEl.textContent = "WebGL: active · bloom";
+    frame();
+  } catch (err) {
+    // Graceful fallback: keep the page readable without the 3D layer
+    statusEl.textContent = "WebGL: unavailable — flat fallback";
+    document.getElementById("gl").style.display = "none";
+    console.error("3D scene failed:", err);
+  }
+</script>
+</body>
+</html>

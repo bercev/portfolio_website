@@ -27,9 +27,7 @@ test("renders the approved portfolio structure in semantic order", async ({
   const sectionIds = await page.locator("main > section").evaluateAll((sections) =>
     sections.map((section) => section.id),
   );
-  expect(sectionIds).toEqual(
-    navigationItems.filter(({ id }) => id !== "skills").map(({ id }) => id),
-  );
+  expect(sectionIds).toEqual(navigationItems.map(({ id }) => id));
 });
 
 test("renders exact publications and their canonical destinations", async ({
@@ -105,26 +103,23 @@ test("renders every approved role, project, and skill category", async ({
     ).toBeVisible();
   }
 
-  for (const category of ["Languages", "Tools", "Frameworks", "Knowledge"]) {
+  for (const category of ["AI & agents", "Full-stack", "Systems & delivery"]) {
     await expect(
       page.getByRole("heading", { name: category, exact: true }),
     ).toBeVisible();
   }
 });
 
-test("uses a divided chronology and two chromatic project cards", async ({
+test("uses a divided chronology and paired project panels", async ({
   page,
 }) => {
   await page.goto("/");
 
   await expect(page.locator("#experience [data-portfolio-card]")).toHaveCount(0);
-  await expect(page.locator("#projects [data-portfolio-card]")).toHaveCount(2);
-  await expect(page.locator("#projects [data-chroma-card]")).toHaveCount(2);
   await expect(page.locator("#experience [data-experience-row]")).toHaveCount(4);
   await expect(page.locator("#projects [data-project-featured]")).toHaveCount(1);
   await expect(page.locator("#projects [data-project-supporting]")).toHaveCount(1);
-  await expect(page.locator("main [data-portfolio-card]")).toHaveCount(2);
-  await expect(page.locator("#skills [data-skills-marquee]")).toHaveCount(1);
+  await expect(page.locator("#projects .journey-panel")).toHaveCount(2);
   await expect(page.locator('#projects a[href="https://vitae.tools/"]')).toHaveCount(1);
   await expect(
     page.getByRole("heading", { name: "AI Discord Chatbot", exact: true }),
@@ -133,7 +128,7 @@ test("uses a divided chronology and two chromatic project cards", async ({
   await expect(page.locator("#projects [data-circular-gallery]")).toHaveCount(0);
 });
 
-test("uses monochrome ChromaCard borders in both themes", async ({ browser }) => {
+test("uses quiet journey-panel borders in both themes", async ({ browser }) => {
   for (const theme of ["light", "dark"] as const) {
     const context = await browser.newContext({
       colorScheme: theme,
@@ -149,15 +144,11 @@ test("uses monochrome ChromaCard borders in both themes", async ({ browser }) =>
       new RegExp(`(^|\\s)${theme}(\\s|$)`),
     );
 
-    const cards = page.locator("[data-chroma-card]");
-    await expect(cards).toHaveCount(2);
-    for (const card of await cards.all()) {
-      await expect(card).toHaveCSS("background-image", "none");
-      await expect(card).toHaveCSS("border-top-width", "1px");
-      await expect(card).toHaveCSS(
-        "border-top-color",
-        theme === "dark" ? "rgb(255, 255, 255)" : "rgb(0, 0, 0)",
-      );
+    const panels = page.locator(".journey-panel");
+    await expect(panels.first()).toBeVisible();
+    for (const panel of await panels.all()) {
+      await expect(panel).toHaveCSS("border-top-width", "1px");
+      await expect(panel).toHaveCSS("background-image", "none");
     }
 
     runtimeErrors.assertEmpty();
@@ -165,24 +156,24 @@ test("uses monochrome ChromaCard borders in both themes", async ({ browser }) =>
   }
 });
 
-test("gives ChromaCards a frosted glass surface", async ({ page }) => {
+test("keeps liquid-glass as an accent surface on Vitae", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  const surface = page.locator("[data-chroma-surface]").first();
-  await expect(
-    page.locator("[data-chroma-glow], [data-chroma-sweep]"),
-  ).toHaveCount(0);
+  const surface = page.locator(".liquid-glass").first();
+  await expect(surface).toBeVisible();
   const styles = await surface.evaluate((element) => {
     const computed = getComputedStyle(element);
     return {
       backdropFilter: computed.backdropFilter,
       boxShadow: computed.boxShadow,
+      borderRadius: computed.borderRadius,
     };
   });
 
-  expect(styles.backdropFilter).toContain("blur(18px)");
+  expect(styles.backdropFilter).toContain("blur(");
   expect(styles.boxShadow).not.toBe("none");
+  expect(Number.parseFloat(styles.borderRadius)).toBeLessThanOrEqual(12);
 });
 
 test("renders the line sidebar as section navigation", async ({ page }) => {
@@ -190,7 +181,7 @@ test("renders the line sidebar as section navigation", async ({ page }) => {
 
   const sidebar = page.getByRole("navigation", { name: "Section navigation" }).last();
   await expect(sidebar).toHaveAttribute("data-line-sidebar");
-  await expect(sidebar.locator("a")).toHaveCount(6);
+  await expect(sidebar.locator("a")).toHaveCount(7);
   await expect(sidebar.locator("a").first()).toHaveAttribute("href", "#home");
   await expect(sidebar.locator("a").last()).toHaveAttribute("href", "#contact");
   await expect(sidebar.locator("[data-line-sidebar-marker]")).toHaveCount(7);
@@ -378,33 +369,25 @@ test("keeps the hero focused on the identity without a project action", async ({
   }
 });
 
-test("places the skills marquee inside the hero without a large heading", async ({
-  page,
-}) => {
+test("renders skills as a numbered journey station", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  const hero = page.locator("#home");
-  const particleText = hero.locator("[data-hero-particle-text]");
-  const skills = hero.locator(":scope > div > #skills");
-
+  const skills = page.locator("main > section#skills");
   await expect(skills).toHaveCount(1);
-  await expect(skills.locator("[data-skills-marquee]")).toHaveCount(1);
-  await expect(skills.getByRole("heading", { level: 2 })).toHaveCount(0);
-  await expect(page.locator("main > #skills")).toHaveCount(0);
+  await expect(skills.getByRole("heading", { level: 2 })).toHaveCount(1);
+  await expect(page.locator("#home #skills")).toHaveCount(0);
 
-  const [particleBox, skillsBox] = await Promise.all([
-    particleText.boundingBox(),
-    skills.boundingBox(),
-  ]);
-  expect(particleBox).not.toBeNull();
-  expect(skillsBox).not.toBeNull();
-  expect(skillsBox!.y).toBeGreaterThanOrEqual(
-    particleBox!.y + particleBox!.height - 1,
-  );
+  for (const category of ["Languages", "Tools", "Frameworks", "Knowledge"]) {
+    await expect(
+      skills.getByRole("heading", { name: category, exact: true }),
+    ).toBeVisible();
+  }
+  await expect(skills.locator("[data-skill]").first()).toBeVisible();
+  await expect(skills.locator("[data-skills-marquee]")).toHaveCount(0);
 });
 
-test("keeps the skills marquee static in a narrow fine-pointer viewport", async ({
+test("keeps skill chips static in a narrow fine-pointer viewport", async ({
   browser,
 }) => {
   const context = await browser.newContext({
@@ -419,54 +402,24 @@ test("keeps the skills marquee static in a narrow fine-pointer viewport", async 
     "mobile",
   );
 
-  const tracks = page.locator("#skills [data-skills-track]");
-  await expect(tracks).toHaveCount(2);
-  for (const track of await tracks.all()) {
-    await expect(track).toHaveCSS("animation-name", "none");
-    await expect(track).toHaveCSS("transform", "none");
-  }
+  const chips = page.locator("#skills [data-skill]");
+  await expect(chips.first()).toBeVisible();
+  expect(await chips.count()).toBeGreaterThanOrEqual(20);
 
   runtimeErrors.assertEmpty();
   await context.close();
 });
 
-test("moves the compact skill-chip rows in opposite directions", async ({
-  page,
-}) => {
-  await page.goto("/");
-
-  await expect(page.locator("[data-effect-mode]")).toHaveAttribute(
-    "data-effect-mode",
-    "enhanced",
-  );
-  await expect(page.locator('[data-skills-marquee="enhanced"]')).toHaveCount(1);
-
-  const tracks = page.locator("#skills [data-skills-track]");
-  const rows = page.locator("#skills [data-skills-row]");
-  await expect(tracks).toHaveCount(2);
-  await expect(rows.first()).toHaveCSS("mask-image", /linear-gradient/);
-  await expect(page.locator("#skills [data-skill]").first()).toBeVisible();
-  await expect(page.locator("#skills .curved-loop-svg")).toHaveCount(0);
-  await expect(tracks.nth(0)).toHaveCSS("animation-name", "skills-marquee");
-  await expect(tracks.nth(0)).toHaveCSS("animation-direction", "normal");
-  await expect(tracks.nth(1)).toHaveCSS("animation-name", "skills-marquee");
-  await expect(tracks.nth(1)).toHaveCSS("animation-direction", "reverse");
-});
-
-test("disables continuous skill movement for reduced motion", async ({ browser }) => {
+test("shows the full skills station for reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
   const runtimeErrors = attachRuntimeErrorCollector(page);
   await page.goto("/");
 
-  await expect(page.locator('[data-skills-marquee="static"]')).toHaveCount(1);
-  const tracks = page.locator("#skills [data-skills-track]");
-  await expect(tracks).toHaveCount(2);
-  for (const track of await tracks.all()) {
-    await expect(track).toHaveCSS("animation-name", "none");
-    await expect(track).toHaveCSS("transform", "none");
-  }
-  await expect(page.locator("#skills")).toContainText("Concurrency & Parallelism");
+  await expect(
+    page.locator("#skills").getByText("Concurrency & Parallelism"),
+  ).toBeVisible();
+  await expect(page.locator("#skills [data-skills-track]")).toHaveCount(0);
 
   runtimeErrors.assertEmpty();
   await context.close();

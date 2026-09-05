@@ -73,12 +73,12 @@ test("keeps every multi-column section readable at 390px", async ({
   await expect(page.locator("#home")).toHaveCSS("min-height", "844px");
   await expect(page.locator("#home a")).toHaveCount(0);
 
-  const particleTextBounds = await page
-    .locator("[data-hero-particle-text]")
+  const heroNameBounds = await page
+    .locator("[data-hero-name-fallback]")
     .boundingBox();
-  expect(particleTextBounds).not.toBeNull();
-  expect(particleTextBounds!.x).toBeGreaterThanOrEqual(0);
-  expect(particleTextBounds!.x + particleTextBounds!.width).toBeLessThanOrEqual(
+  expect(heroNameBounds).not.toBeNull();
+  expect(heroNameBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(heroNameBounds!.x + heroNameBounds!.width).toBeLessThanOrEqual(
     MOBILE_VIEWPORT.width,
   );
 
@@ -235,48 +235,30 @@ test("renders static, fully visible content for reduced motion", async ({
     "data-signal-mode",
     "static",
   );
-  await expect(page.locator('[data-warp-replay="static"]')).toHaveCount(6);
+  await expect(page.locator('[data-warp-replay="static"]')).toHaveCount(0);
   await expect(page.locator("[data-signal-fill]")).toHaveCount(0);
   await expect(page.locator("[data-target-cursor]")).toHaveCount(0);
   await expect(page.locator("[data-pixel-trail]")).toHaveCount(0);
   await expect(page.locator("[data-click-spark]")).toHaveCount(0);
 
-  const skillTracks = page.locator("[data-skills-track]");
-  await expect(skillTracks).toHaveCount(2);
-  for (const track of await skillTracks.all()) {
-    await expect(track).toHaveCSS("animation-name", "none");
-    await expect(track).toHaveCSS("transform", "none");
-  }
+  const skillChips = page.locator("#skills [data-skill]");
+  await expect(skillChips.first()).toBeVisible();
 
   const sectionHeadings = page.locator("main > section:not(#home) h2");
-  await expect(sectionHeadings).toHaveCount(5);
+  await expect(sectionHeadings).toHaveCount(6);
   for (const heading of await sectionHeadings.all()) {
-    const glyphs = heading.locator('span[aria-hidden="true"] > span');
-    expect(await glyphs.count()).toBeGreaterThan(0);
-
-    for (const glyph of await glyphs.all()) {
-      await expect(glyph).toHaveCSS("opacity", "1");
-      await expect(glyph).toHaveCSS("transform", "none");
-    }
+    await expect(heading).toBeVisible();
   }
 
-  const particleText = page.locator("[data-hero-particle-text]");
-  await expect(particleText).toHaveAttribute(
-    "data-particle-text-mode",
-    "static",
-  );
-  await expect(particleText.getByText("BERAT", { exact: true })).toBeVisible();
-  await expect(particleText.locator("canvas")).toHaveCount(0);
+  const heroName = page.locator("[data-hero-name-fallback]");
+  await expect(heroName).toBeVisible();
+  await expect(heroName).toHaveText("BERAT");
   await expect(
     page.locator("#home").getByText(/full-stack applications/i),
   ).toBeVisible();
 
   for (const id of SECTION_IDS) {
     await expect(page.locator(`#${id}`)).toBeVisible();
-  }
-  await expect(page.locator("[data-skills-original]")).toHaveCount(2);
-  for (const skillsRow of await page.locator("[data-skills-original]").all()) {
-    await expect(skillsRow).toBeVisible();
   }
 
   runtimeErrors.assertEmpty();

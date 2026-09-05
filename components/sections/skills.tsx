@@ -1,6 +1,6 @@
 import type { PortfolioContent } from "@/data/content";
 
-import { SkillsMarquee } from "@/components/effects/skills-marquee";
+import { Station } from "@/components/ui/station";
 
 type SkillsProps = {
   readonly content: PortfolioContent["skills"];
@@ -9,13 +9,30 @@ type SkillsProps = {
 
 export function Skills({ content, heading }: SkillsProps) {
   return (
-    <div
+    <Station
       id="skills"
-      role="region"
-      aria-label={heading}
-      className="relative w-full scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+      station={6}
+      heading={heading}
+      className="journey-station--vocab"
     >
-      <SkillsMarquee skills={content} />
-    </div>
+      <div className="journey-skill-clusters">
+        {content.map((category) => (
+          <div
+            key={category.category}
+            data-skill-cluster
+            className="journey-skill-group"
+          >
+            <h3 className="journey-skill-heading">{category.category}</h3>
+            <p className="journey-skill-line">
+              {category.items.map((item) => (
+                <span key={item} data-skill className="journey-skill">
+                  {item}
+                </span>
+              ))}
+            </p>
+          </div>
+        ))}
+      </div>
+    </Station>
   );
 }

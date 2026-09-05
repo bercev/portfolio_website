@@ -11,6 +11,7 @@ type Spark = {
   y: number;
   angle: number;
   startTime: number;
+  radius: number;
 };
 
 export type ClickSparkProps = {
@@ -42,7 +43,7 @@ export const CLICK_SPARK_DEFAULTS = {
   sparkRadius: 20,
   sparkCount: 7,
   duration: 600,
-} satisfies Required<ClickSparkProps>
+} satisfies Required<ClickSparkProps>;
 
 export function getClickSparkColor(
   accent: string | undefined,
@@ -90,6 +91,42 @@ export function calculateSparkSegment({
     endX: x + (distance + lineLength) * cos,
     endY: y + (distance + lineLength) * sin,
   };
+}
+
+export function resolveSparkBurst({
+  sparkCount,
+  sparkRadius,
+  richer = false,
+}: {
+  sparkCount: number;
+  sparkRadius: number;
+  richer?: boolean;
+}) {
+  if (!richer) {
+    return { sparkCount, sparkRadius, angles: null as number[] | null };
+  }
+
+  // Peel / edge-flash: tight cardinal page-edge ticks — sharper grab flash, not confetti.
+  const count = sparkCount + 1;
+  const angles: number[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const edge = (index % 4) * (Math.PI / 2);
+    const jitter = ((index * 0.37) % 1 - 0.5) * 0.16;
+    angles.push(edge + jitter);
+  }
+
+  return {
+    sparkCount: count,
+    sparkRadius: Math.round(sparkRadius * 1.35),
+    angles,
+  };
+}
+
+export function isVitaeSparkTarget(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    Boolean(target.closest("[data-vitae-artifact]"))
+  );
 }
 
 export function ClickSpark({
@@ -152,7 +189,7 @@ export function ClickSpark({
           angle: spark.angle,
           progress: elapsed / duration,
           sparkSize,
-          sparkRadius,
+          sparkRadius: spark.radius,
         });
 
         context.strokeStyle = resolvedSparkColor;
@@ -169,13 +206,21 @@ export function ClickSpark({
 
     const handlePointerDown = (event: PointerEvent) => {
       const startTime = performance.now();
+      const burst = resolveSparkBurst({
+        sparkCount,
+        sparkRadius,
+        richer: isVitaeSparkTarget(event.target),
+      });
 
-      for (let index = 0; index < sparkCount; index += 1) {
+      for (let index = 0; index < burst.sparkCount; index += 1) {
         sparks.push({
           x: event.clientX,
           y: event.clientY,
-          angle: (Math.PI * 2 * index) / sparkCount,
+          angle:
+            burst.angles?.[index] ??
+            (Math.PI * 2 * index) / burst.sparkCount,
           startTime,
+          radius: burst.sparkRadius,
         });
       }
 

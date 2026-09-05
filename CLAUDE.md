@@ -1,51 +1,40 @@
-@AGENTS.md
+# CLAUDE.md
 
-# Portfolio Website
+Personal one-page portfolio for Berat Ercevik.
 
-Next.js 16.3.0 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS v4. One-page portfolio for Berat Ercevik — **design approved, build not started**. Spec: `docs/superpowers/specs/2026-08-08-portfolio-design.md` (brief: `docs/prompts/starting_prompt.md`).
+## Stack
+
+- Next.js 16 (App Router), React 19, TypeScript
+- Tailwind CSS v4 (CSS-first config via `app/globals.css`, no `tailwind.config`)
+- Motion (`motion` package) + GSAP + `ogl` for WebGL effects
+- `next-themes` for system-aware light/dark themes
+- `canvas-confetti` for the resume-download celebration
 
 ## Commands
 
 - `npm run dev` — dev server at http://localhost:3000
-- `npm run build` / `npm run start` — production build / serve
-- `npx eslint .` — lint
+- `npm run lint` / `npx eslint .` — lint
+- `npm run test` — Vitest unit tests
+- `npm run test:e2e` — Playwright visual-regression / e2e tests
+- `npx playwright install chromium` — needed once for e2e
 
-## Stack & key decisions
+## Structure
 
-- Stack: shadcn/ui · `motion` v13 · `next-themes` · react-bits components (ported from brief URLs) · deploy **Netlify**.
-- **Theme:** Chalk Slate (21st.dev) light+dark; default follows system; single toggle in header (class strategy).
-- **Colors are hand-editable:** all theme + accent + effect colors live as CSS vars in `globals.css`; components never hardcode hex. One var change reskins the site.
-- Accent = cyan `#00d8ff` (prismatic-burst background + Target Cursor).
-- Vision: **creative but tasteful, mobile-first.** Mouse effects (target cursor, click-spark) desktop-only (`hover:hover` + `pointer:fine`); background throttled on mobile; respect `prefers-reduced-motion`.
-- Typography: serif display (headings) + sans body + mono labels.
-- Sections: Hero → About → Publications → Experience → Projects → Skills → Contact.
-- Content: all copy in `data/content.ts`, first-person, **no stats** — rotating character-trait line in hero. Publication cards get a screenshot placeholder (user fills later). Other cards text/tags/links only.
+- `app/` — layout, page, global styles, OG image
+- `components/effects/` — visual effects (Acid Squares background, hero particle text, pixel cards, target cursor, click spark, curved skills loop, etc.)
+- `components/sections/` — page sections (hero, about, experience, projects, publications, skills, contact-footer)
+- `lib/` — content data (`content.ts`), effect policy/reduced-motion gating, theme palette logic
+- `e2e/` — Playwright specs; deterministic visual regression is a project goal
+- `docs/` — design docs (e.g. interactive PDF previews)
 
-## MCP servers
+## Conventions
 
-- **next-devtools** (`.mcp.json`) — dev-server tools (`get_routes`, `get_errors`, …); requires `npm run dev`.
-- **shadcn** (`.mcp.json`) — add components via shadcn CLI.
-- **21st** — search/fetch components + themes (Chalk Slate).
-- **context7** — current docs for Next.js / motion / shadcn.
-- **playwright** — verify + screenshots (light & dark, mobile, links).
-- react-bits has **no MCP server** — port components from the reactbits.dev URLs in the brief.
+- Conventional commits with scopes, e.g. `feat(effects): ...`, `fix(navigation): ...`, `style(portfolio): ...`
+- Effects must respect reduced motion (`lib/use-hydrated-reduced-motion.ts`, `lib/effect-policy.ts`) and stay visible/work in both light and dark themes
+- Theme resolution happens only through `components/providers/theme-provider.tsx`; do not add another theme resolver or use a fixed CSP nonce (see README "Theme bootstrap and strict CSP")
+- Do not delete files or artifacts — unused starter assets in `public/assets/icons/` are intentionally retained per user directive
+- Deploy target is Netlify (Node 22); keep static rendering unless necessary
 
-## Model & vision constraints (IMPORTANT)
+## Testing expectations
 
-- The custom `auto/best-free` model (via **omniroute**) has **no vision**. Do NOT rely on `browser_take_screenshot` or any image-returning tool as a way for Claude to *see* the page — an embedded image can't be processed and trips a `400` (this also breaks `/compact` when a screenshot is in context).
-- **Verify with text, not pixels:** use Playwright `browser_snapshot`, `browser_find` (DOM/accessibility tree), and next-devtools `get_routes`/`get_errors`. Trust the DOM, not the screenshot.
-- If a vision/image call fires or errors anyway, **skip the image, fall back to text, and keep going** — never block or loop on it.
-- Screenshots as *deliverables for the human* (written to disk / used as placeholder assets) are fine and expected here; just don't expect the model to read them back.
-
-## Skills & workflow
-
-- `superpowers:brainstorming` → `writing-plans` → `executing-plans` (or `subagent-driven-development`); `verification-before-completion` before done; `test-driven-development` for testable logic.
-- `frontend-design` — invoke before writing component/JSX/CSS.
-- `design-taste-frontend` — invoke with `frontend-design` before portfolio JSX/CSS and run its pre-flight before completion; the approved design spec overrides conflicting generic rules.
-- Keep the AGENTS.md `BEGIN:nextjs-agent-rules` block (auto-regenerated by `next dev`).
-
-## Next.js 16
-
-- Consult `node_modules/next/dist/docs/` before writing Next.js code (enforced by AGENTS.md).
-- Tailwind v4 — `@import "tailwindcss"`; `@theme inline` maps tokens.
-- Alias `@/*` → repo root.
+Unit-test pure logic in `lib/` and effect helpers (Vitest colocated `*.test.ts`). Visual/e2e coverage lives in Playwright; keep screenshots deterministic when changing effects or sections.

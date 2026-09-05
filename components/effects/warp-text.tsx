@@ -31,7 +31,7 @@ export function WarpText({
             initial={reducedMotion ? false : { y: 10, rotate: 1.5 }}
             animate={reducedMotion ? { y: 0, rotate: 0 } : undefined}
             whileInView={reducedMotion ? undefined : { y: 0, rotate: 0 }}
-            viewport={{ once: false, amount: 0.72 }}
+            viewport={{ once: true, amount: 0.72 }}
             transition={{
               duration: reducedMotion ? 0 : 0.45,
               delay: reducedMotion ? 0 : Math.min(index * 0.025, 0.28),
