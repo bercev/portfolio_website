@@ -1,21 +1,24 @@
 "use client";
 
 import { ThemeToggle } from "@/components/chrome/theme-toggle";
+import { portfolio } from "@/data/content";
 
 export function SiteHeader() {
   return (
-    <header
-      className="fixed inset-x-0 top-0 z-[var(--z-site-header)] border-b border-[var(--journey-rule-soft)] bg-background/75 pt-[env(safe-area-inset-top)] backdrop-blur-md"
-    >
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] lg:pl-[max(2rem,env(safe-area-inset-left))] lg:pr-[max(2rem,env(safe-area-inset-right))]">
+    <header className="journey-masthead">
+      <div className="journey-measure journey-masthead-inner">
         <a
           href="#home"
-          className="cursor-target inline-flex size-10 items-center justify-center rounded-[var(--radius)] font-serif text-xl font-medium leading-none tracking-[0.02em] text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          aria-label="Berat Ercevik, home"
+          className="cursor-target journey-wordmark"
+          aria-label={`${portfolio.identity.name}, home`}
         >
-          BE
+          <span className="journey-wordmark-given">Berat</span>{" "}
+          <span className="journey-wordmark-family">Ercevik</span>
         </a>
-        <ThemeToggle />
+        <div className="journey-masthead-actions">
+          <p className="journey-masthead-role">{portfolio.identity.role}</p>
+          <ThemeToggle className="cursor-target journey-masthead-toggle" />
+        </div>
       </div>
     </header>
   );

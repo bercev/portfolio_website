@@ -903,6 +903,96 @@ html[data-journey="active"] .journey-rail {
   border-radius: 0;
 }
 
+/*
+ * The measure. Header, hero and every station resolve their left and right
+ * edge from this one rule, so page chrome never floats on its own grid.
+ */
+.journey-measure {
+  width: 100%;
+  max-width: var(--journey-content-max);
+  margin-inline: auto;
+  padding-inline: var(--journey-content-inline);
+}
+
+/* Masthead: name left, role and theme right, both flush to the measure. */
+.journey-masthead {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: var(--z-site-header);
+  padding-top: env(safe-area-inset-top);
+  border-bottom: 1px solid var(--journey-rule-soft);
+  background: color-mix(in srgb, var(--background) 78%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.journey-masthead-inner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 1.05rem;
+}
+
+.journey-wordmark {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  color: var(--foreground);
+  /* Hang the serif sidebearing so the cap aligns with the station rules. */
+  margin-inline-start: -0.055em;
+  text-decoration: none;
+  transition: opacity 150ms ease;
+}
+
+.journey-wordmark:hover {
+  opacity: 0.68;
+}
+
+.journey-wordmark-family {
+  color: var(--muted-foreground);
+}
+
+.journey-masthead-actions {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(0.9rem, 2vw, 1.6rem);
+}
+
+.journey-masthead-role {
+  margin: 0;
+  font: 400 10px/1 var(--font-mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-masthead-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  /* Optical flush-right: pull the icon's own padding past the measure edge. */
+  margin-inline-end: -0.35rem;
+  padding: 0.35rem;
+  color: var(--muted-foreground);
+  background: none;
+  border: 0;
+  transition: color 150ms ease;
+}
+
+.journey-masthead-toggle:hover {
+  color: var(--foreground);
+}
+
+@media (max-width: 640px) {
+  .journey-masthead-role {
+    display: none;
+  }
+}
+
 [data-journey-station] {
   min-height: 100svh;
   display: grid;
@@ -1269,9 +1359,11 @@ html[data-journey="active"] [data-effect-layer="background"] {
   align-items: start;
 }
 
+/* Column gap must stay the shell gap or the subgrid drifts off the measure. */
 .journey-grid--ships {
   grid-template-columns: subgrid;
-  gap: clamp(28px, 4vw, 56px) 0;
+  column-gap: var(--shell-gap);
+  row-gap: clamp(28px, 4vw, 56px);
   align-items: start;
 }
 
@@ -1353,6 +1445,40 @@ html[data-journey="active"] [data-effect-layer="background"] {
   font-size: clamp(1.85rem, 3.9vw, 2.7rem);
   line-height: 1.06;
   letter-spacing: -0.018em;
+}
+
+/*
+ * Let the link run as text so the arrow trails the last word instead of
+ * parking itself in the ragged right of a three-line title.
+ */
+.journey-pub-title a {
+  display: inline;
+}
+
+.journey-pub-title a svg {
+  display: inline;
+  width: 0.52em;
+  height: 0.52em;
+  margin-left: 0.22em;
+  vertical-align: 0.06em;
+  color: var(--muted-foreground);
+  transition: color 180ms ease;
+}
+
+.journey-pub-row:hover .journey-pub-title a svg,
+.journey-pub-title a:focus-visible svg {
+  color: var(--portfolio-accent);
+}
+
+/* The claim in plain language — the title alone does not sell the work. */
+.journey-pub-gloss {
+  max-width: 42ch;
+  margin: clamp(0.7rem, 1.4vh, 1rem) 0 0;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.62;
+  color: var(--muted-foreground);
+  text-wrap: pretty;
 }
 
 .journey-pub-marginalia {
@@ -1447,13 +1573,16 @@ html[data-journey="active"] [data-effect-layer="background"] {
   padding-top: 8px;
 }
 
+/* Indented past the date rail but closing on the same line as every other
+   reading column, so the page keeps one right edge for prose. */
 .journey-xp-main {
-  grid-column: 3 / span 6;
+  grid-column: 3 / span 5;
   min-width: 0;
 }
 
+/* Same 9–12 rail every other station uses, so the right edge never shifts. */
 .journey-xp-stack {
-  grid-column: 10 / span 3;
+  grid-column: 9 / span 4;
   padding-top: 8px;
   min-width: 0;
 }
@@ -1636,7 +1765,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
   align-items: baseline;
-  gap: 0.35rem 0;
+  row-gap: 0.35rem;
   padding: clamp(14px, 1.9vw, 22px) 0;
   border-bottom: 1px solid var(--journey-rule-soft);
 }
