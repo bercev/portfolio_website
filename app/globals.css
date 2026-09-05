@@ -369,8 +369,19 @@ textarea {
   pointer-events: none;
 }
 
+/*
+ * Backdrop for the reduced-motion path, where there is no journey scene and no
+ * content frost. At full strength the tunnel competes with the hero copy and
+ * the sidebar labels, so it is held back to atmosphere — further on paper,
+ * where the ramp has more contrast to spend.
+ */
 [data-effect-layer="background"] {
   z-index: var(--z-effect-background);
+  opacity: 0.3;
+}
+
+.dark [data-effect-layer="background"] {
+  opacity: 0.5;
 }
 
 [data-effect-layer="pointer"] {
@@ -1134,6 +1145,8 @@ html[data-journey="active"] [data-effect-layer="background"] {
 /* Left-ragged body — never justified SaaS blocks. */
 .journey-body {
   max-width: 62ch;
+  font-size: 1rem;
+  line-height: 1.72;
   text-align: left;
   text-wrap: pretty;
   hyphens: manual;
@@ -1141,9 +1154,10 @@ html[data-journey="active"] [data-effect-layer="background"] {
 }
 
 .journey-body--lede {
-  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
-  line-height: 1.65;
+  font-size: clamp(1.1rem, 1.7vw, 1.32rem);
+  line-height: 1.6;
   letter-spacing: -0.01em;
+  color: var(--foreground);
 }
 
 /* Liquid glass is an accent material — Vitae/deep-dive only. */
@@ -1309,6 +1323,12 @@ html[data-journey="active"] [data-effect-layer="background"] {
   font: 400 10px/1 var(--font-mono);
   letter-spacing: 0.24em;
   color: var(--muted-foreground);
+  transition: color 180ms ease;
+}
+
+.journey-pub-row:hover .journey-pub-index,
+.journey-pub-row:focus-within .journey-pub-index {
+  color: var(--portfolio-accent);
 }
 
 .journey-pub-main {
