@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 import { portfolio } from "@/data/content";
+import { loadOgFont } from "@/lib/og-fonts";
 
 export const alt = "Berat Ercevik software engineering portfolio";
 
@@ -22,7 +23,21 @@ if (!background || !foreground || !accent) {
   throw new Error("Required social card color tokens are missing from app/globals.css.");
 }
 
-export default function OpenGraphImage() {
+/** The credentials worth reading before anyone clicks through. */
+const proof = [
+  ...portfolio.publications.map((paper) => paper.venue.split(":")[0]),
+  `${portfolio.about.education.institution} · ${portfolio.about.education.gpa}`,
+].join("  ·  ");
+
+export default async function OpenGraphImage() {
+  const [display, mono] = await Promise.all([
+    loadOgFont("Newsreader", 400),
+    loadOgFont("IBM Plex Mono", 500),
+  ]);
+  const fonts = [display, mono].filter((font) => font !== null);
+  const displayFamily = display ? "Newsreader" : "serif";
+  const monoFamily = mono ? "IBM Plex Mono" : "monospace";
+
   return new ImageResponse(
     (
       <div
@@ -62,10 +77,10 @@ export default function OpenGraphImage() {
               style={{
                 display: "flex",
                 color: accent,
-                fontFamily: "sans-serif",
-                fontSize: 28,
-                fontWeight: 600,
-                letterSpacing: "0.16em",
+                fontFamily: monoFamily,
+                fontSize: 24,
+                fontWeight: 500,
+                letterSpacing: "0.2em",
                 textTransform: "uppercase",
               }}
             >
@@ -74,15 +89,29 @@ export default function OpenGraphImage() {
             <div
               style={{
                 display: "flex",
-                marginTop: 22,
-                fontFamily: "serif",
-                fontSize: 100,
+                marginTop: 26,
+                fontFamily: displayFamily,
+                fontSize: 104,
                 fontWeight: 400,
-                letterSpacing: "-0.045em",
+                letterSpacing: "-0.02em",
                 lineHeight: 1,
               }}
             >
               {portfolio.identity.name}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                marginTop: 20,
+                maxWidth: 760,
+                fontFamily: displayFamily,
+                fontSize: 38,
+                fontWeight: 400,
+                lineHeight: 1.25,
+                opacity: 0.85,
+              }}
+            >
+              {portfolio.hero.tagline}
             </div>
           </div>
           <div
@@ -95,7 +124,7 @@ export default function OpenGraphImage() {
             <div
               style={{
                 width: 84,
-                height: 8,
+                height: 6,
                 display: "flex",
                 marginRight: 24,
                 backgroundColor: accent,
@@ -104,17 +133,20 @@ export default function OpenGraphImage() {
             <div
               style={{
                 display: "flex",
-                fontFamily: "sans-serif",
-                fontSize: 32,
-                fontWeight: 400,
+                fontFamily: monoFamily,
+                fontSize: 22,
+                fontWeight: 500,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                opacity: 0.8,
               }}
             >
-              {portfolio.hero.tagline}
+              {proof}
             </div>
           </div>
         </div>
       </div>
     ),
-    size,
+    { ...size, fonts },
   );
 }

@@ -253,11 +253,14 @@
   --effect-chroma-coral: #fb7185;
 }
 
+/*
+ * Selection stays monochrome on purpose. A palette is always applied (ocean by
+ * default), so tinting it here made the accent the permanent selection colour.
+ */
 [data-palette] {
   --accent: color-mix(in srgb, var(--portfolio-accent) 16%, var(--background));
   --accent-foreground: var(--portfolio-accent-foreground);
   --ring: var(--portfolio-accent);
-  --selection-background: var(--portfolio-accent);
 }
 
 @theme inline {
