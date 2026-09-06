@@ -549,6 +549,7 @@ export class JourneyScene {
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = 1;
     this.arrivalGroup.add(this.arrivalPoints);
     this.arrivalGroup.position.set(0, 0.4, -142);
+    this.arrivalGroup.visible = false;
     this.scene.add(this.arrivalGroup);
     this.fitWordmarks();
 
@@ -964,12 +965,15 @@ export class JourneyScene {
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
     this.textGroup.rotation.y = Math.sin(t * 0.15) * 0.06;
 
+    // Skills and Contact share a viewport near the end of the page, so the
+    // wordmark has to stay scattered until the camera is actually in Contact.
     const arrive = this.reducedMotion
       ? 1
-      : 1 - THREE.MathUtils.smoothstep(this.smoothT, 0.8, 0.95);
+      : 1 - THREE.MathUtils.smoothstep(this.smoothT, 0.97, 1);
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = arrive;
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
     this.arrivalGroup.rotation.y = Math.sin(t * 0.12 + 2) * 0.05;
+    this.arrivalGroup.visible = !this.reducedMotion && this.smoothT > 0.94;
 
     if (!this.reducedMotion) {
       this.stars.rotation.y = t * 0.008;
