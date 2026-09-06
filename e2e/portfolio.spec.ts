@@ -518,7 +518,9 @@ test("shows the full skills station for reduced motion", async ({ browser }) => 
   await page.goto("/");
 
   await expect(
-    page.locator("#skills").getByText("Multi-agent systems"),
+    page
+      .locator("#skills [data-skill]:not([aria-hidden='true'])")
+      .getByText("Multi-agent systems"),
   ).toBeVisible();
   await expect(page.locator("#skills [data-skills-track]")).toHaveCount(0);
   await expect(page.locator("#skills [data-skills-row]")).toHaveCount(2);
