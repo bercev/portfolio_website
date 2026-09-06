@@ -33,16 +33,10 @@
   --sidebar-accent-foreground: #101723;
   --sidebar-border: #d8dfe9;
   --sidebar-ring: #87909d;
-  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    "Noto Color Emoji";
-  --font-serif: var(--font-newsreader), ui-serif, Georgia, "Times New Roman",
-    serif;
-  --font-display: var(--font-newsreader), ui-serif, Georgia, "Times New Roman",
-    serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo,
-    Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
   --radius: 0.125rem;
   --shadow-color: oklch(0 0 0);
   --shadow-opacity: 0.1;
@@ -156,16 +150,10 @@
   --sidebar-ring: #6e7c8c;
   --selection-background: #ffffff;
   --selection-foreground: #000000;
-  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    "Noto Color Emoji";
-  --font-serif: var(--font-newsreader), ui-serif, Georgia, "Times New Roman",
-    serif;
-  --font-display: var(--font-newsreader), ui-serif, Georgia, "Times New Roman",
-    serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo,
-    Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
   --radius: 0.125rem;
   --shadow-color: oklch(0 0 0);
   --shadow-opacity: 0.1;
@@ -302,10 +290,10 @@
   --color-effect-spark: var(--effect-spark);
   --color-effect-glow: var(--effect-glow);
 
-  --font-sans: var(--font-schibsted);
-  --font-serif: var(--font-newsreader);
-  --font-display: var(--font-newsreader);
-  --font-mono: var(--font-plex-mono);
+  --font-sans: var(--font-grotesk);
+  --font-serif: var(--font-grotesk);
+  --font-display: var(--font-grotesk);
+  --font-mono: var(--font-grotesk);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -938,7 +926,7 @@ html[data-journey="active"] .journey-rail {
   grid-column: 1 / span 7;
   font-family: var(--font-display);
   font-size: 1.0625rem;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1;
   letter-spacing: 0.005em;
   color: var(--foreground);
@@ -965,8 +953,8 @@ html[data-journey="active"] .journey-rail {
 
 .journey-masthead-role {
   margin: 0;
-  font: 400 10px/1 var(--font-mono);
-  letter-spacing: 0.22em;
+  font: 500 10px/1 var(--font-sans);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -1085,7 +1073,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
   grid-column: 1 / span 6;
   margin: 0;
   font: 500 11px/1 var(--font-mono);
-  letter-spacing: 0.24em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--portfolio-accent);
 }
@@ -1108,7 +1096,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
   font-family: var(--font-display);
   font-optical-sizing: auto;
   font-size: clamp(2.6rem, 6.2vw, 4.75rem);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 0.96;
   letter-spacing: -0.022em;
   text-transform: none;
@@ -1148,7 +1136,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
 .journey-spec-label {
   margin: 0;
   font: 500 10px/1 var(--font-mono);
-  letter-spacing: 0.24em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--portfolio-accent);
 }
@@ -1415,7 +1403,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
   grid-column: 1 / -1;
   margin: 0 0 0.6rem;
   font: 400 10px/1 var(--font-mono);
-  letter-spacing: 0.24em;
+  letter-spacing: 0.12em;
   color: var(--muted-foreground);
   transition: color 180ms ease;
 }

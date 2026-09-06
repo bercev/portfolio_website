@@ -30,13 +30,13 @@ const proof = [
 ].join("  ·  ");
 
 export default async function OpenGraphImage() {
-  const [display, mono] = await Promise.all([
-    loadOgFont("Newsreader", 400),
-    loadOgFont("IBM Plex Mono", 500),
+  const [regular, medium] = await Promise.all([
+    loadOgFont("Bricolage Grotesque", 400),
+    loadOgFont("Bricolage Grotesque", 500),
   ]);
-  const fonts = [display, mono].filter((font) => font !== null);
-  const displayFamily = display ? "Newsreader" : "serif";
-  const monoFamily = mono ? "IBM Plex Mono" : "monospace";
+  const fonts = [regular, medium].filter((font) => font !== null);
+  const displayFamily = regular ? "Bricolage Grotesque" : "sans-serif";
+  const monoFamily = medium ? "Bricolage Grotesque" : "sans-serif";
 
   return new ImageResponse(
     (

@@ -332,7 +332,7 @@ test("keeps navigation contrast and typography intentional in both themes", asyn
       await page
         .locator("body")
         .evaluate((element) => getComputedStyle(element).fontFamily),
-    ).toContain("Archivo");
+    ).toContain("Bricolage Grotesque");
 
     runtimeErrors.assertEmpty();
     await context.close();
