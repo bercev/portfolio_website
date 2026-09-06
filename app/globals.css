@@ -288,31 +288,19 @@
  * TOC, links, and sparks stay chromatic without glowing.
  */
 html:not(.dark) {
-  --portfolio-accent: color-mix(in srgb, var(--accent-neon) 40%, var(--foreground));
+  --portfolio-accent: color-mix(in oklch, var(--accent-neon) 72%, #14556a);
   --portfolio-accent-foreground: #f7fafc;
-  --effect-cursor: var(--foreground);
-  --effect-spark: var(--foreground);
-  --effect-glow: color-mix(in srgb, var(--foreground) 42%, transparent);
-  --effect-chroma-cyan: color-mix(
-    in srgb,
-    var(--chroma-cyan-neon) 36%,
-    var(--foreground)
-  );
+  --effect-cursor: var(--accent-neon);
+  --effect-spark: var(--accent-neon);
+  --effect-glow: color-mix(in srgb, var(--accent-neon) 55%, #ffffff);
+  --effect-chroma-cyan: color-mix(in oklch, var(--chroma-cyan-neon) 68%, #14556a);
   --effect-chroma-emerald: color-mix(
-    in srgb,
-    var(--chroma-emerald-neon) 36%,
-    var(--foreground)
+    in oklch,
+    var(--chroma-emerald-neon) 62%,
+    #14556a
   );
-  --effect-chroma-amber: color-mix(
-    in srgb,
-    var(--chroma-amber-neon) 42%,
-    var(--foreground)
-  );
-  --effect-chroma-coral: color-mix(
-    in srgb,
-    var(--chroma-coral-neon) 40%,
-    var(--foreground)
-  );
+  --effect-chroma-amber: color-mix(in oklch, var(--chroma-amber-neon) 70%, #5a3d12);
+  --effect-chroma-coral: color-mix(in oklch, var(--chroma-coral-neon) 68%, #5a241c);
 }
 
 @theme inline {
@@ -1125,7 +1113,7 @@ html:not(.dark) .journey-masthead {
   padding-block: clamp(56px, 8vh, 110px);
 }
 
-html[data-journey="active"] [data-effect-layer="background"] {
+html[data-journey] [data-effect-layer="background"] {
   display: none;
 }
 

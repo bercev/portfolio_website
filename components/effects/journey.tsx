@@ -24,13 +24,13 @@ const STATIC_PROFILE: EffectProfile = {
   particleCount: 0,
 };
 
-const ACCENT_TOKEN = "--hero-particle-accent";
+const ACCENT_TOKEN = "--accent-neon";
 const COLOR_TOKENS = [
-  "--hero-particle-accent",
-  "--hero-particle-cyan",
-  "--hero-particle-emerald",
-  "--effect-chroma-amber",
-  "--hero-particle-coral",
+  "--accent-neon",
+  "--chroma-cyan-neon",
+  "--chroma-emerald-neon",
+  "--chroma-amber-neon",
+  "--chroma-coral-neon",
 ] as const;
 
 function readTokenColor(root: HTMLElement, token: string) {
@@ -62,7 +62,6 @@ export function Journey({
   readonly stationCounts: readonly number[];
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const railFillRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<JourneyScene | null>(null);
   const { resolvedTheme } = useTheme();
   const { palette } = usePalette();
@@ -140,6 +139,7 @@ export function Journey({
     let scene: JourneyScene | null = null;
     let disposed = false;
     const root = document.documentElement;
+    root.dataset.journey = "pending";
 
     const setup = async () => {
       try {
@@ -168,10 +168,6 @@ export function Journey({
           palette: colors,
           stationCounts,
           lightTheme: !root.classList.contains("dark"),
-          onProgress: (t) => {
-            const rail = railFillRef.current;
-            if (rail) rail.style.transform = `scaleY(${t})`;
-          },
         });
         sceneRef.current = scene;
         // Pause while Projects/Vitae is the hot enhanced station.
@@ -192,7 +188,9 @@ export function Journey({
       disposed = true;
       scene?.dispose();
       if (sceneRef.current === scene) sceneRef.current = null;
-      if (root.dataset.journey === "active") delete root.dataset.journey;
+      if (root.dataset.journey === "active" || root.dataset.journey === "pending") {
+        delete root.dataset.journey;
+      }
     };
     // projectsHot / pointerLookHot applied via dedicated effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -217,9 +215,6 @@ export function Journey({
         data-journey-scene
       />
       <div aria-hidden="true" className="journey-vignette" />
-      <div aria-hidden="true" className="journey-rail">
-        <div ref={railFillRef} className="journey-rail-fill" />
-      </div>
     </>
   );
 }

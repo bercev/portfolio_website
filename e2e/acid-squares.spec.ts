@@ -1,11 +1,12 @@
 import { attachRuntimeErrorCollector, expect, test } from "./runtime-errors";
 
-test("mounts the Acid Squares canvas", async ({ page }) => {
+test("does not mount Acid Squares while the journey is running", async ({
+  page,
+}) => {
   await page.goto("/");
 
-  const effect = page.locator('[data-effect="acid-squares"]');
-  await expect(effect).toHaveCount(1);
-  await expect(effect.locator("canvas")).toHaveCount(1);
+  await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
+  await expect(page.locator('[data-effect="acid-squares"]')).toHaveCount(0);
 });
 
 test("keeps a frozen Acid Squares frame for reduced motion", async ({

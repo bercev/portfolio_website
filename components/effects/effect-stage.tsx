@@ -15,14 +15,8 @@ import { AcidSquares } from "./acid-squares";
 import { SpecularControls } from "./specular-controls";
 import { TargetCursor } from "./target-cursor";
 
-const STATIC_PROFILE: EffectProfile = {
-  mode: "static",
-  pointerEffects: false,
-  particleCount: 0,
-};
-
 export function EffectStage() {
-  const [profile, setProfile] = useState<EffectProfile>(STATIC_PROFILE);
+  const [profile, setProfile] = useState<EffectProfile | null>(null);
 
   useEffect(() => {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
@@ -51,14 +45,16 @@ export function EffectStage() {
     };
   }, []);
 
+  const mode = profile?.mode ?? "static";
+
   return (
     <div
       aria-hidden="true"
       className="pointer-events-none"
-      data-effect-mode={profile.mode}
+      data-effect-mode={mode}
     >
-      <AcidSquares profile={profile} />
-      {profile.pointerEffects ? (
+      {profile?.mode === "static" ? <AcidSquares profile={profile} /> : null}
+      {profile?.pointerEffects ? (
         <>
           <SpecularControls />
           <TargetCursor

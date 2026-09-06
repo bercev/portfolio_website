@@ -6,6 +6,9 @@
   width: 0;
   height: 0;
   pointer-events: none;
+}
+
+:global(.dark) .wrapper {
   mix-blend-mode: difference;
 }
 
@@ -13,10 +16,11 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--background) 85%, transparent);
   will-change: transform;
 }
 
