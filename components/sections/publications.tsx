@@ -14,7 +14,6 @@ export function Publications({ content, heading }: PublicationsProps) {
       id="publications"
       station={3}
       heading={heading}
-      note={`${content.length} peer-reviewed · hover to read`}
       className="journey-station--proof"
     >
       <div className="journey-panel journey-panel--ruled journey-ledger">

@@ -13,7 +13,6 @@ export function Experience({ content, heading }: ExperienceProps) {
       id="experience"
       station={4}
       heading={heading}
-      note={`${content.length} roles · 2024 — present`}
       className="journey-station--systems"
     >
       <div className="journey-rail-list journey-ledger">

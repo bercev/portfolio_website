@@ -15,7 +15,6 @@ export function About({ content, heading }: AboutProps) {
       id="about"
       station={2}
       heading={heading}
-      note={`${education.institution} · ${education.gpa}`}
       className="journey-station--origin"
     >
       <div className="journey-col-main journey-about-column">

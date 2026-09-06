@@ -13,7 +13,6 @@ export function ContactFooter({
       id="contact"
       station={7}
       heading={content.heading}
-      note="Santa Cruz, CA · open to 2027 new grad"
       className="journey-station--connect"
     >
       <div className="journey-col-main journey-copy journey-copy--connect">

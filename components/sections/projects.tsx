@@ -69,7 +69,6 @@ export function Projects({ content, heading }: ProjectsProps) {
       id="projects"
       station={5}
       heading={heading}
-      note="Shipped · live links"
       className="journey-station--ships"
     >
       <div className="journey-grid journey-grid--ships">

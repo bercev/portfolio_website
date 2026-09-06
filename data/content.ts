@@ -127,7 +127,7 @@ export const portfolio = {
       "AI systems engineer — multi-agent products and published LLM research",
     bio: "I build agentic software systems and study how LLMs behave in the wild. Currently an AI Systems Engineer Intern building multi-agent pipelines, with SkillOptimizer (ICML 2026 AIWILD Workshop) and @GrokSet (arXiv), while finishing CS at UC Santa Cruz (4.0).",
     signals: [
-      { label: "Now", value: "AI Systems Engineer Intern" },
+      { label: "Now", value: "Multi-agent systems" },
       { label: "Published", value: "ICML 2026 AIWILD · arXiv" },
       { label: "Open to", value: "AI systems / ML engineering" },
     ],
@@ -139,7 +139,7 @@ export const portfolio = {
       "Then I interned at Trustd.ai before college. That was my first real look at professional software. I worked with a mentor, sat in code review, took feedback that made my work sharper, and watched how production systems are designed, tested, and kept alive. A lot of how I think about shipping came from that room.",
       "When I started at UC Santa Cruz, my curiosity pulled hard toward AI and agents. Through Algoverse I researched how people talk to LLMs in the wild and helped build @GrokSet. I also worked on SkillOptimizer for the ICML 2026 AIWILD Workshop, digging into how agents can get better at skills without heavy task supervision. Alongside that I tutored DSA for upper division students, which forced me to explain hard ideas clearly under real time pressure.",
       "In my software engineering course I joined four teammates on Vitae. We lived in Scrum for months. Timing slipped, tickets collided, and we spent long sessions tracing bugs that only appeared when two features met. We brainstormed until messy ideas became something we could ship, leaned on each other through the rough weeks, and formed the kind of trust you get from solving hard problems together. That project still sits close to me.",
-      "Now I am an AI Systems Engineer Intern building multi-agent pipelines that turn evidence into software, and I build every day with tools like Codex and Claude. The through line is pretty simple: start curious, put something in front of real people, learn how teams ship, study how agents behave, then build the systems I wanted to exist.",
+      "Now I build multi-agent pipelines that turn evidence into software, every day with tools like Codex and Claude. The through line is pretty simple: start curious, put something in front of real people, learn how teams ship, study how agents behave, then build the systems I wanted to exist.",
     ],
     education: {
       institution: "UC Santa Cruz",
@@ -307,7 +307,7 @@ export const portfolio = {
   ],
   contact: {
     heading: "Let’s talk AI systems.",
-    message: "Open to AI systems / ML engineering roles — full-stack craft included.",
+    message: "If you are hiring for agent systems, I want to hear from you.",
     links: profileLinks,
   },
 } as const satisfies PortfolioContent;

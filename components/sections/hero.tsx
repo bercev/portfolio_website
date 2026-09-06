@@ -53,7 +53,6 @@ export function Hero({ content }: { content: HeroContent }) {
             </div>
 
             {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
-            <span className="journey-scroll-hint">Scroll to fly the journey</span>
           </div>
 
           <dl data-hero-signals>
