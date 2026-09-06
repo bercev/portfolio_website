@@ -1865,6 +1865,10 @@ html:not(.dark) .skill-pill {
   animation: none;
 }
 
+.skill-marquee--static [aria-hidden="true"] {
+  display: none;
+}
+
 .skill-marquee[data-direction="reverse"] .skill-marquee-track {
   animation-direction: reverse;
   animation-duration: 50s;

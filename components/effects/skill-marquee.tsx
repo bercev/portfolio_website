@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducedMotion } from "motion/react";
+import { useHydratedReducedMotion } from "@/lib/use-hydrated-reduced-motion";
 
 type SkillGroup = {
   readonly category: string;
@@ -15,13 +15,13 @@ function SkillRow({
 }: {
   readonly groups: readonly SkillGroup[];
   readonly direction: "forward" | "reverse";
-  readonly reduceMotion: boolean | null;
+  readonly reduceMotion: boolean;
   readonly label: string;
 }) {
   const pills = groups.flatMap((group) =>
     group.items.map((item) => ({ item, category: group.category })),
   );
-  const loop = reduceMotion ? pills : [...pills, ...pills];
+  const loop = [...pills, ...pills];
 
   if (pills.length === 0) {
     return null;
@@ -43,7 +43,7 @@ function SkillRow({
             data-skill
             className="skill-pill"
             title={pill.category}
-            aria-hidden={reduceMotion ? undefined : index >= pills.length}
+            aria-hidden={index >= pills.length ? true : undefined}
           >
             {pill.item}
           </li>
@@ -58,10 +58,8 @@ export function SkillMarquee({
 }: {
   readonly groups: readonly SkillGroup[];
 }) {
-  const reduceMotion = useReducedMotion();
-  const rows = reduceMotion
-    ? ([groups.slice(0, 2), groups.slice(2)] as const)
-    : ([groups, groups] as const);
+  const reduceMotion = useHydratedReducedMotion();
+  const rows = [groups.slice(0, 2), groups.slice(2)] as const;
 
   return (
     <div className="skill-marquee-stack" data-skill-cluster>
