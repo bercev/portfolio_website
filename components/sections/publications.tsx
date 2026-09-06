@@ -42,7 +42,7 @@ export function Publications({ content, heading }: PublicationsProps) {
                     ? "journey-pub-title journey-pub-title--lead"
                     : "journey-pub-title"
                 }
-                linkClassName="w-full items-start gap-2 decoration-portfolio-accent"
+                linkClassName="decoration-portfolio-accent"
                 linkIconSize={24}
                 previewClassName={
                   index === 0

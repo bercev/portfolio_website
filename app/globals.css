@@ -927,21 +927,21 @@ html[data-journey="active"] .journey-rail {
 }
 
 .journey-masthead-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
+  column-gap: var(--shell-gap);
   align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
   padding-block: 1.05rem;
 }
 
 .journey-wordmark {
+  grid-column: 1 / span 7;
   font-family: var(--font-display);
   font-size: 1.0625rem;
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.005em;
   color: var(--foreground);
-  /* Hang the serif sidebearing so the cap aligns with the station rules. */
   margin-inline-start: -0.055em;
   text-decoration: none;
   transition: opacity 150ms ease;
@@ -956,8 +956,10 @@ html[data-journey="active"] .journey-rail {
 }
 
 .journey-masthead-actions {
+  grid-column: 9 / span 4;
   display: flex;
   align-items: baseline;
+  justify-content: flex-end;
   gap: clamp(0.9rem, 2vw, 1.6rem);
 }
 
@@ -1453,6 +1455,11 @@ html[data-journey="active"] [data-effect-layer="background"] {
  */
 .journey-pub-title a {
   display: inline;
+  width: auto;
+}
+
+.journey-pub-title a > span {
+  display: inline;
 }
 
 .journey-pub-title a svg {
@@ -1791,6 +1798,8 @@ html[data-journey="active"] [data-effect-layer="background"] {
   width: 100%;
   min-height: clamp(42vh, 52vh, 62vh);
   padding-top: clamp(4.5rem, 12vh, 7.5rem);
+  /* Keep BERAT above the masthead rule instead of sitting on it. */
+  padding-bottom: clamp(1.1rem, 2.4vh, 1.85rem);
   pointer-events: none;
 }
 
@@ -1824,7 +1833,6 @@ html[data-journey="active"] [data-hero-name-fallback] {
   column-gap: var(--shell-gap);
   align-items: end;
   padding-top: clamp(0.85rem, 1.4vh, 1.25rem);
-  /* Kept shallow so the masthead rule clears the BERAT glyph above it. */
   padding-bottom: clamp(6vh, 8vh, 11vh);
   border-top: 1px solid var(--journey-rule);
 }
