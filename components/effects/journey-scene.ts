@@ -224,6 +224,69 @@ const FRENET_SEGMENTS = 64;
 const LANDSCAPE_FIT_ASPECT = 1.35;
 /** World units the glyph rises by at the narrowest portrait viewports. */
 const PORTRAIT_WORDMARK_LIFT = 4.4;
+/** Hero BERAT world height — slightly under the original 9 so it does not crowd the masthead. */
+const HERO_WORDMARK_HEIGHT = 8.15;
+/** Extra hero-only shrink after the shared landscape/portrait fit. */
+const HERO_WORDMARK_FIT = 0.96;
+/**
+ * Camera t when each page section is in focus. Contact stays short of 1 so
+ * Skills → Contact still travels instead of completing the path.
+ */
+const SECTION_IDS = [
+  "home",
+  "about",
+  "publications",
+  "experience",
+  "projects",
+  "skills",
+  "contact",
+] as const;
+const SECTION_PATH_T = [0, 0.16, 0.32, 0.48, 0.62, 0.76, 0.88] as const;
+/** Hard ceiling — arrival never parks at t = 1. */
+const PATH_END_T = 0.91;
+
+/** Map page scroll to path t using section tops so later chapters keep travel. */
+function mapScrollToJourneyT(): number {
+  const vh = window.innerHeight;
+  const y = Number.isFinite(window.scrollY) ? window.scrollY : 0;
+  const max = document.documentElement.scrollHeight - vh;
+  const focusY = y + vh * 0.38;
+
+  const anchors: Array<{ y: number; t: number }> = [];
+  for (let i = 0; i < SECTION_IDS.length; i++) {
+    const el = document.getElementById(SECTION_IDS[i]);
+    if (!el) continue;
+    anchors.push({
+      y: el.getBoundingClientRect().top + window.scrollY,
+      t: SECTION_PATH_T[i],
+    });
+  }
+
+  if (anchors.length < 2) {
+    const raw = max > 0 ? y / max : 0;
+    return THREE.MathUtils.clamp(raw * PATH_END_T, 0, PATH_END_T);
+  }
+
+  if (focusY <= anchors[0].y) return anchors[0].t;
+
+  const last = anchors[anchors.length - 1];
+  if (focusY >= last.y) {
+    const endY = Math.max(last.y + 1, (max > 0 ? max : last.y) + vh * 0.38);
+    const u = THREE.MathUtils.clamp((focusY - last.y) / (endY - last.y), 0, 1);
+    return THREE.MathUtils.lerp(last.t, PATH_END_T, u);
+  }
+
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const a = anchors[i];
+    const b = anchors[i + 1];
+    if (focusY <= b.y) {
+      const u = (focusY - a.y) / Math.max(1, b.y - a.y);
+      return THREE.MathUtils.lerp(a.t, b.t, THREE.MathUtils.clamp(u, 0, 1));
+    }
+  }
+
+  return PATH_END_T;
+}
 
 /** Sculpture wireframe: breathing pulse + vertical two-tone gradient. */
 function stationMaterial(color: THREE.Color): THREE.ShaderMaterial {
@@ -587,7 +650,14 @@ export class JourneyScene {
       220,
     );
 
-    this.textPoints = buildTextPoints("BERAT", quality === "full" ? 7000 : 4200, palette, 9, particleBlending, lightTheme);
+    this.textPoints = buildTextPoints(
+      "BERAT",
+      quality === "full" ? 7000 : 4200,
+      palette,
+      HERO_WORDMARK_HEIGHT,
+      particleBlending,
+      lightTheme,
+    );
     this.textGroup.add(this.textPoints);
     this.textGroup.position.set(0, 0.4, 7);
     this.textGroup.renderOrder = 6;
@@ -627,7 +697,7 @@ export class JourneyScene {
       // Camera must be part of the graph for its children (nebula) to render.
       this.scene.add(this.camera);
 
-      // Domain-warped fbm nebula backdrop (noise ported from vgpu wgsl-std).
+      // Domain-warped liquid / caustic wash (same class in both themes).
       const nebulaMat = new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
@@ -635,13 +705,17 @@ export class JourneyScene {
         blending: THREE.NormalBlending,
         uniforms: {
           uTime: { value: 0 },
-          uIntensity: { value: lightTheme ? 0.06 : 0.16 },
+          uIntensity: { value: lightTheme ? 0.4 : 0.22 },
+          uInkMode: { value: lightTheme ? 1 : 0 },
           uTintA: {
-            value: new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.68),
+            value: lightTheme
+              ? new THREE.Color(palette.accent).lerp(new THREE.Color(0x142028), 0.72)
+              : new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.68),
           },
-          // Held near the accent — a heavier emerald mix reads as lava lamp.
           uTintB: {
-            value: new THREE.Color(palette.cyan).lerp(new THREE.Color(palette.emerald), 0.22),
+            value: lightTheme
+              ? new THREE.Color(palette.cyan).lerp(new THREE.Color(0x1c2c38), 0.55)
+              : new THREE.Color(palette.cyan).lerp(new THREE.Color(palette.emerald), 0.22),
           },
         },
         vertexShader: `
@@ -656,16 +730,22 @@ export class JourneyScene {
           `
           uniform float uTime;
           uniform float uIntensity;
+          uniform float uInkMode;
           uniform vec3 uTintA;
           uniform vec3 uTintB;
           varying vec2 vUv;
           void main() {
-            vec2 p = vUv * vec2(4.0, 2.4);
-            p += vec2(uTime * 0.01, -uTime * 0.006);
-            float n = fbm(p + 0.6 * fbm(p * 1.7 + 3.1));
-            float d = smoothstep(-0.35, 0.85, n);
-            vec3 col = mix(uTintA, uTintB, clamp(n * 0.5 + 0.5, 0.0, 1.0));
-            gl_FragColor = vec4(col, d * uIntensity);
+            vec2 p = vUv * vec2(3.4, 2.0);
+            p += vec2(uTime * 0.014, -uTime * 0.009);
+            vec2 q = p + 0.55 * vec2(fbm(p + uTime * 0.05), fbm(p.yx - uTime * 0.04));
+            float n = fbm(q);
+            float bands = abs(sin(q.x * 2.6 + n * 3.2 + uTime * 0.18));
+            float caustic = pow(max(1.0 - bands, 0.0), 5.0);
+            float wash = smoothstep(-0.2, 0.78, n);
+            vec3 col = mix(uTintA, uTintB, clamp(wash * 0.7 + caustic * 0.5, 0.0, 1.0));
+            float field = mix(wash, caustic, 0.42);
+            float alpha = field * uIntensity * mix(1.0, 1.15, uInkMode);
+            gl_FragColor = vec4(col, alpha);
           }
         `,
       });
@@ -683,15 +763,15 @@ export class JourneyScene {
         blending: THREE.NormalBlending,
         uniforms: {
           uTime: { value: 0 },
-          uIntensity: { value: lightTheme ? 0.05 : 0.12 },
+          uIntensity: { value: lightTheme ? 0.14 : 0.12 },
           uTintA: {
             value: lightTheme
-              ? new THREE.Color(fog).lerp(new THREE.Color(0x1a2430), 0.22)
+              ? new THREE.Color(0x1a2834).lerp(new THREE.Color(fog), 0.28)
               : new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.82),
           },
           uTintB: {
             value: lightTheme
-              ? new THREE.Color(0x2a3544).lerp(new THREE.Color(fog), 0.55)
+              ? new THREE.Color(palette.cyan).lerp(new THREE.Color(0x243040), 0.62)
               : new THREE.Color(palette.cyan).lerp(new THREE.Color(fog), 0.7),
           },
         },
@@ -806,6 +886,7 @@ export class JourneyScene {
     }
 
     this.renderOneFrame(0);
+    this.publishProgress(this.smoothT);
     if (!reducedMotion) this.loop(performance.now());
   }
   private buildStarfield(count: number): THREE.Points {
@@ -1187,7 +1268,7 @@ export class JourneyScene {
   private fitWordmarks() {
     const aspect = window.innerWidth / window.innerHeight;
     const scale = Math.min(1, aspect / LANDSCAPE_FIT_ASPECT);
-    this.textGroup.scale.setScalar(scale);
+    this.textGroup.scale.setScalar(scale * HERO_WORDMARK_FIT);
     this.arrivalGroup.scale.setScalar(scale);
     // Portrait stacks the hero copy tall, so lift the glyph clear of it.
     const lift = (1 - scale) * PORTRAIT_WORDMARK_LIFT;
@@ -1213,9 +1294,7 @@ export class JourneyScene {
   };
 
   private readonly handleScroll = () => {
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    const y = Number.isFinite(window.scrollY) ? window.scrollY : 0;
-    this.targetT = max > 0 ? y / max : 0;
+    this.targetT = mapScrollToJourneyT();
   };
 
   private bindScroll() {
@@ -1223,10 +1302,16 @@ export class JourneyScene {
     window.addEventListener("scroll", this.handleScroll, { passive: true });
   }
 
-  /** Damped scroll progress, clamped and NaN-safe for the curve lookup. */
+  /** Damped scroll progress, clamped short of a hard path finish. */
   private journeyT(): number {
     const t = this.reducedMotion ? 0 : this.smoothT;
-    return Number.isFinite(t) ? THREE.MathUtils.clamp(t, 0, 1) : 0;
+    return Number.isFinite(t) ? THREE.MathUtils.clamp(t, 0, PATH_END_T) : 0;
+  }
+
+  private publishProgress(t: number) {
+    const value = Number.isFinite(t) ? t : 0;
+    this.renderer.domElement.dataset.journeyT = value.toFixed(4);
+    this.onProgress?.(value);
   }
 
   private renderOneFrame(time: number) {
@@ -1237,15 +1322,15 @@ export class JourneyScene {
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
     this.textGroup.rotation.y = Math.sin(t * 0.15) * 0.06;
 
-    // Skills and Contact share a viewport near the end of the page, so the
-    // wordmark has to stay scattered until the camera is actually in Contact.
+    // Gather CONNECT through Contact but leave residual scatter so the
+    // path never looks finished / parked at the footer.
     const arrive = this.reducedMotion
       ? 1
-      : 1 - THREE.MathUtils.smoothstep(this.smoothT, 0.97, 1);
+      : 1 - 0.62 * THREE.MathUtils.smoothstep(this.smoothT, 0.84, PATH_END_T);
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = arrive;
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
     this.arrivalGroup.rotation.y = Math.sin(t * 0.12 + 2) * 0.05;
-    this.arrivalGroup.visible = !this.reducedMotion && this.smoothT > 0.94;
+    this.arrivalGroup.visible = !this.reducedMotion && this.smoothT > 0.8;
 
     if (!this.reducedMotion) {
       this.stars.rotation.y = t * 0.008;
@@ -1297,9 +1382,14 @@ export class JourneyScene {
     this.camera.position.copy(pos);
     this.curve.getTangentAt(this.journeyT(), this.tangent);
     this.lookTarget.copy(pos).add(this.tangent);
-    if (!this.reducedMotion && this.pointerLookEnabled) {
-      this.lookTarget.x += this.pointer.x * 0.32;
-      this.lookTarget.y += this.pointer.y * 0.2;
+    if (!this.reducedMotion) {
+      const linger = THREE.MathUtils.smoothstep(this.smoothT, 0.82, PATH_END_T);
+      this.lookTarget.x += Math.sin(t * 0.31) * 0.18 * linger;
+      this.lookTarget.y += Math.cos(t * 0.24) * 0.1 * linger;
+      if (this.pointerLookEnabled) {
+        this.lookTarget.x += this.pointer.x * 0.32;
+        this.lookTarget.y += this.pointer.y * 0.2;
+      }
     }
     this.camera.lookAt(this.lookTarget);
 
@@ -1320,7 +1410,7 @@ export class JourneyScene {
     this.smoothT += (this.targetT - this.smoothT) * (1 - Math.exp(-3.2 * dt));
     if (!Number.isFinite(this.smoothT)) this.smoothT = this.targetT;
     this.renderOneFrame(t);
-    this.onProgress?.(Number.isFinite(this.smoothT) ? this.smoothT : 0);
+    this.publishProgress(this.smoothT);
     this.raf = requestAnimationFrame(this.loop);
   };
 

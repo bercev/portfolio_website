@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test";
+
 import {
   attachRuntimeErrorCollector,
   expect,
@@ -28,6 +30,7 @@ test("keeps the journey active after switching themes", async ({ page }) => {
 
   await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
 
+  await page.getByRole("button", { name: "Open utility menu" }).click();
   await page
     .getByRole("button", { name: /Switch to (light|dark) theme/ })
     .click();
@@ -49,6 +52,61 @@ test("renders every numbered station in semantic order", async ({ page }) => {
   await expect(kickers.nth(3)).toHaveText("05");
   await expect(kickers.nth(4)).toHaveText("06");
   await expect(kickers.nth(5)).toHaveText("07");
+});
+
+async function readJourneyT(page: Page) {
+  const raw = await page
+    .locator("[data-journey-scene]")
+    .getAttribute("data-journey-t");
+  return raw == null ? Number.NaN : Number(raw);
+}
+
+test("keeps the journey moving from Experience through Projects", async ({
+  page,
+}) => {
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
+  await expect.poll(() => readJourneyT(page)).toBeGreaterThanOrEqual(0);
+
+  await page.locator("#experience").scrollIntoViewIfNeeded();
+  await expect.poll(() => readJourneyT(page)).toBeGreaterThan(0.2);
+  const tAtExperience = await readJourneyT(page);
+
+  await page.locator("#projects").scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => readJourneyT(page))
+    .toBeGreaterThan(tAtExperience + 0.02);
+
+  const tAtProjects = await readJourneyT(page);
+  await page.evaluate(() => window.scrollBy(0, 800));
+  await expect.poll(() => readJourneyT(page)).toBeGreaterThan(tAtProjects);
+  expect(await readJourneyT(page)).toBeLessThan(0.9);
+
+  runtimeErrors.assertEmpty();
+});
+
+test("keeps the journey unfinished from Skills through Contact", async ({
+  page,
+}) => {
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
+
+  await page.locator("#skills").scrollIntoViewIfNeeded();
+  await expect.poll(() => readJourneyT(page)).toBeGreaterThan(0.5);
+  const tAtSkills = await readJourneyT(page);
+  expect(tAtSkills).toBeLessThan(0.9);
+
+  await page.locator("#contact").scrollIntoViewIfNeeded();
+  await page.evaluate(() =>
+    window.scrollTo(0, document.documentElement.scrollHeight),
+  );
+  await expect.poll(() => readJourneyT(page)).toBeGreaterThan(tAtSkills);
+  const tAtContact = await readJourneyT(page);
+  expect(tAtContact).toBeLessThan(0.94);
+
+  runtimeErrors.assertEmpty();
 });
 
 test("uses a flat BERAT fallback when reduced motion is requested", async ({

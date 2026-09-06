@@ -66,7 +66,6 @@ export function Journey({
   const { resolvedTheme } = useTheme();
   const { palette } = usePalette();
   const [profile, setProfile] = useState<EffectProfile>(STATIC_PROFILE);
-  const [projectsHot, setProjectsHot] = useState(false);
   const [pointerLookHot, setPointerLookHot] = useState(false);
 
   useEffect(() => {
@@ -94,18 +93,6 @@ export function Journey({
       mobile.removeEventListener("change", updateProfile);
       reducedMotion.removeEventListener("change", updateProfile);
     };
-  }, []);
-
-  useEffect(() => {
-    const projects = document.getElementById("projects");
-    if (!projects) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setProjectsHot(Boolean(entry?.isIntersecting)),
-      { threshold: 0.35 },
-    );
-    observer.observe(projects);
-    return () => observer.disconnect();
   }, []);
 
   // Pointer-look / mouse-moves-camera only on #home and Contact.
@@ -170,8 +157,6 @@ export function Journey({
           lightTheme: !root.classList.contains("dark"),
         });
         sceneRef.current = scene;
-        // Pause while Projects/Vitae is the hot enhanced station.
-        scene.setPaused(profile.mode === "enhanced" && projectsHot);
         scene.setPointerLookEnabled(pointerLookHot);
 
         root.dataset.journey = "active";
@@ -192,14 +177,9 @@ export function Journey({
         delete root.dataset.journey;
       }
     };
-    // projectsHot / pointerLookHot applied via dedicated effects below.
+    // pointerLookHot applied via the dedicated effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, palette, resolvedTheme, stationCounts]);
-
-  useEffect(() => {
-    const shouldPause = profile.mode === "enhanced" && projectsHot;
-    sceneRef.current?.setPaused(shouldPause);
-  }, [profile.mode, projectsHot]);
 
   useEffect(() => {
     sceneRef.current?.setPointerLookEnabled(pointerLookHot);
