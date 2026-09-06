@@ -552,7 +552,7 @@ export class JourneyScene {
     this.scene.add(this.arrivalGroup);
     this.fitWordmarks();
 
-    this.stars = this.buildStarfield(quality === "full" ? 2600 : 1300);
+    this.stars = this.buildStarfield(quality === "full" ? 4800 : 2400);
     this.scene.add(this.stars);
 
     this.buildStations(stationCounts);
@@ -728,9 +728,9 @@ export class JourneyScene {
     const starCol = new Float32Array(count * 3);
     const starSeed = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      starPos[i * 3] = (Math.random() - 0.5) * 170;
-      starPos[i * 3 + 1] = (Math.random() - 0.5) * 100;
-      starPos[i * 3 + 2] = 40 - Math.random() * 210;
+      starPos[i * 3] = (Math.random() - 0.5) * 230;
+      starPos[i * 3 + 1] = (Math.random() - 0.5) * 140;
+      starPos[i * 3 + 2] = 50 - Math.random() * 260;
       const c = stops[(Math.random() * stops.length) | 0];
       const dim = 0.35 + Math.random() * 0.65;
       starCol[i * 3] = c.r * dim;
@@ -977,6 +977,16 @@ export class JourneyScene {
         mesh.rotation.x = t * (0.12 + i * 0.03);
         mesh.rotation.y = t * (0.16 + i * 0.02);
         mesh.position.y += Math.sin(t * 0.6 + i * 1.7) * 0.002;
+        const presence =
+          0.18 + 0.82 * THREE.MathUtils.smoothstep(this.smoothT, 0.05, 0.22);
+        mesh.traverse((child) => {
+          const mat = (child as THREE.Mesh).material as
+            | THREE.ShaderMaterial
+            | undefined;
+          if (!mat?.uniforms?.uOpacity) return;
+          const base = mat.wireframe ? 0.62 : 0.28;
+          mat.uniforms.uOpacity.value = base * this.inkAlpha * presence;
+        });
       });
       // Orbit dust animates per-particle in its own vertex shader.
       const cometT = ((t / 26) % 1 + 1) % 1;
@@ -1007,8 +1017,8 @@ export class JourneyScene {
     this.curve.getTangentAt(this.journeyT(), this.tangent);
     this.lookTarget.copy(pos).add(this.tangent);
     if (!this.reducedMotion && this.pointerLookEnabled) {
-      this.lookTarget.x += this.pointer.x * 1.4;
-      this.lookTarget.y += this.pointer.y * 0.9;
+      this.lookTarget.x += this.pointer.x * 0.32;
+      this.lookTarget.y += this.pointer.y * 0.2;
     }
     this.camera.lookAt(this.lookTarget);
 

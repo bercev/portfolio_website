@@ -149,6 +149,12 @@ export function LineSidebar({ items }: LineSidebarProps) {
       aria-label="Line section navigation"
       data-line-sidebar
       className={styles.sidebar}
+      style={
+        {
+          "--progress":
+            items.length > 1 ? activeIndex / (items.length - 1) : 0,
+        } as CSSProperties
+      }
     >
       <ul
         ref={listRef}

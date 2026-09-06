@@ -1,11 +1,33 @@
 .sidebar {
   --line-sidebar-accent: #000000;
+  --progress: 0;
   position: fixed;
   top: 12.5vh;
   left: 0;
   z-index: var(--z-site-navigation);
   display: none;
   height: 75vh;
+}
+
+.sidebar::before,
+.sidebar::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 1px;
+  pointer-events: none;
+}
+
+.sidebar::before {
+  background: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.sidebar::after {
+  background: var(--line-sidebar-accent);
+  transform: scaleY(var(--progress));
+  transform-origin: top;
 }
 
 .list {
