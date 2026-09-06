@@ -1664,6 +1664,59 @@ html[data-journey="active"] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
+.skill-marquee {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+}
+
+.skill-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.2rem 0;
+  list-style: none;
+  animation: skill-marquee 42s linear infinite;
+}
+
+.skill-marquee--static {
+  mask-image: none;
+}
+
+.skill-marquee--static .skill-marquee-track {
+  flex-wrap: wrap;
+  width: auto;
+  animation: none;
+}
+
+.skill-pill {
+  flex: none;
+  padding: 0.48rem 0.95rem;
+  border: 1px solid var(--journey-rule);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 55%, transparent);
+  color: var(--foreground);
+  font: 500 0.92rem/1.2 var(--font-sans);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+@keyframes skill-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 .journey-skill-line {
   grid-column: 4 / -1;
   margin: 0;

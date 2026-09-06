@@ -1,5 +1,6 @@
 import type { PortfolioContent } from "@/data/content";
 
+import { SkillMarquee } from "@/components/effects/skill-marquee";
 import { Station } from "@/components/ui/station";
 
 type SkillsProps = {
@@ -15,24 +16,12 @@ export function Skills({ content, heading }: SkillsProps) {
       heading={heading}
       className="journey-station--vocab"
     >
-      <div className="journey-skill-clusters">
-        {content.map((category) => (
-          <div
-            key={category.category}
-            data-skill-cluster
-            className="journey-skill-group"
-          >
-            <h3 className="journey-skill-heading">{category.category}</h3>
-            <p className="journey-skill-line">
-              {category.items.map((item) => (
-                <span key={item} data-skill className="journey-skill">
-                  {item}
-                </span>
-              ))}
-            </p>
-          </div>
-        ))}
-      </div>
+      {content.map((category) => (
+        <h3 key={category.category} className="sr-only">
+          {category.category}
+        </h3>
+      ))}
+      <SkillMarquee groups={content} />
     </Station>
   );
 }
