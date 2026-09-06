@@ -57,11 +57,15 @@ export function getAcidSquaresTheme(
       : mix(accent, LIGHT_INK, LIGHT_INK_MIX)
     : defaultInk;
 
-  const highlight = isDark ? mix(ink, "#d8eef5", 0.42) : mix(ink, "#8aa0b0", 0.35);
+  // Dark: lift the caustic toward a cool glint. Light: push the ridge
+  // deeper than the ink body so it stains paper instead of bleaching out.
+  const highlight = isDark
+    ? mix(ink, "#d8eef5", 0.42)
+    : mix(ink, LIGHT_INK, 0.55);
 
   return {
     colors: [base, ink, highlight],
-    spread: isDark ? 0.42 : 0.48,
+    spread: isDark ? 0.42 : 0.36,
     inkOnPaper: !isDark,
   };
 }

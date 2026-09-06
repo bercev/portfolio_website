@@ -9,8 +9,8 @@ import {
 describe("getAcidSquaresTheme", () => {
   it("uses ink-on-paper wash stops in light mode", () => {
     expect(getAcidSquaresTheme(false)).toEqual({
-      colors: ["#ffffff", "#000000", "#30383e"],
-      spread: 0.48,
+      colors: ["#ffffff", "#000000", "#060a12"],
+      spread: 0.36,
       inkOnPaper: true,
     });
   });
@@ -40,7 +40,7 @@ describe("getAcidSquaresTheme", () => {
     const { colors, inkOnPaper } = getAcidSquaresTheme(false, "#00d8ff");
     expect(colors[0]).toBe("#ffffff");
     expect(colors[1]).toBe("#075d75");
-    expect(colors[2]).toBe("#35748a");
+    expect(colors[2]).toBe("#093446");
     expect(inkOnPaper).toBe(true);
   });
 

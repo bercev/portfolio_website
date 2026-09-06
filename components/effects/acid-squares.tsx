@@ -73,6 +73,39 @@ float fbm(vec2 p) {
   }
   return v;
 }
+vec2 hash2(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.xx + p3.yz) * p3.zy);
+}
+// Irregular tide-pool cells (F2-F1), not a square lattice.
+float tidePools(vec2 p, float t) {
+  vec2 n = floor(p);
+  vec2 f = fract(p);
+  float d1 = 8.0;
+  float d2 = 8.0;
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 g = vec2(float(i), float(j));
+      vec2 o = hash2(n + g);
+      o = 0.5 + 0.44 * sin(6.28318 * o + t * 0.16 + o.yx * 2.15);
+      float d = length(g + o - f);
+      if (d < d1) { d2 = d1; d1 = d; }
+      else if (d < d2) { d2 = d; }
+    }
+  }
+  return d2 - d1;
+}
+// Diagonal kelp veins — breaks the leftover orthogonal grid.
+float kelpVein(vec2 p, float t) {
+  vec2 along = vec2(0.83, 0.56);
+  vec2 across = vec2(-along.y, along.x);
+  float ridge = abs(snoise(vec2(
+    dot(p, along) * 0.34 + t * 0.07,
+    dot(p, across) * 1.55
+  )));
+  return pow(1.0 - clamp(ridge, 0.0, 1.0), 5.4);
+}
 
 void main() {
   vec2 frag = gl_FragCoord.xy;
@@ -89,24 +122,32 @@ void main() {
   float t = iTime * uSpeed;
   float warp = uWaveDepth * 0.42;
   float spread = clamp(uSpread, 0.05, ${ACID_SQUARES_SPREAD_CEILING.toFixed(1)});
+  float paper = uInkOnPaper;
 
   vec2 p = ndc * (1.15 / zoom);
   p += md * dent * 0.35;
-  p += vec2(sin(p.y * 1.6 + t * 0.32) * warp, cos(p.x * 1.35 - t * 0.26) * warp);
-  vec2 q = p + 0.55 * vec2(fbm(p + t * 0.06), fbm(p.yx - t * 0.045));
-  float n = fbm(q * mix(1.15, 1.7, spread));
-  float bands = abs(sin(q.x * 2.4 + n * 2.8 + t * 0.2) *
-    cos(q.y * 1.9 - n * 1.6 - t * 0.14));
-  float caustic = pow(max(1.0 - bands, 0.0), mix(3.6, 5.4, spread));
-  float wash = smoothstep(-0.28, 0.82, n);
-  float field = clamp(wash * 0.62 + caustic * max(uGlow, 0.2), 0.0, 1.0);
+  p += vec2(sin(p.y * 1.15 + t * 0.28) * warp, cos(p.x * 0.95 - t * 0.22) * warp);
+  vec2 q = p + 0.62 * vec2(fbm(p + t * 0.05), fbm(p.yx * vec2(1.07, 0.91) - t * 0.04));
+  float n = fbm(q * mix(1.05, 1.55, spread));
+  float cellScale = mix(1.25, 2.05, spread) * mix(0.82, 1.22, 0.5 + 0.5 * n);
+  float rim = pow(smoothstep(0.0, 0.24, tidePools(q * cellScale + n * 0.32, t)),
+    mix(1.55, 2.35, spread));
+  float vein = kelpVein(q + n * 0.38, t);
+  float caustic = clamp(rim * 0.74 + vein * 0.52, 0.0, 1.0);
+  float wash = smoothstep(-0.32, 0.76, n);
+  float field = clamp(wash * 0.5 + caustic * max(uGlow, 0.2), 0.0, 1.0);
+  float coverage = paper > 0.5
+    ? clamp(wash * 0.82 + caustic * 1.2, 0.0, 1.0)
+    : field;
   float shimmer = 0.5 + 0.5 * sin(t * max(uColorShift, 0.15) + n * 4.0);
-  field = clamp((field - 0.5) * uContrast + 0.5, 0.0, 1.0);
-  field *= mix(0.78, 1.08, shimmer) * uBrightness;
+  coverage = clamp((coverage - mix(0.5, 0.22, paper)) *
+    mix(uContrast, 1.55, paper) + mix(0.5, 0.22, paper), 0.0, 1.0);
+  coverage *= mix(0.8, 1.1, shimmer) * uBrightness;
 
-  vec3 col = mix(uColor2, uColor3, caustic);
-  col = mix(uColor1, col, mix(field, 1.0, uInkOnPaper * 0.35));
-  float alpha = field * uOpacity * mix(0.85, 1.2, uInkOnPaper);
+  vec3 body = mix(uColor2, uColor3, caustic);
+  // Paper: emit ink only so CSS paper shows through. Void: fade into base.
+  vec3 col = paper > 0.5 ? body : mix(uColor1, body, coverage);
+  float alpha = clamp(coverage * uOpacity, 0.0, 1.0);
   fragColor = vec4(col * alpha, alpha);
 }`;
 
@@ -209,6 +250,11 @@ export function AcidSquares({ profile }: { profile: EffectProfile }) {
       program.uniforms.uColor3.value = hexToRgb(theme.colors[2]);
       program.uniforms.uSpread.value = theme.spread;
       program.uniforms.uInkOnPaper.value = theme.inkOnPaper ? 1 : 0;
+      // globals.css holds the layer at 0.3 on paper / 0.5 in the void.
+      // Paper needs more of that budget or the stain vanishes; multiply
+      // keeps it a wash instead of a sheet.
+      canvas.style.mixBlendMode = theme.inkOnPaper ? "multiply" : "normal";
+      container.style.opacity = theme.inkOnPaper ? "0.58" : "";
       redrawStatic();
     };
 
