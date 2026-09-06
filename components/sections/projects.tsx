@@ -1,6 +1,6 @@
 import type { PortfolioContent, Project } from "@/data/content";
 
-import { ExternalLink } from "@/components/ui/external-link";
+import { HoverPreview } from "@/components/ui/hover-preview";
 import { Station } from "@/components/ui/station";
 import { TechPills } from "@/components/ui/tech-pills";
 
@@ -9,45 +9,49 @@ type ProjectsProps = {
   readonly heading: PortfolioContent["navigation"][number]["label"];
 };
 
-function ProjectDetails({
-  project,
-  quiet = false,
-}: {
-  readonly project: Project;
-  readonly quiet?: boolean;
-}) {
+const projectPreviews = {
+  Vitae: {
+    src: "/assets/projects/vitae.svg",
+    alt: "Placeholder studio shot of Vitae: stacked resume revisions beside a typeset page.",
+  },
+  "AI Discord Chatbot": {
+    src: "/assets/projects/discord-chatbot.svg",
+    alt: "Placeholder studio shot of the Discord bot: a night channel with a bot reply in the thread.",
+  },
+} as const satisfies Record<
+  Project["title"],
+  { readonly src: string; readonly alt: string }
+>;
+
+function previewFor(title: Project["title"]) {
+  if (title === "Vitae" || title === "AI Discord Chatbot") {
+    return projectPreviews[title];
+  }
+
+  return undefined;
+}
+
+function ProjectDetails({ project }: { readonly project: Project }) {
+  const preview = previewFor(project.title);
+
   return (
     <>
       <p className="journey-project-when">{project.dates}</p>
-      <h3
-        aria-label={project.title}
-        className={
-          quiet
-            ? "journey-project-title journey-project-title--quiet"
-            : "journey-project-title journey-project-title--ships"
-        }
-      >
-        {project.href ? (
-          <ExternalLink
-            href={project.href}
-            className="decoration-portfolio-accent"
-          >
-            {project.title}
-          </ExternalLink>
-        ) : (
-          project.title
-        )}
-      </h3>
-      <p
-        className={
-          quiet
-            ? "journey-body mt-5 max-w-[58ch] text-base leading-7 text-muted-foreground"
-            : "journey-body mt-5 max-w-[65ch] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8"
-        }
-      >
-        {project.description}
-      </p>
-      <div className="mt-5">
+      {project.href && preview ? (
+        <HoverPreview
+          title={project.title}
+          href={project.href}
+          image={preview}
+          headingClassName="journey-project-title"
+          linkClassName="decoration-portfolio-accent"
+          linkIconSize={22}
+          previewClassName="journey-project-preview"
+        />
+      ) : (
+        <h3 className="journey-project-title">{project.title}</h3>
+      )}
+      <p className="journey-body journey-project-copy">{project.description}</p>
+      <div className="mt-auto pt-5">
         <TechPills technologies={project.technologies} />
       </div>
     </>
@@ -68,7 +72,7 @@ export function Projects({ content, heading }: ProjectsProps) {
         {featured ? (
           <article
             data-project-featured
-            className="journey-panel journey-project journey-project--ships liquid-glass"
+            className="journey-panel journey-project"
           >
             <ProjectDetails project={featured} />
           </article>
@@ -77,9 +81,9 @@ export function Projects({ content, heading }: ProjectsProps) {
         {supporting ? (
           <article
             data-project-supporting
-            className="journey-panel journey-panel--strip journey-project journey-project--quiet"
+            className="journey-panel journey-project"
           >
-            <ProjectDetails project={supporting} quiet />
+            <ProjectDetails project={supporting} />
           </article>
         ) : null}
       </div>

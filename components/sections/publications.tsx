@@ -16,7 +16,7 @@ export function Publications({ content, heading }: PublicationsProps) {
       heading={heading}
       className="journey-station--proof"
     >
-      <div className="journey-panel journey-panel--ruled journey-ledger">
+      <div className="journey-pub-list journey-ledger">
         {content.map((publication, index) => (
           <article
             key={publication.href}

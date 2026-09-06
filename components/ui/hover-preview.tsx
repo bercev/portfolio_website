@@ -6,15 +6,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ExternalLink } from "@/components/ui/external-link";
 
-interface HoverPreviewProps {
+type HoverPreviewProps = {
   readonly title: string;
   readonly href: string;
-  readonly pdfUrl: string;
   readonly headingClassName?: string;
   readonly linkClassName?: string;
   readonly linkIconSize?: number;
   readonly previewClassName?: string;
-}
+} & (
+  | { readonly pdfUrl: string; readonly image?: never }
+  | {
+      readonly pdfUrl?: never;
+      readonly image: { readonly src: string; readonly alt: string };
+    }
+);
 
 const CLOSE_DELAY_MS = 180;
 
@@ -22,6 +27,7 @@ export function HoverPreview({
   title,
   href,
   pdfUrl,
+  image,
   headingClassName,
   linkClassName,
   linkIconSize,
@@ -66,12 +72,17 @@ export function HoverPreview({
     requestClose();
   };
 
-  const readerSrc = `${pdfUrl}#page=1&view=FitH&toolbar=0&navpanes=0`;
+  const readerSrc = pdfUrl
+    ? `${pdfUrl}#page=1&view=FitH&toolbar=0&navpanes=0`
+    : undefined;
   const readerTitle = title.split(":", 1)[0];
+  const isPaper = Boolean(pdfUrl);
 
   return (
     <motion.span
-      data-hover-preview
+      {...(isPaper
+        ? { "data-hover-preview": true }
+        : { "data-project-preview": true })}
       className="relative block w-fit max-w-full"
       onPointerEnter={() => {
         hasPointerRef.current = true;
@@ -111,10 +122,14 @@ export function HoverPreview({
             className="pointer-events-auto absolute bottom-full left-0 z-[var(--z-site-navigation)] pb-3 lg:bottom-auto lg:left-full lg:top-1/2 lg:-translate-y-1/2 lg:pb-0 lg:pl-4"
           >
             <motion.span
-              data-pdf-reader
+              data-pdf-reader={isPaper ? true : undefined}
               data-hover-preview-image
               role="region"
-              aria-label={`${title} compact PDF reader`}
+              aria-label={
+                isPaper
+                  ? `${title} compact PDF reader`
+                  : `${title} project preview`
+              }
               className={
                 previewClassName
                   ? previewClassName
@@ -136,23 +151,36 @@ export function HoverPreview({
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
-              <span className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Scroll inside to read
-                </span>
-                <ExternalLink
-                  href={href}
-                  className="shrink-0 text-xs font-semibold text-foreground"
-                >
-                  Open full paper
-                </ExternalLink>
-              </span>
-              <iframe
-                src={readerSrc}
-                title={`${readerTitle} PDF preview`}
-                loading="lazy"
-                className="h-[min(38rem,70vh)] w-full rounded-none bg-white"
-              />
+              {isPaper && readerSrc ? (
+                <>
+                  <span className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Scroll inside to read
+                    </span>
+                    <ExternalLink
+                      href={href}
+                      className="shrink-0 text-xs font-semibold text-foreground"
+                    >
+                      Open full paper
+                    </ExternalLink>
+                  </span>
+                  <iframe
+                    src={readerSrc}
+                    title={`${readerTitle} PDF preview`}
+                    loading="lazy"
+                    className="h-[min(38rem,70vh)] w-full rounded-none bg-white"
+                  />
+                </>
+              ) : image ? (
+                // eslint-disable-next-line @next/next/no-img-element -- local SVG preview crop
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  width={800}
+                  height={560}
+                  className="block h-auto w-full"
+                />
+              ) : null}
             </motion.span>
           </span>
         ) : null}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" role="img" aria-labelledby="discord-title">
+  <title id="discord-title">AI Discord chatbot placeholder</title>
+  <rect width="800" height="560" fill="#141821"/>
+  <rect x="28" y="28" width="744" height="504" fill="#1b2130" stroke="#8ee0cf" stroke-width="1.25"/>
+  <rect x="28" y="28" width="72" height="504" fill="#10141c"/>
+  <circle cx="64" cy="78" r="18" fill="#8ee0cf"/>
+  <circle cx="64" cy="128" r="14" fill="#2a3346"/>
+  <circle cx="64" cy="170" r="14" fill="#2a3346"/>
+  <rect x="100" y="28" width="176" height="504" fill="#171d29"/>
+  <text x="118" y="64" fill="#8ee0cf" font-family="ui-monospace, monospace" font-size="11" letter-spacing="0.18em">SERVER</text>
+  <text x="118" y="88" fill="#e8eef6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="16">night-shift</text>
+  <text x="118" y="132" fill="#7d8899" font-family="ui-monospace, monospace" font-size="12"># lobby</text>
+  <text x="118" y="160" fill="#8ee0cf" font-family="ui-monospace, monospace" font-size="12"># help-bot</text>
+  <text x="118" y="188" fill="#7d8899" font-family="ui-monospace, monospace" font-size="12"># ships</text>
+  <rect x="276" y="28" width="496" height="46" fill="#121722"/>
+  <text x="296" y="58" fill="#e8eef6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="16"># help-bot</text>
+  <text x="748" y="58" fill="#7d8899" font-family="ui-monospace, monospace" font-size="11" text-anchor="end">50+ members</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif">
+    <text x="296" y="130" fill="#9aa6b8" font-size="12">maya</text>
+    <text x="296" y="156" fill="#e8eef6" font-size="18">can you recap last night's deploy?</text>
+    <rect x="296" y="188" width="430" height="118" fill="#151c28" stroke="#8ee0cf" stroke-width="1"/>
+    <text x="316" y="220" fill="#8ee0cf" font-size="12">bot / self-corrected</text>
+    <text x="316" y="250" fill="#e8eef6" font-size="16">shipped after the RAG pass.</text>
+    <text x="316" y="276" fill="#c9d4e0" font-size="15">10k messages indexed. no silent stall.</text>
+    <text x="296" y="350" fill="#9aa6b8" font-size="12">kai</text>
+    <text x="296" y="376" fill="#e8eef6" font-size="18">keep that in the thread.</text>
+  </g>
+  <rect x="296" y="470" width="436" height="36" fill="#121722" stroke="#2a3346" stroke-width="1"/>
+  <text x="312" y="493" fill="#7d8899" font-family="ui-monospace, monospace" font-size="12">message #help-bot</text>
+  <text x="748" y="514" fill="#8ee0cf" font-family="ui-monospace, monospace" font-size="11" text-anchor="end">OLLAMA / RAG</text>
+</svg>

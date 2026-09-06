@@ -28,6 +28,7 @@ test("renders the approved portfolio structure in semantic order", async ({
     sections.map((section) => section.id),
   );
   expect(sectionIds).toEqual(navigationItems.map(({ id }) => id));
+  await expect(page.locator(".journey-masthead")).toHaveCount(0);
 });
 
 test("renders exact publications and their canonical destinations", async ({
@@ -126,6 +127,103 @@ test("uses a divided chronology and paired project panels", async ({
   ).not.toHaveRole("link");
 
   await expect(page.locator("#projects [data-circular-gallery]")).toHaveCount(0);
+});
+
+test("keeps publication and project surfaces as bordered glass, not filled cards", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  const pubRows = page.locator("[data-publication-row]");
+  await expect(pubRows).toHaveCount(2);
+  for (const row of await pubRows.all()) {
+    const styles = await row.evaluate((element) => {
+      const computed = getComputedStyle(element);
+      return {
+        backgroundColor: computed.backgroundColor,
+        boxShadow: computed.boxShadow,
+      };
+    });
+    expect(styles.backgroundColor).toMatch(/rgba?\(0, 0, 0, 0\)|transparent/);
+    expect(styles.boxShadow).not.toBe("none");
+  }
+
+  const featured = page.locator("[data-project-featured]");
+  const supporting = page.locator("[data-project-supporting]");
+  const featuredBox = await featured.boundingBox();
+  const supportingBox = await supporting.boundingBox();
+  expect(featuredBox).not.toBeNull();
+  expect(supportingBox).not.toBeNull();
+  expect(Math.abs(featuredBox!.width - supportingBox!.width)).toBeLessThan(8);
+  expect(Math.abs(featuredBox!.height - supportingBox!.height)).toBeLessThan(8);
+
+  const projectSurface = await featured.evaluate((element) => {
+    const computed = getComputedStyle(element);
+    return {
+      backgroundImage: computed.backgroundImage,
+      backdropFilter: computed.backdropFilter,
+    };
+  });
+  expect(projectSurface.backgroundImage).toBe("none");
+  expect(projectSurface.backdropFilter).toContain("blur(");
+});
+
+test("previews a distinct placeholder screenshot for each project", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  const previews = [
+    {
+      title: "Vitae",
+      src: "/assets/projects/vitae.svg",
+    },
+    {
+      title: "AI Discord Chatbot",
+      src: "/assets/projects/discord-chatbot.svg",
+    },
+  ] as const;
+
+  await expect(page.locator("[data-project-preview]")).toHaveCount(2);
+  await expect(page.locator("[data-hover-preview]")).toHaveCount(2);
+
+  for (const preview of previews) {
+    expect((await page.request.get(preview.src)).ok()).toBe(true);
+    const target = page.locator("[data-project-preview]").filter({
+      hasText: preview.title,
+    });
+    await target.getByRole("link", { name: preview.title }).hover();
+    const image = target.locator("[data-hover-preview-image] img");
+    await expect(image).toBeVisible();
+    await expect(image).toHaveAttribute("src", preview.src);
+    await page.mouse.move(0, 0);
+  }
+});
+
+test("marquee-scrolls experience tech and keeps it static for reduced motion", async ({
+  browser,
+}) => {
+  const motion = await browser.newContext();
+  const motionPage = await motion.newPage();
+  await motionPage.goto("/");
+  const moving = motionPage.locator("#experience .tech-pills-marquee .tech-pills");
+  await expect(moving.first()).toBeVisible();
+  expect(
+    await moving.first().evaluate((element) => getComputedStyle(element).animationName),
+  ).not.toBe("none");
+  await motion.close();
+
+  const staticContext = await browser.newContext({ reducedMotion: "reduce" });
+  const staticPage = await staticContext.newPage();
+  await staticPage.goto("/");
+  const still = staticPage.locator("#experience .tech-pills-marquee .tech-pills");
+  await expect(still.first()).toBeVisible();
+  expect(
+    await still.first().evaluate((element) => getComputedStyle(element).animationName),
+  ).toBe("none");
+  await staticContext.close();
 });
 
 test("uses quiet journey-panel borders in both themes", async ({ browser }) => {
@@ -283,8 +381,8 @@ test("keeps profile actions only in the utility menu", async ({
 }) => {
   await page.goto("/");
 
-  const header = page.locator("header");
   const contact = page.locator("#contact");
+  await expect(page.locator(".journey-masthead")).toHaveCount(0);
   await page.getByRole("button", { name: "Open utility menu" }).click();
   const menu = page.getByRole("navigation", { name: "Utility menu" });
 
@@ -296,9 +394,6 @@ test("keeps profile actions only in the utility menu", async ({
     const action = menu.locator(`a[href=${JSON.stringify(href)}]`);
     await expect(action).toHaveCount(1);
     await expect(action.locator("svg")).toHaveCount(1);
-    await expect(header.locator(`a[href=${JSON.stringify(href)}]`)).toHaveCount(
-      0,
-    );
     await expect(contact.locator(`a[href=${JSON.stringify(href)}]`)).toHaveCount(
       0,
     );
@@ -378,12 +473,18 @@ test("renders skills as a numbered journey station", async ({ page }) => {
   await expect(skills.getByRole("heading", { level: 2 })).toHaveCount(1);
   await expect(page.locator("#home #skills")).toHaveCount(0);
 
-  for (const category of ["Languages", "Tools", "Frameworks", "Knowledge"]) {
+  for (const category of [
+    "AI & agents",
+    "Full-stack",
+    "Systems & delivery",
+    "Foundations",
+  ]) {
     await expect(
       skills.getByRole("heading", { name: category, exact: true }),
     ).toBeVisible();
   }
   await expect(skills.locator("[data-skill]").first()).toBeVisible();
+  await expect(skills.locator("[data-skills-row]")).toHaveCount(2);
   await expect(skills.locator("[data-skills-marquee]")).toHaveCount(0);
 });
 
@@ -417,9 +518,14 @@ test("shows the full skills station for reduced motion", async ({ browser }) => 
   await page.goto("/");
 
   await expect(
-    page.locator("#skills").getByText("Concurrency & Parallelism"),
+    page.locator("#skills").getByText("Multi-agent systems"),
   ).toBeVisible();
   await expect(page.locator("#skills [data-skills-track]")).toHaveCount(0);
+  await expect(page.locator("#skills [data-skills-row]")).toHaveCount(2);
+  await expect(page.locator("#experience .tech-pills-marquee .tech-pills")).toHaveCSS(
+    "flex-wrap",
+    "wrap",
+  );
 
   runtimeErrors.assertEmpty();
   await context.close();
@@ -713,6 +819,7 @@ test("supports a visible keyboard path through chrome, external links, and Bubbl
     "https://openreview.net/forum?id=nZYF0aPAMP",
     "https://arxiv.org/abs/2602.21236",
     "https://vitae.tools/",
+    "https://github.com/bercev/Discord-Chatbot-AI",
   ] as const;
 
   for (const href of expectedContentHrefs) {
