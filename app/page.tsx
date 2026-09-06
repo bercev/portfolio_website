@@ -1,6 +1,5 @@
 import { BubbleMenu } from "@/components/chrome/bubble-menu";
 import { LineSidebar } from "@/components/chrome/line-sidebar";
-import { SiteHeader } from "@/components/chrome/site-header";
 import { ContentFrost } from "@/components/effects/content-frost";
 import { EffectStage } from "@/components/effects/effect-stage";
 import { Journey } from "@/components/effects/journey";
@@ -24,7 +23,6 @@ const journeyStationCounts = [
 export default function Home() {
   return (
     <>
-      <SiteHeader />
       <Journey stationCounts={journeyStationCounts} />
       <EffectStage />
       <ContentFrost />

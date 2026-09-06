@@ -6,17 +6,23 @@ export function ContentFrost() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const hero = document.getElementById("home");
-    if (!hero) return;
+    const about = document.getElementById("about");
+    if (!about) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(!entry.isIntersecting);
+        if (!entry) return;
+        // Frost as soon as About enters, and keep it on after scrolling past
+        // so Publications and later stations stay readable.
+        setIsVisible(entry.isIntersecting || entry.boundingClientRect.top < 0);
       },
-      { threshold: 0 },
+      {
+        threshold: 0,
+        rootMargin: "80px 0px 0px 0px",
+      },
     );
 
-    observer.observe(hero);
+    observer.observe(about);
     return () => observer.disconnect();
   }, []);
 

@@ -1,6 +1,6 @@
 import { expect, test } from "./runtime-errors";
 
-test("starts the shared frost when the BERAT text leaves view", async ({ page }) => {
+test("starts the shared frost when About enters view", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
@@ -20,16 +20,14 @@ test("starts the shared frost when the BERAT text leaves view", async ({ page })
   expect(frostStyles.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
   expect(frostStyles.pointerEvents).toBe("none");
 
-  const hero = page.locator("#home");
-  await hero.evaluate((element) => {
-    const { bottom } = element.getBoundingClientRect();
-    window.scrollTo({ top: window.scrollY + bottom + 1 });
+  await page.locator("#about").evaluate((element) => {
+    element.scrollIntoView({ block: "start" });
   });
+  await expect(frost).toHaveCSS("opacity", "1");
 
-  const heroBottom = await hero.evaluate(
-    (element) => element.getBoundingClientRect().bottom,
-  );
-  expect(heroBottom).toBeLessThanOrEqual(0);
+  await page.locator("#publications").evaluate((element) => {
+    element.scrollIntoView({ block: "start" });
+  });
   await expect(frost).toHaveCSS("opacity", "1");
 
   await page.locator("#home").scrollIntoViewIfNeeded();

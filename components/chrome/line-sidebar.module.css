@@ -13,7 +13,7 @@
 .sidebar::after {
   content: "";
   position: absolute;
-  left: 0.75rem;
+  left: 0;
   top: 0.35rem;
   bottom: 0.35rem;
   width: 1px;
