@@ -149,13 +149,13 @@ function buildTextPoints(
 }
 
 /**
- * One readable wireframe per chapter, built from the actual page content:
- *   0 About        — open book + mortarboard (UCSC CS)
- *   1 Publications — two papers (SkillOptimizer, GrokSet)
- *   2 Experience   — four role badges on a track
- *   3 Projects     — stacked Vitae pages + a Discord chat bubble
- *   4 Skills       — a rack of tool tiles
- *   5 Contact      — envelope with three outbound links
+ * One silhouette per chapter — different geometry families, never a box grid:
+ *   0 About        — nested orbits around a knowledge core
+ *   1 Publications — two interlocking knots (two papers)
+ *   2 Experience   — four distinct polyhedra on one arc
+ *   3 Projects     — a flowing ribbon + community rings
+ *   4 Skills       — constellation rings with mixed gems
+ *   5 Contact      — a core with three outbound flares
  */
 const STATION_BUILDERS: ((color: THREE.Color) => THREE.Object3D)[] = [
   buildEducationMark,
@@ -386,182 +386,185 @@ function stationMesh(
   return mesh;
 }
 
-function addRuledLines(
-  group: THREE.Group,
-  color: THREE.Color,
-  origin: readonly [number, number, number],
-  rotation: readonly [number, number, number],
-  count: number,
-  width: number,
-) {
-  const line = new THREE.BoxGeometry(width, 0.035, 0.035);
-  for (let i = 0; i < count; i++) {
-    group.add(
-      stationMesh(line, color, [origin[0], origin[1] - i * 0.2, origin[2]], rotation),
-    );
-  }
+type StationSpin = { y: number; x: number; bob: number };
+
+function withSpin(group: THREE.Group, spin: StationSpin) {
+  group.userData.spin = spin;
+  return group;
 }
 
-/** About — UCSC CS: an open book with a mortarboard resting on it. */
+/** About — nested orbits around a knowledge core, not an open book of boxes. */
 function buildEducationMark(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const page = new THREE.BoxGeometry(1.9, 0.04, 2.55);
-  group.add(stationMesh(page, color, [-0.92, 0, 0], [0, 0, 0.42]));
-  group.add(stationMesh(page, color, [0.92, 0, 0], [0, 0, -0.42]));
-  group.add(stationMesh(page, color, [-0.55, 0.08, -0.12], [0.08, 0.04, 0.28]));
-  group.add(stationMesh(new THREE.BoxGeometry(0.28, 0.18, 2.55), color));
-  addRuledLines(group, color, [-1.08, 0.26, 0.62], [0, 0, 0.42], 6, 1.28);
-  addRuledLines(group, color, [1.08, 0.26, 0.62], [0, 0, -0.42], 6, 1.28);
+  group.add(stationMesh(new THREE.IcosahedronGeometry(0.72, 0), color));
   group.add(
-    stationMesh(new THREE.BoxGeometry(1.35, 0.07, 1.35), color, [0.18, 1.38, 0], [
-      0,
-      Math.PI / 4,
+    stationMesh(new THREE.TorusGeometry(1.48, 0.045, 8, 48), color, [0, 0.08, 0], [
+      Math.PI / 2.35,
+      0.18,
       0,
     ]),
   );
   group.add(
-    stationMesh(
-      new THREE.CylinderGeometry(0.3, 0.46, 0.36, 6),
-      color,
-      [0.18, 1.12, 0],
-    ),
+    stationMesh(new THREE.TorusGeometry(1.12, 0.03, 6, 40), color, [0, 0.14, 0], [
+      0.42,
+      0.82,
+      0.18,
+    ]),
   );
-  group.add(stationMesh(new THREE.BoxGeometry(0.06, 0.9, 0.06), color, [0.18, 1.85, 0]));
-  group.rotation.x = -0.28;
-  return group;
+  for (let i = 0; i < 7; i++) {
+    const a = i * 0.78;
+    group.add(
+      stationMesh(new THREE.OctahedronGeometry(0.13, 0), color, [
+        Math.cos(a) * 1.08,
+        -0.92 + i * 0.3,
+        Math.sin(a) * 1.08,
+      ]),
+    );
+  }
+  return withSpin(group, { y: 0.22, x: 0.06, bob: 0.16 });
 }
 
-/** Publications — two papers plus a third sheet still in the stack. */
+/** Publications — two interlocking knots, one for each paper. */
 function buildTwoPapers(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const sheet = new THREE.BoxGeometry(2.55, 0.045, 3.4);
-  group.add(stationMesh(sheet, color, [-0.42, -0.28, -0.08], [0.46, -0.14, -0.1]));
-  group.add(stationMesh(sheet, color, [0.38, 0.32, 0.16], [0.4, 0.18, 0.12]));
-  group.add(stationMesh(sheet, color, [0.05, 0.02, -0.22], [0.22, 0.04, 0.04]));
-  addRuledLines(group, color, [-0.42, 0.04, 0.78], [0.46, -0.14, -0.1], 7, 1.75);
-  addRuledLines(group, color, [0.38, 0.64, 0.92], [0.4, 0.18, 0.12], 7, 1.75);
-  return group;
+  group.add(
+    stationMesh(
+      new THREE.TorusKnotGeometry(1.12, 0.08, 96, 12, 2, 3),
+      color,
+      [-0.32, 0, 0],
+      [0.38, 0.18, 0],
+    ),
+  );
+  group.add(
+    stationMesh(
+      new THREE.TorusKnotGeometry(0.92, 0.065, 80, 10, 3, 2),
+      color,
+      [0.42, 0.12, 0.08],
+      [-0.28, 0.52, 0.18],
+    ),
+  );
+  group.add(
+    stationMesh(new THREE.TorusGeometry(0.52, 0.038, 8, 32), color, [0, -0.18, 0.36], [
+      1.12,
+      0.18,
+      0,
+    ]),
+  );
+  return withSpin(group, { y: 0.16, x: 0.08, bob: 0.1 });
 }
 
-/** Experience — four role badges on one track. */
+/** Experience — four different solids on one career arc. */
 function buildRoleBadges(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const card = new THREE.BoxGeometry(1.35, 0.95, 0.08);
-  const pin = new THREE.SphereGeometry(0.1, 8, 8);
-  for (let i = 0; i < 4; i++) {
-    const x = i * 0.92 - 1.38;
-    const y = i * 0.28 - 0.55;
-    const z = -i * 0.38;
-    group.add(stationMesh(card, color, [x, y, z], [0, 0.18, 0]));
-    group.add(stationMesh(pin, color, [x, y + 0.52, z + 0.02]));
+  const solids: THREE.BufferGeometry[] = [
+    new THREE.TetrahedronGeometry(0.55),
+    new THREE.OctahedronGeometry(0.5, 0),
+    new THREE.DodecahedronGeometry(0.48, 0),
+    new THREE.IcosahedronGeometry(0.46, 0),
+  ];
+  for (let i = 0; i < solids.length; i++) {
+    const a = (i / 3) * Math.PI * 0.92 - 0.46;
     group.add(
-      stationMesh(new THREE.BoxGeometry(0.85, 0.04, 0.04), color, [x, y + 0.12, z + 0.06], [
-        0,
-        0.18,
-        0,
-      ]),
-    );
-    group.add(
-      stationMesh(new THREE.BoxGeometry(0.55, 0.04, 0.04), color, [x, y - 0.12, z + 0.06], [
-        0,
-        0.18,
-        0,
+      stationMesh(solids[i], color, [
+        Math.sin(a) * 2.05,
+        Math.cos(a) * 0.52 - 0.18,
+        -i * 0.2,
       ]),
     );
   }
-  group.add(
-    stationMesh(
-      new THREE.CylinderGeometry(0.04, 0.04, 3.4, 6),
-      color,
-      [0, -0.15, -0.4],
-      [0, 0, 1.28],
-    ),
+  const arc = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(-2.05, 0.18, 0.05),
+    new THREE.Vector3(0, 1.15, -0.35),
+    new THREE.Vector3(2.05, 0.12, -0.65),
   );
-  return group;
+  group.add(stationMesh(new THREE.TubeGeometry(arc, 28, 0.032, 5, false), color));
+  return withSpin(group, { y: 0.1, x: 0.04, bob: 0.14 });
 }
 
-/** Projects — Vitae page stack beside a Discord chat bubble. */
+/** Projects — a vitae ribbon beside two community rings. */
 function buildShippedWork(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const page = new THREE.BoxGeometry(1.7, 0.045, 2.25);
-  for (let i = 0; i < 5; i++) {
-    group.add(
-      stationMesh(page, color, [-1.45, i * 0.16 - 0.22, i * 0.04], [0.1, i * 0.08, 0]),
-    );
-  }
-  addRuledLines(group, color, [-1.45, 0.42, 0.62], [0.12, 0.24, 0], 5, 1.15);
-  const bubble = stationMesh(
-    new THREE.SphereGeometry(0.92, 12, 10),
-    color,
-    [1.55, 0.3, 0],
-  );
-  bubble.scale.set(1.28, 1.0, 0.52);
-  group.add(bubble);
+  const ribbon = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-2.15, -0.85, 0.18),
+    new THREE.Vector3(-1.15, 0.42, -0.28),
+    new THREE.Vector3(-0.15, 0.95, 0.12),
+    new THREE.Vector3(0.42, 0.08, 0.38),
+  ]);
+  group.add(stationMesh(new THREE.TubeGeometry(ribbon, 42, 0.11, 8, false), color));
   group.add(
-    stationMesh(
-      new THREE.ConeGeometry(0.32, 0.62, 6),
-      color,
-      [0.92, -0.52, 0.2],
-      [0, 0, 0.85],
-    ),
+    stationMesh(new THREE.TorusGeometry(0.92, 0.075, 10, 28), color, [1.52, 0.22, 0], [
+      0.48,
+      0.28,
+      0.16,
+    ]),
   );
-  return group;
+  group.add(
+    stationMesh(new THREE.TorusGeometry(0.52, 0.04, 8, 22), color, [1.52, 0.22, 0], [
+      1.18,
+      0.08,
+      -0.38,
+    ]),
+  );
+  return withSpin(group, { y: 0.14, x: 0.05, bob: 0.12 });
 }
 
-/** Skills — a rack of tool tiles, not an atom. */
+/** Skills — concentric rings with mixed gems, not a tile rack. */
 function buildSkillRack(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const tile = new THREE.BoxGeometry(0.48, 0.48, 0.1);
-  for (let row = 0; row < 4; row++) {
-    for (let col = 0; col < 5; col++) {
-      group.add(
-        stationMesh(tile, color, [(col - 2) * 0.62, (1.5 - row) * 0.62, 0]),
-      );
-    }
-  }
-  group.add(stationMesh(new THREE.BoxGeometry(3.35, 0.06, 0.06), color, [0, 1.55, 0]));
-  group.add(stationMesh(new THREE.BoxGeometry(3.35, 0.06, 0.06), color, [0, -1.55, 0]));
-  group.rotation.y = -0.22;
-  return group;
-}
-
-/** Contact — an envelope and three outbound nodes (GitHub, LinkedIn, Resume). */
-function buildEnvelope(color: THREE.Color): THREE.Object3D {
-  const group = new THREE.Group();
-  group.add(stationMesh(new THREE.BoxGeometry(2.9, 1.75, 0.12), color));
   group.add(
-    stationMesh(
-      new THREE.BoxGeometry(2.9, 1.2, 0.08),
-      color,
-      [0, 1.05, 0.42],
-      [-0.72, 0, 0],
-    ),
-  );
-  group.add(stationMesh(new THREE.BoxGeometry(0.55, 0.7, 0.08), color, [0.95, -0.15, 0.12]));
-  group.add(
-    stationMesh(new THREE.BoxGeometry(1.7, 0.05, 0.05), color, [-0.35, 0.15, 0.1], [
+    stationMesh(new THREE.TorusGeometry(1.72, 0.038, 6, 48), color, [0, 0, 0], [
+      Math.PI / 2,
       0,
       0,
-      0.55,
     ]),
   );
   group.add(
-    stationMesh(new THREE.BoxGeometry(1.7, 0.05, 0.05), color, [0.35, 0.15, 0.1], [
-      0,
-      0,
-      -0.55,
+    stationMesh(new THREE.TorusGeometry(1.12, 0.032, 6, 40), color, [0, 0, 0], [
+      0.92,
+      0.38,
+      0.18,
     ]),
   );
-  for (let i = 0; i < 3; i++) {
+  group.add(
+    stationMesh(new THREE.TorusGeometry(0.58, 0.038, 6, 32), color, [0, 0, 0], [
+      0.22,
+      1.08,
+      0.28,
+    ]),
+  );
+  const gems: THREE.BufferGeometry[] = [
+    new THREE.TetrahedronGeometry(0.2),
+    new THREE.OctahedronGeometry(0.18, 0),
+    new THREE.IcosahedronGeometry(0.16, 0),
+  ];
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
     group.add(
-      stationMesh(new THREE.SphereGeometry(0.16, 8, 8), color, [
-        (i - 1) * 0.95,
-        2.05,
-        0.4,
+      stationMesh(gems[i % 3], color, [
+        Math.cos(a) * 1.72,
+        Math.sin(a) * 0.32,
+        Math.sin(a) * 1.72,
       ]),
     );
   }
-  return group;
+  return withSpin(group, { y: 0.2, x: 0.07, bob: 0.08 });
+}
+
+/** Contact — a core with three outbound flares (GitHub, LinkedIn, resume). */
+function buildEnvelope(color: THREE.Color): THREE.Object3D {
+  const group = new THREE.Group();
+  group.add(stationMesh(new THREE.OctahedronGeometry(0.62, 0), color));
+  const tips = [
+    new THREE.Vector3(1.78, 1.08, 0.38),
+    new THREE.Vector3(-1.58, 1.28, 0.18),
+    new THREE.Vector3(0.18, 1.82, -0.78),
+  ];
+  for (const tip of tips) {
+    const ray = new THREE.LineCurve3(new THREE.Vector3(0, 0.18, 0), tip);
+    group.add(stationMesh(new THREE.TubeGeometry(ray, 8, 0.038, 5, false), color));
+    group.add(stationMesh(new THREE.SphereGeometry(0.17, 10, 8), color, [tip.x, tip.y, tip.z]));
+  }
+  return withSpin(group, { y: 0.12, x: 0.05, bob: 0.18 });
 }
 
 export class JourneyScene {
@@ -1381,10 +1384,12 @@ export class JourneyScene {
         if (mesh.userData.baseQuat === undefined) {
           mesh.userData.baseQuat = mesh.quaternion.clone();
         }
+        const spin = (mesh.userData.spin ?? { y: 0.12, x: 0, bob: 0.12 }) as StationSpin;
         mesh.position.y =
-          mesh.userData.baseY + Math.sin(t * 0.6 + i * 1.7) * 0.12;
+          mesh.userData.baseY + Math.sin(t * 0.55 + i * 1.7) * spin.bob;
         mesh.quaternion.copy(mesh.userData.baseQuat);
-        mesh.rotateY(Math.sin(t * 0.22 + i * 0.9) * 0.12);
+        mesh.rotateY(Math.sin(t * 0.2 + i * 0.9) * spin.y);
+        if (spin.x) mesh.rotateX(Math.sin(t * 0.14 + i * 0.6) * spin.x);
         const presence =
           0.18 + 0.82 * THREE.MathUtils.smoothstep(this.smoothT, 0.05, 0.22);
         mesh.traverse((child) => {
