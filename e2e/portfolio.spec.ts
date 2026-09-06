@@ -524,10 +524,9 @@ test("shows the full skills station for reduced motion", async ({ browser }) => 
   ).toBeVisible();
   await expect(page.locator("#skills [data-skills-track]")).toHaveCount(0);
   await expect(page.locator("#skills [data-skills-row]")).toHaveCount(2);
-  await expect(page.locator("#experience .tech-pills-marquee .tech-pills")).toHaveCSS(
-    "flex-wrap",
-    "wrap",
-  );
+  await expect(
+    page.locator("#experience .tech-pills-marquee .tech-pills").first(),
+  ).toHaveCSS("flex-wrap", "wrap");
 
   runtimeErrors.assertEmpty();
   await context.close();
