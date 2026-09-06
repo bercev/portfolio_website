@@ -94,6 +94,7 @@ for (const theme of ["light", "dark"] as const) {
     );
 
     await expectStableTheme(page, theme);
+    await page.getByRole("button", { name: "Open utility menu" }).click();
     await expect(page.getByRole("button", { name: `Switch to ${theme === "light" ? "dark" : "light"} theme` })).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem("theme"))).toBeNull();
 
@@ -176,6 +177,41 @@ test("rejects an unexpected stored theme and falls back to the system scheme", a
   await context.close();
 });
 
+const PALETTE_CURSOR_COLORS = {
+  rose: "rgb(244, 63, 94)",
+  forest: "rgb(16, 185, 129)",
+  citrus: "rgb(245, 158, 11)",
+} as const;
+
+test("keeps palette accent aligned with the cursor color", async ({
+  browser,
+}) => {
+  for (const theme of ["light", "dark"] as const) {
+    const context = await browser.newContext({ colorScheme: theme });
+    const page = await context.newPage();
+    await page.goto("/");
+
+    for (const [palette, expected] of Object.entries(PALETTE_CURSOR_COLORS)) {
+      const colors = await page.evaluate((name) => {
+        document.documentElement.dataset.palette = name;
+        const probe = document.createElement("span");
+        document.body.append(probe);
+        probe.style.color = "var(--portfolio-accent)";
+        const accent = getComputedStyle(probe).color;
+        probe.style.color = "var(--effect-cursor)";
+        const cursor = getComputedStyle(probe).color;
+        probe.remove();
+        return { accent, cursor };
+      }, palette);
+
+      expect(colors.accent).toBe(expected);
+      expect(colors.cursor).toBe(expected);
+    }
+
+    await context.close();
+  }
+});
+
 test("toggles theme and restores the persisted choice before reload paints", async ({
   browser,
 }) => {
@@ -186,6 +222,7 @@ test("toggles theme and restores the persisted choice before reload paints", asy
   await page.goto("/");
   await expectStableTheme(page, "light");
 
+  await page.getByRole("button", { name: "Open utility menu" }).click();
   const toggle = page.getByRole("button", { name: "Switch to dark theme" });
   await expect(toggle).toBeVisible();
   await toggle.click();
@@ -209,6 +246,7 @@ test("toggles theme and restores the persisted choice before reload paints", asy
       (element) => window.getComputedStyle(element).backgroundColor,
     ),
   );
+  await page.getByRole("button", { name: "Open utility menu" }).click();
   await expect(
     page.getByRole("button", { name: "Switch to light theme" }),
   ).toBeVisible();

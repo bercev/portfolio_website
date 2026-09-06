@@ -1,6 +1,8 @@
 export type AcidSquaresTheme = {
   colors: [string, string, string];
   spread: number;
+  /** Light paper uses ink-on-paper wash; dark uses additive caustic glow. */
+  inkOnPaper: boolean;
 };
 
 export const ACID_SQUARES_SPREAD_CEILING = 1.5;
@@ -39,9 +41,9 @@ function mix(from: string, to: string, amount: number): string {
 }
 
 /**
- * The tunnel needs a light base and a dark ink to keep its depth. Tinting all
- * three stops with the accent collapses that contrast into one flat wash, so
- * the accent only takes the ink stop — darkened first when it sits on paper.
+ * Liquid field: paper/void, ink body, caustic highlight. Accent tints only
+ * the ink stop — darkened first when it sits on paper — so the wash keeps
+ * depth instead of collapsing into one flat color.
  */
 export function getAcidSquaresTheme(
   isDark: boolean,
@@ -55,8 +57,11 @@ export function getAcidSquaresTheme(
       : mix(accent, LIGHT_INK, LIGHT_INK_MIX)
     : defaultInk;
 
+  const highlight = isDark ? mix(ink, "#d8eef5", 0.42) : mix(ink, "#8aa0b0", 0.35);
+
   return {
-    colors: [base, ink, base],
-    spread: isDark ? 0.3 : 0.22,
+    colors: [base, ink, highlight],
+    spread: isDark ? 0.42 : 0.48,
+    inkOnPaper: !isDark,
   };
 }

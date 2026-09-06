@@ -1,3 +1,4 @@
+/** Accent hexes must match `[data-palette]` `--accent-neon` / `--effect-cursor`. */
 export const THEME_PALETTES = {
   ocean: { label: "Ocean", accent: "#00d8ff", foreground: "#060a12", soft: "#9cf1ff" },
   orchid: { label: "Orchid", accent: "#a855f7", foreground: "#ffffff", soft: "#d8b4fe" },

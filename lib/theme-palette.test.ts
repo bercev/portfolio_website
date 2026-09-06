@@ -12,4 +12,12 @@ describe("theme palettes", () => {
     expect(isThemePalette("ocean")).toBe(true);
     expect(isThemePalette("sepia")).toBe(false);
   });
+
+  it("keeps accent hexes aligned with CSS cursor tokens", () => {
+    expect(THEME_PALETTES.ocean.accent).toBe("#00d8ff");
+    expect(THEME_PALETTES.orchid.accent).toBe("#a855f7");
+    expect(THEME_PALETTES.citrus.accent).toBe("#f59e0b");
+    expect(THEME_PALETTES.forest.accent).toBe("#10b981");
+    expect(THEME_PALETTES.rose.accent).toBe("#f43f5e");
+  });
 });
