@@ -66,9 +66,9 @@
   align-items: baseline;
   gap: 0.65rem;
   color: color-mix(in srgb, var(--foreground) 62%, transparent);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--label-tracking);
   text-transform: uppercase;
   text-decoration: none;
   transform: translateX(calc(var(--effect) * 0.35rem));

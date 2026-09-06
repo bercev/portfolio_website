@@ -1,4 +1,4 @@
-import { iconForTech, techInitials } from "@/lib/tech-icons";
+import { iconForTech } from "@/lib/tech-icons";
 
 export function TechPills({
   technologies,
@@ -10,7 +10,7 @@ export function TechPills({
       {technologies.map((technology) => {
         const icon = iconForTech(technology);
         return (
-          <li key={technology} className="tech-pill" title={technology}>
+          <li key={technology} className="tech-pill">
             {icon ? (
               <svg
                 viewBox="0 0 24 24"
@@ -19,12 +19,8 @@ export function TechPills({
               >
                 <path fill="currentColor" d={icon.path} />
               </svg>
-            ) : (
-              <span className="tech-pill-mark" aria-hidden="true">
-                {techInitials(technology)}
-              </span>
-            )}
-            <span className="sr-only">{technology}</span>
+            ) : null}
+            <span>{technology}</span>
           </li>
         );
       })}
