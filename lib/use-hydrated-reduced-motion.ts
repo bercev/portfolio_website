@@ -1,13 +1,15 @@
 "use client";
 
 import { useReducedMotion } from "motion/react";
-import { useSyncExternalStore } from "react";
-
-const subscribe = () => () => {};
+import { useEffect, useState } from "react";
 
 export function useHydratedReducedMotion() {
   const reducedMotion = useReducedMotion();
-  const hydrated = useSyncExternalStore(subscribe, () => true, () => false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   return hydrated && reducedMotion === true;
 }

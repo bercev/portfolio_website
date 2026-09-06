@@ -1,13 +1,11 @@
 "use client";
 
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
 const toggleClassName =
   "cursor-target inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-wait";
-
-const subscribe = () => () => undefined;
 
 type ThemeToggleProps = {
   readonly className?: string;
@@ -15,18 +13,18 @@ type ThemeToggleProps = {
   readonly showLabel?: boolean;
 };
 
-function useMounted() {
-  return useSyncExternalStore(subscribe, () => true, () => false);
-}
-
 export function ThemeToggle({
   className,
   menuItem = false,
   showLabel = false,
 }: ThemeToggleProps) {
-  const mounted = useMounted();
+  const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const resolvedClassName = className ?? toggleClassName;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!mounted) {
     return (
