@@ -118,10 +118,6 @@
   --line-sidebar-accent: var(--portfolio-accent);
 }
 
-:global(html:not(.dark)) .link {
-  color: color-mix(in srgb, var(--foreground) 78%, transparent);
-}
-
 @media (min-width: 900px) {
   .sidebar {
     display: block;

@@ -81,7 +81,7 @@ function buildTextPoints(
         new THREE.Color(palette.accent),
         new THREE.Color(palette.cyan),
         new THREE.Color(palette.emerald),
-        new THREE.Color(palette.coral),
+        new THREE.Color(0xffffff).lerp(new THREE.Color(palette.accent), 0.45),
       ];
   for (let i = 0; i < count; i++) {
     const [px, py] = candidates[(Math.random() * candidates.length) | 0] ?? [
@@ -127,7 +127,7 @@ function buildTextPoints(
         p.x += cos(uTime * 0.6 + seed * 1.7) * 0.04;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         float dist = -mv.z;
-        gl_PointSize = min((1.1 + 1.3 * fract(seed)) * (60.0 / dist), 7.0);
+        gl_PointSize = min((1.25 + 1.5 * fract(seed)) * (${ink ? "58.0" : "100.0"} / dist), ${ink ? "8.0" : "14.0"});
         vFade = smoothstep(70.0, 18.0, dist) * smoothstep(1.5, 7.0, dist);
         gl_Position = projectionMatrix * mv;
       }
@@ -138,7 +138,7 @@ function buildTextPoints(
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float d = length(uv);
-        float alpha = smoothstep(0.5, 0.05, d) * vFade;
+        float alpha = smoothstep(0.5, 0.05, d) * vFade${ink ? "" : " * 1.35"};
         if (alpha < 0.01) discard;
         gl_FragColor = vec4(vColor, alpha);
       }
@@ -579,17 +579,19 @@ export class JourneyScene {
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.renderer.setClearColor(new THREE.Color(spaceBg), 1);
 
-    this.scene.fog = new THREE.FogExp2(new THREE.Color(fog), 0.028);
+    this.scene.fog = new THREE.FogExp2(new THREE.Color(fog), 0.014);
     this.camera = new THREE.PerspectiveCamera(
-      60,
+      66,
       window.innerWidth / window.innerHeight,
       0.1,
       220,
     );
 
-    this.textPoints = buildTextPoints("BERAT", quality === "full" ? 7000 : 4200, palette, 7, particleBlending, lightTheme);
+    this.textPoints = buildTextPoints("BERAT", quality === "full" ? 7000 : 4200, palette, 9, particleBlending, lightTheme);
     this.textGroup.add(this.textPoints);
-    this.textGroup.position.set(0, 0.4, 0);
+    this.textGroup.position.set(0, 0.4, 7);
+    this.textGroup.renderOrder = 6;
+    this.textPoints.renderOrder = 6;
     this.scene.add(this.textGroup);
 
     this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 6000 : 3600, palette, 5, particleBlending, lightTheme);
@@ -633,7 +635,7 @@ export class JourneyScene {
         blending: THREE.NormalBlending,
         uniforms: {
           uTime: { value: 0 },
-          uIntensity: { value: lightTheme ? 0.07 : 0.22 },
+          uIntensity: { value: lightTheme ? 0.06 : 0.16 },
           uTintA: {
             value: new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.68),
           },
@@ -951,16 +953,16 @@ export class JourneyScene {
     const { binormals, normals, tangents } = this.frenet;
     object.position
       .copy(p)
-      .addScaledVector(binormals[idx], side * 7.5)
-      .addScaledVector(normals[idx], lift)
+      .addScaledVector(binormals[idx], side * 11)
+      .addScaledVector(normals[idx], lift * 1.4)
       .addScaledVector(tangents[idx], back);
     object.lookAt(p);
   }
 
-  /** Library stacks flanking the path — one InstancedMesh, not extra platonic junk. */
+  /** Page faces scattered through the journey volume so the camera does not see a tube. */
   private buildPageCanyon() {
     const count = 280;
-    const geo = new THREE.BoxGeometry(1.8, 0.03, 2.4);
+    const geo = new THREE.BoxGeometry(2.2, 2.9, 0.04);
     const mat = new THREE.ShaderMaterial({
       wireframe: true,
       transparent: true,
@@ -969,7 +971,7 @@ export class JourneyScene {
       defines: { USE_INSTANCING: "" },
       uniforms: {
         uTime: { value: 0 },
-        uOpacity: { value: (this.lightTheme ? 0.32 : 0.34) * this.inkAlpha },
+        uOpacity: { value: (this.lightTheme ? 0.38 : 0.4) * this.inkAlpha },
         uColor: {
           value: new THREE.Color(this.palette.accent).lerp(
             new THREE.Color(this.palette.cyan),
@@ -1001,19 +1003,18 @@ export class JourneyScene {
     });
     const mesh = new THREE.InstancedMesh(geo, mat, count);
     const dummy = new THREE.Object3D();
+    const look = new THREE.Vector3();
     for (let i = 0; i < count; i++) {
-      const t = i / count;
-      const idx = Math.round(t * FRENET_SEGMENTS);
-      const p = this.curve.getPointAt(t);
-      const radius = 14 + (i % 7) * 1.7;
-      const side = i % 2 ? 1 : -1;
-      dummy.position
-        .copy(p)
-        .addScaledVector(this.frenet.binormals[idx], side * radius)
-        .addScaledVector(this.frenet.normals[idx], ((i % 5) - 2) * 1.35);
-      dummy.lookAt(p);
-      dummy.rotateX((i % 5) * 0.09);
-      dummy.scale.set(0.65 + (i % 4) * 0.16, 1, 0.7 + (i % 3) * 0.14);
+      dummy.position.set(
+        (Math.random() - 0.5) * 52,
+        (Math.random() - 0.5) * 28,
+        22 - Math.random() * 160,
+      );
+      const t = THREE.MathUtils.clamp((22 - dummy.position.z) / 160, 0, 1);
+      this.curve.getPointAt(t, look);
+      dummy.lookAt(look);
+      dummy.rotateZ((Math.random() - 0.5) * 0.5);
+      dummy.scale.set(0.55 + Math.random() * 0.9, 0.55 + Math.random() * 0.9, 1);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
     }
@@ -1023,9 +1024,9 @@ export class JourneyScene {
     this.animatedMaterials.push(mat);
   }
 
-  /** Soft motes you fly through — fills the empty air the star shell misses. */
+  /** Soft motes filling the journey AABB, not a cylinder around the camera path. */
   private buildNearMotes() {
-    const count = 900;
+    const count = 1200;
     const centers = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const angles = new Float32Array(count);
@@ -1033,25 +1034,19 @@ export class JourneyScene {
     const heights = new Float32Array(count);
     const seeds = new Float32Array(count);
     const ink = this.lightTheme
-      ? new THREE.Color(this.palette.accent).lerp(new THREE.Color(0x1a2430), 0.45)
+      ? new THREE.Color(this.palette.accent).lerp(new THREE.Color(0x1a2430), 0.28)
       : new THREE.Color(this.palette.cyan);
     for (let i = 0; i < count; i++) {
-      const t = i / count;
-      const idx = Math.round(t * FRENET_SEGMENTS);
-      const p = this.curve.getPointAt(t);
-      const side = Math.sin(i * 12.9898) > 0 ? 1 : -1;
-      p.addScaledVector(this.frenet.binormals[idx], side * (6 + (i % 11) * 0.9));
-      p.addScaledVector(this.frenet.normals[idx], ((i % 7) - 3) * 0.55);
-      centers[i * 3] = p.x;
-      centers[i * 3 + 1] = p.y;
-      centers[i * 3 + 2] = p.z;
+      centers[i * 3] = (Math.random() - 0.5) * 50;
+      centers[i * 3 + 1] = (Math.random() - 0.5) * 28;
+      centers[i * 3 + 2] = 22 - Math.random() * 160;
       const dim = 0.45 + Math.random() * 0.55;
       colors[i * 3] = ink.r * dim;
       colors[i * 3 + 1] = ink.g * dim;
       colors[i * 3 + 2] = ink.b * dim;
       angles[i] = Math.random() * Math.PI * 2;
-      radii[i] = 0.4 + Math.random() * 1.8;
-      heights[i] = (Math.random() - 0.5) * 1.4;
+      radii[i] = 0.6 + Math.random() * 3.4;
+      heights[i] = (Math.random() - 0.5) * 2.4;
       seeds[i] = Math.random();
     }
     const geo = new THREE.BufferGeometry();

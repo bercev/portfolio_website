@@ -24,6 +24,7 @@ type LineSidebarProps = {
 };
 
 export function LineSidebar({ items }: LineSidebarProps) {
+  const navRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
   const targetsRef = useRef<number[]>([]);
@@ -119,6 +120,10 @@ export function LineSidebar({ items }: LineSidebarProps) {
 
       updateFrame = requestAnimationFrame(() => {
         updateFrame = null;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const y = Number.isFinite(window.scrollY) ? window.scrollY : 0;
+        const progress = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
+        navRef.current?.style.setProperty("--progress", String(progress));
         updateActiveSection();
       });
     };
@@ -146,13 +151,13 @@ export function LineSidebar({ items }: LineSidebarProps) {
 
   return (
     <nav
+      ref={navRef}
       aria-label="Line section navigation"
       data-line-sidebar
       className={styles.sidebar}
       style={
         {
-          "--progress":
-            items.length > 1 ? activeIndex / (items.length - 1) : 0,
+          "--progress": 0,
         } as CSSProperties
       }
     >

@@ -54,22 +54,25 @@ test("renders the journey canvas in both themes", async ({
   }
 });
 
-test("tracks scroll with the journey progress rail", async ({ page }) => {
+test("tracks scroll with the sidebar progress line", async ({ page }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
   await page.goto("/");
 
-  const rail = page.locator(".journey-rail");
-  const fill = page.locator(".journey-rail-fill");
+  const sidebar = page.locator("[data-line-sidebar]");
   await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
-  await expect(rail).toBeVisible();
+  await expect(sidebar).toBeVisible();
 
-  const initialTransform = await fill.evaluate(
-    (element) => getComputedStyle(element).transform,
+  const initial = await sidebar.evaluate((element) =>
+    getComputedStyle(element).getPropertyValue("--progress").trim(),
   );
   await page.locator("#contact").scrollIntoViewIfNeeded();
   await expect
-    .poll(() => fill.evaluate((element) => getComputedStyle(element).transform))
-    .not.toBe(initialTransform);
+    .poll(() =>
+      sidebar.evaluate((element) =>
+        getComputedStyle(element).getPropertyValue("--progress").trim(),
+      ),
+    )
+    .not.toBe(initial);
 
   runtimeErrors.assertEmpty();
 });
