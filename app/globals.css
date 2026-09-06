@@ -58,11 +58,16 @@
   --journey-rule-soft: color-mix(in srgb, var(--foreground) 12%, transparent);
   --portfolio-accent: #00d8ff;
   --portfolio-accent-foreground: #060a12;
+  --accent-neon: #00d8ff;
+  --chroma-cyan-neon: #00d8ff;
+  --chroma-emerald-neon: #20d98b;
+  --chroma-amber-neon: #ffbf3f;
+  --chroma-coral-neon: #ff6b57;
   --selection-background: #000000;
   --selection-foreground: #ffffff;
-  --effect-cursor: #ffffff;
-  --effect-spark: #ffffff;
-  --effect-glow: #ffffff;
+  --effect-cursor: #101723;
+  --effect-spark: #101723;
+  --effect-glow: #3f4856;
   --effect-ascii-mask: #ffffff;
   --effect-chroma-cyan: #00d8ff;
   --effect-chroma-emerald: #20d98b;
@@ -181,65 +186,90 @@
   color-scheme: dark;
 }
 
-/* Palette accents are intentionally mode-independent: light/dark still owns surfaces. */
+/* Palette accents are neon on dark space; light mode remixes `--*-neon` into ink. */
 [data-palette="ocean"] {
-  --portfolio-accent: #00d8ff;
+  --accent-neon: #00d8ff;
+  --chroma-cyan-neon: #00d8ff;
+  --chroma-emerald-neon: #20d98b;
+  --chroma-amber-neon: #ffbf3f;
+  --chroma-coral-neon: #ff6b57;
+  --portfolio-accent: var(--accent-neon);
   --portfolio-accent-foreground: #060a12;
-  --effect-cursor: #00d8ff;
-  --effect-spark: #00d8ff;
+  --effect-cursor: var(--accent-neon);
+  --effect-spark: var(--accent-neon);
   --effect-glow: #9cf1ff;
-  --effect-chroma-cyan: #00d8ff;
-  --effect-chroma-emerald: #20d98b;
-  --effect-chroma-amber: #ffbf3f;
-  --effect-chroma-coral: #ff6b57;
+  --effect-chroma-cyan: var(--chroma-cyan-neon);
+  --effect-chroma-emerald: var(--chroma-emerald-neon);
+  --effect-chroma-amber: var(--chroma-amber-neon);
+  --effect-chroma-coral: var(--chroma-coral-neon);
 }
 
 [data-palette="orchid"] {
-  --portfolio-accent: #a855f7;
+  --accent-neon: #a855f7;
+  --chroma-cyan-neon: #a855f7;
+  --chroma-emerald-neon: #c084fc;
+  --chroma-amber-neon: #f0abfc;
+  --chroma-coral-neon: #e879f9;
+  --portfolio-accent: var(--accent-neon);
   --portfolio-accent-foreground: #ffffff;
-  --effect-cursor: #a855f7;
-  --effect-spark: #a855f7;
+  --effect-cursor: var(--accent-neon);
+  --effect-spark: var(--accent-neon);
   --effect-glow: #d8b4fe;
-  --effect-chroma-cyan: #a855f7;
-  --effect-chroma-emerald: #c084fc;
-  --effect-chroma-amber: #f0abfc;
-  --effect-chroma-coral: #e879f9;
+  --effect-chroma-cyan: var(--chroma-cyan-neon);
+  --effect-chroma-emerald: var(--chroma-emerald-neon);
+  --effect-chroma-amber: var(--chroma-amber-neon);
+  --effect-chroma-coral: var(--chroma-coral-neon);
 }
 
 [data-palette="citrus"] {
-  --portfolio-accent: #f59e0b;
+  --accent-neon: #f59e0b;
+  --chroma-cyan-neon: #f59e0b;
+  --chroma-emerald-neon: #fbbf24;
+  --chroma-amber-neon: #fcd34d;
+  --chroma-coral-neon: #fb923c;
+  --portfolio-accent: var(--accent-neon);
   --portfolio-accent-foreground: #17120a;
-  --effect-cursor: #f59e0b;
-  --effect-spark: #f59e0b;
+  --effect-cursor: var(--accent-neon);
+  --effect-spark: var(--accent-neon);
   --effect-glow: #fcd34d;
-  --effect-chroma-cyan: #f59e0b;
-  --effect-chroma-emerald: #fbbf24;
-  --effect-chroma-amber: #fcd34d;
-  --effect-chroma-coral: #fb923c;
+  --effect-chroma-cyan: var(--chroma-cyan-neon);
+  --effect-chroma-emerald: var(--chroma-emerald-neon);
+  --effect-chroma-amber: var(--chroma-amber-neon);
+  --effect-chroma-coral: var(--chroma-coral-neon);
 }
 
 [data-palette="forest"] {
-  --portfolio-accent: #10b981;
+  --accent-neon: #10b981;
+  --chroma-cyan-neon: #10b981;
+  --chroma-emerald-neon: #34d399;
+  --chroma-amber-neon: #a3e635;
+  --chroma-coral-neon: #facc15;
+  --portfolio-accent: var(--accent-neon);
   --portfolio-accent-foreground: #06130e;
-  --effect-cursor: #10b981;
-  --effect-spark: #10b981;
+  --effect-cursor: var(--accent-neon);
+  --effect-spark: var(--accent-neon);
   --effect-glow: #6ee7b7;
-  --effect-chroma-cyan: #10b981;
-  --effect-chroma-emerald: #34d399;
-  --effect-chroma-amber: #a3e635;
-  --effect-chroma-coral: #facc15;
+  --effect-chroma-cyan: var(--chroma-cyan-neon);
+  --effect-chroma-emerald: var(--chroma-emerald-neon);
+  --effect-chroma-amber: var(--chroma-amber-neon);
+  --effect-chroma-coral: var(--chroma-coral-neon);
 }
 
 [data-palette="rose"] {
-  --portfolio-accent: #f43f5e;
+  --accent-neon: #f43f5e;
+  --chroma-cyan-neon: #f43f5e;
+  --chroma-emerald-neon: #fb7185;
+  --chroma-amber-neon: #fda4af;
+  --chroma-coral-neon: #fb7185;
+  --portfolio-accent: var(--accent-neon);
   --portfolio-accent-foreground: #ffffff;
-  --effect-cursor: #f43f5e;
-  --effect-spark: #f43f5e;
+  --effect-cursor: var(--accent-neon);
+  --effect-spark: var(--accent-neon);
   --effect-glow: #fda4af;
-  --effect-chroma-cyan: #f43f5e;
-  --effect-chroma-emerald: #fb7185;
-  --effect-chroma-amber: #fda4af;
-  --effect-chroma-coral: #fb7185;
+  --effect-chroma-cyan: var(--chroma-cyan-neon);
+  --effect-chroma-emerald: var(--chroma-emerald-neon);
+  --effect-chroma-amber: var(--chroma-amber-neon);
+  --effect-chroma-coral: var(--chroma-coral-neon);
 }
 
 /*
@@ -250,6 +280,39 @@
   --accent: color-mix(in srgb, var(--portfolio-accent) 16%, var(--background));
   --accent-foreground: var(--portfolio-accent-foreground);
   --ring: var(--portfolio-accent);
+}
+
+/*
+ * Palette accents stay neon on dark space. On paper they fail contrast
+ * (cyan on cream) and read as a HUD. Mix them toward ink so kickers,
+ * TOC, links, and sparks stay chromatic without glowing.
+ */
+html:not(.dark) {
+  --portfolio-accent: color-mix(in srgb, var(--accent-neon) 40%, var(--foreground));
+  --portfolio-accent-foreground: #f7fafc;
+  --effect-cursor: var(--foreground);
+  --effect-spark: var(--foreground);
+  --effect-glow: color-mix(in srgb, var(--foreground) 42%, transparent);
+  --effect-chroma-cyan: color-mix(
+    in srgb,
+    var(--chroma-cyan-neon) 36%,
+    var(--foreground)
+  );
+  --effect-chroma-emerald: color-mix(
+    in srgb,
+    var(--chroma-emerald-neon) 36%,
+    var(--foreground)
+  );
+  --effect-chroma-amber: color-mix(
+    in srgb,
+    var(--chroma-amber-neon) 42%,
+    var(--foreground)
+  );
+  --effect-chroma-coral: color-mix(
+    in srgb,
+    var(--chroma-coral-neon) 40%,
+    var(--foreground)
+  );
 }
 
 @theme inline {
@@ -625,6 +688,12 @@ html:has([data-pdf-reader]:hover) [data-target-cursor] {
   opacity: 1;
 }
 
+html:not(.dark) .content-frost {
+  background: color-mix(in srgb, var(--background) 16%, transparent);
+  -webkit-backdrop-filter: blur(8px) saturate(118%);
+  backdrop-filter: blur(8px) saturate(118%);
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .content-frost {
     background: color-mix(in srgb, var(--background) 88%, transparent);
@@ -913,6 +982,10 @@ html[data-journey="active"] .journey-rail {
   border-bottom: 1px solid var(--journey-rule-soft);
   background: color-mix(in srgb, var(--background) 78%, transparent);
   backdrop-filter: blur(12px);
+}
+
+html:not(.dark) .journey-masthead {
+  background: color-mix(in srgb, var(--background) 90%, transparent);
 }
 
 .journey-masthead-inner {
@@ -1258,6 +1331,10 @@ html[data-journey="active"] [data-effect-layer="background"] {
   border: 1px solid var(--foreground);
   border-radius: 0;
   box-shadow: none;
+}
+
+html:not(.dark) .journey-panel {
+  background: color-mix(in srgb, var(--card) 82%, transparent);
 }
 
 .journey-panel--hard {
@@ -1656,6 +1733,12 @@ html[data-journey="active"] [data-effect-layer="background"] {
   background: color-mix(in srgb, var(--card) 50%, transparent);
   font: 500 0.78rem/1.2 var(--font-sans);
   letter-spacing: -0.01em;
+}
+
+html:not(.dark) .tech-pill,
+html:not(.dark) .skill-pill {
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 22%, transparent);
 }
 
 .tech-pill-icon {
