@@ -677,7 +677,7 @@ export class JourneyScene {
 
     this.buildStations(stationCounts);
     if (quality === "full") {
-      this.buildPageCanyon();
+      this.buildDriftField();
       this.buildNearMotes();
     }
 
@@ -1040,69 +1040,111 @@ export class JourneyScene {
     object.lookAt(p);
   }
 
-  /** Page faces scattered through the journey volume so the camera does not see a tube. */
-  private buildPageCanyon() {
-    const count = 280;
-    const geo = new THREE.BoxGeometry(2.2, 2.9, 0.04);
-    const mat = new THREE.ShaderMaterial({
-      wireframe: true,
-      transparent: true,
-      depthWrite: false,
-      blending: this.particleBlending,
-      defines: { USE_INSTANCING: "" },
-      uniforms: {
-        uTime: { value: 0 },
-        uOpacity: { value: (this.lightTheme ? 0.38 : 0.4) * this.inkAlpha },
-        uColor: {
-          value: new THREE.Color(this.palette.accent).lerp(
-            new THREE.Color(this.palette.cyan),
-            0.35,
-          ),
-        },
-      },
-      vertexShader: `
-        varying float vZ;
-        void main() {
-          vec3 transformed = position;
-          #ifdef USE_INSTANCING
-            transformed = (instanceMatrix * vec4(transformed, 1.0)).xyz;
-          #endif
-          vZ = transformed.z;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 uColor;
-        uniform float uOpacity;
-        uniform float uTime;
-        varying float vZ;
-        void main() {
-          float pulse = 0.82 + 0.18 * sin(uTime * 0.35 + vZ * 0.07);
-          gl_FragColor = vec4(uColor, uOpacity * pulse);
-        }
-      `,
-    });
-    const mesh = new THREE.InstancedMesh(geo, mat, count);
+  /**
+   * Mixed drift through the journey volume: tide rings, kelp needles,
+   * crystal shards, seed pods. Never a tiled page of the same rectangle.
+   */
+  private buildDriftField() {
     const dummy = new THREE.Object3D();
     const look = new THREE.Vector3();
-    for (let i = 0; i < count; i++) {
-      dummy.position.set(
-        (Math.random() - 0.5) * 52,
-        (Math.random() - 0.5) * 28,
-        22 - Math.random() * 160,
-      );
-      const t = THREE.MathUtils.clamp((22 - dummy.position.z) / 160, 0, 1);
-      this.curve.getPointAt(t, look);
-      dummy.lookAt(look);
-      dummy.rotateZ((Math.random() - 0.5) * 0.5);
-      dummy.scale.set(0.55 + Math.random() * 0.9, 0.55 + Math.random() * 0.9, 1);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
+    const ink = new THREE.Color(this.palette.accent).lerp(
+      new THREE.Color(this.palette.cyan),
+      0.35,
+    );
+    const kinds: Array<{
+      geo: THREE.BufferGeometry;
+      count: number;
+      scale: () => [number, number, number];
+    }> = [
+      {
+        geo: new THREE.TorusGeometry(1.05, 0.032, 5, 20),
+        count: 72,
+        scale: () => {
+          const s = 0.32 + Math.random() * 1.15;
+          return [s, s * (0.35 + Math.random() * 0.7), s];
+        },
+      },
+      {
+        geo: new THREE.ConeGeometry(0.11, 2.35, 5, 1, true),
+        count: 58,
+        scale: () => {
+          const s = 0.45 + Math.random() * 1.25;
+          return [s * (0.55 + Math.random() * 0.6), s, s * (0.55 + Math.random() * 0.6)];
+        },
+      },
+      {
+        geo: new THREE.TetrahedronGeometry(0.82),
+        count: 48,
+        scale: () => {
+          const s = 0.4 + Math.random() * 0.95;
+          return [s, s * (0.7 + Math.random() * 0.8), s * (0.55 + Math.random() * 0.7)];
+        },
+      },
+      {
+        geo: new THREE.OctahedronGeometry(0.52, 0),
+        count: 42,
+        scale: () => {
+          const s = 0.35 + Math.random() * 0.85;
+          return [s, s, s];
+        },
+      },
+    ];
+
+    for (const kind of kinds) {
+      const mat = new THREE.ShaderMaterial({
+        wireframe: true,
+        transparent: true,
+        depthWrite: false,
+        blending: this.particleBlending,
+        defines: { USE_INSTANCING: "" },
+        uniforms: {
+          uTime: { value: 0 },
+          uOpacity: { value: (this.lightTheme ? 0.34 : 0.36) * this.inkAlpha },
+          uColor: { value: ink.clone() },
+        },
+        vertexShader: `
+          varying float vZ;
+          void main() {
+            vec3 transformed = position;
+            #ifdef USE_INSTANCING
+              transformed = (instanceMatrix * vec4(transformed, 1.0)).xyz;
+            #endif
+            vZ = transformed.z;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          uniform float uOpacity;
+          uniform float uTime;
+          varying float vZ;
+          void main() {
+            float pulse = 0.82 + 0.18 * sin(uTime * 0.35 + vZ * 0.07);
+            gl_FragColor = vec4(uColor, uOpacity * pulse);
+          }
+        `,
+      });
+      const mesh = new THREE.InstancedMesh(kind.geo, mat, kind.count);
+      for (let i = 0; i < kind.count; i++) {
+        dummy.position.set(
+          (Math.random() - 0.5) * 52,
+          (Math.random() - 0.5) * 28,
+          22 - Math.random() * 160,
+        );
+        const t = THREE.MathUtils.clamp((22 - dummy.position.z) / 160, 0, 1);
+        this.curve.getPointAt(t, look);
+        dummy.lookAt(look);
+        dummy.rotateX((Math.random() - 0.5) * 1.6);
+        dummy.rotateZ((Math.random() - 0.5) * 2.1);
+        dummy.scale.set(...kind.scale());
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.frustumCulled = false;
+      this.scene.add(mesh);
+      this.animatedMaterials.push(mat);
     }
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.frustumCulled = false;
-    this.scene.add(mesh);
-    this.animatedMaterials.push(mat);
   }
 
   /** Soft motes filling the journey AABB, not a cylinder around the camera path. */
