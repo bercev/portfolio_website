@@ -62,7 +62,7 @@ export function HoverPreview({
 
   useEffect(() => clearCloseTimer, [clearCloseTimer]);
 
-  const handleBlur = (event: FocusEvent<HTMLSpanElement>) => {
+  const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
     const nextTarget = event.relatedTarget;
     if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
       return;
@@ -79,11 +79,11 @@ export function HoverPreview({
   const isPaper = Boolean(pdfUrl);
 
   return (
-    <motion.span
+    <motion.div
       {...(isPaper
         ? { "data-hover-preview": true }
         : { "data-project-preview": true })}
-      className="relative block w-fit max-w-full"
+      className="relative w-fit max-w-full"
       onPointerEnter={() => {
         hasPointerRef.current = true;
         openPreview();
@@ -185,6 +185,6 @@ export function HoverPreview({
           </span>
         ) : null}
       </AnimatePresence>
-    </motion.span>
+    </motion.div>
   );
 }
