@@ -1,6 +1,7 @@
 import type { PortfolioContent } from "@/data/content";
 
 import { Station } from "@/components/ui/station";
+import { TechPills } from "@/components/ui/tech-pills";
 
 type ExperienceProps = {
   readonly content: PortfolioContent["experience"];
@@ -40,11 +41,7 @@ export function Experience({ content, heading }: ExperienceProps) {
               </p>
             </div>
             <div className="journey-xp-stack">
-              <ul className="journey-xp-tools" aria-label="Stack">
-                {experience.technologies.map((technology) => (
-                  <li key={technology}>{technology}</li>
-                ))}
-              </ul>
+              <TechPills technologies={experience.technologies} />
             </div>
           </article>
         ))}

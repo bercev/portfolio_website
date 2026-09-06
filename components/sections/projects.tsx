@@ -1,8 +1,8 @@
 import type { PortfolioContent, Project } from "@/data/content";
 
-import { VitaeArtifact } from "@/components/effects/vitae-artifact";
 import { ExternalLink } from "@/components/ui/external-link";
 import { Station } from "@/components/ui/station";
+import { TechPills } from "@/components/ui/tech-pills";
 
 type ProjectsProps = {
   readonly content: PortfolioContent["projects"];
@@ -11,11 +11,9 @@ type ProjectsProps = {
 
 function ProjectDetails({
   project,
-  deepDive = false,
   quiet = false,
 }: {
   readonly project: Project;
-  readonly deepDive?: boolean;
   readonly quiet?: boolean;
 }) {
   return (
@@ -49,14 +47,9 @@ function ProjectDetails({
       >
         {project.description}
       </p>
-      <p className="journey-tech-line mt-5">
-        {project.technologies.join(" · ")}
-      </p>
-      {deepDive ? (
-        <div className="mt-8">
-          <VitaeArtifact project={project} />
-        </div>
-      ) : null}
+      <div className="mt-5">
+        <TechPills technologies={project.technologies} />
+      </div>
     </>
   );
 }
@@ -77,7 +70,7 @@ export function Projects({ content, heading }: ProjectsProps) {
             data-project-featured
             className="journey-panel journey-project journey-project--ships liquid-glass"
           >
-            <ProjectDetails project={featured} deepDive />
+            <ProjectDetails project={featured} />
           </article>
         ) : null}
 

@@ -198,14 +198,14 @@ export const portfolio = {
       organization: "Stealth Startup",
       dates: "Apr 2026-Present",
       summary:
-        "Building a multi-agent system that creates software from multimodal, source-based evidence — structured handoffs, persistent execution state, inspectable artifacts, iterative discovery, and sandboxed build-and-repair until acceptance checks pass.",
+        "Building a multi-agent system that creates software from multimodal, source-based evidence: structured handoffs, persistent execution state, inspectable artifacts, and a sandboxed build-and-repair loop that only stops when acceptance checks pass. I own the contracts between agents so a failed step is visible, replayable, and not a silent stall.",
       technologies: ["Python", "Google ADK", "GCP", "Docker"],
     },
     {
       role: "DSA Tutor",
       dates: "Apr 2025-Present",
       summary:
-        "I support upper-division students through office hours and project guidance, explaining data structures, algorithmic tradeoffs, and debugging strategies while collaborating with faculty and teaching assistants on consistent evaluation.",
+        "I support upper-division students through office hours and project guidance, explaining data structures, algorithmic tradeoffs, and debugging strategies while collaborating with faculty and teaching assistants on consistent evaluation. Those sessions are a weekly pressure test for walking through recursion, graphs, and complexity out loud.",
       technologies: ["Data Structures", "Algorithms"],
     },
     {
@@ -213,7 +213,7 @@ export const portfolio = {
       organization: "Algoverse",
       dates: "Jun 2025-Jan 2026",
       summary:
-        "Built and analyzed @GrokSet (1M+ tweets of public Grok conversations), fine-tuned BERTopic on conversation-level embeddings, and ran concurrent collection/debug workflows that cut API and compute cost ~50%.",
+        "Built and analyzed @GrokSet (1M+ tweets of public Grok conversations), fine-tuned BERTopic on conversation-level embeddings, and ran concurrent collection/debug workflows that cut API and compute cost ~50%. The same pipeline later became the paper, so the research and the engineering sat in the same week.",
       technologies: ["LLMs", "Python", "Hydra", "Tmux", "Runpod", "SQLite"],
     },
     {
@@ -221,7 +221,7 @@ export const portfolio = {
       organization: "Trustd.ai",
       dates: "Oct 2024-Feb 2025",
       summary:
-        "Shipped admin + REST MongoDB workflows for large user-record sets with Zod validation, then hardened Amplify CI/CD and expanded Playwright/Jest coverage (~60%).",
+        "Shipped admin + REST MongoDB workflows for large user-record sets with Zod validation, then hardened Amplify CI/CD and expanded Playwright/Jest coverage (~60%). That was my first production codebase, and it is why I still reach for tests before I call a feature done.",
       technologies: ["React", "NextJS", "TypeScript", "MongoDB", "AWS", "Git", "SCRUM"],
     },
   ],
