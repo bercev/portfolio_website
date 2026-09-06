@@ -984,7 +984,7 @@ html[data-journey="active"] .journey-rail {
 }
 
 [data-journey-station] {
-  min-height: 100svh;
+  min-height: unset;
   display: grid;
   grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
   column-gap: var(--shell-gap);
@@ -992,7 +992,7 @@ html[data-journey="active"] .journey-rail {
   margin-inline: auto;
   width: 100%;
   max-width: var(--journey-content-max);
-  padding: clamp(90px, 15vh, 160px) var(--journey-content-inline);
+  padding: clamp(48px, 6vh, 80px) var(--journey-content-inline);
 }
 
 /* Anything unplaced still spans the full measure, so no block can drift. */
@@ -1025,30 +1025,30 @@ html[data-journey="active"] .journey-rail {
 }
 
 .journey-station--origin {
-  padding-block: clamp(120px, 20vh, 210px);
+  padding-block: clamp(72px, 10vh, 120px);
 }
 
 /* Mid-scroll rhythm A: dense proof stack. */
 .journey-station--proof {
-  padding-block: clamp(60px, 9vh, 110px);
+  padding-block: clamp(48px, 7vh, 80px);
 }
 
 /* Mid-scroll rhythm B: airy systems chronology. */
 .journey-station--systems {
-  padding-block: clamp(110px, 17.5vh, 190px);
+  padding-block: clamp(64px, 9vh, 110px);
 }
 
 .journey-station--ships {
-  padding-block: clamp(90px, 15vh, 170px);
+  padding-block: clamp(56px, 8vh, 100px);
 }
 
 .journey-station--vocab {
-  padding-block: clamp(70px, 11.25vh, 135px);
+  padding-block: clamp(48px, 7vh, 88px);
 }
 
 .journey-station--connect {
-  min-height: 72svh;
-  padding-block: clamp(90px, 17.5vh, 175px);
+  min-height: unset;
+  padding-block: clamp(56px, 8vh, 110px);
 }
 
 html[data-journey="active"] [data-effect-layer="background"] {
@@ -1064,7 +1064,7 @@ html[data-journey="active"] [data-effect-layer="background"] {
   grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
   column-gap: var(--shell-gap);
   align-items: baseline;
-  margin-bottom: clamp(2.25rem, 4.5vh, 3.5rem);
+  margin-bottom: clamp(1.4rem, 2.8vh, 2.2rem);
   padding-top: clamp(0.85rem, 1.4vh, 1.25rem);
   border-top: 1px solid var(--journey-rule);
 }
