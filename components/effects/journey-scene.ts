@@ -218,6 +218,8 @@ let stationBlending: THREE.Blending = THREE.AdditiveBlending;
  */
 let inkAlpha = 1;
 
+const FRENET_SEGMENTS = 64;
+
 /** Viewport aspect the wordmark world width was authored against. */
 const LANDSCAPE_FIT_ASPECT = 1.35;
 /** World units the glyph rises by at the narrowest portrait viewports. */
@@ -240,9 +242,14 @@ function stationMaterial(color: THREE.Color): THREE.ShaderMaterial {
     },
     vertexShader: `
       varying vec3 vPos;
+      varying vec3 vNormal;
+      varying vec3 vView;
       void main() {
         vPos = position;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vView = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
       }
     `,
     fragmentShader: `
@@ -252,10 +259,13 @@ function stationMaterial(color: THREE.Color): THREE.ShaderMaterial {
       uniform float uSeed;
       uniform float uOpacity;
       varying vec3 vPos;
+      varying vec3 vNormal;
+      varying vec3 vView;
       void main() {
         float pulse = 0.72 + 0.28 * sin(uTime * 1.3 + uSeed);
         vec3 col = mix(uColorA, uColorB, smoothstep(-2.2, 2.2, vPos.y));
-        gl_FragColor = vec4(col, uOpacity * pulse);
+        float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 1.55);
+        gl_FragColor = vec4(col, uOpacity * pulse * (0.42 + 0.58 * fresnel));
       }
     `,
   });
@@ -332,14 +342,15 @@ function addRuledLines(
 /** About — UCSC CS: an open book with a mortarboard resting on it. */
 function buildEducationMark(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const page = new THREE.BoxGeometry(1.7, 0.05, 2.3);
-  group.add(stationMesh(page, color, [-0.78, 0, 0], [0, 0, 0.38]));
-  group.add(stationMesh(page, color, [0.78, 0, 0], [0, 0, -0.38]));
-  group.add(stationMesh(new THREE.BoxGeometry(0.2, 0.14, 2.3), color));
-  addRuledLines(group, color, [-0.95, 0.22, 0.55], [0, 0, 0.38], 5, 1.15);
-  addRuledLines(group, color, [0.95, 0.22, 0.55], [0, 0, -0.38], 5, 1.15);
+  const page = new THREE.BoxGeometry(1.9, 0.04, 2.55);
+  group.add(stationMesh(page, color, [-0.92, 0, 0], [0, 0, 0.42]));
+  group.add(stationMesh(page, color, [0.92, 0, 0], [0, 0, -0.42]));
+  group.add(stationMesh(page, color, [-0.55, 0.08, -0.12], [0.08, 0.04, 0.28]));
+  group.add(stationMesh(new THREE.BoxGeometry(0.28, 0.18, 2.55), color));
+  addRuledLines(group, color, [-1.08, 0.26, 0.62], [0, 0, 0.42], 6, 1.28);
+  addRuledLines(group, color, [1.08, 0.26, 0.62], [0, 0, -0.42], 6, 1.28);
   group.add(
-    stationMesh(new THREE.BoxGeometry(1.15, 0.07, 1.15), color, [0.15, 1.22, 0], [
+    stationMesh(new THREE.BoxGeometry(1.35, 0.07, 1.35), color, [0.18, 1.38, 0], [
       0,
       Math.PI / 4,
       0,
@@ -347,25 +358,25 @@ function buildEducationMark(color: THREE.Color): THREE.Object3D {
   );
   group.add(
     stationMesh(
-      new THREE.CylinderGeometry(0.26, 0.4, 0.32, 6),
+      new THREE.CylinderGeometry(0.3, 0.46, 0.36, 6),
       color,
-      [0.15, 0.98, 0],
+      [0.18, 1.12, 0],
     ),
   );
+  group.add(stationMesh(new THREE.BoxGeometry(0.06, 0.9, 0.06), color, [0.18, 1.85, 0]));
   group.rotation.x = -0.28;
-  group.scale.setScalar(1.2);
   return group;
 }
 
-/** Publications — exactly two sheets: SkillOptimizer and GrokSet. */
+/** Publications — two papers plus a third sheet still in the stack. */
 function buildTwoPapers(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const sheet = new THREE.BoxGeometry(2.35, 0.05, 3.15);
-  group.add(stationMesh(sheet, color, [-0.28, -0.18, 0], [0.42, -0.12, -0.08]));
-  group.add(stationMesh(sheet, color, [0.32, 0.28, 0.12], [0.38, 0.16, 0.1]));
-  addRuledLines(group, color, [-0.28, 0.12, 0.7], [0.42, -0.12, -0.08], 6, 1.6);
-  addRuledLines(group, color, [0.32, 0.58, 0.82], [0.38, 0.16, 0.1], 6, 1.6);
-  group.scale.setScalar(1.15);
+  const sheet = new THREE.BoxGeometry(2.55, 0.045, 3.4);
+  group.add(stationMesh(sheet, color, [-0.42, -0.28, -0.08], [0.46, -0.14, -0.1]));
+  group.add(stationMesh(sheet, color, [0.38, 0.32, 0.16], [0.4, 0.18, 0.12]));
+  group.add(stationMesh(sheet, color, [0.05, 0.02, -0.22], [0.22, 0.04, 0.04]));
+  addRuledLines(group, color, [-0.42, 0.04, 0.78], [0.46, -0.14, -0.1], 7, 1.75);
+  addRuledLines(group, color, [0.38, 0.64, 0.92], [0.4, 0.18, 0.12], 7, 1.75);
   return group;
 }
 
@@ -403,67 +414,67 @@ function buildRoleBadges(color: THREE.Color): THREE.Object3D {
       [0, 0, 1.28],
     ),
   );
-  group.scale.setScalar(1.2);
   return group;
 }
 
 /** Projects — Vitae page stack beside a Discord chat bubble. */
 function buildShippedWork(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const page = new THREE.BoxGeometry(1.55, 0.05, 2.05);
-  for (let i = 0; i < 3; i++) {
+  const page = new THREE.BoxGeometry(1.7, 0.045, 2.25);
+  for (let i = 0; i < 5; i++) {
     group.add(
-      stationMesh(page, color, [-1.35, i * 0.2 - 0.15, 0], [0.12, i * 0.1, 0]),
+      stationMesh(page, color, [-1.45, i * 0.16 - 0.22, i * 0.04], [0.1, i * 0.08, 0]),
     );
   }
-  addRuledLines(group, color, [-1.35, 0.35, 0.55], [0.12, 0.2, 0], 4, 1.0);
+  addRuledLines(group, color, [-1.45, 0.42, 0.62], [0.12, 0.24, 0], 5, 1.15);
   const bubble = stationMesh(
-    new THREE.SphereGeometry(0.82, 10, 8),
+    new THREE.SphereGeometry(0.92, 12, 10),
     color,
-    [1.35, 0.25, 0],
+    [1.55, 0.3, 0],
   );
-  bubble.scale.set(1.2, 0.95, 0.55);
+  bubble.scale.set(1.28, 1.0, 0.52);
   group.add(bubble);
   group.add(
     stationMesh(
-      new THREE.ConeGeometry(0.28, 0.55, 6),
+      new THREE.ConeGeometry(0.32, 0.62, 6),
       color,
-      [0.82, -0.48, 0.18],
+      [0.92, -0.52, 0.2],
       [0, 0, 0.85],
     ),
   );
-  group.scale.setScalar(1.2);
   return group;
 }
 
 /** Skills — a rack of tool tiles, not an atom. */
 function buildSkillRack(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  const tile = new THREE.BoxGeometry(0.52, 0.52, 0.12);
-  for (let row = 0; row < 3; row++) {
-    for (let col = 0; col < 4; col++) {
+  const tile = new THREE.BoxGeometry(0.48, 0.48, 0.1);
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 5; col++) {
       group.add(
-        stationMesh(tile, color, [(col - 1.5) * 0.72, (1 - row) * 0.72, 0]),
+        stationMesh(tile, color, [(col - 2) * 0.62, (1.5 - row) * 0.62, 0]),
       );
     }
   }
+  group.add(stationMesh(new THREE.BoxGeometry(3.35, 0.06, 0.06), color, [0, 1.55, 0]));
+  group.add(stationMesh(new THREE.BoxGeometry(3.35, 0.06, 0.06), color, [0, -1.55, 0]));
   group.rotation.y = -0.22;
-  group.scale.setScalar(1.25);
   return group;
 }
 
 /** Contact — an envelope and three outbound nodes (GitHub, LinkedIn, Resume). */
 function buildEnvelope(color: THREE.Color): THREE.Object3D {
   const group = new THREE.Group();
-  group.add(stationMesh(new THREE.BoxGeometry(2.55, 1.55, 0.12), color));
+  group.add(stationMesh(new THREE.BoxGeometry(2.9, 1.75, 0.12), color));
   group.add(
     stationMesh(
-      new THREE.BoxGeometry(2.55, 1.05, 0.08),
+      new THREE.BoxGeometry(2.9, 1.2, 0.08),
       color,
-      [0, 0.92, 0.38],
+      [0, 1.05, 0.42],
       [-0.72, 0, 0],
     ),
   );
+  group.add(stationMesh(new THREE.BoxGeometry(0.55, 0.7, 0.08), color, [0.95, -0.15, 0.12]));
   group.add(
     stationMesh(new THREE.BoxGeometry(1.7, 0.05, 0.05), color, [-0.35, 0.15, 0.1], [
       0,
@@ -481,13 +492,12 @@ function buildEnvelope(color: THREE.Color): THREE.Object3D {
   for (let i = 0; i < 3; i++) {
     group.add(
       stationMesh(new THREE.SphereGeometry(0.16, 8, 8), color, [
-        (i - 1) * 0.85,
-        1.85,
-        0.35,
+        (i - 1) * 0.95,
+        2.05,
+        0.4,
       ]),
     );
   }
-  group.scale.setScalar(1.2);
   return group;
 }
 
@@ -518,6 +528,7 @@ export class JourneyScene {
     new THREE.Vector3(2, 0, -114),
     new THREE.Vector3(0, 0, -128),
   ]);
+  private readonly frenet = this.curve.computeFrenetFrames(FRENET_SEGMENTS, false);
   private readonly stations: THREE.Object3D[] = [];
   private readonly orbitDust: THREE.Points[] = [];
   private readonly textGroup = new THREE.Group();
@@ -540,6 +551,7 @@ export class JourneyScene {
   private pointerLookEnabled = false;
   private readonly particleBlending: THREE.Blending;
   private readonly inkAlpha: number = 1;
+  private readonly lightTheme: boolean;
   /** Every shader material driven by uTime (sculptures, aura, stars, dust, nebula, trail). */
   private readonly animatedMaterials: THREE.ShaderMaterial[] = [];
   private trail: { geometry: THREE.BufferGeometry; positions: Float32Array } | null = null;
@@ -553,8 +565,9 @@ export class JourneyScene {
     this.palette = palette;
     this.particleBlending = particleBlending;
     stationBlending = particleBlending;
-    inkAlpha = lightTheme ? 0.22 : 1;
+    inkAlpha = lightTheme ? 0.55 : 1;
     this.inkAlpha = inkAlpha;
+    this.lightTheme = lightTheme;
     this.onProgress = onProgress;
 
     this.renderer = new THREE.WebGLRenderer({
@@ -591,6 +604,10 @@ export class JourneyScene {
     this.scene.add(this.stars);
 
     this.buildStations(stationCounts);
+    if (quality === "full") {
+      this.buildPageCanyon();
+      this.buildNearMotes();
+    }
 
     this.comet = new THREE.Mesh(
       new THREE.SphereGeometry(0.14, 12, 12),
@@ -656,6 +673,57 @@ export class JourneyScene {
       nebula.frustumCulled = false;
       this.camera.add(nebula);
       this.animatedMaterials.push(nebulaMat);
+
+      const grainMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+        blending: THREE.NormalBlending,
+        uniforms: {
+          uTime: { value: 0 },
+          uIntensity: { value: lightTheme ? 0.05 : 0.12 },
+          uTintA: {
+            value: lightTheme
+              ? new THREE.Color(fog).lerp(new THREE.Color(0x1a2430), 0.22)
+              : new THREE.Color(palette.accent).lerp(new THREE.Color(fog), 0.82),
+          },
+          uTintB: {
+            value: lightTheme
+              ? new THREE.Color(0x2a3544).lerp(new THREE.Color(fog), 0.55)
+              : new THREE.Color(palette.cyan).lerp(new THREE.Color(fog), 0.7),
+          },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader:
+          GLSL_NOISE_2D +
+          `
+          uniform float uTime;
+          uniform float uIntensity;
+          uniform vec3 uTintA;
+          uniform vec3 uTintB;
+          varying vec2 vUv;
+          void main() {
+            vec2 p = vUv * vec2(9.0, 5.5);
+            p += vec2(-uTime * 0.008, uTime * 0.004);
+            float n = fbm(p * 1.4 + 0.35 * fbm(p * 3.1));
+            float d = smoothstep(0.05, 0.92, n);
+            vec3 col = mix(uTintA, uTintB, clamp(n, 0.0, 1.0));
+            gl_FragColor = vec4(col, d * uIntensity);
+          }
+        `,
+      });
+      const grain = new THREE.Mesh(new THREE.PlaneGeometry(560, 260), grainMat);
+      grain.position.set(0, 0, -168);
+      grain.renderOrder = -2;
+      grain.frustumCulled = false;
+      this.camera.add(grain);
+      this.animatedMaterials.push(grainMat);
 
       // Fading particle trail behind the comet (ring buffer, newest at index 0).
       const TRAIL_N = 28;
@@ -740,19 +808,41 @@ export class JourneyScene {
   }
   private buildStarfield(count: number): THREE.Points {
     const { cyan, emerald, coral, accent } = this.palette;
-    const stops = [
-      new THREE.Color(cyan),
-      new THREE.Color(emerald),
-      new THREE.Color(coral),
-      new THREE.Color(accent),
-    ];
+    const fogCol = new THREE.Color(
+      this.lightTheme ? 0x6a7686 : 0x0a1018,
+    );
+    const stops = this.lightTheme
+      ? [
+          new THREE.Color(accent).lerp(fogCol, 0.55),
+          new THREE.Color(cyan).lerp(fogCol, 0.5),
+          new THREE.Color(emerald).lerp(fogCol, 0.58),
+          new THREE.Color(accent).lerp(new THREE.Color(0x1a2430), 0.35),
+        ]
+      : [
+          new THREE.Color(cyan),
+          new THREE.Color(emerald),
+          new THREE.Color(coral),
+          new THREE.Color(accent),
+        ];
     const starPos = new Float32Array(count * 3);
     const starCol = new Float32Array(count * 3);
     const starSeed = new Float32Array(count);
+    const shellCount = Math.floor(count * 0.35);
+    const dir = new THREE.Vector3();
     for (let i = 0; i < count; i++) {
-      starPos[i * 3] = (Math.random() - 0.5) * 230;
-      starPos[i * 3 + 1] = (Math.random() - 0.5) * 140;
-      starPos[i * 3 + 2] = 50 - Math.random() * 260;
+      if (i < shellCount) {
+        dir.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+        if (dir.lengthSq() < 1e-4) dir.set(0, 1, 0);
+        dir.normalize();
+        const radius = 80 + Math.random() * 60;
+        starPos[i * 3] = dir.x * radius;
+        starPos[i * 3 + 1] = dir.y * radius * 0.62;
+        starPos[i * 3 + 2] = dir.z * radius - 40;
+      } else {
+        starPos[i * 3] = (Math.random() - 0.5) * 90;
+        starPos[i * 3 + 1] = (Math.random() - 0.5) * 42;
+        starPos[i * 3 + 2] = 20 - Math.random() * 140;
+      }
       const c = stops[(Math.random() * stops.length) | 0];
       const dim = 0.35 + Math.random() * 0.65;
       starCol[i * 3] = c.r * dim;
@@ -816,14 +906,11 @@ export class JourneyScene {
     ];
 
     const stationT = [0.18, 0.34, 0.5, 0.66, 0.82, 0.95];
+    const stationScale = [2.6, 2.5, 2.2, 2.45, 2.3, 2.6];
     for (let i = 0; i < STATION_BUILDERS.length; i++) {
       const object = STATION_BUILDERS[i](tintColors[i]);
-      const p = this.curve.getPointAt(stationT[i]);
-      object.position.set(
-        p.x + (i % 2 ? 3.5 : -3.5),
-        p.y + (i % 3 - 1) * 1.6,
-        p.z - 3,
-      );
+      this.parkOnPath(object, stationT[i], i % 2 ? 1 : -1, (i % 3 - 1) * 1.2, 3.2);
+      object.scale.setScalar(stationScale[i]);
       this.stations.push(object);
       this.scene.add(object);
 
@@ -851,6 +938,175 @@ export class JourneyScene {
     }
   }
 
+  /** Park a sculpture on the camera-path Frenet frame so scale-up never clips the tube. */
+  private parkOnPath(
+    object: THREE.Object3D,
+    t: number,
+    side: number,
+    lift: number,
+    back: number,
+  ) {
+    const p = this.curve.getPointAt(t);
+    const idx = Math.round(t * FRENET_SEGMENTS);
+    const { binormals, normals, tangents } = this.frenet;
+    object.position
+      .copy(p)
+      .addScaledVector(binormals[idx], side * 7.5)
+      .addScaledVector(normals[idx], lift)
+      .addScaledVector(tangents[idx], back);
+    object.lookAt(p);
+  }
+
+  /** Library stacks flanking the path — one InstancedMesh, not extra platonic junk. */
+  private buildPageCanyon() {
+    const count = 280;
+    const geo = new THREE.BoxGeometry(1.8, 0.03, 2.4);
+    const mat = new THREE.ShaderMaterial({
+      wireframe: true,
+      transparent: true,
+      depthWrite: false,
+      blending: this.particleBlending,
+      defines: { USE_INSTANCING: "" },
+      uniforms: {
+        uTime: { value: 0 },
+        uOpacity: { value: (this.lightTheme ? 0.32 : 0.34) * this.inkAlpha },
+        uColor: {
+          value: new THREE.Color(this.palette.accent).lerp(
+            new THREE.Color(this.palette.cyan),
+            0.35,
+          ),
+        },
+      },
+      vertexShader: `
+        varying float vZ;
+        void main() {
+          vec3 transformed = position;
+          #ifdef USE_INSTANCING
+            transformed = (instanceMatrix * vec4(transformed, 1.0)).xyz;
+          #endif
+          vZ = transformed.z;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uOpacity;
+        uniform float uTime;
+        varying float vZ;
+        void main() {
+          float pulse = 0.82 + 0.18 * sin(uTime * 0.35 + vZ * 0.07);
+          gl_FragColor = vec4(uColor, uOpacity * pulse);
+        }
+      `,
+    });
+    const mesh = new THREE.InstancedMesh(geo, mat, count);
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < count; i++) {
+      const t = i / count;
+      const idx = Math.round(t * FRENET_SEGMENTS);
+      const p = this.curve.getPointAt(t);
+      const radius = 14 + (i % 7) * 1.7;
+      const side = i % 2 ? 1 : -1;
+      dummy.position
+        .copy(p)
+        .addScaledVector(this.frenet.binormals[idx], side * radius)
+        .addScaledVector(this.frenet.normals[idx], ((i % 5) - 2) * 1.35);
+      dummy.lookAt(p);
+      dummy.rotateX((i % 5) * 0.09);
+      dummy.scale.set(0.65 + (i % 4) * 0.16, 1, 0.7 + (i % 3) * 0.14);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.frustumCulled = false;
+    this.scene.add(mesh);
+    this.animatedMaterials.push(mat);
+  }
+
+  /** Soft motes you fly through — fills the empty air the star shell misses. */
+  private buildNearMotes() {
+    const count = 900;
+    const centers = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const angles = new Float32Array(count);
+    const radii = new Float32Array(count);
+    const heights = new Float32Array(count);
+    const seeds = new Float32Array(count);
+    const ink = this.lightTheme
+      ? new THREE.Color(this.palette.accent).lerp(new THREE.Color(0x1a2430), 0.45)
+      : new THREE.Color(this.palette.cyan);
+    for (let i = 0; i < count; i++) {
+      const t = i / count;
+      const idx = Math.round(t * FRENET_SEGMENTS);
+      const p = this.curve.getPointAt(t);
+      const side = Math.sin(i * 12.9898) > 0 ? 1 : -1;
+      p.addScaledVector(this.frenet.binormals[idx], side * (6 + (i % 11) * 0.9));
+      p.addScaledVector(this.frenet.normals[idx], ((i % 7) - 3) * 0.55);
+      centers[i * 3] = p.x;
+      centers[i * 3 + 1] = p.y;
+      centers[i * 3 + 2] = p.z;
+      const dim = 0.45 + Math.random() * 0.55;
+      colors[i * 3] = ink.r * dim;
+      colors[i * 3 + 1] = ink.g * dim;
+      colors[i * 3 + 2] = ink.b * dim;
+      angles[i] = Math.random() * Math.PI * 2;
+      radii[i] = 0.4 + Math.random() * 1.8;
+      heights[i] = (Math.random() - 0.5) * 1.4;
+      seeds[i] = Math.random();
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+    geo.setAttribute("aCenter", new THREE.BufferAttribute(centers, 3));
+    geo.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute("aAngle", new THREE.BufferAttribute(angles, 1));
+    geo.setAttribute("aRadius", new THREE.BufferAttribute(radii, 1));
+    geo.setAttribute("aHeight", new THREE.BufferAttribute(heights, 1));
+    geo.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: this.particleBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uPixelScale: { value: window.innerHeight * 0.5 },
+        uInk: { value: this.inkAlpha * (this.lightTheme ? 0.7 : 1) },
+      },
+      vertexShader: `
+        attribute vec3 aCenter;
+        attribute vec3 aColor;
+        attribute float aAngle;
+        attribute float aRadius;
+        attribute float aHeight;
+        attribute float aSeed;
+        uniform float uTime;
+        uniform float uPixelScale;
+        varying vec3 vColor;
+        void main() {
+          vColor = aColor;
+          float ang = aAngle + uTime * 0.12 * (0.5 + fract(aSeed * 4.2));
+          vec3 p = aCenter + vec3(cos(ang) * aRadius, aHeight, sin(ang) * aRadius * 0.55);
+          vec4 mv = modelViewMatrix * vec4(p, 1.0);
+          gl_PointSize = uPixelScale * 0.16 / max(1.0, -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        uniform float uInk;
+        varying vec3 vColor;
+        void main() {
+          float d = length(gl_PointCoord - 0.5);
+          float alpha = smoothstep(0.5, 0.12, d) * 0.85 * uInk;
+          if (alpha < 0.01) discard;
+          gl_FragColor = vec4(vColor, alpha);
+        }
+      `,
+    });
+    this.animatedMaterials.push(mat);
+    const points = new THREE.Points(geo, mat);
+    points.frustumCulled = false;
+    this.scene.add(points);
+  }
+
   /** Per-particle orbital motion computed in the vertex shader — round soft sprites. */
   private buildOrbitDust(
     center: THREE.Vector3,
@@ -865,7 +1121,7 @@ export class JourneyScene {
     const seeds = new Float32Array(count);
     for (let i = 0; i < count; i++) {
       angles[i] = (i / count) * Math.PI * 2 + Math.random() * 0.4;
-      radii[i] = 3.2 + Math.random() * 1.4;
+      radii[i] = 5.4 + Math.random() * 2.2;
       heights[i] = (Math.random() - 0.5) * 2.2;
       const dim = 0.5 + Math.random() * 0.5;
       colors[i * 3] = tint.r * dim;
@@ -1000,9 +1256,13 @@ export class JourneyScene {
       this.stars.rotation.y = t * 0.008;
       this.stations.forEach((mesh, i) => {
         if (mesh.userData.baseY === undefined) mesh.userData.baseY = mesh.position.y;
+        if (mesh.userData.baseQuat === undefined) {
+          mesh.userData.baseQuat = mesh.quaternion.clone();
+        }
         mesh.position.y =
           mesh.userData.baseY + Math.sin(t * 0.6 + i * 1.7) * 0.12;
-        mesh.rotation.y = Math.sin(t * 0.22 + i * 0.9) * 0.4;
+        mesh.quaternion.copy(mesh.userData.baseQuat);
+        mesh.rotateY(Math.sin(t * 0.22 + i * 0.9) * 0.12);
         const presence =
           0.18 + 0.82 * THREE.MathUtils.smoothstep(this.smoothT, 0.05, 0.22);
         mesh.traverse((child) => {
