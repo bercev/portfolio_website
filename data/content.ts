@@ -178,7 +178,7 @@ export const portfolio = {
     {
       title: "@GrokSet: Multi-party Human-LLM Interactions in Social Media.",
       gloss:
-        "A dataset and analysis of 1M+ public Grok conversations — what changes when people talk to an LLM in front of an audience instead of alone.",
+        "A dataset and analysis of 1M+ public Grok conversations: what changes when people talk to an LLM in front of an audience instead of alone.",
       venue: "arXiv:2602.21236",
       date: "February 2026",
       href: "https://arxiv.org/abs/2602.21236",
@@ -230,7 +230,7 @@ export const portfolio = {
       title: "Vitae",
       dates: "Jan 2026-Jun 2026",
       description:
-        "Resume building and version-control platform shipped with a 5-person Agile team — Postgres (Docker/Neon), Clerk auth, GitHub Actions + Netlify CI/CD; ~30% faster API responses, ~70% fewer merge conflicts, 99.9% uptime.",
+        "Resume building and version-control platform shipped with a 5-person Agile team. Postgres (Docker/Neon), Clerk auth, GitHub Actions + Netlify CI/CD; ~30% faster API responses, ~70% fewer merge conflicts, 99.9% uptime.",
       technologies: [
         "NextJS",
         "TypeScript",
