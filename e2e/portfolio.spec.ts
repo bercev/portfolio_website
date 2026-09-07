@@ -171,37 +171,30 @@ test("keeps publication and project surfaces as frost, not boxed cards", async (
   expect(projectSurface.backdropFilter).toContain("blur(");
 });
 
-test("previews a distinct placeholder screenshot for each project", async ({
+test("previews the Vitae screenshot and leaves Discord without a hover image", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  const previews = [
-    {
-      title: "Vitae",
-      src: "/assets/projects/vitae.svg",
-    },
-    {
-      title: "AI Discord Chatbot",
-      src: "/assets/projects/discord-chatbot.svg",
-    },
-  ] as const;
+  const vitaeSrc = "/assets/projects/vitae.png";
 
-  await expect(page.locator("[data-project-preview]")).toHaveCount(2);
+  await expect(page.locator("[data-project-preview]")).toHaveCount(1);
   await expect(page.locator("[data-hover-preview]")).toHaveCount(2);
+  expect((await page.request.get(vitaeSrc)).ok()).toBe(true);
 
-  for (const preview of previews) {
-    expect((await page.request.get(preview.src)).ok()).toBe(true);
-    const target = page.locator("[data-project-preview]").filter({
-      hasText: preview.title,
-    });
-    await target.getByRole("link", { name: preview.title }).hover();
-    const image = target.locator("[data-hover-preview-image] img");
-    await expect(image).toBeVisible();
-    await expect(image).toHaveAttribute("src", preview.src);
-    await page.mouse.move(0, 0);
-  }
+  const vitae = page.locator("[data-project-preview]").filter({
+    hasText: "Vitae",
+  });
+  await vitae.getByRole("link", { name: "Vitae" }).hover();
+  const image = vitae.locator("[data-hover-preview-image] img");
+  await expect(image).toBeVisible();
+  await expect(image).toHaveAttribute("src", vitaeSrc);
+
+  const discord = page.locator("[data-project-supporting]");
+  await discord.getByRole("link", { name: "AI Discord Chatbot" }).hover();
+  await expect(discord.locator("[data-hover-preview-image]")).toHaveCount(0);
+  await expect(discord.locator("img")).toHaveCount(0);
 });
 
 test("marquee-scrolls experience tech and keeps it static for reduced motion", async ({

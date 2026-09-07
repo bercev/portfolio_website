@@ -1,5 +1,6 @@
 import type { PortfolioContent, Project } from "@/data/content";
 
+import { ExternalLink } from "@/components/ui/external-link";
 import { HoverPreview } from "@/components/ui/hover-preview";
 import { Station } from "@/components/ui/station";
 import { TechPills } from "@/components/ui/tech-pills";
@@ -11,24 +12,15 @@ type ProjectsProps = {
 
 const projectPreviews = {
   Vitae: {
-    src: "/assets/projects/vitae.svg",
-    alt: "Placeholder studio shot of Vitae: stacked resume revisions beside a typeset page.",
+    src: "/assets/projects/vitae.png",
+    alt: "Vitae landing page: resume version control with Get Started and Why Vitae.",
   },
-  "AI Discord Chatbot": {
-    src: "/assets/projects/discord-chatbot.svg",
-    alt: "Placeholder studio shot of the Discord bot: a night channel with a bot reply in the thread.",
-  },
-} as const satisfies Record<
-  Project["title"],
-  { readonly src: string; readonly alt: string }
+} as const satisfies Partial<
+  Record<Project["title"], { readonly src: string; readonly alt: string }>
 >;
 
 function previewFor(title: Project["title"]) {
-  if (title === "Vitae" || title === "AI Discord Chatbot") {
-    return projectPreviews[title];
-  }
-
-  return undefined;
+  return projectPreviews[title];
 }
 
 function ProjectDetails({ project }: { readonly project: Project }) {
@@ -47,6 +39,16 @@ function ProjectDetails({ project }: { readonly project: Project }) {
           linkIconSize={22}
           previewClassName="journey-project-preview"
         />
+      ) : project.href ? (
+        <h3 className="journey-project-title">
+          <ExternalLink
+            href={project.href}
+            className="decoration-portfolio-accent"
+            iconSize={22}
+          >
+            {project.title}
+          </ExternalLink>
+        </h3>
       ) : (
         <h3 className="journey-project-title">{project.title}</h3>
       )}

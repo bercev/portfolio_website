@@ -79,7 +79,7 @@ describe("portfolio content", () => {
       "ai systems engineer",
     );
     expect(portfolio.hero.tagline.toLowerCase()).toContain("software engineer");
-    expect(portfolio.hero.tagline.toLowerCase()).toContain("multi-agent");
+    expect(portfolio.hero.tagline.toLowerCase()).toContain("full-stack");
     expect(portfolio.hero.bio.toLowerCase()).toContain("software first");
   });
 });
