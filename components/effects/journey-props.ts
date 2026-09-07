@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import type { JourneyPropManifest } from "@/data/journey-props";
+import { brandColorForTech, iconForTech } from "@/lib/tech-icons";
 
 export type JourneyPropTheme = {
   readonly lightTheme: boolean;
@@ -20,6 +21,8 @@ export type ContentPropHandle = {
 };
 
 const MAX_PREVIEW_EDGE = 512;
+/** Simple Icons glyphs are authored in a 24×24 viewBox. */
+const ICON_VIEW = 24;
 
 /** Presence fade: invisible far from the chapter, readable near it. */
 export function propPresence(smoothT: number, pathT: number, width = 0.11) {
@@ -62,17 +65,39 @@ export async function loadDownscaledTexture(
   }
 }
 
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+function cssFromColor(color: THREE.Color) {
+  return `#${color.getHexString()}`;
+}
+
 function paintLabelCanvas(
   label: string,
   color: string,
-  options: { readonly size?: "tech" | "role" | "badge"; readonly lightTheme: boolean },
+  options: { readonly size?: "role" | "badge"; readonly lightTheme: boolean },
 ) {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  const size = options.size ?? "tech";
-  const fontPx = size === "badge" ? 72 : size === "role" ? 48 : 56;
+  const size = options.size ?? "role";
+  const fontPx = size === "badge" ? 72 : 48;
   const padX = size === "badge" ? 48 : 28;
   const padY = size === "badge" ? 36 : 18;
   ctx.font = `700 ${fontPx}px ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif`;
@@ -100,19 +125,76 @@ function paintLabelCanvas(
   ctx.shadowBlur = options.lightTheme ? 0 : 18;
   ctx.fillText(label, canvas.width / 2, canvas.height / 2 + 1);
 
-  if (size === "tech") {
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = color;
-    ctx.globalAlpha = options.lightTheme ? 0.45 : 0.7;
-    ctx.lineWidth = 3;
-    const underlineY = canvas.height * 0.78;
-    const half = Math.min(metrics.width * 0.42, canvas.width * 0.28);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return { texture, aspect: canvas.width / canvas.height };
+}
+
+/**
+ * Icon-first tech badge: Simple Icons glyph (brand color) + small caption.
+ * Falls back to a monogram plate when no glyph is registered.
+ */
+export function paintTechBadgeCanvas(
+  label: string,
+  accent: string,
+  lightTheme: boolean,
+): { texture: THREE.CanvasTexture; aspect: number } | null {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const icon = iconForTech(label);
+  const brand = brandColorForTech(label) ?? accent;
+  const plate = 220;
+  const captionH = 52;
+  const pad = 28;
+  canvas.width = plate + pad * 2;
+  canvas.height = plate + captionH + pad * 2;
+
+  // Soft plate so logos stay readable on nebula / frost.
+  ctx.fillStyle = lightTheme ? "rgba(255, 255, 255, 0.72)" : "rgba(6, 12, 18, 0.62)";
+  roundRect(ctx, pad * 0.45, pad * 0.45, canvas.width - pad * 0.9, canvas.height - pad * 0.9, 28);
+  ctx.fill();
+  ctx.strokeStyle = lightTheme ? "rgba(20, 32, 40, 0.14)" : `${brand}99`;
+  ctx.lineWidth = 3;
+  roundRect(ctx, pad * 0.45, pad * 0.45, canvas.width - pad * 0.9, canvas.height - pad * 0.9, 28);
+  ctx.stroke();
+
+  const iconBox = plate * 0.62;
+  const iconLeft = (canvas.width - iconBox) / 2;
+  const iconTop = pad + (plate - iconBox) * 0.42;
+
+  if (icon) {
+    ctx.save();
+    if (!lightTheme) {
+      ctx.shadowColor = brand;
+      ctx.shadowBlur = 22;
+    }
+    ctx.translate(iconLeft, iconTop);
+    ctx.scale(iconBox / ICON_VIEW, iconBox / ICON_VIEW);
+    ctx.fillStyle = brand;
+    ctx.fill(new Path2D(icon.path));
+    ctx.restore();
+  } else {
+    // Monogram fallback for unmapped stack names.
+    ctx.fillStyle = brand;
     ctx.beginPath();
-    ctx.moveTo(canvas.width / 2 - half, underlineY);
-    ctx.lineTo(canvas.width / 2 + half, underlineY);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    ctx.arc(canvas.width / 2, pad + plate * 0.42, iconBox * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = lightTheme ? "#0b141c" : "#f4f8fc";
+    ctx.font = `800 ${Math.round(iconBox * 0.38)}px ui-sans-serif, system-ui, Arial, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label.slice(0, 2).toUpperCase(), canvas.width / 2, pad + plate * 0.42 + 2);
   }
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = lightTheme ? "rgba(18, 28, 36, 0.88)" : "rgba(236, 244, 252, 0.92)";
+  ctx.font = `700 28px ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, canvas.width / 2, pad + plate + captionH * 0.42);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -120,33 +202,11 @@ function paintLabelCanvas(
   return { texture, aspect: canvas.width / canvas.height };
 }
 
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-) {
-  const radius = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + w, y, x + w, y + h, radius);
-  ctx.arcTo(x + w, y + h, x, y + h, radius);
-  ctx.arcTo(x, y + h, x, y, radius);
-  ctx.arcTo(x, y, x + w, y, radius);
-  ctx.closePath();
-}
-
-function cssFromColor(color: THREE.Color) {
-  return `#${color.getHexString()}`;
-}
-
 function labelPlane(
   label: string,
   color: THREE.Color,
   theme: JourneyPropTheme,
-  size: "tech" | "role" | "badge",
+  size: "role" | "badge",
   worldH: number,
 ): { mesh: THREE.Mesh; texture: THREE.CanvasTexture; material: THREE.MeshBasicMaterial } | null {
   const painted = paintLabelCanvas(label, cssFromColor(color), {
@@ -164,6 +224,32 @@ function labelPlane(
     depthTest: true,
     blending: THREE.NormalBlending,
     opacity: theme.lightTheme ? 0.92 : 0.96,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material);
+  mesh.renderOrder = 6;
+  return { mesh, texture: painted.texture, material };
+}
+
+function techIconPlane(
+  label: string,
+  accent: THREE.Color,
+  theme: JourneyPropTheme,
+  worldH: number,
+): { mesh: THREE.Mesh; texture: THREE.CanvasTexture; material: THREE.MeshBasicMaterial } | null {
+  const painted = paintTechBadgeCanvas(label, cssFromColor(accent), theme.lightTheme);
+  if (!painted) return null;
+
+  const height = worldH;
+  const width = height * painted.aspect;
+  const material = new THREE.MeshBasicMaterial({
+    map: painted.texture,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
+    blending: THREE.NormalBlending,
+    opacity: theme.lightTheme ? 0.94 : 0.97,
     side: THREE.DoubleSide,
     toneMapped: false,
   });
@@ -266,6 +352,27 @@ export async function buildJourneyContentProps({
       continue;
     }
 
+    // Prefer Discord glyph for the chatbot badge when available.
+    if (preview.id === "discord-bot") {
+      const iconBadge = techIconPlane("Discord", accent, theme, 1.55);
+      if (iconBadge) {
+        const group = new THREE.Group();
+        group.add(iconBadge.mesh);
+        group.userData.propSlot = slot;
+        group.userData.propSide = slot % 2 === 0 ? 1 : -1;
+        handles.push({
+          object: group,
+          stationIndex: preview.stationIndex,
+          pathT,
+          baseOpacity: iconBadge.material.opacity,
+          materials: [iconBadge.material],
+          textures: [iconBadge.texture],
+          kind: "preview",
+        });
+        continue;
+      }
+    }
+
     // Badge / fallback when images are skipped (mobile) or missing src.
     const badge = labelPlane(preview.label, accent, theme, "badge", 1.55);
     if (!badge) continue;
@@ -284,23 +391,23 @@ export async function buildJourneyContentProps({
     });
   }
 
-  // —— Floating tech type around Skills ——
+  // —— Floating tech icons around Skills ——
   const skillsT = stationPathT[4] ?? 0.77;
   manifest.tech.forEach((tech, i) => {
     const tint = theme.palette[tech.tint % theme.palette.length] ?? theme.palette[0];
-    const label = labelPlane(tech.label, tint, theme, "tech", 1.05);
-    if (!label) return;
+    const badge = techIconPlane(tech.label, tint, theme, 1.35);
+    if (!badge) return;
     const group = new THREE.Group();
-    group.add(label.mesh);
+    group.add(badge.mesh);
     group.userData.orbitIndex = i;
     group.userData.orbitCount = manifest.tech.length;
     handles.push({
       object: group,
       stationIndex: 4,
       pathT: skillsT,
-      baseOpacity: label.material.opacity,
-      materials: [label.material],
-      textures: [label.texture],
+      baseOpacity: badge.material.opacity,
+      materials: [badge.material],
+      textures: [badge.texture],
       kind: "tech",
     });
   });

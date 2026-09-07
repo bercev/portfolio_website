@@ -32,6 +32,7 @@ const BY_NAME: Record<string, SimpleIcon> = {
   Docker: siDocker,
   React: siReact,
   NextJS: siNextdotjs,
+  "Next.js": siNextdotjs,
   TypeScript: siTypescript,
   MongoDB: siMongodb,
   Git: siGit,
@@ -41,6 +42,7 @@ const BY_NAME: Record<string, SimpleIcon> = {
   Neon: siNeon,
   Clerk: siClerk,
   "discord.py": siDiscord,
+  Discord: siDiscord,
   Ollama: siOllama,
   LangChain: siLangchain,
   SQL: siSqlite,
@@ -48,10 +50,17 @@ const BY_NAME: Record<string, SimpleIcon> = {
   Zod: siZod,
   Tmux: siTmux,
   LLMs: siHuggingface,
+  RAG: siLangchain,
   "CI/CD": siGithubactions,
   SCRUM: siScrumalliance,
 };
 
 export function iconForTech(name: string): SimpleIcon | null {
   return BY_NAME[name] ?? null;
+}
+
+/** Brand fill from Simple Icons, or null when the name has no glyph. */
+export function brandColorForTech(name: string): string | null {
+  const icon = iconForTech(name);
+  return icon ? `#${icon.hex}` : null;
 }

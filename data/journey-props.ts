@@ -1,4 +1,5 @@
 import { portfolio } from "@/data/content";
+import { iconForTech } from "@/lib/tech-icons";
 
 /** Preview card parked beside a Journey chapter sculpture. */
 export type JourneyPreviewProp = {
@@ -25,21 +26,24 @@ export type JourneyPropManifest = {
   readonly roles: readonly string[];
 };
 
-/** Curated stack labels — short enough to read as floating 3D type. */
+/**
+ * Curated stack for floating Journey badges — prefer names with Simple Icons
+ * glyphs so the background reads as logos, not generic type.
+ */
 const FEATURED_TECH: readonly JourneyTechProp[] = [
   { label: "Python", tint: 0 },
   { label: "TypeScript", tint: 1 },
-  { label: "Next.js", tint: 2 },
+  { label: "NextJS", tint: 2 },
   { label: "React", tint: 1 },
   { label: "LLMs", tint: 3 },
-  { label: "RAG", tint: 4 },
   { label: "LangChain", tint: 0 },
   { label: "Docker", tint: 2 },
   { label: "GCP", tint: 3 },
-  { label: "AWS", tint: 4 },
-  { label: "Playwright", tint: 1 },
   { label: "PostgreSQL", tint: 2 },
-] as const;
+  { label: "Ollama", tint: 4 },
+  { label: "Jest", tint: 1 },
+  { label: "CI/CD", tint: 4 },
+].filter((tech) => iconForTech(tech.label) !== null);
 
 function shortRole(role: string) {
   return role
@@ -50,7 +54,7 @@ function shortRole(role: string) {
 
 /**
  * Content-aware props for the Journey WebGL spine — paper/project previews
- * and floating tech type, sourced from portfolio data.
+ * and floating tech icons, sourced from portfolio data.
  */
 export function buildJourneyPropManifest(): JourneyPropManifest {
   const [skillOptimizer, grokSet] = portfolio.publications;

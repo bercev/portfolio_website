@@ -1098,7 +1098,6 @@ export class JourneyScene {
   private placeContentProp(handle: ContentPropHandle) {
     const station = this.stations[handle.stationIndex];
     const { object, kind } = handle;
-    const idx = Math.round(handle.pathT * FRENET_SEGMENTS);
     const { binormals, normals, tangents } = this.frenet;
     const stationSide = handle.stationIndex % 2 ? 1 : -1;
 

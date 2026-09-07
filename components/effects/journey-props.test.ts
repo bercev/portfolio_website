@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { buildJourneyPropManifest } from "@/data/journey-props";
+import { iconForTech } from "@/lib/tech-icons";
+
 import { propPresence } from "./journey-props";
 
 describe("propPresence", () => {
@@ -16,5 +19,15 @@ describe("propPresence", () => {
     const mid = propPresence(0.33 + 0.055, 0.33, 0.11);
     expect(mid).toBeGreaterThan(0);
     expect(mid).toBeLessThan(1);
+  });
+});
+
+describe("journey tech badges", () => {
+  it("curates only stack names that have Simple Icons glyphs", () => {
+    const manifest = buildJourneyPropManifest();
+    expect(manifest.tech.length).toBeGreaterThan(6);
+    for (const tech of manifest.tech) {
+      expect(iconForTech(tech.label)).not.toBeNull();
+    }
   });
 });
