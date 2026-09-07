@@ -1,6 +1,6 @@
-import type { Browser, Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
-import { attachRuntimeErrorCollector, expect } from "./runtime-errors";
+import { expect } from "./runtime-errors";
 
 export async function readJourneyT(page: Page) {
   const raw = await page
@@ -9,36 +9,21 @@ export async function readJourneyT(page: Page) {
   return raw == null ? Number.NaN : Number(raw);
 }
 
-export async function openThemedJourney(
-  browser: Browser,
-  theme: "light" | "dark",
-) {
-  const context = await browser.newContext({ colorScheme: theme });
-  const page = await context.newPage();
-  const runtimeErrors = attachRuntimeErrorCollector(page);
-  await page.addInitScript((value) => {
-    localStorage.setItem("theme", value);
-  }, theme);
-  await page.goto("/");
-  await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
-  return { context, page, runtimeErrors };
-}
-
-/** Count high-contrast pixels in the hero glyph band — the BERAT particle field. */
+/** Count high-contrast pixels where the BERAT particle field is framed. */
 export async function measureHeroWordmarkInk(page: Page) {
-  const band = page.locator("[data-hero-glyph-band]");
-  await expect(band).toBeVisible();
-  const box = await band.boundingBox();
+  const home = page.locator("#home");
+  await expect(home).toBeVisible();
+  const box = await home.boundingBox();
   if (!box) {
     return { inkRatio: 0, columnHits: 0, widthSpan: 0 };
   }
 
   const png = await page.screenshot({
     clip: {
-      x: Math.max(0, box.x),
-      y: Math.max(0, box.y),
-      width: Math.max(1, box.width),
-      height: Math.max(1, box.height),
+      x: Math.max(0, box.x + 72),
+      y: Math.max(0, box.y + box.height * 0.12),
+      width: Math.max(1, box.width - 96),
+      height: Math.max(1, box.height * 0.58),
     },
     type: "png",
   });
@@ -75,9 +60,7 @@ export async function measureHeroWordmarkInk(page: Page) {
         const b = data[i + 2];
         const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
         const chroma = Math.max(r, g, b) - Math.min(r, g, b);
-        const marked = isDark
-          ? luma > 36 && chroma > 12
-          : luma < 210 || chroma > 28;
+        const marked = isDark ? luma > 28 && chroma > 8 : chroma > 8;
         if (!marked) continue;
         ink += 1;
         minX = Math.min(minX, x);

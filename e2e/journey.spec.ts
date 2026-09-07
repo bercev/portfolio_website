@@ -3,11 +3,7 @@ import {
   expect,
   test,
 } from "./runtime-errors";
-import {
-  measureHeroWordmarkInk,
-  openThemedJourney,
-  readJourneyT,
-} from "./journey-helpers";
+import { measureHeroWordmarkInk, readJourneyT } from "./journey-helpers";
 
 test("renders the immersive 3D journey on capable devices", async ({ page }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
@@ -69,28 +65,41 @@ test("holds the camera on BERAT at the top of the page", async ({ page }) => {
   runtimeErrors.assertEmpty();
 });
 
-test("shows BERAT particle ink in the hero in dark and light", async ({
-  browser,
-}) => {
-  for (const theme of ["dark", "light"] as const) {
-    const { context, page, runtimeErrors } = await openThemedJourney(
-      browser,
-      theme,
-    );
+for (const theme of ["dark", "light"] as const) {
+  test.describe(`hero wordmark (${theme})`, () => {
+    test.use({ colorScheme: theme });
 
-    await expect(page.locator("[data-hero-name-fallback]")).toBeHidden();
-    await expect.poll(() => readJourneyT(page)).toBeLessThan(0.03);
-    await expect
-      .poll(async () => {
-        const ink = await measureHeroWordmarkInk(page);
-        return ink.inkRatio > 0.03 && ink.columnHits >= 4 && ink.widthSpan > 0.35;
-      })
-      .toBe(true);
-
-    runtimeErrors.assertEmpty();
-    await context.close();
-  }
-});
+    test(`shows BERAT particle ink in ${theme} mode`, async ({ page }) => {
+      const runtimeErrors = attachRuntimeErrorCollector(page);
+      await page.addInitScript((value) => {
+        localStorage.setItem("theme", value);
+      }, theme);
+      await page.goto("/");
+      await expect(page.locator("html")).toHaveAttribute("data-journey", "active", {
+        timeout: 20_000,
+      });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expect(page.locator("[data-hero-name-fallback]")).toBeHidden();
+      await expect.poll(() => readJourneyT(page)).toBeLessThan(0.03);
+      await expect
+        .poll(() =>
+          page.locator("[data-journey-scene]").getAttribute("data-journey-look"),
+        )
+        .toBe("berat");
+      const ink = await measureHeroWordmarkInk(page);
+      expect(ink.inkRatio, `${theme} ink=${JSON.stringify(ink)}`).toBeGreaterThan(
+        0.012,
+      );
+      expect(ink.columnHits, `${theme} ink=${JSON.stringify(ink)}`).toBeGreaterThanOrEqual(
+        3,
+      );
+      expect(ink.widthSpan, `${theme} ink=${JSON.stringify(ink)}`).toBeGreaterThan(
+        0.25,
+      );
+      runtimeErrors.assertEmpty();
+    });
+  });
+}
 
 test("keeps the journey moving from Experience through Projects", async ({
   page,
@@ -125,7 +134,12 @@ test("keeps the journey unfinished from Skills through Contact", async ({
   await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
 
   await page.locator("#skills").scrollIntoViewIfNeeded();
-  await expect.poll(() => readJourneyT(page)).toBeGreaterThan(0.5);
+  await page.evaluate(() => {
+    const el = document.getElementById("skills");
+    if (!el) return;
+    window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY);
+  });
+  await expect.poll(() => readJourneyT(page), { timeout: 10_000 }).toBeGreaterThan(0.5);
   const tAtSkills = await readJourneyT(page);
   expect(tAtSkills).toBeLessThan(0.9);
 

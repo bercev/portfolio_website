@@ -47,9 +47,8 @@ export function journeySmoothstep(x: number, min: number, max: number) {
 /**
  * Map page scroll to path t using section tops so later chapters keep travel.
  *
- * Hero hold: t stays at the home anchor while the page is still at rest
- * (scrollY ≈ 0). Using the 38% focus probe on home interpolates toward About
- * immediately and parks the camera past BERAT.
+ * Home uses scrollY so t=0 while the hero is at rest. Later chapters still
+ * use the 38% focus probe so Experience→Contact keeps moving.
  */
 export function mapSectionScrollToJourneyT({
   scrollY,
@@ -64,7 +63,7 @@ export function mapSectionScrollToJourneyT({
   readonly anchors: readonly JourneyScrollAnchor[];
   readonly pathEndT?: number;
 }): number {
-  const y = Number.isFinite(scrollY) ? scrollY : 0;
+  const y = Number.isFinite(scrollY) ? Math.max(0, scrollY) : 0;
   const vh = Number.isFinite(viewportH) && viewportH > 0 ? viewportH : 1;
   const max = Number.isFinite(maxScroll) ? maxScroll : 0;
   const focusY = y + vh * JOURNEY_FOCUS_Y_RATIO;
@@ -74,7 +73,8 @@ export function mapSectionScrollToJourneyT({
     return clamp(raw * pathEndT, 0, pathEndT);
   }
 
-  if (focusY <= anchors[0].y) return anchors[0].t;
+  // Hold BERAT through small load-time scroll / chrome offsets.
+  if (y < vh * 0.2 || focusY <= anchors[0].y) return anchors[0].t;
 
   const last = anchors[anchors.length - 1];
   if (focusY >= last.y) {
@@ -86,8 +86,9 @@ export function mapSectionScrollToJourneyT({
   for (let i = 0; i < anchors.length - 1; i++) {
     const a = anchors[i];
     const b = anchors[i + 1];
-    if (focusY <= b.y) {
-      const u = (focusY - a.y) / Math.max(1, b.y - a.y);
+    const probe = i === 0 ? y : focusY;
+    if (probe <= b.y) {
+      const u = (probe - a.y) / Math.max(1, b.y - a.y);
       return lerp(a.t, b.t, clamp(u, 0, 1));
     }
   }
@@ -95,10 +96,7 @@ export function mapSectionScrollToJourneyT({
   return pathEndT;
 }
 
-/**
- * Aim the camera. At t≈0 this currently looks one unit along the path tangent
- * (empty space) instead of at the BERAT wordmark.
- */
+/** Aim at BERAT at rest, then frame sculptures, then CONNECT. */
 export function resolveJourneyLookTarget({
   t,
   cameraPos,
@@ -114,15 +112,22 @@ export function resolveJourneyLookTarget({
   readonly arrivalPos: JourneyVec3;
   readonly stationPos?: JourneyVec3;
 }): JourneyVec3 {
-  void t;
-  void textPos;
-  void arrivalPos;
-  void stationPos;
-  return {
-    x: cameraPos.x + tangent.x,
-    y: cameraPos.y + tangent.y,
-    z: cameraPos.z + tangent.z,
+  const heroW = 1 - journeySmoothstep(t, 0, 0.12);
+  const connectW = journeySmoothstep(t, 0.82, PATH_END_T);
+  const pathAhead = {
+    x: cameraPos.x + tangent.x * 10,
+    y: cameraPos.y + tangent.y * 10,
+    z: cameraPos.z + tangent.z * 10,
   };
+  const framed = stationPos
+    ? {
+        x: pathAhead.x * 0.4 + stationPos.x * 0.6,
+        y: pathAhead.y * 0.55 + stationPos.y * 0.45,
+        z: pathAhead.z * 0.35 + stationPos.z * 0.65,
+      }
+    : pathAhead;
+  const mid = lerpVec(framed, textPos, heroW);
+  return lerpVec(mid, arrivalPos, connectW * 0.9);
 }
 
 export function journeyLookName({

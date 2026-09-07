@@ -88,8 +88,8 @@ function buildTextPoints(
     : [
         new THREE.Color(palette.accent),
         new THREE.Color(palette.cyan),
-        new THREE.Color(palette.emerald),
-        new THREE.Color(0xffffff).lerp(new THREE.Color(palette.accent), 0.45),
+        new THREE.Color(0xffffff).lerp(new THREE.Color(palette.accent), 0.28),
+        new THREE.Color(0xffffff).lerp(new THREE.Color(palette.cyan), 0.35),
       ];
   for (let i = 0; i < count; i++) {
     const [px, py] = candidates[(Math.random() * candidates.length) | 0] ?? [
@@ -114,6 +114,8 @@ function buildTextPoints(
   const mat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
+    depthTest: false,
+    fog: false,
     blending,
     uniforms: {
       uTime: { value: 0 },
@@ -127,16 +129,16 @@ function buildTextPoints(
       uniform float uTime;
       uniform float uScatter;
       void main() {
-        vColor = color;
+        vColor = color${ink ? "" : " * 1.25"};
         vec3 p = position;
         vec3 dir = normalize(vec3(sin(seed * 3.1), cos(seed * 2.3), sin(seed * 5.7)));
         p += dir * uScatter * (9.0 + seed * 2.0);
         p.y += sin(uTime * 0.8 + seed) * 0.05;
         p.x += cos(uTime * 0.6 + seed * 1.7) * 0.04;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        float dist = -mv.z;
-        gl_PointSize = min((1.25 + 1.5 * fract(seed)) * (${ink ? "58.0" : "100.0"} / dist), ${ink ? "8.0" : "14.0"});
-        vFade = smoothstep(70.0, 18.0, dist) * smoothstep(1.5, 7.0, dist);
+        float dist = max(-mv.z, 0.35);
+        gl_PointSize = min((1.25 + 1.5 * fract(seed)) * (${ink ? "58.0" : "130.0"} / dist), ${ink ? "8.0" : "18.0"});
+        vFade = smoothstep(80.0, 16.0, dist) * smoothstep(0.45, 2.8, dist);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -146,14 +148,16 @@ function buildTextPoints(
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float d = length(uv);
-        float alpha = smoothstep(0.5, 0.05, d) * vFade${ink ? "" : " * 1.35"};
+        float alpha = smoothstep(0.5, 0.04, d) * vFade${ink ? "" : " * 1.55"};
         if (alpha < 0.01) discard;
         gl_FragColor = vec4(vColor, alpha);
       }
     `,
   });
 
-  return new THREE.Points(geo, mat);
+  const points = new THREE.Points(geo, mat);
+  points.frustumCulled = false;
+  return points;
 }
 
 /**
@@ -648,8 +652,8 @@ export class JourneyScene {
     );
     this.textGroup.add(this.textPoints);
     this.textGroup.position.set(0, 0.4, 7);
-    this.textGroup.renderOrder = 6;
-    this.textPoints.renderOrder = 6;
+    this.textGroup.renderOrder = 8;
+    this.textPoints.renderOrder = 8;
     this.scene.add(this.textGroup);
 
     this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 6000 : 3600, palette, 5, particleBlending, lightTheme);
@@ -657,6 +661,8 @@ export class JourneyScene {
     this.arrivalGroup.add(this.arrivalPoints);
     this.arrivalGroup.position.set(0, 0.4, -142);
     this.arrivalGroup.visible = false;
+    this.arrivalGroup.renderOrder = 8;
+    this.arrivalPoints.renderOrder = 8;
     this.scene.add(this.arrivalGroup);
     this.fitWordmarks();
 
@@ -1362,7 +1368,7 @@ export class JourneyScene {
   private renderOneFrame(time: number) {
     // `time` is elapsed seconds.
     const t = Math.max(0, time);
-    const scatter = this.reducedMotion ? 0 : THREE.MathUtils.smoothstep(this.smoothT, 0.02, 0.16);
+    const scatter = this.reducedMotion ? 0 : THREE.MathUtils.smoothstep(this.smoothT, 0.04, 0.18);
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = scatter;
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
     this.textGroup.rotation.y = Math.sin(t * 0.15) * 0.06;
