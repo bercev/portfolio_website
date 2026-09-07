@@ -124,8 +124,8 @@ export const portfolio = {
   ],
   hero: {
     tagline:
-      "AI systems engineer: multi-agent products and published LLM research",
-    bio: "I build agentic software systems and study how LLMs behave in the wild. Currently an AI Systems Engineer Intern building multi-agent pipelines, with SkillOptimizer (ICML 2026 AIWILD Workshop) and @GrokSet (arXiv), while finishing CS at UC Santa Cruz (4.0).",
+      "Software engineer: multi-agent products and published LLM research",
+    bio: "I write software first and study how LLMs behave in the wild. Currently an AI Systems Engineer Intern building multi-agent pipelines, with SkillOptimizer (ICML 2026 AIWILD Workshop) and @GrokSet (arXiv), while finishing CS at UC Santa Cruz (4.0).",
     signals: [
       { label: "Now", value: "Multi-agent systems" },
       { label: "Published", value: "ICML 2026 AIWILD · arXiv" },

@@ -73,4 +73,13 @@ describe("portfolio content", () => {
       "https://arxiv.org/abs/2602.21236",
     ]);
   });
+
+  it("leads the hero as a software engineer, not only an AI title", () => {
+    expect(portfolio.hero.tagline.toLowerCase()).not.toContain(
+      "ai systems engineer",
+    );
+    expect(portfolio.hero.tagline.toLowerCase()).toContain("software engineer");
+    expect(portfolio.hero.tagline.toLowerCase()).toContain("multi-agent");
+    expect(portfolio.hero.bio.toLowerCase()).toContain("software first");
+  });
 });
