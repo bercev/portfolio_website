@@ -133,7 +133,7 @@ export function HoverPreview({
               className={
                 previewClassName
                   ? previewClassName
-                  : "block w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-none border border-border bg-card shadow-[6px_8px_0_color-mix(in_srgb,var(--foreground)_10%,transparent)]"
+                  : "block w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-none bg-card shadow-[6px_8px_0_color-mix(in_srgb,var(--foreground)_10%,transparent)]"
               }
               initial={
                 shouldReduceMotion
@@ -147,7 +147,7 @@ export function HoverPreview({
                   : { opacity: 0, scale: 0.98, y: 6 }
               }
               transition={{
-                duration: shouldReduceMotion ? 0 : 0.18,
+                duration: shouldReduceMotion ? 0 : 0.48,
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
