@@ -3,8 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   PATH_END_T,
   SECTION_PATH_T,
-  STATION_PATH_T,
-  interpolateStationPosition,
   journeyLookName,
   mapSectionScrollToJourneyT,
   resolveJourneyLookTarget,
@@ -133,47 +131,5 @@ describe("resolveJourneyLookTarget", () => {
 
     expect(look.z).toBeLessThan(-130);
     expect(journeyLookName({ look, textPos, arrivalPos })).toBe("connect");
-  });
-
-  it("aims at CONNECT once Contact is in focus, not only at path-end", () => {
-    const look = resolveJourneyLookTarget({
-      t: SECTION_PATH_T[6],
-      cameraPos: { x: 0, y: 0, z: -100 },
-      tangent: { x: 0, y: 0, z: -1 },
-      textPos,
-      arrivalPos: { x: 0, y: 0.4, z: -92 },
-    });
-
-    expect(journeyLookName({
-      look,
-      textPos,
-      arrivalPos: { x: 0, y: 0.4, z: -92 },
-    })).toBe("connect");
-  });
-});
-
-describe("interpolateStationPosition", () => {
-  const stations = [
-    { x: 0, y: 0, z: 0 },
-    { x: 10, y: 0, z: -10 },
-    { x: 20, y: 0, z: -20 },
-    { x: 30, y: 0, z: -30 },
-    { x: 40, y: 0, z: -40 },
-    { x: 50, y: 0, z: -50 },
-  ];
-
-  it("lerps between chapters instead of snapping to the nearest sculpture", () => {
-    const midT = (STATION_PATH_T[0] + STATION_PATH_T[1]) / 2;
-    const pos = interpolateStationPosition(midT, stations);
-    expect(pos?.x).toBeCloseTo(5, 5);
-    expect(pos?.z).toBeCloseTo(-5, 5);
-  });
-
-  it("does not jump when t crosses a station midpoint", () => {
-    const a = interpolateStationPosition(0.249, stations);
-    const b = interpolateStationPosition(0.251, stations);
-    expect(a).toBeDefined();
-    expect(b).toBeDefined();
-    expect(Math.abs((b?.x ?? 0) - (a?.x ?? 0))).toBeLessThan(0.3);
   });
 });

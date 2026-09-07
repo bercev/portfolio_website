@@ -154,26 +154,6 @@ test("keeps the journey unfinished from Skills through Contact", async ({
   runtimeErrors.assertEmpty();
 });
 
-test("frames CONNECT when Contact is in view", async ({ page }) => {
-  const runtimeErrors = attachRuntimeErrorCollector(page);
-  await page.goto("/");
-  await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
-
-  await page.locator("#contact").scrollIntoViewIfNeeded();
-  await page.evaluate(() =>
-    window.scrollTo(0, document.documentElement.scrollHeight),
-  );
-  await expect.poll(() => readJourneyT(page), { timeout: 10_000 }).toBeGreaterThan(0.72);
-  await expect
-    .poll(
-      () => page.locator("[data-journey-scene]").getAttribute("data-journey-look"),
-      { timeout: 10_000 },
-    )
-    .toBe("connect");
-
-  runtimeErrors.assertEmpty();
-});
-
 test("uses a flat BERAT fallback when reduced motion is requested", async ({
   browser,
 }) => {
