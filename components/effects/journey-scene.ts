@@ -3,6 +3,8 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
+import type { JourneyPropManifest } from "@/data/journey-props";
+
 import {
   PATH_END_T,
   SECTION_PATH_T,
@@ -12,6 +14,12 @@ import {
   mapSectionScrollToJourneyT,
   resolveJourneyLookTarget,
 } from "./journey-camera";
+import {
+  buildJourneyContentProps,
+  disposeContentProp,
+  propPresence,
+  type ContentPropHandle,
+} from "./journey-props";
 
 export type JourneyQuality = "full" | "mobile";
 
@@ -38,6 +46,8 @@ export type JourneySceneOptions = {
    * blending keeps ink readable; bloom stays dark-only for the same reason.
    */
   readonly lightTheme?: boolean;
+  /** Paper/project previews + floating tech type for content-aware mid-path props. */
+  readonly props?: JourneyPropManifest;
   readonly onProgress?: (t: number) => void;
 };
 
@@ -588,6 +598,7 @@ export class JourneyScene {
   private readonly frenet = this.curve.computeFrenetFrames(FRENET_SEGMENTS, false);
   private readonly stations: THREE.Object3D[] = [];
   private readonly orbitDust: THREE.Points[] = [];
+  private readonly contentProps: ContentPropHandle[] = [];
   private readonly textGroup = new THREE.Group();
   private readonly arrivalGroup = new THREE.Group();
   private readonly textPoints: THREE.Points;
@@ -617,7 +628,17 @@ export class JourneyScene {
   private trail: { geometry: THREE.BufferGeometry; positions: Float32Array } | null = null;
 
   constructor(options: JourneySceneOptions) {
-    const { canvas, quality, reducedMotion, spaceBg, fog, palette, stationCounts, onProgress } = options;
+    const {
+      canvas,
+      quality,
+      reducedMotion,
+      spaceBg,
+      fog,
+      palette,
+      stationCounts,
+      props,
+      onProgress,
+    } = options;
     const lightTheme = Boolean(options.lightTheme);
     const particleBlending = lightTheme ? THREE.NormalBlending : THREE.AdditiveBlending;
     this.quality = quality;
@@ -681,10 +702,13 @@ export class JourneyScene {
     this.stars = this.buildStarfield(quality === "full" ? 4800 : 2400);
     this.scene.add(this.stars);
 
-    this.buildStations(stationCounts);
+    this.buildStations(stationCounts, Boolean(props));
     if (quality === "full") {
       this.buildDriftField();
       this.buildNearMotes();
+    }
+    if (props && !reducedMotion) {
+      void this.mountContentProps(props);
     }
 
     this.comet = new THREE.Mesh(
@@ -984,7 +1008,7 @@ export class JourneyScene {
   }
 
   /** One glowing wireframe station per chapter + orbiting "content dust" mirroring portfolio scale. */
-  private buildStations(stationCounts: readonly number[]) {
+  private buildStations(stationCounts: readonly number[], hasContentProps: boolean) {
     const tintColors = [
       new THREE.Color(this.palette.accent),
       new THREE.Color(this.palette.cyan),
@@ -1017,13 +1041,107 @@ export class JourneyScene {
         this.animatedMaterials.push(aura.material as THREE.ShaderMaterial);
       }
 
-      const count = Math.min(stationCounts[i] ?? 0, 60);
+      // Thin anonymous dust where named props carry the content read.
+      let count = Math.min(stationCounts[i] ?? 0, 60);
+      if (hasContentProps && (i === 1 || i === 2 || i === 3 || i === 4)) {
+        count = Math.min(count, i === 4 ? 8 : 12);
+      }
       if (count > 0) {
         this.orbitDust.push(
           this.buildOrbitDust(object.position, count, tintColors[i], 0.1 + i * 0.05),
         );
       }
     }
+  }
+
+  /** Paper/project billboards + tech/role type — async so textures never block first paint. */
+  private async mountContentProps(manifest: JourneyPropManifest) {
+    const paletteColors = [
+      new THREE.Color(this.palette.accent),
+      new THREE.Color(this.palette.cyan),
+      new THREE.Color(this.palette.emerald),
+      new THREE.Color(this.palette.amber),
+      new THREE.Color(this.palette.coral),
+    ];
+    const handles = await buildJourneyContentProps({
+      manifest,
+      theme: {
+        lightTheme: this.lightTheme,
+        inkAlpha: this.inkAlpha,
+        blending: this.particleBlending,
+        palette: paletteColors,
+      },
+      stationPathT: STATION_PATH_T,
+      includeImages: this.quality === "full",
+    });
+    if (this.disposed) {
+      for (const handle of handles) disposeContentProp(handle);
+      return;
+    }
+
+    for (const handle of handles) {
+      this.placeContentProp(handle);
+      this.scene.add(handle.object);
+      this.contentProps.push(handle);
+    }
+  }
+
+  private placeContentProp(handle: ContentPropHandle) {
+    const station = this.stations[handle.stationIndex];
+    const { object, kind } = handle;
+    if (!station) {
+      this.parkOnPath(object, handle.pathT, 1, 0, 2);
+      return;
+    }
+
+    if (kind === "preview") {
+      const slot = Number(object.userData.propSlot ?? 0);
+      const side = Number(object.userData.propSide ?? 1);
+      // Sit beside the sculpture, staggered so two papers/projects don't stack.
+      object.position
+        .copy(station.position)
+        .addScaledVector(this.frenet.binormals[Math.round(handle.pathT * FRENET_SEGMENTS)], side * (4.8 + slot * 0.35))
+        .addScaledVector(this.frenet.normals[Math.round(handle.pathT * FRENET_SEGMENTS)], 1.1 - slot * 1.55)
+        .addScaledVector(this.frenet.tangents[Math.round(handle.pathT * FRENET_SEGMENTS)], -1.2 + slot * 0.8);
+      object.lookAt(station.position);
+      object.userData.basePosition = object.position.clone();
+      object.userData.baseQuat = object.quaternion.clone();
+      object.userData.spin = { y: 0.08, x: 0.04, bob: 0.22 };
+      return;
+    }
+
+    if (kind === "tech") {
+      const i = Number(object.userData.orbitIndex ?? 0);
+      const n = Math.max(1, Number(object.userData.orbitCount ?? 1));
+      const ring = i % 3;
+      const radius = 5.2 + ring * 1.15;
+      const angle = (i / n) * Math.PI * 2 + ring * 0.35;
+      object.position
+        .copy(station.position)
+        .add(new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle * 1.15) * 1.35 + (ring - 1) * 0.55, Math.sin(angle) * radius * 0.42));
+      object.lookAt(this.camera.position);
+      object.userData.basePosition = object.position.clone();
+      object.userData.orbitAngle = angle;
+      object.userData.orbitRadius = radius;
+      object.userData.orbitRing = ring;
+      object.userData.anchor = station.position.clone();
+      return;
+    }
+
+    // Roles — gentle arc under the Experience sculpture.
+    const i = Number(object.userData.roleIndex ?? 0);
+    const n = Math.max(1, Number(object.userData.roleCount ?? 1));
+    const t = n === 1 ? 0.5 : i / (n - 1);
+    const arc = (t - 0.5) * 7.4;
+    object.position
+      .copy(station.position)
+      .addScaledVector(this.frenet.binormals[Math.round(handle.pathT * FRENET_SEGMENTS)], arc * 0.55)
+      .addScaledVector(this.frenet.normals[Math.round(handle.pathT * FRENET_SEGMENTS)], -2.1 + Math.sin(t * Math.PI) * 0.4)
+      .addScaledVector(this.frenet.tangents[Math.round(handle.pathT * FRENET_SEGMENTS)], -0.6 + t * 0.8);
+    object.lookAt(station.position);
+    object.userData.basePosition = object.position.clone();
+    object.userData.baseQuat = object.quaternion.clone();
+    object.userData.spin = { y: 0.05, x: 0.02, bob: 0.14 };
   }
 
   /** Park a sculpture on the camera-path Frenet frame so scale-up never clips the tube. */
@@ -1417,6 +1535,7 @@ export class JourneyScene {
         });
       });
       // Orbit dust animates per-particle in its own vertex shader.
+      this.updateContentProps(t);
       const cometT = ((t / 26) % 1 + 1) % 1;
       this.comet.position.copy(this.curve.getPointAt(cometT));
       this.comet.scale.setScalar(1 + Math.sin(t * 4) * 0.3);
@@ -1517,6 +1636,53 @@ export class JourneyScene {
     }
   }
 
+  /** Float / orbit content props and fade them in near their chapter. */
+  private updateContentProps(time: number) {
+    if (this.contentProps.length === 0) return;
+    for (const handle of this.contentProps) {
+      const presence = propPresence(this.smoothT, handle.pathT, handle.kind === "tech" ? 0.14 : 0.12);
+      const visible = presence > 0.02;
+      handle.object.visible = visible;
+      if (!visible) continue;
+
+      const opacity = handle.baseOpacity * (0.2 + 0.8 * presence);
+      for (const material of handle.materials) {
+        if ("opacity" in material) {
+          (material as THREE.MeshBasicMaterial).opacity = opacity;
+        }
+      }
+
+      if (handle.kind === "tech") {
+        const anchor = handle.object.userData.anchor as THREE.Vector3 | undefined;
+        if (!anchor) continue;
+        const baseAngle = Number(handle.object.userData.orbitAngle ?? 0);
+        const radius = Number(handle.object.userData.orbitRadius ?? 5);
+        const ring = Number(handle.object.userData.orbitRing ?? 0);
+        const angle = baseAngle + time * (0.12 + ring * 0.03);
+        handle.object.position.set(
+          anchor.x + Math.cos(angle) * radius,
+          anchor.y + Math.sin(angle * 1.15 + time * 0.4) * 1.2 + (ring - 1) * 0.45,
+          anchor.z + Math.sin(angle) * radius * 0.42,
+        );
+        handle.object.lookAt(this.camera.position);
+        continue;
+      }
+
+      const base = handle.object.userData.basePosition as THREE.Vector3 | undefined;
+      const baseQuat = handle.object.userData.baseQuat as THREE.Quaternion | undefined;
+      const spin = (handle.object.userData.spin ?? { y: 0.06, x: 0.03, bob: 0.16 }) as StationSpin;
+      if (base) {
+        handle.object.position.copy(base);
+        handle.object.position.y += Math.sin(time * 0.55 + handle.pathT * 8) * spin.bob;
+      }
+      if (baseQuat) {
+        handle.object.quaternion.copy(baseQuat);
+        handle.object.rotateY(Math.sin(time * 0.22 + handle.pathT * 4) * spin.y);
+        if (spin.x) handle.object.rotateX(Math.sin(time * 0.16 + handle.pathT * 3) * spin.x);
+      }
+    }
+  }
+
   /** Enable mouse-moves-camera only on #home and Contact; mid-stations are scroll-driven. */
   setPointerLookEnabled(enabled: boolean) {
     if (this.pointerLookEnabled === enabled) return;
@@ -1533,6 +1699,11 @@ export class JourneyScene {
     window.removeEventListener("scroll", this.handleScroll);
     window.removeEventListener("resize", this.handleResize);
     window.removeEventListener("pointermove", this.handlePointerMove);
+    for (const handle of this.contentProps) {
+      this.scene.remove(handle.object);
+      disposeContentProp(handle);
+    }
+    this.contentProps.length = 0;
     this.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.geometry) mesh.geometry.dispose();

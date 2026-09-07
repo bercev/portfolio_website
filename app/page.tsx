@@ -11,6 +11,7 @@ import { Projects } from "@/components/sections/projects";
 import { Publications } from "@/components/sections/publications";
 import { Skills } from "@/components/sections/skills";
 import { portfolio } from "@/data/content";
+import { buildJourneyPropManifest } from "@/data/journey-props";
 
 const journeyStationCounts = [
   1, // About — one origin (education)
@@ -20,10 +21,12 @@ const journeyStationCounts = [
   portfolio.skills.reduce((total, category) => total + category.items.length, 0),
 ] as const;
 
+const journeyProps = buildJourneyPropManifest();
+
 export default function Home() {
   return (
     <>
-      <Journey stationCounts={journeyStationCounts} />
+      <Journey stationCounts={journeyStationCounts} props={journeyProps} />
       <EffectStage />
       <ContentFrost />
 

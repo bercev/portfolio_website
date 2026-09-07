@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
+import type { JourneyPropManifest } from "@/data/journey-props";
 import {
   FINE_POINTER_QUERY,
   MOBILE_QUERY,
@@ -57,9 +58,12 @@ function normalizeCssColor(value: string): string {
 
 export function Journey({
   stationCounts,
+  props,
 }: {
   /** Orbit dust count per station — mirrors portfolio content. */
   readonly stationCounts: readonly number[];
+  /** Content-aware preview planes + floating tech/role type. */
+  readonly props: JourneyPropManifest;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<JourneyScene | null>(null);
@@ -154,6 +158,7 @@ export function Journey({
           fog,
           palette: colors,
           stationCounts,
+          props,
           lightTheme: !root.classList.contains("dark"),
         });
         sceneRef.current = scene;
@@ -179,7 +184,7 @@ export function Journey({
     };
     // pointerLookHot applied via the dedicated effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, palette, resolvedTheme, stationCounts]);
+  }, [profile, palette, resolvedTheme, stationCounts, props]);
 
   useEffect(() => {
     sceneRef.current?.setPointerLookEnabled(pointerLookHot);
