@@ -132,74 +132,43 @@ function paintLabelCanvas(
 }
 
 /**
- * Icon-first tech badge: Simple Icons glyph (brand color) + small caption.
- * Falls back to a monogram plate when no glyph is registered.
+ * Bare tech glyph on a transparent canvas — no plate, no caption.
+ * Reads like other Journey props: a floating mark in space, not a UI chip.
  */
-export function paintTechBadgeCanvas(
+export function paintTechIconCanvas(
   label: string,
   accent: string,
   lightTheme: boolean,
 ): { texture: THREE.CanvasTexture; aspect: number } | null {
+  const icon = iconForTech(label);
+  if (!icon) return null;
+
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  const icon = iconForTech(label);
   const brand = brandColorForTech(label) ?? accent;
-  const plate = 220;
-  const captionH = 52;
-  const pad = 28;
-  canvas.width = plate + pad * 2;
-  canvas.height = plate + captionH + pad * 2;
+  // Extra padding so soft glow doesn't clip; glyph itself stays square.
+  const glyph = 256;
+  const pad = lightTheme ? 24 : 48;
+  canvas.width = glyph + pad * 2;
+  canvas.height = glyph + pad * 2;
 
-  // Soft plate so logos stay readable on nebula / frost.
-  ctx.fillStyle = lightTheme ? "rgba(255, 255, 255, 0.72)" : "rgba(6, 12, 18, 0.62)";
-  roundRect(ctx, pad * 0.45, pad * 0.45, canvas.width - pad * 0.9, canvas.height - pad * 0.9, 28);
-  ctx.fill();
-  ctx.strokeStyle = lightTheme ? "rgba(20, 32, 40, 0.14)" : `${brand}99`;
-  ctx.lineWidth = 3;
-  roundRect(ctx, pad * 0.45, pad * 0.45, canvas.width - pad * 0.9, canvas.height - pad * 0.9, 28);
-  ctx.stroke();
-
-  const iconBox = plate * 0.62;
-  const iconLeft = (canvas.width - iconBox) / 2;
-  const iconTop = pad + (plate - iconBox) * 0.42;
-
-  if (icon) {
-    ctx.save();
-    if (!lightTheme) {
-      ctx.shadowColor = brand;
-      ctx.shadowBlur = 22;
-    }
-    ctx.translate(iconLeft, iconTop);
-    ctx.scale(iconBox / ICON_VIEW, iconBox / ICON_VIEW);
-    ctx.fillStyle = brand;
-    ctx.fill(new Path2D(icon.path));
-    ctx.restore();
-  } else {
-    // Monogram fallback for unmapped stack names.
-    ctx.fillStyle = brand;
-    ctx.beginPath();
-    ctx.arc(canvas.width / 2, pad + plate * 0.42, iconBox * 0.42, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = lightTheme ? "#0b141c" : "#f4f8fc";
-    ctx.font = `800 ${Math.round(iconBox * 0.38)}px ui-sans-serif, system-ui, Arial, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(label.slice(0, 2).toUpperCase(), canvas.width / 2, pad + plate * 0.42 + 2);
+  ctx.save();
+  if (!lightTheme) {
+    ctx.shadowColor = brand;
+    ctx.shadowBlur = 36;
   }
-
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = lightTheme ? "rgba(18, 28, 36, 0.88)" : "rgba(236, 244, 252, 0.92)";
-  ctx.font = `700 28px ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(label, canvas.width / 2, pad + plate + captionH * 0.42);
+  ctx.translate(pad, pad);
+  ctx.scale(glyph / ICON_VIEW, glyph / ICON_VIEW);
+  ctx.fillStyle = brand;
+  ctx.fill(new Path2D(icon.path));
+  ctx.restore();
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
-  return { texture, aspect: canvas.width / canvas.height };
+  return { texture, aspect: 1 };
 }
 
 function labelPlane(
@@ -236,24 +205,26 @@ function techIconPlane(
   label: string,
   accent: THREE.Color,
   theme: JourneyPropTheme,
-  worldH: number,
+  worldSize: number,
 ): { mesh: THREE.Mesh; texture: THREE.CanvasTexture; material: THREE.MeshBasicMaterial } | null {
-  const painted = paintTechBadgeCanvas(label, cssFromColor(accent), theme.lightTheme);
+  const painted = paintTechIconCanvas(label, cssFromColor(accent), theme.lightTheme);
   if (!painted) return null;
 
-  const height = worldH;
-  const width = height * painted.aspect;
   const material = new THREE.MeshBasicMaterial({
     map: painted.texture,
     transparent: true,
     depthWrite: false,
     depthTest: true,
-    blending: THREE.NormalBlending,
-    opacity: theme.lightTheme ? 0.94 : 0.97,
+    // Match Journey particle blending so glyphs glow like other mid-path props.
+    blending: theme.lightTheme ? THREE.NormalBlending : theme.blending,
+    opacity: theme.lightTheme ? 0.88 * theme.inkAlpha : 0.95,
     side: THREE.DoubleSide,
     toneMapped: false,
   });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material);
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(worldSize, worldSize),
+    material,
+  );
   mesh.renderOrder = 6;
   return { mesh, texture: painted.texture, material };
 }
@@ -352,21 +323,21 @@ export async function buildJourneyContentProps({
       continue;
     }
 
-    // Prefer Discord glyph for the chatbot badge when available.
+    // Prefer Discord glyph for the chatbot mark when available.
     if (preview.id === "discord-bot") {
-      const iconBadge = techIconPlane("Discord", accent, theme, 1.55);
-      if (iconBadge) {
+      const iconMark = techIconPlane("Discord", accent, theme, 1.45);
+      if (iconMark) {
         const group = new THREE.Group();
-        group.add(iconBadge.mesh);
+        group.add(iconMark.mesh);
         group.userData.propSlot = slot;
         group.userData.propSide = slot % 2 === 0 ? 1 : -1;
         handles.push({
           object: group,
           stationIndex: preview.stationIndex,
           pathT,
-          baseOpacity: iconBadge.material.opacity,
-          materials: [iconBadge.material],
-          textures: [iconBadge.texture],
+          baseOpacity: iconMark.material.opacity,
+          materials: [iconMark.material],
+          textures: [iconMark.texture],
           kind: "preview",
         });
         continue;
@@ -391,23 +362,23 @@ export async function buildJourneyContentProps({
     });
   }
 
-  // —— Floating tech icons around Skills ——
+  // —— Floating tech glyphs around Skills ——
   const skillsT = stationPathT[4] ?? 0.77;
   manifest.tech.forEach((tech, i) => {
     const tint = theme.palette[tech.tint % theme.palette.length] ?? theme.palette[0];
-    const badge = techIconPlane(tech.label, tint, theme, 1.35);
-    if (!badge) return;
+    const mark = techIconPlane(tech.label, tint, theme, 1.15);
+    if (!mark) return;
     const group = new THREE.Group();
-    group.add(badge.mesh);
+    group.add(mark.mesh);
     group.userData.orbitIndex = i;
     group.userData.orbitCount = manifest.tech.length;
     handles.push({
       object: group,
       stationIndex: 4,
       pathT: skillsT,
-      baseOpacity: badge.material.opacity,
-      materials: [badge.material],
-      textures: [badge.texture],
+      baseOpacity: mark.material.opacity,
+      materials: [mark.material],
+      textures: [mark.texture],
       kind: "tech",
     });
   });
