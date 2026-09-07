@@ -163,7 +163,7 @@ function labelPlane(
     depthWrite: false,
     depthTest: true,
     blending: THREE.NormalBlending,
-    opacity: theme.lightTheme ? 0.78 * theme.inkAlpha : 0.92,
+    opacity: theme.lightTheme ? 0.92 : 0.96,
     side: THREE.DoubleSide,
     toneMapped: false,
   });
@@ -185,7 +185,7 @@ function previewFrame(
     map: texture,
     transparent: true,
     depthWrite: false,
-    opacity: theme.lightTheme ? 0.82 * theme.inkAlpha : 0.9,
+    opacity: theme.lightTheme ? 0.94 : 0.95,
     side: THREE.DoubleSide,
     toneMapped: false,
   });
@@ -199,7 +199,7 @@ function previewFrame(
       color: accent,
       transparent: true,
       depthWrite: false,
-      opacity: theme.lightTheme ? 0.28 * theme.inkAlpha : 0.42,
+      opacity: theme.lightTheme ? 0.42 : 0.55,
       side: THREE.DoubleSide,
       blending: theme.blending,
       toneMapped: false,
@@ -250,7 +250,7 @@ export async function buildJourneyContentProps({
         preview.aspect || loaded.aspect,
         accent,
         theme,
-        preview.stationIndex === 1 ? 2.35 : 2.05,
+        preview.stationIndex === 1 ? 3.4 : 3.0,
       );
       framed.group.userData.propSlot = slot;
       framed.group.userData.propSide = slot % 2 === 0 ? 1 : -1;
@@ -258,7 +258,7 @@ export async function buildJourneyContentProps({
         object: framed.group,
         stationIndex: preview.stationIndex,
         pathT,
-        baseOpacity: theme.lightTheme ? 0.82 * theme.inkAlpha : 0.9,
+        baseOpacity: theme.lightTheme ? 0.94 : 0.95,
         materials: framed.materials,
         textures: framed.textures,
         kind: "preview",
@@ -267,7 +267,7 @@ export async function buildJourneyContentProps({
     }
 
     // Badge / fallback when images are skipped (mobile) or missing src.
-    const badge = labelPlane(preview.label, accent, theme, "badge", 1.15);
+    const badge = labelPlane(preview.label, accent, theme, "badge", 1.55);
     if (!badge) continue;
     const group = new THREE.Group();
     group.add(badge.mesh);
@@ -288,7 +288,7 @@ export async function buildJourneyContentProps({
   const skillsT = stationPathT[4] ?? 0.77;
   manifest.tech.forEach((tech, i) => {
     const tint = theme.palette[tech.tint % theme.palette.length] ?? theme.palette[0];
-    const label = labelPlane(tech.label, tint, theme, "tech", 0.72);
+    const label = labelPlane(tech.label, tint, theme, "tech", 1.05);
     if (!label) return;
     const group = new THREE.Group();
     group.add(label.mesh);
@@ -309,7 +309,7 @@ export async function buildJourneyContentProps({
   const experienceT = stationPathT[2] ?? 0.49;
   manifest.roles.forEach((role, i) => {
     const tint = theme.palette[(i + 2) % theme.palette.length] ?? theme.palette[0];
-    const label = labelPlane(role, tint, theme, "role", 0.55);
+    const label = labelPlane(role, tint, theme, "role", 0.78);
     if (!label) return;
     const group = new THREE.Group();
     group.add(label.mesh);

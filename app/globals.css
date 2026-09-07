@@ -680,6 +680,18 @@ html:not(.dark) .content-frost {
   backdrop-filter: blur(8px) saturate(118%);
 }
 
+/* Keep Journey content props readable through the mid-page wash. */
+html[data-journey="active"] .content-frost {
+  -webkit-backdrop-filter: blur(6px) saturate(124%);
+  backdrop-filter: blur(6px) saturate(124%);
+}
+
+html[data-journey="active"]:not(.dark) .content-frost {
+  background: color-mix(in srgb, var(--background) 10%, transparent);
+  -webkit-backdrop-filter: blur(3.5px) saturate(112%);
+  backdrop-filter: blur(3.5px) saturate(112%);
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .content-frost {
     background: color-mix(in srgb, var(--background) 88%, transparent);

@@ -1084,11 +1084,16 @@ export class JourneyScene {
       this.scene.add(handle.object);
       this.contentProps.push(handle);
     }
+    this.renderer.domElement.dataset.journeyProps = String(this.contentProps.length);
   }
 
   private placeContentProp(handle: ContentPropHandle) {
     const station = this.stations[handle.stationIndex];
     const { object, kind } = handle;
+    const idx = Math.round(handle.pathT * FRENET_SEGMENTS);
+    const { binormals, normals, tangents } = this.frenet;
+    const stationSide = handle.stationIndex % 2 ? 1 : -1;
+
     if (!station) {
       this.parkOnPath(object, handle.pathT, 1, 0, 2);
       return;
@@ -1097,16 +1102,16 @@ export class JourneyScene {
     if (kind === "preview") {
       const slot = Number(object.userData.propSlot ?? 0);
       const side = Number(object.userData.propSide ?? 1);
-      // Sit beside the sculpture, staggered so two papers/projects don't stack.
+      // Sit between the path and the sculpture so frost still leaves readable silhouettes.
       object.position
         .copy(station.position)
-        .addScaledVector(this.frenet.binormals[Math.round(handle.pathT * FRENET_SEGMENTS)], side * (4.8 + slot * 0.35))
-        .addScaledVector(this.frenet.normals[Math.round(handle.pathT * FRENET_SEGMENTS)], 1.1 - slot * 1.55)
-        .addScaledVector(this.frenet.tangents[Math.round(handle.pathT * FRENET_SEGMENTS)], -1.2 + slot * 0.8);
-      object.lookAt(station.position);
+        .addScaledVector(binormals[idx], -stationSide * (5.6 + slot * 0.4) + side * 0.9)
+        .addScaledVector(normals[idx], 0.35 - slot * 1.35)
+        .addScaledVector(tangents[idx], -0.4 + slot * 1.1);
+      object.lookAt(this.camera.position);
       object.userData.basePosition = object.position.clone();
       object.userData.baseQuat = object.quaternion.clone();
-      object.userData.spin = { y: 0.08, x: 0.04, bob: 0.22 };
+      object.userData.spin = { y: 0.06, x: 0.03, bob: 0.18 };
       return;
     }
 
@@ -1114,34 +1119,45 @@ export class JourneyScene {
       const i = Number(object.userData.orbitIndex ?? 0);
       const n = Math.max(1, Number(object.userData.orbitCount ?? 1));
       const ring = i % 3;
-      const radius = 5.2 + ring * 1.15;
+      const radius = 3.4 + ring * 0.85;
       const angle = (i / n) * Math.PI * 2 + ring * 0.35;
+      // Anchor closer to the camera tube than the wireframe rack.
+      const anchor = station.position
+        .clone()
+        .addScaledVector(binormals[idx], -stationSide * 4.2)
+        .addScaledVector(normals[idx], 0.2);
       object.position
-        .copy(station.position)
-        .add(new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle * 1.15) * 1.35 + (ring - 1) * 0.55, Math.sin(angle) * radius * 0.42));
+        .copy(anchor)
+        .add(
+          new THREE.Vector3(
+            Math.cos(angle) * radius,
+            Math.sin(angle * 1.15) * 1.05 + (ring - 1) * 0.4,
+            Math.sin(angle) * radius * 0.55,
+          ),
+        );
       object.lookAt(this.camera.position);
       object.userData.basePosition = object.position.clone();
       object.userData.orbitAngle = angle;
       object.userData.orbitRadius = radius;
       object.userData.orbitRing = ring;
-      object.userData.anchor = station.position.clone();
+      object.userData.anchor = anchor;
       return;
     }
 
-    // Roles — gentle arc under the Experience sculpture.
+    // Roles — gentle arc under the Experience sculpture, pulled toward the path.
     const i = Number(object.userData.roleIndex ?? 0);
     const n = Math.max(1, Number(object.userData.roleCount ?? 1));
     const t = n === 1 ? 0.5 : i / (n - 1);
-    const arc = (t - 0.5) * 7.4;
+    const arc = (t - 0.5) * 6.2;
     object.position
       .copy(station.position)
-      .addScaledVector(this.frenet.binormals[Math.round(handle.pathT * FRENET_SEGMENTS)], arc * 0.55)
-      .addScaledVector(this.frenet.normals[Math.round(handle.pathT * FRENET_SEGMENTS)], -2.1 + Math.sin(t * Math.PI) * 0.4)
-      .addScaledVector(this.frenet.tangents[Math.round(handle.pathT * FRENET_SEGMENTS)], -0.6 + t * 0.8);
-    object.lookAt(station.position);
+      .addScaledVector(binormals[idx], -stationSide * 4.8 + arc * 0.35)
+      .addScaledVector(normals[idx], -1.55 + Math.sin(t * Math.PI) * 0.35)
+      .addScaledVector(tangents[idx], -0.2 + t * 0.6);
+    object.lookAt(this.camera.position);
     object.userData.basePosition = object.position.clone();
     object.userData.baseQuat = object.quaternion.clone();
-    object.userData.spin = { y: 0.05, x: 0.02, bob: 0.14 };
+    object.userData.spin = { y: 0.04, x: 0.02, bob: 0.12 };
   }
 
   /** Park a sculpture on the camera-path Frenet frame so scale-up never clips the tube. */
@@ -1640,7 +1656,7 @@ export class JourneyScene {
   private updateContentProps(time: number) {
     if (this.contentProps.length === 0) return;
     for (const handle of this.contentProps) {
-      const presence = propPresence(this.smoothT, handle.pathT, handle.kind === "tech" ? 0.14 : 0.12);
+      const presence = propPresence(this.smoothT, handle.pathT, handle.kind === "tech" ? 0.18 : 0.16);
       const visible = presence > 0.02;
       handle.object.visible = visible;
       if (!visible) continue;
