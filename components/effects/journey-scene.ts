@@ -1071,7 +1071,15 @@ export class JourneyScene {
         blending: this.particleBlending,
         palette: paletteColors,
       },
-      stationPathT: STATION_PATH_T,
+      // Fade with section focus (camera t), while sculptures stay on STATION_PATH_T.
+      stationPathT: [
+        SECTION_PATH_T[1],
+        SECTION_PATH_T[2],
+        SECTION_PATH_T[3],
+        SECTION_PATH_T[4],
+        SECTION_PATH_T[5],
+        SECTION_PATH_T[6],
+      ],
       includeImages: this.quality === "full",
     });
     if (this.disposed) {
@@ -1102,12 +1110,14 @@ export class JourneyScene {
     if (kind === "preview") {
       const slot = Number(object.userData.propSlot ?? 0);
       const side = Number(object.userData.propSide ?? 1);
+      const parkT = STATION_PATH_T[handle.stationIndex] ?? handle.pathT;
+      const parkIdx = Math.round(parkT * FRENET_SEGMENTS);
       // Sit between the path and the sculpture so frost still leaves readable silhouettes.
       object.position
         .copy(station.position)
-        .addScaledVector(binormals[idx], -stationSide * (5.6 + slot * 0.4) + side * 0.9)
-        .addScaledVector(normals[idx], 0.35 - slot * 1.35)
-        .addScaledVector(tangents[idx], -0.4 + slot * 1.1);
+        .addScaledVector(binormals[parkIdx], -stationSide * (5.6 + slot * 0.4) + side * 0.9)
+        .addScaledVector(normals[parkIdx], 0.35 - slot * 1.35)
+        .addScaledVector(tangents[parkIdx], -0.4 + slot * 1.1);
       object.lookAt(this.camera.position);
       object.userData.basePosition = object.position.clone();
       object.userData.baseQuat = object.quaternion.clone();
@@ -1121,11 +1131,13 @@ export class JourneyScene {
       const ring = i % 3;
       const radius = 3.4 + ring * 0.85;
       const angle = (i / n) * Math.PI * 2 + ring * 0.35;
+      const parkT = STATION_PATH_T[handle.stationIndex] ?? handle.pathT;
+      const parkIdx = Math.round(parkT * FRENET_SEGMENTS);
       // Anchor closer to the camera tube than the wireframe rack.
       const anchor = station.position
         .clone()
-        .addScaledVector(binormals[idx], -stationSide * 4.2)
-        .addScaledVector(normals[idx], 0.2);
+        .addScaledVector(binormals[parkIdx], -stationSide * 4.2)
+        .addScaledVector(normals[parkIdx], 0.2);
       object.position
         .copy(anchor)
         .add(
@@ -1149,11 +1161,13 @@ export class JourneyScene {
     const n = Math.max(1, Number(object.userData.roleCount ?? 1));
     const t = n === 1 ? 0.5 : i / (n - 1);
     const arc = (t - 0.5) * 6.2;
+    const parkT = STATION_PATH_T[handle.stationIndex] ?? handle.pathT;
+    const parkIdx = Math.round(parkT * FRENET_SEGMENTS);
     object.position
       .copy(station.position)
-      .addScaledVector(binormals[idx], -stationSide * 4.8 + arc * 0.35)
-      .addScaledVector(normals[idx], -1.55 + Math.sin(t * Math.PI) * 0.35)
-      .addScaledVector(tangents[idx], -0.2 + t * 0.6);
+      .addScaledVector(binormals[parkIdx], -stationSide * 4.8 + arc * 0.35)
+      .addScaledVector(normals[parkIdx], -1.55 + Math.sin(t * Math.PI) * 0.35)
+      .addScaledVector(tangents[parkIdx], -0.2 + t * 0.6);
     object.lookAt(this.camera.position);
     object.userData.basePosition = object.position.clone();
     object.userData.baseQuat = object.quaternion.clone();
@@ -1685,17 +1699,15 @@ export class JourneyScene {
       }
 
       const base = handle.object.userData.basePosition as THREE.Vector3 | undefined;
-      const baseQuat = handle.object.userData.baseQuat as THREE.Quaternion | undefined;
       const spin = (handle.object.userData.spin ?? { y: 0.06, x: 0.03, bob: 0.16 }) as StationSpin;
       if (base) {
         handle.object.position.copy(base);
         handle.object.position.y += Math.sin(time * 0.55 + handle.pathT * 8) * spin.bob;
       }
-      if (baseQuat) {
-        handle.object.quaternion.copy(baseQuat);
-        handle.object.rotateY(Math.sin(time * 0.22 + handle.pathT * 4) * spin.y);
-        if (spin.x) handle.object.rotateX(Math.sin(time * 0.16 + handle.pathT * 3) * spin.x);
-      }
+      // Billboard so paper/project cards and role type stay readable as the camera drifts.
+      handle.object.lookAt(this.camera.position);
+      handle.object.rotateY(Math.sin(time * 0.22 + handle.pathT * 4) * spin.y * 0.35);
+      if (spin.x) handle.object.rotateX(Math.sin(time * 0.16 + handle.pathT * 3) * spin.x * 0.35);
     }
   }
 
