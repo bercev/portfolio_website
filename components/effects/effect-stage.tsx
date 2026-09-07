@@ -7,6 +7,8 @@ import {
   MOBILE_QUERY,
   REDUCED_MOTION_QUERY,
   getEffectProfile,
+  isJourneyBackgroundActive,
+  shouldMountAcidSquares,
   type EffectProfile,
 } from "@/lib/effect-policy";
 
@@ -17,6 +19,27 @@ import { TargetCursor } from "./target-cursor";
 
 export function EffectStage() {
   const [profile, setProfile] = useState<EffectProfile | null>(null);
+  const [journey, setJourney] = useState<string | null>(null);
+  const [journeyClaimed, setJourneyClaimed] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncJourney = () => {
+      const next = root.getAttribute("data-journey");
+      setJourney(next);
+      if (isJourneyBackgroundActive(next)) {
+        setJourneyClaimed(true);
+      }
+    };
+
+    syncJourney();
+    const observer = new MutationObserver(syncJourney);
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ["data-journey"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
@@ -46,6 +69,13 @@ export function EffectStage() {
   }, []);
 
   const mode = profile?.mode ?? "static";
+  const showAcidSquares =
+    profile !== null &&
+    shouldMountAcidSquares({
+      mode: profile.mode,
+      journey,
+      journeyClaimed,
+    });
 
   return (
     <div
@@ -53,7 +83,7 @@ export function EffectStage() {
       className="pointer-events-none"
       data-effect-mode={mode}
     >
-      {profile?.mode === "static" ? <AcidSquares profile={profile} /> : null}
+      {showAcidSquares ? <AcidSquares profile={profile} /> : null}
       {profile?.pointerEffects ? (
         <>
           <SpecularControls />
