@@ -16,7 +16,7 @@
   left: 0;
   top: 0.35rem;
   bottom: 0.35rem;
-  width: 1px;
+  width: 3px;
   pointer-events: none;
 }
 
@@ -93,8 +93,9 @@
 }
 
 .index {
-  color: color-mix(in srgb, var(--foreground) 34%, transparent);
-  font-size: 0.625rem;
+  color: color-mix(in srgb, var(--foreground) 46%, transparent);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
   transition: color 100ms ease-out;
 }
 
