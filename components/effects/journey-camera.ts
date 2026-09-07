@@ -4,6 +4,9 @@ export const SECTION_PATH_T = [0, 0.16, 0.32, 0.48, 0.62, 0.76, 0.88] as const;
 /** Hard ceiling — arrival never parks at t = 1. */
 export const PATH_END_T = 0.91;
 
+/** Chapter sculptures along the path (About → Contact). Contact stays on-camera. */
+export const STATION_PATH_T = [0.17, 0.33, 0.49, 0.63, 0.77, 0.86] as const;
+
 /** Viewport probe used to map later chapters; hero must not use this at rest. */
 export const JOURNEY_FOCUS_Y_RATIO = 0.38;
 
@@ -96,7 +99,32 @@ export function mapSectionScrollToJourneyT({
   return pathEndT;
 }
 
-/** Aim at BERAT at rest, then frame sculptures, then CONNECT. */
+/**
+ * Blend sculpture positions along t so the camera flies past chapters
+ * instead of snapping to whichever station is nearest.
+ */
+export function interpolateStationPosition(
+  t: number,
+  stations: readonly JourneyVec3[],
+  stationT: readonly number[] = STATION_PATH_T,
+): JourneyVec3 | undefined {
+  if (stations.length === 0) return undefined;
+  const last = Math.min(stations.length, stationT.length) - 1;
+  if (last < 0) return undefined;
+  if (t <= stationT[0]) return stations[0];
+  if (t >= stationT[last]) return stations[last];
+  for (let i = 0; i < last; i++) {
+    const a = stationT[i];
+    const b = stationT[i + 1];
+    if (t <= b) {
+      const u = clamp((t - a) / Math.max(1e-6, b - a), 0, 1);
+      return lerpVec(stations[i], stations[i + 1], u);
+    }
+  }
+  return stations[last];
+}
+
+/** Aim at BERAT at rest, then glide past sculptures, then CONNECT. */
 export function resolveJourneyLookTarget({
   t,
   cameraPos,
@@ -112,22 +140,24 @@ export function resolveJourneyLookTarget({
   readonly arrivalPos: JourneyVec3;
   readonly stationPos?: JourneyVec3;
 }): JourneyVec3 {
-  const heroW = 1 - journeySmoothstep(t, 0, 0.12);
-  const connectW = journeySmoothstep(t, 0.82, PATH_END_T);
+  const heroW = 1 - journeySmoothstep(t, 0, 0.14);
+  const connectW = journeySmoothstep(t, 0.74, SECTION_PATH_T[6]);
   const pathAhead = {
     x: cameraPos.x + tangent.x * 10,
     y: cameraPos.y + tangent.y * 10,
     z: cameraPos.z + tangent.z * 10,
   };
+  // Keep most of the look on the path so chapter sculptures drift through
+  // frame instead of becoming a hard cut to a new "background."
   const framed = stationPos
     ? {
-        x: pathAhead.x * 0.4 + stationPos.x * 0.6,
-        y: pathAhead.y * 0.55 + stationPos.y * 0.45,
-        z: pathAhead.z * 0.35 + stationPos.z * 0.65,
+        x: pathAhead.x * 0.72 + stationPos.x * 0.28,
+        y: pathAhead.y * 0.78 + stationPos.y * 0.22,
+        z: pathAhead.z * 0.7 + stationPos.z * 0.3,
       }
     : pathAhead;
   const mid = lerpVec(framed, textPos, heroW);
-  return lerpVec(mid, arrivalPos, connectW * 0.9);
+  return lerpVec(mid, arrivalPos, connectW);
 }
 
 export function journeyLookName({

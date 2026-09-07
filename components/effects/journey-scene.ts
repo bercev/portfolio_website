@@ -6,6 +6,8 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import {
   PATH_END_T,
   SECTION_PATH_T,
+  STATION_PATH_T,
+  interpolateStationPosition,
   journeyLookName,
   mapSectionScrollToJourneyT,
   resolveJourneyLookTarget,
@@ -63,8 +65,8 @@ function buildTextPoints(
 
   const data = ctx.getImageData(0, 0, c.width, c.height).data;
   const candidates: Array<[number, number]> = [];
-  for (let y = 0; y < c.height; y += 2) {
-    for (let x = 0; x < c.width; x += 2) {
+  for (let y = 0; y < c.height; y += 1) {
+    for (let x = 0; x < c.width; x += 1) {
       if (data[(y * c.width + x) * 4 + 3] > 128) candidates.push([x, y]);
     }
   }
@@ -96,9 +98,9 @@ function buildTextPoints(
       c.width / 2,
       c.height / 2,
     ];
-    positions[i * 3] = (px / c.width - 0.5) * worldW + (Math.random() - 0.5) * 0.06;
-    positions[i * 3 + 1] = -(py / c.height - 0.5) * worldH + (Math.random() - 0.5) * 0.06;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.9;
+    positions[i * 3] = (px / c.width - 0.5) * worldW + (Math.random() - 0.5) * 0.03;
+    positions[i * 3 + 1] = -(py / c.height - 0.5) * worldH + (Math.random() - 0.5) * 0.03;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.42;
     const col = colorStops[(Math.random() * colorStops.length) | 0];
     colors[i * 3] = col.r;
     colors[i * 3 + 1] = col.g;
@@ -129,7 +131,7 @@ function buildTextPoints(
       uniform float uTime;
       uniform float uScatter;
       void main() {
-        vColor = color${ink ? "" : " * 1.25"};
+        vColor = color${ink ? "" : " * 1.06"};
         vec3 p = position;
         vec3 dir = normalize(vec3(sin(seed * 3.1), cos(seed * 2.3), sin(seed * 5.7)));
         p += dir * uScatter * (9.0 + seed * 2.0);
@@ -137,7 +139,7 @@ function buildTextPoints(
         p.x += cos(uTime * 0.6 + seed * 1.7) * 0.04;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         float dist = max(-mv.z, 0.35);
-        gl_PointSize = min((1.25 + 1.5 * fract(seed)) * (${ink ? "58.0" : "130.0"} / dist), ${ink ? "8.0" : "18.0"});
+        gl_PointSize = min((1.15 + 1.05 * fract(seed)) * (${ink ? "58.0" : "78.0"} / dist), ${ink ? "8.0" : "11.0"});
         vFade = smoothstep(80.0, 16.0, dist) * smoothstep(0.45, 2.8, dist);
         gl_Position = projectionMatrix * mv;
       }
@@ -148,7 +150,7 @@ function buildTextPoints(
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float d = length(uv);
-        float alpha = smoothstep(0.5, 0.04, d) * vFade${ink ? "" : " * 1.55"};
+        float alpha = smoothstep(0.5, 0.08, d) * vFade${ink ? "" : " * 1.08"};
         if (alpha < 0.01) discard;
         gl_FragColor = vec4(vColor, alpha);
       }
@@ -595,6 +597,9 @@ export class JourneyScene {
 
   private readonly tangent = new THREE.Vector3();
   private readonly lookTarget = new THREE.Vector3(0, 0, 0);
+  private readonly lookSmoothed = new THREE.Vector3(0, 0, 0);
+  private readonly arrivalPark = new THREE.Vector3(0, 0.4, -114);
+  private lookPrimed = false;
   private readonly pointer = { x: 0, y: 0 };
   private readonly timer = new THREE.Timer();
   private targetT = 0;
@@ -644,7 +649,7 @@ export class JourneyScene {
 
     this.textPoints = buildTextPoints(
       "BERAT",
-      quality === "full" ? 7000 : 4200,
+      quality === "full" ? 10000 : 5600,
       palette,
       HERO_WORDMARK_HEIGHT,
       particleBlending,
@@ -656,10 +661,10 @@ export class JourneyScene {
     this.textPoints.renderOrder = 8;
     this.scene.add(this.textGroup);
 
-    this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 6000 : 3600, palette, 5, particleBlending, lightTheme);
+    this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 7800 : 4200, palette, 5, particleBlending, lightTheme);
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = 1;
     this.arrivalGroup.add(this.arrivalPoints);
-    this.arrivalGroup.position.set(0, 0.4, -142);
+    this.parkArrivalWordmark();
     this.arrivalGroup.visible = false;
     this.arrivalGroup.renderOrder = 8;
     this.arrivalPoints.renderOrder = 8;
@@ -861,9 +866,9 @@ export class JourneyScene {
       this.composer.addPass(
         new UnrealBloomPass(
           new THREE.Vector2(window.innerWidth, window.innerHeight),
-          0.35,
-          0.4,
-          0.55,
+          0.08,
+          0.16,
+          0.88,
         ),
       );
       this.composer.setSize(window.innerWidth, window.innerHeight);
@@ -982,11 +987,10 @@ export class JourneyScene {
       new THREE.Color(this.palette.accent),
     ];
 
-    const stationT = [0.18, 0.34, 0.5, 0.66, 0.82, 0.95];
     const stationScale = [2.6, 2.5, 2.2, 2.45, 2.3, 2.6];
     for (let i = 0; i < STATION_BUILDERS.length; i++) {
       const object = STATION_BUILDERS[i](tintColors[i]);
-      this.parkOnPath(object, stationT[i], i % 2 ? 1 : -1, (i % 3 - 1) * 1.2, 3.2);
+      this.parkOnPath(object, STATION_PATH_T[i], i % 2 ? 1 : -1, (i % 3 - 1) * 1.2, 3.2);
       object.scale.setScalar(stationScale[i]);
       this.stations.push(object);
       this.scene.add(object);
@@ -1309,7 +1313,17 @@ export class JourneyScene {
     // Portrait stacks the hero copy tall, so lift the glyph clear of it.
     const lift = (1 - scale) * PORTRAIT_WORDMARK_LIFT;
     this.textGroup.position.y = 0.4 + lift;
-    this.arrivalGroup.position.y = 0.4 + lift;
+    this.arrivalGroup.position.copy(this.arrivalPark);
+    this.arrivalGroup.position.y += lift;
+  }
+
+  /** Sit CONNECT ahead of the camera at Contact, on the path. */
+  private parkArrivalWordmark() {
+    const t = SECTION_PATH_T[6];
+    const p = this.curve.getPointAt(t);
+    this.curve.getTangentAt(t, this.tangent);
+    this.arrivalGroup.position.copy(p).addScaledVector(this.tangent, 9);
+    this.arrivalPark.copy(this.arrivalGroup.position);
   }
 
   private readonly handleResize = () => {
@@ -1344,19 +1358,9 @@ export class JourneyScene {
     return Number.isFinite(t) ? THREE.MathUtils.clamp(t, 0, PATH_END_T) : 0;
   }
 
-  private nearestStation(t: number): THREE.Object3D | undefined {
+  private blendedStationPos(t: number) {
     if (this.stations.length === 0) return undefined;
-    const stationT = [0.18, 0.34, 0.5, 0.66, 0.82, 0.95];
-    let best = 0;
-    let bestDist = Number.POSITIVE_INFINITY;
-    for (let i = 0; i < this.stations.length; i++) {
-      const dist = Math.abs((stationT[i] ?? 1) - t);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = i;
-      }
-    }
-    return this.stations[best];
+    return interpolateStationPosition(t, this.stations.map((station) => station.position));
   }
 
   private publishProgress(t: number) {
@@ -1365,23 +1369,22 @@ export class JourneyScene {
     this.onProgress?.(value);
   }
 
-  private renderOneFrame(time: number) {
+  private renderOneFrame(time: number, dt = 1 / 60) {
     // `time` is elapsed seconds.
     const t = Math.max(0, time);
-    const scatter = this.reducedMotion ? 0 : THREE.MathUtils.smoothstep(this.smoothT, 0.04, 0.18);
+    const scatter = this.reducedMotion ? 0 : THREE.MathUtils.smoothstep(this.smoothT, 0.05, 0.22);
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = scatter;
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
     this.textGroup.rotation.y = Math.sin(t * 0.15) * 0.06;
 
-    // Gather CONNECT through Contact but leave residual scatter so the
-    // path never looks finished / parked at the footer.
+    // Gather CONNECT as Contact comes into focus.
     const arrive = this.reducedMotion
       ? 1
-      : 1 - 0.62 * THREE.MathUtils.smoothstep(this.smoothT, 0.84, PATH_END_T);
+      : 1 - 0.92 * THREE.MathUtils.smoothstep(this.smoothT, 0.72, 0.88);
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = arrive;
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
     this.arrivalGroup.rotation.y = Math.sin(t * 0.12 + 2) * 0.05;
-    this.arrivalGroup.visible = !this.reducedMotion && this.smoothT > 0.8;
+    this.arrivalGroup.visible = !this.reducedMotion && this.smoothT > 0.7;
 
     if (!this.reducedMotion) {
       this.stars.rotation.y = t * 0.008;
@@ -1435,14 +1438,14 @@ export class JourneyScene {
     const pos = this.curve.getPointAt(pathT);
     this.camera.position.copy(pos);
     this.curve.getTangentAt(pathT, this.tangent);
-    const station = this.nearestStation(pathT);
+    const stationPos = this.blendedStationPos(pathT);
     const look = resolveJourneyLookTarget({
       t: pathT,
       cameraPos: pos,
       tangent: this.tangent,
       textPos: this.textGroup.position,
       arrivalPos: this.arrivalGroup.position,
-      stationPos: station?.position,
+      stationPos,
     });
     this.lookTarget.set(look.x, look.y, look.z);
     if (!this.reducedMotion) {
@@ -1454,9 +1457,15 @@ export class JourneyScene {
         this.lookTarget.y += this.pointer.y * 0.2;
       }
     }
-    this.camera.lookAt(this.lookTarget);
+    if (!this.lookPrimed) {
+      this.lookSmoothed.copy(this.lookTarget);
+      this.lookPrimed = true;
+    } else {
+      this.lookSmoothed.lerp(this.lookTarget, 1 - Math.exp(-5.2 * dt));
+    }
+    this.camera.lookAt(this.lookSmoothed);
     this.renderer.domElement.dataset.journeyLook = journeyLookName({
-      look: this.lookTarget,
+      look: this.lookSmoothed,
       textPos: this.textGroup.position,
       arrivalPos: this.arrivalGroup.position,
     });
@@ -1475,9 +1484,9 @@ export class JourneyScene {
     const rawDt = this.timer.getDelta();
     const dt = Number.isFinite(rawDt) && rawDt > 0 ? Math.min(rawDt, 0.05) : 1 / 60;
     const t = Math.max(0, this.timer.getElapsed());
-    this.smoothT += (this.targetT - this.smoothT) * (1 - Math.exp(-3.2 * dt));
+    this.smoothT += (this.targetT - this.smoothT) * (1 - Math.exp(-1.85 * dt));
     if (!Number.isFinite(this.smoothT)) this.smoothT = this.targetT;
-    this.renderOneFrame(t);
+    this.renderOneFrame(t, dt);
     this.publishProgress(this.smoothT);
     this.raf = requestAnimationFrame(this.loop);
   };
