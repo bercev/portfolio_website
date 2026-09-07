@@ -1,10 +1,13 @@
-import type { Page } from "@playwright/test";
-
 import {
   attachRuntimeErrorCollector,
   expect,
   test,
 } from "./runtime-errors";
+import {
+  measureHeroWordmarkInk,
+  openThemedJourney,
+  readJourneyT,
+} from "./journey-helpers";
 
 test("renders the immersive 3D journey on capable devices", async ({ page }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
@@ -54,12 +57,40 @@ test("renders every numbered station in semantic order", async ({ page }) => {
   await expect(kickers.nth(5)).toHaveText("07");
 });
 
-async function readJourneyT(page: Page) {
-  const raw = await page
-    .locator("[data-journey-scene]")
-    .getAttribute("data-journey-t");
-  return raw == null ? Number.NaN : Number(raw);
-}
+test("holds the camera on BERAT at the top of the page", async ({ page }) => {
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
+  await expect.poll(() => readJourneyT(page)).toBeGreaterThanOrEqual(0);
+  expect(await readJourneyT(page)).toBeLessThan(0.03);
+  await expect
+    .poll(() => page.locator("[data-journey-scene]").getAttribute("data-journey-look"))
+    .toBe("berat");
+  runtimeErrors.assertEmpty();
+});
+
+test("shows BERAT particle ink in the hero in dark and light", async ({
+  browser,
+}) => {
+  for (const theme of ["dark", "light"] as const) {
+    const { context, page, runtimeErrors } = await openThemedJourney(
+      browser,
+      theme,
+    );
+
+    await expect(page.locator("[data-hero-name-fallback]")).toBeHidden();
+    await expect.poll(() => readJourneyT(page)).toBeLessThan(0.03);
+    await expect
+      .poll(async () => {
+        const ink = await measureHeroWordmarkInk(page);
+        return ink.inkRatio > 0.03 && ink.columnHits >= 4 && ink.widthSpan > 0.35;
+      })
+      .toBe(true);
+
+    runtimeErrors.assertEmpty();
+    await context.close();
+  }
+});
 
 test("keeps the journey moving from Experience through Projects", async ({
   page,

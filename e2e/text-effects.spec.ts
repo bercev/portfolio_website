@@ -3,6 +3,11 @@ import {
   expect,
   test,
 } from "./runtime-errors";
+import {
+  measureHeroWordmarkInk,
+  openThemedJourney,
+  readJourneyT,
+} from "./journey-helpers";
 
 test("keeps the journey identity semantically stable", async ({
   page,
@@ -16,6 +21,29 @@ test("keeps the journey identity semantically stable", async ({
   await expect(page.locator("#home a")).toHaveCount(0);
 
   runtimeErrors.assertEmpty();
+});
+
+test("keeps BERAT particle ink measurable in both themes", async ({
+  browser,
+}) => {
+  for (const theme of ["light", "dark"] as const) {
+    const { context, page, runtimeErrors } = await openThemedJourney(
+      browser,
+      theme,
+    );
+
+    await expect(page.locator("[data-hero-name-fallback]")).toBeHidden();
+    await expect.poll(() => readJourneyT(page)).toBeLessThan(0.03);
+    await expect
+      .poll(async () => {
+        const ink = await measureHeroWordmarkInk(page);
+        return ink.inkRatio > 0.03 && ink.columnHits >= 4 && ink.widthSpan > 0.35;
+      })
+      .toBe(true);
+
+    runtimeErrors.assertEmpty();
+    await context.close();
+  }
 });
 
 test("renders the journey canvas in both themes", async ({

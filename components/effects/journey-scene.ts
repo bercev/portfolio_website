@@ -3,6 +3,14 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
+import {
+  PATH_END_T,
+  SECTION_PATH_T,
+  journeyLookName,
+  mapSectionScrollToJourneyT,
+  resolveJourneyLookTarget,
+} from "./journey-camera";
+
 export type JourneyQuality = "full" | "mobile";
 
 export type JourneyPalette = {
@@ -241,17 +249,12 @@ const SECTION_IDS = [
   "skills",
   "contact",
 ] as const;
-const SECTION_PATH_T = [0, 0.16, 0.32, 0.48, 0.62, 0.76, 0.88] as const;
-/** Hard ceiling — arrival never parks at t = 1. */
-const PATH_END_T = 0.91;
 
 /** Map page scroll to path t using section tops so later chapters keep travel. */
 function mapScrollToJourneyT(): number {
   const vh = window.innerHeight;
   const y = Number.isFinite(window.scrollY) ? window.scrollY : 0;
   const max = document.documentElement.scrollHeight - vh;
-  const focusY = y + vh * 0.38;
-
   const anchors: Array<{ y: number; t: number }> = [];
   for (let i = 0; i < SECTION_IDS.length; i++) {
     const el = document.getElementById(SECTION_IDS[i]);
@@ -262,30 +265,12 @@ function mapScrollToJourneyT(): number {
     });
   }
 
-  if (anchors.length < 2) {
-    const raw = max > 0 ? y / max : 0;
-    return THREE.MathUtils.clamp(raw * PATH_END_T, 0, PATH_END_T);
-  }
-
-  if (focusY <= anchors[0].y) return anchors[0].t;
-
-  const last = anchors[anchors.length - 1];
-  if (focusY >= last.y) {
-    const endY = Math.max(last.y + 1, (max > 0 ? max : last.y) + vh * 0.38);
-    const u = THREE.MathUtils.clamp((focusY - last.y) / (endY - last.y), 0, 1);
-    return THREE.MathUtils.lerp(last.t, PATH_END_T, u);
-  }
-
-  for (let i = 0; i < anchors.length - 1; i++) {
-    const a = anchors[i];
-    const b = anchors[i + 1];
-    if (focusY <= b.y) {
-      const u = (focusY - a.y) / Math.max(1, b.y - a.y);
-      return THREE.MathUtils.lerp(a.t, b.t, THREE.MathUtils.clamp(u, 0, 1));
-    }
-  }
-
-  return PATH_END_T;
+  return mapSectionScrollToJourneyT({
+    scrollY: y,
+    viewportH: vh,
+    maxScroll: max,
+    anchors,
+  });
 }
 
 /** Sculpture wireframe: breathing pulse + vertical two-tone gradient. */
@@ -1353,6 +1338,21 @@ export class JourneyScene {
     return Number.isFinite(t) ? THREE.MathUtils.clamp(t, 0, PATH_END_T) : 0;
   }
 
+  private nearestStation(t: number): THREE.Object3D | undefined {
+    if (this.stations.length === 0) return undefined;
+    const stationT = [0.18, 0.34, 0.5, 0.66, 0.82, 0.95];
+    let best = 0;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < this.stations.length; i++) {
+      const dist = Math.abs((stationT[i] ?? 1) - t);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    }
+    return this.stations[best];
+  }
+
   private publishProgress(t: number) {
     const value = Number.isFinite(t) ? t : 0;
     this.renderer.domElement.dataset.journeyT = value.toFixed(4);
@@ -1425,10 +1425,20 @@ export class JourneyScene {
       if (mat.uniforms.uTime) mat.uniforms.uTime.value = t;
     }
 
-    const pos = this.curve.getPointAt(this.journeyT());
+    const pathT = this.journeyT();
+    const pos = this.curve.getPointAt(pathT);
     this.camera.position.copy(pos);
-    this.curve.getTangentAt(this.journeyT(), this.tangent);
-    this.lookTarget.copy(pos).add(this.tangent);
+    this.curve.getTangentAt(pathT, this.tangent);
+    const station = this.nearestStation(pathT);
+    const look = resolveJourneyLookTarget({
+      t: pathT,
+      cameraPos: pos,
+      tangent: this.tangent,
+      textPos: this.textGroup.position,
+      arrivalPos: this.arrivalGroup.position,
+      stationPos: station?.position,
+    });
+    this.lookTarget.set(look.x, look.y, look.z);
     if (!this.reducedMotion) {
       const linger = THREE.MathUtils.smoothstep(this.smoothT, 0.82, PATH_END_T);
       this.lookTarget.x += Math.sin(t * 0.31) * 0.18 * linger;
@@ -1439,6 +1449,11 @@ export class JourneyScene {
       }
     }
     this.camera.lookAt(this.lookTarget);
+    this.renderer.domElement.dataset.journeyLook = journeyLookName({
+      look: this.lookTarget,
+      textPos: this.textGroup.position,
+      arrivalPos: this.arrivalGroup.position,
+    });
 
     this.composer?.render();
     if (!this.composer) this.renderer.render(this.scene, this.camera);
