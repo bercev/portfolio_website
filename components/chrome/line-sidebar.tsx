@@ -161,6 +161,7 @@ export function LineSidebar({ items }: LineSidebarProps) {
         } as CSSProperties
       }
     >
+      <span aria-hidden="true" className={styles.traveler} />
       <ul
         ref={listRef}
         className={styles.list}

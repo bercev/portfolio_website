@@ -21,13 +21,32 @@
 }
 
 .sidebar::before {
-  background: color-mix(in srgb, var(--foreground) 16%, transparent);
+  background: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--foreground) 22%, transparent) 0 2px,
+    transparent 2px 11px
+  );
 }
 
 .sidebar::after {
   background: var(--line-sidebar-accent);
   transform: scaleY(var(--progress));
   transform-origin: top;
+}
+
+.traveler {
+  position: absolute;
+  left: 1.5px;
+  top: calc(0.35rem + (100% - 0.7rem) * var(--progress));
+  z-index: 1;
+  width: 9px;
+  height: 9px;
+  pointer-events: none;
+  background: var(--line-sidebar-accent);
+  transform: translate(-50%, -50%) rotate(45deg);
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 12px color-mix(in srgb, var(--line-sidebar-accent) 70%, transparent);
 }
 
 .list {
@@ -50,12 +69,13 @@
 }
 
 .marker {
-  width: 4rem;
-  height: 2px;
-  margin-top: 0.25rem;
+  width: 7px;
+  height: 7px;
+  margin-top: 0.2rem;
+  margin-left: -2px;
   background: color-mix(in srgb, var(--foreground) 34%, transparent);
-  transform: scaleX(calc(1 + var(--effect) * 0.45));
-  transform-origin: right;
+  transform: rotate(45deg) scale(calc(0.7 + var(--effect) * 0.55));
+  transform-origin: center;
   transition: background 100ms ease-out, transform 100ms ease-out;
 }
 

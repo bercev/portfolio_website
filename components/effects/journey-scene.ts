@@ -661,7 +661,14 @@ export class JourneyScene {
     this.textPoints.renderOrder = 8;
     this.scene.add(this.textGroup);
 
-    this.arrivalPoints = buildTextPoints("CONNECT", quality === "full" ? 7800 : 4200, palette, 5, particleBlending, lightTheme);
+    this.arrivalPoints = buildTextPoints(
+      "LET'S CONNECT",
+      quality === "full" ? 11000 : 6200,
+      palette,
+      6.6,
+      particleBlending,
+      lightTheme,
+    );
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = 1;
     this.arrivalGroup.add(this.arrivalPoints);
     this.parkArrivalWordmark();
@@ -1317,12 +1324,12 @@ export class JourneyScene {
     this.arrivalGroup.position.y += lift;
   }
 
-  /** Sit CONNECT ahead of the camera at Contact, on the path. */
+  /** Sit LET'S CONNECT ahead of the camera at Contact, facing the lens. */
   private parkArrivalWordmark() {
     const t = SECTION_PATH_T[6];
     const p = this.curve.getPointAt(t);
     this.curve.getTangentAt(t, this.tangent);
-    this.arrivalGroup.position.copy(p).addScaledVector(this.tangent, 9);
+    this.arrivalGroup.position.copy(p).addScaledVector(this.tangent, 16);
     this.arrivalPark.copy(this.arrivalGroup.position);
   }
 
@@ -1377,14 +1384,13 @@ export class JourneyScene {
     (this.textPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
     this.textGroup.rotation.y = Math.sin(t * 0.15) * 0.06;
 
-    // Gather CONNECT as Contact comes into focus.
+    // Gather LET'S CONNECT as Contact comes into focus.
     const arrive = this.reducedMotion
-      ? 1
-      : 1 - 0.92 * THREE.MathUtils.smoothstep(this.smoothT, 0.72, 0.88);
+      ? 0
+      : 1 - THREE.MathUtils.smoothstep(this.smoothT, 0.62, 0.86);
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uScatter.value = arrive;
     (this.arrivalPoints.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
-    this.arrivalGroup.rotation.y = Math.sin(t * 0.12 + 2) * 0.05;
-    this.arrivalGroup.visible = !this.reducedMotion && this.smoothT > 0.7;
+    this.arrivalGroup.visible = !this.reducedMotion && this.smoothT > 0.58;
 
     if (!this.reducedMotion) {
       this.stars.rotation.y = t * 0.008;
@@ -1438,6 +1444,7 @@ export class JourneyScene {
     const pos = this.curve.getPointAt(pathT);
     this.camera.position.copy(pos);
     this.curve.getTangentAt(pathT, this.tangent);
+    this.arrivalGroup.lookAt(this.camera.position);
     const stationPos = this.blendedStationPos(pathT);
     const look = resolveJourneyLookTarget({
       t: pathT,
@@ -1448,7 +1455,7 @@ export class JourneyScene {
       stationPos,
     });
     this.lookTarget.set(look.x, look.y, look.z);
-    if (!this.reducedMotion) {
+    if (!this.reducedMotion && pathT < 0.78) {
       const linger = THREE.MathUtils.smoothstep(this.smoothT, 0.82, PATH_END_T);
       this.lookTarget.x += Math.sin(t * 0.31) * 0.18 * linger;
       this.lookTarget.y += Math.cos(t * 0.24) * 0.1 * linger;

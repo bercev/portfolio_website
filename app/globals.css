@@ -1590,28 +1590,28 @@ html[data-journey] [data-effect-layer="background"] {
 /* Bold crop / slight overlap publication previews. */
 .journey-pub-preview {
   display: block;
-  width: min(27rem, calc(100vw - 2.5rem));
+  width: min(44rem, calc(100vw - 2rem));
   overflow: hidden;
   border: 1px solid var(--foreground);
   border-radius: 0;
   background: var(--card);
   box-shadow: 8px 14px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
-  transform: rotate(-1.25deg) translate(-6%, 8%);
-  margin-left: 4%;
+  transform: rotate(-0.6deg);
+  margin-left: 0;
 }
 
 .journey-pub-preview--lead {
-  width: min(32rem, calc(100vw - 2rem));
-  transform: rotate(-1.75deg) translate(-8%, 10%);
+  width: min(50rem, calc(100vw - 1.25rem));
+  transform: rotate(-0.75deg);
   box-shadow: 10px 18px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 
 .journey-pub-preview iframe {
   display: block;
-  width: 140%;
+  width: 100%;
   max-width: none;
-  height: min(34rem, 72vh);
-  margin: -8% 0 0 -12%;
+  height: min(52rem, 84vh);
+  margin: 0;
   border: 0;
   border-radius: 0;
   background: #fff;

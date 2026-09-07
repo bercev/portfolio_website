@@ -168,7 +168,7 @@ export function HoverPreview({
                     src={readerSrc}
                     title={`${readerTitle} PDF preview`}
                     loading="lazy"
-                    className="h-[min(38rem,70vh)] w-full rounded-none bg-white"
+                    className="h-[min(52rem,84vh)] w-full rounded-none bg-white"
                   />
                 </>
               ) : image ? (

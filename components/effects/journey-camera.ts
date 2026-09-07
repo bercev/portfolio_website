@@ -141,7 +141,7 @@ export function resolveJourneyLookTarget({
   readonly stationPos?: JourneyVec3;
 }): JourneyVec3 {
   const heroW = 1 - journeySmoothstep(t, 0, 0.14);
-  const connectW = journeySmoothstep(t, 0.74, SECTION_PATH_T[6]);
+  const connectW = journeySmoothstep(t, 0.64, 0.86);
   const pathAhead = {
     x: cameraPos.x + tangent.x * 10,
     y: cameraPos.y + tangent.y * 10,
