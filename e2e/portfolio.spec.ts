@@ -129,7 +129,7 @@ test("uses a divided chronology and paired project panels", async ({
   await expect(page.locator("#projects [data-circular-gallery]")).toHaveCount(0);
 });
 
-test("keeps publication and project surfaces as bordered glass, not filled cards", async ({
+test("keeps publication and project surfaces as frost, not boxed cards", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -143,10 +143,12 @@ test("keeps publication and project surfaces as bordered glass, not filled cards
       return {
         backgroundColor: computed.backgroundColor,
         boxShadow: computed.boxShadow,
+        borderTopWidth: computed.borderTopWidth,
       };
     });
     expect(styles.backgroundColor).toMatch(/rgba?\(0, 0, 0, 0\)|transparent/);
-    expect(styles.boxShadow).not.toBe("none");
+    expect(styles.boxShadow).toBe("none");
+    expect(styles.borderTopWidth).toBe("0px");
   }
 
   const featured = page.locator("[data-project-featured]");
@@ -226,7 +228,9 @@ test("marquee-scrolls experience tech and keeps it static for reduced motion", a
   await staticContext.close();
 });
 
-test("uses quiet journey-panel borders in both themes", async ({ browser }) => {
+test("keeps journey-panel frost without a box stroke in both themes", async ({
+  browser,
+}) => {
   for (const theme of ["light", "dark"] as const) {
     const context = await browser.newContext({
       colorScheme: theme,
@@ -245,8 +249,11 @@ test("uses quiet journey-panel borders in both themes", async ({ browser }) => {
     const panels = page.locator(".journey-panel");
     await expect(panels.first()).toBeVisible();
     for (const panel of await panels.all()) {
-      await expect(panel).toHaveCSS("border-top-width", "1px");
+      await expect(panel).toHaveCSS("border-top-width", "0px");
       await expect(panel).toHaveCSS("background-image", "none");
+      expect(
+        await panel.evaluate((element) => getComputedStyle(element).backdropFilter),
+      ).toContain("blur(");
     }
 
     runtimeErrors.assertEmpty();
