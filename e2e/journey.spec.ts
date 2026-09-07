@@ -45,12 +45,12 @@ test("renders every numbered station in semantic order", async ({ page }) => {
 
   const kickers = page.locator(".journey-kicker");
   await expect(kickers).toHaveCount(6);
-  await expect(kickers.nth(0)).toHaveText("02");
-  await expect(kickers.nth(1)).toHaveText("03");
-  await expect(kickers.nth(2)).toHaveText("04");
-  await expect(kickers.nth(3)).toHaveText("05");
-  await expect(kickers.nth(4)).toHaveText("06");
-  await expect(kickers.nth(5)).toHaveText("07");
+  await expect(kickers.nth(0)).toHaveText("2");
+  await expect(kickers.nth(1)).toHaveText("3");
+  await expect(kickers.nth(2)).toHaveText("4");
+  await expect(kickers.nth(3)).toHaveText("5");
+  await expect(kickers.nth(4)).toHaveText("6");
+  await expect(kickers.nth(5)).toHaveText("7");
 });
 
 test("holds the camera on BERAT at the top of the page", async ({ page }) => {

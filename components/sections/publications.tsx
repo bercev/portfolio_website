@@ -29,7 +29,7 @@ export function Publications({ content, heading }: PublicationsProps) {
             }
           >
             <p className="journey-pub-index" aria-hidden="true">
-              {String(index + 1).padStart(2, "0")}
+              {index + 1}
             </p>
             <div className="journey-pub-main">
               <HoverPreview

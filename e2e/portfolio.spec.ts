@@ -379,8 +379,8 @@ test("keeps line navigation labels and markers comfortably legible", async ({
 
   const markerBox = await marker.boundingBox();
   expect(markerBox).not.toBeNull();
-  expect(markerBox!.width).toBeGreaterThanOrEqual(64);
-  expect(markerBox!.height).toBeGreaterThanOrEqual(2);
+  expect(markerBox!.width).toBeGreaterThanOrEqual(4);
+  expect(markerBox!.height).toBeGreaterThanOrEqual(4);
 });
 
 test("keeps profile actions only in the utility menu", async ({

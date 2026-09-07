@@ -19,13 +19,57 @@ const FALLOFF_CURVES = {
   sharp: (progress: number) => progress * progress * progress,
 } as const;
 
+const ACTIVATION_LINE = 0.35;
+const SLOT_MIN_GAP = 0.08;
+
+function clamp01(value: number) {
+  return Math.min(1, Math.max(0, value));
+}
+
+/**
+ * Place each label at the same rail progress the traveler uses when that
+ * section sits at the top of the viewport (hash jumps and native scroll).
+ */
+function measureSectionSlots(ids: readonly string[]): number[] {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  const last = ids.length - 1;
+  const raw = ids.map((id, index) => {
+    if (index === 0) return 0;
+    if (max <= 0) return last > 0 ? index / last : 0;
+    const section = document.getElementById(id);
+    if (!section) return last > 0 ? index / last : 0;
+    const top = section.getBoundingClientRect().top + window.scrollY;
+    const scrollMargin = Number.parseFloat(getComputedStyle(section).scrollMarginTop) || 0;
+    return clamp01((top - scrollMargin) / max);
+  });
+  return spreadSlots(raw);
+}
+
+/** Keep labels from stacking when chapters sit close in the document. */
+function spreadSlots(slots: readonly number[]): number[] {
+  const n = slots.length;
+  if (n === 0) return [];
+  if (n === 1) return [0];
+
+  const out = slots.map(clamp01);
+  out[0] = 0;
+  for (let i = 1; i < n; i++) {
+    out[i] = Math.max(out[i], out[i - 1] + SLOT_MIN_GAP);
+  }
+  out[n - 1] = Math.min(1, out[n - 1]);
+  for (let i = n - 2; i >= 0; i--) {
+    out[i] = Math.min(out[i], out[i + 1] - SLOT_MIN_GAP);
+  }
+  out[0] = 0;
+  return out.map(clamp01);
+}
+
 type LineSidebarProps = {
   items: PortfolioContent["navigation"];
 };
 
 export function LineSidebar({ items }: LineSidebarProps) {
   const navRef = useRef<HTMLElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
   const targetsRef = useRef<number[]>([]);
   const currentRef = useRef<number[]>([]);
@@ -67,15 +111,11 @@ export function LineSidebar({ items }: LineSidebarProps) {
   }, [runFrame]);
 
   const handlePointerMove = (event: PointerEvent<HTMLUListElement>) => {
-    const list = listRef.current;
-    if (!list) return;
-    const bounds = list.getBoundingClientRect();
-    const pointerY = event.clientY - bounds.top;
-
     itemRefs.current.forEach((item, index) => {
       if (!item) return;
-      const center = item.offsetTop + item.offsetHeight / 2;
-      const distance = Math.abs(pointerY - center);
+      const bounds = item.getBoundingClientRect();
+      const center = bounds.top + bounds.height / 2;
+      const distance = Math.abs(event.clientY - center);
       const progress = Math.max(0, 1 - distance / 100);
       targetsRef.current[index] = FALLOFF_CURVES.smooth(progress);
     });
@@ -88,7 +128,7 @@ export function LineSidebar({ items }: LineSidebarProps) {
   };
 
   const updateActiveSection = useCallback(() => {
-    const activationLine = window.innerHeight * 0.35;
+    const activationLine = window.innerHeight * ACTIVATION_LINE;
     let nextIndex = 0;
 
     items.forEach((item, index) => {
@@ -124,6 +164,10 @@ export function LineSidebar({ items }: LineSidebarProps) {
         const y = Number.isFinite(window.scrollY) ? window.scrollY : 0;
         const progress = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
         navRef.current?.style.setProperty("--progress", String(progress));
+        const slots = measureSectionSlots(items.map((item) => item.id));
+        itemRefs.current.forEach((item, index) => {
+          item?.style.setProperty("--slot", String(slots[index] ?? 0));
+        });
         updateActiveSection();
       });
     };
@@ -139,7 +183,7 @@ export function LineSidebar({ items }: LineSidebarProps) {
       window.removeEventListener("hashchange", scheduleUpdate);
       if (updateFrame !== null) cancelAnimationFrame(updateFrame);
     };
-  }, [updateActiveSection]);
+  }, [items, updateActiveSection]);
 
   useEffect(() => {
     runFrameRef.current = runFrame;
@@ -163,7 +207,6 @@ export function LineSidebar({ items }: LineSidebarProps) {
     >
       <span aria-hidden="true" className={styles.traveler} />
       <ul
-        ref={listRef}
         className={styles.list}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
@@ -175,7 +218,12 @@ export function LineSidebar({ items }: LineSidebarProps) {
               itemRefs.current[index] = element;
             }}
             className={styles.item}
-            style={{ "--item-index": index } as CSSProperties}
+            style={
+              {
+                "--slot":
+                  items.length > 1 ? index / (items.length - 1) : 0,
+              } as CSSProperties
+            }
           >
             <span
               aria-hidden="true"
@@ -192,9 +240,7 @@ export function LineSidebar({ items }: LineSidebarProps) {
                 startLoop();
               }}
             >
-              <span className={styles.index}>
-                {String(index + 1).padStart(2, "0")}
-              </span>
+              <span className={styles.index}>{index + 1}</span>
               <span>{item.label}</span>
             </a>
           </li>

@@ -45,7 +45,7 @@ export function Hero({ content }: { content: HeroContent }) {
         <div data-hero-below>
           <div data-hero-lede>
             <div data-hero-meta>
-              <span>01</span>
+              <span>1</span>
               <span data-hero-meta-sep>·</span>
               <span>{identity.role}</span>
               <span data-hero-meta-sep>·</span>

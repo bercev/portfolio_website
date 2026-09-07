@@ -31,7 +31,7 @@ export function Station({
       )}
     >
       <header className="journey-station-head">
-        <p className="journey-kicker">{String(station).padStart(2, "0")}</p>
+        <p className="journey-kicker">{station}</p>
         {note ? <p className="journey-station-note">{note}</p> : null}
         <h2 id={`${id}-heading`} className="journey-station-heading">
           {heading}
