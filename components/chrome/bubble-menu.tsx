@@ -15,7 +15,7 @@ import type { PortfolioContent } from "@/data/content";
 import { ThemeSelector } from "@/components/chrome/theme-selector";
 import { ThemeToggle } from "@/components/chrome/theme-toggle";
 import { Confetti, type ConfettiRef } from "@/components/ui/confetti";
-import { getResumeConfettiBursts } from "@/lib/resume-confetti";
+import { getResumeConfettiBursts, RESUME_CONFETTI_STAGGER_MS } from "@/lib/resume-confetti";
 
 import styles from "./bubble-menu.module.css";
 
@@ -65,9 +65,11 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
     closeMenu();
     if (!isDownload || reducedMotion) return;
 
-    for (const burst of getResumeConfettiBursts()) {
-      void confettiRef.current?.fire(burst);
-    }
+    getResumeConfettiBursts().forEach((burst, index) => {
+      window.setTimeout(() => {
+        void confettiRef.current?.fire(burst);
+      }, index * RESUME_CONFETTI_STAGGER_MS);
+    });
   };
 
   const handleTriggerClick = () => {

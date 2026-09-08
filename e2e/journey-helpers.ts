@@ -9,6 +9,33 @@ export async function readJourneyT(page: Page) {
   return raw == null ? Number.NaN : Number(raw);
 }
 
+/** Average luma of a small hero backdrop sample — theme lockstep checks. */
+export async function readHeroBackdropLuma(page: Page) {
+  const png = await page.screenshot({
+    clip: { x: 12, y: 96, width: 56, height: 56 },
+    type: "png",
+  });
+
+  return page.evaluate(async (base64) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${base64}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return 0;
+    ctx.drawImage(image, 0, 0);
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let luma = 0;
+    const pixels = data.length / 4;
+    for (let i = 0; i < data.length; i += 4) {
+      luma += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+    }
+    return luma / Math.max(1, pixels);
+  }, png.toString("base64"));
+}
+
 /** Count high-contrast pixels where the BERAT particle field is framed. */
 export async function measureHeroWordmarkInk(page: Page) {
   const home = page.locator("#home");

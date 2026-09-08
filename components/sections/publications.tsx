@@ -43,11 +43,7 @@ export function Publications({ content, heading }: PublicationsProps) {
                 }
                 linkClassName="decoration-portfolio-accent"
                 linkIconSize={24}
-                previewClassName={
-                  index === 0
-                    ? "journey-pub-preview journey-pub-preview--lead"
-                    : "journey-pub-preview"
-                }
+                previewClassName="journey-pub-preview"
               />
               <p className="journey-pub-gloss">{publication.gloss}</p>
             </div>

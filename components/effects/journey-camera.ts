@@ -132,6 +132,7 @@ export function resolveJourneyLookTarget({
   textPos,
   arrivalPos,
   stationPos,
+  stationWeight = 0.28,
 }: {
   readonly t: number;
   readonly cameraPos: JourneyVec3;
@@ -139,6 +140,8 @@ export function resolveJourneyLookTarget({
   readonly textPos: JourneyVec3;
   readonly arrivalPos: JourneyVec3;
   readonly stationPos?: JourneyVec3;
+  /** How much side-parked sculptures pull the look (phones need less). */
+  readonly stationWeight?: number;
 }): JourneyVec3 {
   const heroW = 1 - journeySmoothstep(t, 0, 0.14);
   const connectW = journeySmoothstep(t, 0.64, 0.86);
@@ -149,11 +152,12 @@ export function resolveJourneyLookTarget({
   };
   // Keep most of the look on the path so chapter sculptures drift through
   // frame instead of becoming a hard cut to a new "background."
+  const w = Math.min(1, Math.max(0, stationWeight));
   const framed = stationPos
     ? {
-        x: pathAhead.x * 0.72 + stationPos.x * 0.28,
-        y: pathAhead.y * 0.78 + stationPos.y * 0.22,
-        z: pathAhead.z * 0.7 + stationPos.z * 0.3,
+        x: pathAhead.x * (1 - w) + stationPos.x * w,
+        y: pathAhead.y * (1 - w * (0.22 / 0.28)) + stationPos.y * (w * (0.22 / 0.28)),
+        z: pathAhead.z * (1 - w * (0.3 / 0.28)) + stationPos.z * (w * (0.3 / 0.28)),
       }
     : pathAhead;
   const mid = lerpVec(framed, textPos, heroW);

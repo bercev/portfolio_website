@@ -20,5 +20,7 @@ describe("getResumeConfettiBursts", () => {
     ).toBe(200);
     expect(bursts.every(({ angle }) => angle === 270)).toBe(true);
     expect(bursts.every(({ origin }) => origin?.y === 0)).toBe(true);
+    expect(bursts.every(({ ticks }) => (ticks ?? 0) >= 500)).toBe(true);
+    expect(bursts.every(({ gravity }) => (gravity ?? 1) <= 0.5)).toBe(true);
   });
 });
