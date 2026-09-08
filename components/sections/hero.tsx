@@ -2,6 +2,8 @@
 
 import { motion, useReducedMotion } from "motion/react";
 
+import { MotionVersionLink } from "@/components/chrome/motion-version-link";
+import { useMotionPreference } from "@/components/providers/motion-provider";
 import type { PortfolioContent } from "@/data/content";
 
 type HeroContent = {
@@ -11,7 +13,9 @@ type HeroContent = {
 
 export function Hero({ content }: { content: HeroContent }) {
   const { identity, hero } = content;
-  const reduceMotion = useReducedMotion();
+  const { forced } = useMotionPreference();
+  const osReduce = useReducedMotion();
+  const reduceMotion = Boolean(forced) || osReduce;
 
   return (
     <section
@@ -53,6 +57,9 @@ export function Hero({ content }: { content: HeroContent }) {
             </div>
 
             {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
+            <p data-hero-plain-link>
+              <MotionVersionLink />
+            </p>
           </div>
 
           <dl data-hero-signals>

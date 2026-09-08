@@ -12,6 +12,7 @@ import {
 
 import type { Project } from "@/data/content";
 import { usePalette } from "@/components/providers/palette-provider";
+import { useMotionPreference } from "@/components/providers/motion-provider";
 import { ExternalLink } from "@/components/ui/external-link";
 import {
   FINE_POINTER_QUERY,
@@ -128,6 +129,7 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
   const sceneRef = useRef<VitaeOrbitScene | null>(null);
   const { resolvedTheme } = useTheme();
   const { palette } = usePalette();
+  const { reducedMotion: forceReduce } = useMotionPreference();
   const [profile, setProfile] = useState<EffectProfile>(STATIC_PROFILE);
   const [inFocus, setInFocus] = useState(false);
   const [open, setOpen] = useState(false);
@@ -163,7 +165,7 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
         getEffectProfile({
           finePointer: finePointer.matches,
           mobile: mobile.matches,
-          reducedMotion: reducedMotion.matches,
+          reducedMotion: forceReduce || reducedMotion.matches,
         }),
       );
     };
@@ -178,7 +180,7 @@ export function VitaeArtifact({ project }: { readonly project: Project }) {
       mobile.removeEventListener("change", updateProfile);
       reducedMotion.removeEventListener("change", updateProfile);
     };
-  }, []);
+  }, [forceReduce]);
 
   useEffect(() => {
     const projects = document.getElementById("projects");

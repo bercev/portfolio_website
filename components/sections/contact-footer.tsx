@@ -1,5 +1,6 @@
 import type { PortfolioContent } from "@/data/content";
 
+import { MotionVersionLink } from "@/components/chrome/motion-version-link";
 import { ExternalLink } from "@/components/ui/external-link";
 import { Station } from "@/components/ui/station";
 
@@ -33,6 +34,9 @@ export function ContactFooter({
               </ExternalLink>
             </li>
           ))}
+          <li>
+            <MotionVersionLink className="journey-contact-link" />
+          </li>
         </ul>
       </nav>
     </Station>

@@ -2131,6 +2131,23 @@ html[data-journey="active"] [data-hero-name-fallback] {
   text-wrap: pretty;
 }
 
+[data-hero-plain-link] {
+  margin: 0.35rem 0 0;
+  font: 500 0.82rem/1.5 var(--font-sans);
+  letter-spacing: -0.01em;
+}
+
+[data-hero-plain-link] a {
+  color: var(--muted-foreground);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+[data-hero-plain-link] a:hover {
+  color: var(--foreground);
+}
+
 @media (max-width: 900px) {
   [data-hero-lede],
   [data-hero-signals] {
@@ -2203,4 +2220,72 @@ html[data-journey="active"] [data-hero-name-fallback] {
     transform: none !important;
     will-change: auto;
   }
+}
+
+/* Dedicated /plain site: CSS-only backdrop, freeze motion without WebGL. */
+.plain-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-journey-scene);
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse at 50% 12%,
+      color-mix(in srgb, var(--accent-neon) 14%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse at 82% 78%,
+      color-mix(in srgb, var(--chroma-cyan-neon, var(--accent-neon)) 9%, transparent),
+      transparent 48%
+    ),
+    var(--background);
+}
+
+html.dark .plain-backdrop {
+  background:
+    radial-gradient(
+      ellipse at 50% 10%,
+      color-mix(in srgb, var(--accent-neon) 10%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 78% 72%,
+      color-mix(in srgb, var(--chroma-cyan-neon, var(--accent-neon)) 7%, transparent),
+      transparent 46%
+    ),
+    var(--background);
+}
+
+[data-plain-root] .tech-pills-marquee {
+  mask-image: none;
+}
+
+[data-plain-root] .tech-pills-marquee .tech-pills {
+  flex-wrap: wrap;
+  width: auto;
+  animation: none;
+}
+
+[data-plain-root] .tech-pills-marquee [aria-hidden="true"] {
+  display: none;
+}
+
+[data-plain-root] [data-hero-editorial] {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+[data-plain-root] *,
+[data-plain-root] *::before,
+[data-plain-root] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0ms !important;
+}
+
+[data-plain-root] [data-effect-layer="pointer"] {
+  display: none !important;
 }
