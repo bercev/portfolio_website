@@ -1481,6 +1481,7 @@ html[data-journey] [data-effect-layer="background"] {
   align-items: start;
   padding: clamp(20px, 2.6vw, 30px) 0;
   background: transparent;
+  overflow: visible;
 }
 
 .journey-pub-index {
@@ -1599,10 +1600,21 @@ html[data-journey] [data-effect-layer="background"] {
   opacity: 0.85;
 }
 
-/* Bold crop / slight overlap publication previews. */
+/* Park the reader in the row's right gap so it never spills past the shell. */
+.journey-pub-preview-slot {
+  pointer-events: auto;
+  position: absolute;
+  z-index: calc(var(--z-site-navigation) + 8);
+  top: 0;
+  left: calc(58.333% + (var(--shell-gap) * 0.5));
+  right: 0;
+  padding: 0;
+}
+
 .journey-pub-preview {
   display: block;
-  width: min(44rem, calc(100vw - 2rem));
+  width: 100%;
+  max-width: min(28rem, 100%);
   overflow: hidden;
   border: 1px solid var(--foreground);
   border-radius: 0;
@@ -1612,21 +1624,28 @@ html[data-journey] [data-effect-layer="background"] {
   margin-left: 0;
 }
 
-.journey-pub-preview--lead {
-  width: min(50rem, calc(100vw - 1.25rem));
-  transform: rotate(-0.75deg);
-  box-shadow: 10px 18px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
-}
-
 .journey-pub-preview iframe {
   display: block;
   width: 100%;
   max-width: none;
-  height: min(52rem, 84vh);
+  height: min(28rem, 60vh);
   margin: 0;
   border: 0;
   border-radius: 0;
   background: #fff;
+}
+
+@media (max-width: 900px) {
+  .journey-pub-preview-slot {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: calc(100% + 0.35rem);
+  }
+
+  .journey-pub-preview {
+    max-width: min(22rem, calc(100vw - 2.5rem));
+  }
 }
 
 .journey-project-preview {
@@ -2042,6 +2061,14 @@ html:not(.dark) .skill-pill {
 
 html[data-journey="active"] [data-hero-name-fallback] {
   visibility: hidden;
+}
+
+@media (max-width: 767px) {
+  /* Motion's initial opacity:0 can stick on phones before the enter tween. */
+  [data-hero-editorial] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /*

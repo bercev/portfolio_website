@@ -125,30 +125,42 @@ export function Journey({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (profile.mode === "static" || !canvas) return;
+    // Wait for next-themes so phones do not boot one theme behind the page.
+    if (profile.mode === "static" || !canvas || !resolvedTheme) return;
 
     let scene: JourneyScene | null = null;
     let disposed = false;
     const root = document.documentElement;
     root.dataset.journey = "pending";
+    if (profile.mode === "mobile" && window.matchMedia(MOBILE_QUERY).matches) {
+      root.dataset.journeyQuality = "mobile";
+    }
 
     const setup = async () => {
       try {
         await document.fonts.ready;
         if (disposed) return;
 
-        const styleRoot = canvas;
+        const wantsDark = resolvedTheme === "dark";
+        if (root.classList.contains("dark") !== wantsDark) {
+          await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => resolve());
+          });
+        }
+        if (disposed) return;
 
+        // Match the painted CSS class, not a stale resolvedTheme/classList race.
+        const lightTheme = !root.classList.contains("dark");
         const colors: JourneyPalette = {
-          accent: readTokenColor(styleRoot, ACCENT_TOKEN),
-          cyan: readTokenColor(styleRoot, COLOR_TOKENS[1]),
-          emerald: readTokenColor(styleRoot, COLOR_TOKENS[2]),
-          amber: readTokenColor(styleRoot, COLOR_TOKENS[3]),
-          coral: readTokenColor(styleRoot, COLOR_TOKENS[4]),
+          accent: readTokenColor(root, ACCENT_TOKEN),
+          cyan: readTokenColor(root, COLOR_TOKENS[1]),
+          emerald: readTokenColor(root, COLOR_TOKENS[2]),
+          amber: readTokenColor(root, COLOR_TOKENS[3]),
+          coral: readTokenColor(root, COLOR_TOKENS[4]),
         };
 
-        const spaceBg = readTokenColor(styleRoot, "--journey-space-bg");
-        const fog = readTokenColor(styleRoot, "--journey-space-fog");
+        const spaceBg = readTokenColor(root, "--journey-space-bg");
+        const fog = readTokenColor(root, "--journey-space-fog");
 
         scene = new JourneyScene({
           canvas,
@@ -159,7 +171,7 @@ export function Journey({
           palette: colors,
           stationCounts,
           props,
-          lightTheme: !root.classList.contains("dark"),
+          lightTheme,
         });
         sceneRef.current = scene;
         scene.setPointerLookEnabled(pointerLookHot);
@@ -169,6 +181,7 @@ export function Journey({
         scene?.dispose();
         scene = null;
         delete root.dataset.journey;
+        delete root.dataset.journeyQuality;
       }
     };
 
@@ -181,6 +194,7 @@ export function Journey({
       if (root.dataset.journey === "active" || root.dataset.journey === "pending") {
         delete root.dataset.journey;
       }
+      delete root.dataset.journeyQuality;
     };
     // pointerLookHot applied via the dedicated effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps

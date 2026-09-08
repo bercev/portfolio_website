@@ -120,6 +120,30 @@ describe("resolveJourneyLookTarget", () => {
     expect(journeyLookName({ look, textPos, arrivalPos })).toBe("path");
   });
 
+  it("keeps the look more path-centered when stationWeight is reduced for phones", () => {
+    const stationPos = { x: 11, y: 2, z: -28 };
+    const desktop = resolveJourneyLookTarget({
+      t: 0.5,
+      cameraPos: { x: 3, y: 1, z: -20 },
+      tangent: { x: 0, y: 0, z: -1 },
+      textPos,
+      arrivalPos,
+      stationPos,
+      stationWeight: 0.28,
+    });
+    const phone = resolveJourneyLookTarget({
+      t: 0.5,
+      cameraPos: { x: 3, y: 1, z: -20 },
+      tangent: { x: 0, y: 0, z: -1 },
+      textPos,
+      arrivalPos,
+      stationPos,
+      stationWeight: 0.1,
+    });
+
+    expect(Math.abs(phone.x - 3)).toBeLessThan(Math.abs(desktop.x - 3));
+  });
+
   it("aims toward CONNECT near the end of the path", () => {
     const look = resolveJourneyLookTarget({
       t: PATH_END_T,

@@ -251,7 +251,9 @@ const PORTRAIT_WORDMARK_LIFT = 4.4;
 /** Hero BERAT world height — slightly under the original 9 so it does not crowd the masthead. */
 const HERO_WORDMARK_HEIGHT = 8.15;
 /** Extra hero-only shrink after the shared landscape/portrait fit. */
-const HERO_WORDMARK_FIT = 0.96;
+const HERO_WORDMARK_FIT = 0.864;
+/** Additional phone-only shrink on top of the shared fit. */
+const PHONE_HERO_WORDMARK_FIT = 0.9;
 /**
  * Camera t when each page section is in focus. Contact stays short of 1 so
  * Skills → Contact still travels instead of completing the path.
@@ -573,6 +575,8 @@ export class JourneyScene {
   private readonly scene = new THREE.Scene();
   private readonly camera: THREE.PerspectiveCamera;
   private readonly quality: JourneyQuality;
+  /** Narrow phone layout — visualViewport sizing + desktop nebula wash. */
+  private readonly phoneLayout: boolean;
   private readonly reducedMotion: boolean;
   private readonly onProgress?: (t: number) => void;
   private readonly palette: JourneyPalette;
@@ -642,6 +646,8 @@ export class JourneyScene {
     const lightTheme = Boolean(options.lightTheme);
     const particleBlending = lightTheme ? THREE.NormalBlending : THREE.AdditiveBlending;
     this.quality = quality;
+    this.phoneLayout =
+      quality === "mobile" && window.matchMedia("(max-width: 767px)").matches;
     this.reducedMotion = reducedMotion;
     this.palette = palette;
     this.particleBlending = particleBlending;
@@ -653,17 +659,22 @@ export class JourneyScene {
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: true,
-      powerPreference: "high-performance",
+      antialias: !this.phoneLayout,
+      powerPreference: this.phoneLayout ? "low-power" : "high-performance",
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-    this.renderer.setSize(window.innerWidth, window.innerHeight, false);
+    this.renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, this.phoneLayout ? 1.25 : 1.75),
+    );
+    const width = this.phoneLayout ? this.viewSize().w : window.innerWidth;
+    const height = this.phoneLayout ? this.viewSize().h : window.innerHeight;
+    this.renderer.setSize(width, height, false);
     this.renderer.setClearColor(new THREE.Color(spaceBg), 1);
+    this.renderer.domElement.dataset.journeyTheme = lightTheme ? "light" : "dark";
 
     this.scene.fog = new THREE.FogExp2(new THREE.Color(fog), 0.014);
     this.camera = new THREE.PerspectiveCamera(
       66,
-      window.innerWidth / window.innerHeight,
+      width / height,
       0.1,
       220,
     );
@@ -723,8 +734,9 @@ export class JourneyScene {
     );
     this.scene.add(this.comet);
 
-    if (quality === "full") {
+    if (quality === "full" || this.phoneLayout) {
       // Camera must be part of the graph for its children (nebula) to render.
+      // Phones keep the same wash — otherwise the scroll path looks empty vs desktop.
       this.scene.add(this.camera);
 
       // Domain-warped liquid / caustic wash (same class in both themes).
@@ -837,6 +849,7 @@ export class JourneyScene {
       this.camera.add(grain);
       this.animatedMaterials.push(grainMat);
 
+      if (quality === "full") {
       // Fading particle trail behind the comet (ring buffer, newest at index 0).
       const TRAIL_N = 28;
       const trailPos = new Float32Array(TRAIL_N * 3);
@@ -888,6 +901,7 @@ export class JourneyScene {
       this.scene.add(trailPoints);
       this.trail = { geometry: trailGeo, positions: trailPos };
       this.animatedMaterials.push(trailMat);
+      }
     }
 
     // Bloom + additive glow only reads on dark clears; skip in light theme.
@@ -910,6 +924,10 @@ export class JourneyScene {
     if (!reducedMotion) {
       this.bindScroll();
       window.addEventListener("resize", this.handleResize);
+      if (this.phoneLayout) {
+        window.visualViewport?.addEventListener("resize", this.handleResize);
+        window.visualViewport?.addEventListener("scroll", this.handleResize);
+      }
       window.addEventListener("pointermove", this.handlePointerMove, {
         passive: true,
       });
@@ -1018,7 +1036,9 @@ export class JourneyScene {
       new THREE.Color(this.palette.accent),
     ];
 
-    const stationScale = [2.6, 2.5, 2.2, 2.45, 2.3, 2.6];
+    const stationScale = this.phoneLayout
+      ? [2.0, 1.9, 1.75, 1.9, 1.8, 2.0]
+      : [2.6, 2.5, 2.2, 2.45, 2.3, 2.6];
     for (let i = 0; i < STATION_BUILDERS.length; i++) {
       const object = STATION_BUILDERS[i](tintColors[i]);
       this.parkOnPath(object, STATION_PATH_T[i], i % 2 ? 1 : -1, (i % 3 - 1) * 1.2, 3.2);
@@ -1080,7 +1100,7 @@ export class JourneyScene {
         SECTION_PATH_T[5],
         SECTION_PATH_T[6],
       ],
-      includeImages: this.quality === "full",
+      includeImages: this.quality === "full" || this.phoneLayout,
     });
     if (this.disposed) {
       for (const handle of handles) disposeContentProp(handle);
@@ -1100,6 +1120,8 @@ export class JourneyScene {
     const { object, kind } = handle;
     const { binormals, normals, tangents } = this.frenet;
     const stationSide = handle.stationIndex % 2 ? 1 : -1;
+    // Portrait frustum is ~half as wide — desktop side parks sit off-frame.
+    const lateral = this.phoneLayout ? 0.38 : 1;
 
     if (!station) {
       this.parkOnPath(object, handle.pathT, 1, 0, 2);
@@ -1114,13 +1136,20 @@ export class JourneyScene {
       // Sit between the path and the sculpture so frost still leaves readable silhouettes.
       object.position
         .copy(station.position)
-        .addScaledVector(binormals[parkIdx], -stationSide * (5.6 + slot * 0.4) + side * 0.9)
+        .addScaledVector(
+          binormals[parkIdx],
+          (-stationSide * (5.6 + slot * 0.4) + side * 0.9) * lateral,
+        )
         .addScaledVector(normals[parkIdx], 0.35 - slot * 1.35)
-        .addScaledVector(tangents[parkIdx], -0.4 + slot * 1.1);
+        .addScaledVector(
+          tangents[parkIdx],
+          this.phoneLayout ? 1.2 + slot * 0.8 : -0.4 + slot * 1.1,
+        );
       object.lookAt(this.camera.position);
       object.userData.basePosition = object.position.clone();
       object.userData.baseQuat = object.quaternion.clone();
       object.userData.spin = { y: 0.06, x: 0.03, bob: 0.18 };
+      if (this.phoneLayout) object.scale.multiplyScalar(0.72);
       return;
     }
 
@@ -1128,10 +1157,28 @@ export class JourneyScene {
       const i = Number(object.userData.orbitIndex ?? 0);
       const n = Math.max(1, Number(object.userData.orbitCount ?? 1));
       const ring = i % 3;
-      const radius = 3.4 + ring * 0.85;
+      const radius = (this.phoneLayout ? 1.35 : 3.4) + ring * (this.phoneLayout ? 0.35 : 0.85);
       const angle = (i / n) * Math.PI * 2 + ring * 0.35;
       const parkT = STATION_PATH_T[handle.stationIndex] ?? handle.pathT;
       const parkIdx = Math.round(parkT * FRENET_SEGMENTS);
+
+      if (this.phoneLayout) {
+        // Orbit the camera tube itself so glyphs read in the portrait center.
+        const p = this.curve.getPointAt(THREE.MathUtils.clamp(parkT, 0, 1));
+        object.position
+          .copy(p)
+          .addScaledVector(binormals[parkIdx], Math.cos(angle) * radius)
+          .addScaledVector(normals[parkIdx], Math.sin(angle * 1.35) * radius * 0.55)
+          .addScaledVector(tangents[parkIdx], Math.sin(angle) * radius * 0.22);
+        object.lookAt(this.camera.position);
+        object.userData.basePosition = object.position.clone();
+        object.userData.orbitAngle = angle;
+        object.userData.orbitRadius = radius;
+        object.userData.orbitRing = ring;
+        object.scale.multiplyScalar(0.78);
+        return;
+      }
+
       // Anchor closer to the camera tube than the wireframe rack.
       const anchor = station.position
         .clone()
@@ -1159,18 +1206,22 @@ export class JourneyScene {
     const i = Number(object.userData.roleIndex ?? 0);
     const n = Math.max(1, Number(object.userData.roleCount ?? 1));
     const t = n === 1 ? 0.5 : i / (n - 1);
-    const arc = (t - 0.5) * 6.2;
+    const arc = (t - 0.5) * (this.phoneLayout ? 2.4 : 6.2);
     const parkT = STATION_PATH_T[handle.stationIndex] ?? handle.pathT;
     const parkIdx = Math.round(parkT * FRENET_SEGMENTS);
     object.position
       .copy(station.position)
-      .addScaledVector(binormals[parkIdx], -stationSide * 4.8 + arc * 0.35)
+      .addScaledVector(
+        binormals[parkIdx],
+        (-stationSide * 4.8 + arc * 0.35) * lateral,
+      )
       .addScaledVector(normals[parkIdx], -1.55 + Math.sin(t * Math.PI) * 0.35)
       .addScaledVector(tangents[parkIdx], -0.2 + t * 0.6);
     object.lookAt(this.camera.position);
     object.userData.basePosition = object.position.clone();
     object.userData.baseQuat = object.quaternion.clone();
     object.userData.spin = { y: 0.04, x: 0.02, bob: 0.12 };
+    if (this.phoneLayout) object.scale.multiplyScalar(0.78);
   }
 
   /** Park a sculpture on the camera-path Frenet frame so scale-up never clips the tube. */
@@ -1184,10 +1235,12 @@ export class JourneyScene {
     const p = this.curve.getPointAt(t);
     const idx = Math.round(t * FRENET_SEGMENTS);
     const { binormals, normals, tangents } = this.frenet;
+    // Desktop parks sculptures ~11 units off-axis; phones need ~3.4 to stay framed.
+    const sideDist = this.phoneLayout ? 3.4 : 11;
     object.position
       .copy(p)
-      .addScaledVector(binormals[idx], side * 11)
-      .addScaledVector(normals[idx], lift * 1.4)
+      .addScaledVector(binormals[idx], side * sideDist)
+      .addScaledVector(normals[idx], lift * (this.phoneLayout ? 0.85 : 1.4))
       .addScaledVector(tangents[idx], back);
     object.lookAt(p);
   }
@@ -1460,15 +1513,27 @@ export class JourneyScene {
    * clips them at both ends. Scale them back to the visible width instead.
    */
   private fitWordmarks() {
-    const aspect = window.innerWidth / window.innerHeight;
+    const { w, h } = this.phoneLayout
+      ? this.viewSize()
+      : { w: window.innerWidth, h: window.innerHeight };
+    const aspect = w / Math.max(1, h);
     const scale = Math.min(1, aspect / LANDSCAPE_FIT_ASPECT);
-    this.textGroup.scale.setScalar(scale * HERO_WORDMARK_FIT);
+    this.textGroup.scale.setScalar(
+      scale * HERO_WORDMARK_FIT * (this.phoneLayout ? PHONE_HERO_WORDMARK_FIT : 1),
+    );
     this.arrivalGroup.scale.setScalar(scale);
     // Portrait stacks the hero copy tall, so lift the glyph clear of it.
     const lift = (1 - scale) * PORTRAIT_WORDMARK_LIFT;
     this.textGroup.position.y = 0.4 + lift;
     this.arrivalGroup.position.copy(this.arrivalPark);
     this.arrivalGroup.position.y += lift;
+  }
+
+  private viewSize() {
+    const viewport = window.visualViewport;
+    const w = Math.max(1, Math.round(viewport?.width ?? window.innerWidth));
+    const h = Math.max(1, Math.round(viewport?.height ?? window.innerHeight));
+    return { w, h };
   }
 
   /** Sit LET'S CONNECT ahead of the camera at Contact, facing the lens. */
@@ -1481,6 +1546,20 @@ export class JourneyScene {
   }
 
   private readonly handleResize = () => {
+    if (this.phoneLayout) {
+      const { w, h } = this.viewSize();
+      this.camera.aspect = w / Math.max(1, h);
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h, false);
+      this.composer?.setSize(w, h);
+      const pixelScale = h * 0.5;
+      for (const mat of this.animatedMaterials) {
+        if (mat.uniforms.uPixelScale) mat.uniforms.uPixelScale.value = pixelScale;
+      }
+      this.fitWordmarks();
+      return;
+    }
+
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
@@ -1601,6 +1680,7 @@ export class JourneyScene {
       textPos: this.textGroup.position,
       arrivalPos: this.arrivalGroup.position,
       stationPos,
+      stationWeight: this.phoneLayout ? 0.1 : 0.28,
     });
     this.lookTarget.set(look.x, look.y, look.z);
     if (!this.reducedMotion && pathT < 0.78) {
@@ -1682,6 +1762,16 @@ export class JourneyScene {
       }
 
       if (handle.kind === "tech") {
+        if (this.phoneLayout) {
+          const base = handle.object.userData.basePosition as THREE.Vector3 | undefined;
+          if (!base) continue;
+          const angle = Number(handle.object.userData.orbitAngle ?? 0);
+          handle.object.position.copy(base);
+          handle.object.position.x += Math.cos(time * 0.18 + angle) * 0.22;
+          handle.object.position.y += Math.sin(time * 0.24 + angle * 1.3) * 0.18;
+          handle.object.lookAt(this.camera.position);
+          continue;
+        }
         const anchor = handle.object.userData.anchor as THREE.Vector3 | undefined;
         if (!anchor) continue;
         const baseAngle = Number(handle.object.userData.orbitAngle ?? 0);
@@ -1725,6 +1815,8 @@ export class JourneyScene {
     cancelAnimationFrame(this.raf);
     window.removeEventListener("scroll", this.handleScroll);
     window.removeEventListener("resize", this.handleResize);
+    window.visualViewport?.removeEventListener("resize", this.handleResize);
+    window.visualViewport?.removeEventListener("scroll", this.handleResize);
     window.removeEventListener("pointermove", this.handlePointerMove);
     for (const handle of this.contentProps) {
       this.scene.remove(handle.object);

@@ -83,7 +83,7 @@ export function HoverPreview({
       {...(isPaper
         ? { "data-hover-preview": true }
         : { "data-project-preview": true })}
-      className="relative w-fit max-w-full"
+      className={isPaper ? "max-w-full" : "relative w-fit max-w-full"}
       onPointerEnter={() => {
         hasPointerRef.current = true;
         openPreview();
@@ -119,7 +119,11 @@ export function HoverPreview({
       <AnimatePresence initial={false}>
         {isActive ? (
           <span
-            className="pointer-events-auto absolute bottom-full left-0 z-[var(--z-site-navigation)] pb-3 lg:bottom-auto lg:left-full lg:top-1/2 lg:-translate-y-1/2 lg:pb-0 lg:pl-4"
+            className={
+              isPaper
+                ? "pointer-events-auto journey-pub-preview-slot"
+                : "pointer-events-auto absolute bottom-full left-0 z-[var(--z-site-navigation)] pb-3 lg:bottom-auto lg:left-full lg:top-1/2 lg:-translate-y-1/2 lg:pb-0 lg:pl-4"
+            }
           >
             <motion.span
               data-pdf-reader={isPaper ? true : undefined}
@@ -168,7 +172,7 @@ export function HoverPreview({
                     src={readerSrc}
                     title={`${readerTitle} PDF preview`}
                     loading="lazy"
-                    className="h-[min(52rem,84vh)] w-full rounded-none bg-white"
+                    className="h-[min(28rem,60vh)] w-full rounded-none bg-white"
                   />
                 </>
               ) : image ? (

@@ -3,7 +3,11 @@ import {
   expect,
   test,
 } from "./runtime-errors";
-import { measureHeroWordmarkInk, readJourneyT } from "./journey-helpers";
+import {
+  measureHeroWordmarkInk,
+  readHeroBackdropLuma,
+  readJourneyT,
+} from "./journey-helpers";
 
 test("renders the immersive 3D journey on capable devices", async ({ page }) => {
   const runtimeErrors = attachRuntimeErrorCollector(page);
@@ -166,6 +170,76 @@ test("uses a flat BERAT fallback when reduced motion is requested", async ({
   const fallback = page.locator("[data-hero-name-fallback]");
   await expect(fallback).toBeVisible();
   await expect(fallback).toHaveText("BERAT");
+
+  runtimeErrors.assertEmpty();
+  await context.close();
+});
+
+test("keeps BERAT and the scrolling Journey on a phone viewport", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.goto("/");
+
+  await expect(page.locator("html")).toHaveAttribute("data-journey", "active");
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-journey-quality",
+    "mobile",
+  );
+  const editorial = page.locator("[data-hero-editorial]");
+  await expect(editorial).toHaveCSS("opacity", "1");
+  await expect(page.locator("[data-hero-name-fallback]")).toBeHidden();
+  await expect(page.locator("[data-journey-scene]")).toBeVisible();
+  await expect(page.locator("[data-journey-scene]")).toHaveCSS(
+    "visibility",
+    "visible",
+  );
+  await expect.poll(() => readJourneyT(page)).toBeLessThan(0.03);
+
+  await page.locator("#about").scrollIntoViewIfNeeded();
+  await expect.poll(() => readJourneyT(page)).toBeGreaterThan(0.05);
+  await expect(page.locator("#about")).toContainText("About");
+
+  runtimeErrors.assertEmpty();
+  await context.close();
+});
+
+test("keeps phone Journey light and dark in lockstep with CSS", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+    colorScheme: "light",
+  });
+  const page = await context.newPage();
+  const runtimeErrors = attachRuntimeErrorCollector(page);
+  await page.addInitScript(() => localStorage.setItem("theme", "light"));
+  await page.goto("/");
+
+  const html = page.locator("html");
+  const scene = page.locator("[data-journey-scene]");
+  await expect(html).toHaveAttribute("data-journey", "active");
+  await expect(html).toHaveClass(/(^|\s)light(\s|$)/);
+  await expect(scene).toHaveAttribute("data-journey-theme", "light");
+  const lightLuma = await readHeroBackdropLuma(page);
+  expect(lightLuma, `light luma=${lightLuma}`).toBeGreaterThan(120);
+
+  await page.getByRole("button", { name: "Open utility menu" }).tap();
+  await page.getByRole("button", { name: "Switch to dark theme" }).tap();
+  await expect(html).toHaveClass(/(^|\s)dark(\s|$)/);
+  await expect(html).toHaveAttribute("data-journey", "active");
+  await expect(scene).toHaveAttribute("data-journey-theme", "dark");
+  const darkLuma = await readHeroBackdropLuma(page);
+  expect(darkLuma, `dark luma=${darkLuma}`).toBeLessThan(90);
+  expect(darkLuma).toBeLessThan(lightLuma - 40);
 
   runtimeErrors.assertEmpty();
   await context.close();
