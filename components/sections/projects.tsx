@@ -10,14 +10,14 @@ type ProjectsProps = {
   readonly heading: PortfolioContent["navigation"][number]["label"];
 };
 
-const projectPreviews = {
+const projectPreviews: Partial<
+  Record<Project["title"], { readonly src: string; readonly alt: string }>
+> = {
   Vitae: {
     src: "/assets/projects/vitae.png",
     alt: "Vitae landing page: resume version control with Get Started and Why Vitae.",
   },
-} as const satisfies Partial<
-  Record<Project["title"], { readonly src: string; readonly alt: string }>
->;
+};
 
 function previewFor(title: Project["title"]) {
   return projectPreviews[title];
