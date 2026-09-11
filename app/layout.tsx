@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import { Agentation } from "agentation";
 import type { Metadata } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
@@ -65,6 +66,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <ThemeProvider>{children}</ThemeProvider>
+        <Analytics />
         {process.env.NODE_ENV === "development" ? (
           <Agentation endpoint="http://localhost:4747" />
         ) : null}
