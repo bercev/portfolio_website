@@ -15,12 +15,8 @@ export function MotionVersionLink({
   const plain = isPlainPath(pathname);
 
   return (
-    <Link
-      href={plain ? "/" : PLAIN_PATH}
-      className={cn("cursor-target", className)}
-      data-motion-version-link
-    >
+    <Link href={plain ? "/" : PLAIN_PATH} className={cn("cursor-target", className)} data-motion-version-link>
       {plain ? "View with animations" : "View without animations"}
     </Link>
-  );
+  )
 }

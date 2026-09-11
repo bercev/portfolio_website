@@ -28,11 +28,7 @@ export function Hero({ content }: { content: HeroContent }) {
         className="flex w-full flex-1 flex-col"
         initial={reduceMotion ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={
-          reduceMotion
-            ? { duration: 0 }
-            : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.12 }
-        }
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
       >
         <h1 id="home-heading" aria-label={identity.name} className="sr-only">
           {identity.name}
@@ -40,9 +36,7 @@ export function Hero({ content }: { content: HeroContent }) {
 
         {/* Reserves the BERAT particle band so meta never sits over the glyph. */}
         <div data-hero-glyph-band aria-hidden="true">
-          <div data-hero-name-fallback>
-            {identity.shortName.toUpperCase()}
-          </div>
+          <div data-hero-name-fallback>{identity.shortName.toUpperCase()}</div>
         </div>
 
         {/* Role / location / tagline / scroll — always below the glyph band. */}
@@ -57,9 +51,6 @@ export function Hero({ content }: { content: HeroContent }) {
             </div>
 
             {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
-            <p data-hero-plain-link>
-              <MotionVersionLink />
-            </p>
           </div>
 
           <dl data-hero-signals>
@@ -73,5 +64,5 @@ export function Hero({ content }: { content: HeroContent }) {
         </div>
       </motion.div>
     </section>
-  );
+  )
 }
