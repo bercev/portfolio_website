@@ -1,15 +1,31 @@
 "use client";
 
 import { useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+import { useMotionPreference } from "@/components/providers/motion-provider";
+
+function subscribe() {
+  return () => undefined;
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
 
 export function useHydratedReducedMotion() {
+  const { forced } = useMotionPreference();
   const reducedMotion = useReducedMotion();
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
-
+  if (forced) return true;
   return hydrated && reducedMotion === true;
 }
