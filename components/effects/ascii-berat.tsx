@@ -7,61 +7,61 @@ import { useMemo } from "react";
  *
  * Replaces the 3D volumetric particle wordmark (which rendered as unreadable
  * noise) with a large, crisp <pre> block-letter wordmark in the phosphor
- * terminal aesthetic. Each letter is ~17 rows tall, built from block
- * characters with subtle shading for depth.
+ * terminal aesthetic. Each letter is 17x17 on a consistent grid, built from
+ * solid block characters for maximum readability.
  */
 
-/* Each letter is 17 rows. Designed on a grid for clean block letterforms. */
+/* Each letter is 17 rows x 17 cols. Designed on a uniform grid. */
 const LETTER_B: readonly string[] = [
-  "█████████████",
-  "███████████████",
-  "█████     █████",
-  "████       ████",
-  "████       ████",
-  "████       ████",
-  "█████     █████",
-  "███████████████",
-  "█████████████",
-  "█████     █████",
-  "████       ████",
-  "████       ████",
-  "████       ████",
-  "████       ████",
-  "█████     █████",
-  "███████████████",
-  "█████████████",
+  "████████████████",
+  "████████████████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "████████████████",
+  "████████████████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "████████████████",
+  "████████████████",
 ];
 
 const LETTER_E: readonly string[] = [
-  "███████████████",
-  "███████████████",
+  "████████████████",
+  "████████████████",
   "█████",
   "█████",
   "█████",
   "█████",
   "█████",
-  "████████████",
-  "████████████",
+  "█████████████",
+  "█████████████",
   "█████",
   "█████",
   "█████",
   "█████",
   "█████",
   "█████",
-  "███████████████",
-  "███████████████",
+  "████████████████",
+  "████████████████",
 ];
 
 const LETTER_R: readonly string[] = [
+  "████████████████",
+  "████████████████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "█████      █████",
+  "███████████████",
   "█████████████",
-  "███████████████",
-  "█████     █████",
-  "████       ████",
-  "████       ████",
-  "████       ████",
-  "█████     █████",
-  "███████████████",
-  "████████████",
   "█████   █████",
   "█████    █████",
   "█████     █████",
@@ -73,23 +73,23 @@ const LETTER_R: readonly string[] = [
 ];
 
 const LETTER_A: readonly string[] = [
+  "       ███",
+  "      █████",
+  "     ███████",
   "    █████████",
-  "  █████████████",
-  " ██████   ██████",
-  "█████       █████",
-  "█████       █████",
-  "█████       █████",
-  "█████       █████",
-  "█████████████████",
-  "█████████████████",
-  "█████       █████",
-  "█████       █████",
-  "█████       █████",
-  "█████       █████",
-  "█████       █████",
-  "█████       █████",
-  "█████       █████",
-  "█████       █████",
+  "   ███████████",
+  "   █████ █████",
+  "  █████   █████",
+  "  █████   █████",
+  " ███████████████",
+  " ███████████████",
+  "█████     █████",
+  "█████     █████",
+  "█████     █████",
+  "█████     █████",
+  "█████     █████",
+  "█████     █████",
+  "█████     █████",
 ];
 
 const LETTER_T: readonly string[] = [
@@ -121,19 +121,7 @@ const LETTERS: Readonly<Record<string, readonly string[]>> = {
 };
 
 const WORD = "BERAT";
-const GAP = "   "; // 3-space gap between letters
-
-/**
- * Apply subtle phosphor shading: bottom third of the glyph uses ▓ for a
- * gradient falloff, giving the letters depth without hurting readability.
- * A few deterministic "signal" cells render in amber.
- */
-function shadeRow(row: string, rowIndex: number, totalRows: number): string {
-  // Bottom ~35% gets ▓ shading for a phosphor gradient.
-  const shadeStart = Math.floor(totalRows * 0.65);
-  if (rowIndex < shadeStart) return row;
-  return row.replace(/█/g, "▓");
-}
+const GAP = "    "; // 4-space gap between letters for clear separation
 
 function buildArt(): string {
   const rows: string[] = [];
@@ -141,10 +129,11 @@ function buildArt(): string {
   for (let r = 0; r < totalRows; r++) {
     const parts = WORD.split("").map((ch) => {
       const letter = LETTERS[ch];
-      const raw = letter[r] ?? "";
-      return shadeRow(raw, r, totalRows);
+      return letter[r] ?? "";
     });
-    rows.push(parts.join(GAP));
+    // Pad each letter row to 17 cols so the grid stays aligned.
+    const padded = parts.map((p) => p.padEnd(17, " "));
+    rows.push(padded.join(GAP));
   }
   return rows.join("\n");
 }
