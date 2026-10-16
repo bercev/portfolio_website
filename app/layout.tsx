@@ -1,7 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import { Agentation } from "agentation";
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 
 import { LenisProvider } from "@/components/providers/lenis-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -16,14 +16,28 @@ const grotesk = Bricolage_Grotesque({
   display: "swap",
 });
 
+/** Terminal voice: kickers, labels, pills, nav, captions. */
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
 const metadataBase = new URL(
   process.env.NEXT_PUBLIC_SITE_URL ??
     process.env.URL ??
     "http://localhost:3000",
 );
-const title = "Berat Ercevik - Software Engineer";
+const title = "Berat Ercevik - Software Engineer & AI Researcher";
 const description =
-  "Software engineering portfolio featuring full-stack applications, shipped products, and published research by Berat Ercevik.";
+  "Software engineering portfolio featuring full-stack applications, shipped products, and published research (ICML, arXiv) by Berat Ercevik.";
+const ogImage = {
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: "Berat Ercevik software engineering portfolio",
+};
 export const metadata: Metadata = {
   metadataBase,
   title,
@@ -42,11 +56,13 @@ export const metadata: Metadata = {
     title,
     description,
     siteName: "Berat Ercevik",
+    images: [ogImage],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
+    images: [ogImage],
   },
   robots: {
     index: true,
@@ -63,11 +79,46 @@ export const viewport: Viewport = {
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Person",
-  name: "Berat Ercevik",
-  jobTitle: "Software Engineer",
-  url: metadataBase.toString(),
-  sameAs: ["https://github.com/bercev", "https://linkedin.com/in/berat-ercevik"],
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "#person",
+      name: "Berat Ercevik",
+      jobTitle: "Software Engineer",
+      description:
+        "Software engineer and AI researcher: full-stack products and published research (ICML AIWILD Workshop, arXiv).",
+      url: metadataBase.toString(),
+      alumniOf: {
+        "@type": "EducationalOrganization",
+        name: "UC Santa Cruz",
+      },
+      knowsAbout: [
+        "Multi-agent systems",
+        "LLM evaluation",
+        "TypeScript",
+        "React",
+        "Next.js",
+        "Python",
+        "Full-stack development",
+        "Machine learning",
+      ],
+      sameAs: [
+        "https://github.com/bercev",
+        "https://linkedin.com/in/berat-ercevik",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      name: "Berat Ercevik",
+      url: metadataBase.toString(),
+      publisher: { "@id": "#person" },
+    },
+    {
+      "@type": "ProfilePage",
+      url: metadataBase.toString(),
+      mainEntity: { "@id": "#person" },
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -79,7 +130,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={grotesk.variable}
+      className={`${grotesk.variable} ${jetbrainsMono.variable}`}
     >
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <script
