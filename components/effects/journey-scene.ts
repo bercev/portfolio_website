@@ -973,6 +973,7 @@ export class JourneyScene {
 
     this.buildStations(stationCounts, Boolean(props));
     this.buildChapterGates();
+    this.buildContinuousWorld();
     // Emotional color arc: fog starts cool (cyan tech) and warms toward amber
     // (human moments) as the journey progresses.
     this.fogCool = new THREE.Color(fog);
@@ -1494,16 +1495,194 @@ export class JourneyScene {
    * Chapter gates — numbered torus portals at the midpoint between stations.
    * The camera flies through them; they flash as chapters change.
    */
+  /**
+   * The continuous world — Adventure Time style: one unbroken environment
+   * along the entire flight path, no empty gaps between chapters.
+   * A luminous spine follows the curve, terrain banks flank it, and hundreds
+   * of instanced crystals fill the space, shifting cyan→amber by chapter.
+   */
+  private buildContinuousWorld() {
+    const cyan = new THREE.Color(this.palette.cyan);
+    const amber = new THREE.Color(this.palette.amber);
+    const accent = new THREE.Color(this.palette.accent);
+
+    // 1 — World spine: a bright river of light following the whole path.
+    const spinePts = this.curve.getSpacedPoints(140);
+    const spineGeo = new THREE.BufferGeometry();
+    const spinePos: number[] = [];
+    const spineCol: number[] = [];
+    const spineIdx: number[] = [];
+    const tmpColor = new THREE.Color();
+    const upVec = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < spinePts.length; i++) {
+      const t = i / (spinePts.length - 1);
+      const p = spinePts[i];
+      const tangent = this.curve.getTangentAt(Math.min(t * PATH_END_T, PATH_END_T));
+      const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+      const w = 0.9;
+      spinePos.push(p.x - side.x * w, p.y - 0.7, p.z - side.z * w);
+      spinePos.push(p.x + side.x * w, p.y - 0.7, p.z + side.z * w);
+      tmpColor.copy(cyan).lerp(amber, THREE.MathUtils.smoothstep(t, 0.15, 0.85));
+      // Bright center line.
+      const bright = 0.7 + 0.3 * Math.sin(t * 40);
+      spineCol.push(
+        tmpColor.r * bright, tmpColor.g * bright, tmpColor.b * bright,
+        tmpColor.r * bright, tmpColor.g * bright, tmpColor.b * bright,
+      );
+      if (i < spinePts.length - 1) {
+        const a = i * 2;
+        spineIdx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      }
+    }
+    spineGeo.setAttribute("position", new THREE.Float32BufferAttribute(spinePos, 3));
+    spineGeo.setAttribute("color", new THREE.Float32BufferAttribute(spineCol, 3));
+    spineGeo.setIndex(spineIdx);
+    const spineMat = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: this.particleBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const spine = new THREE.Mesh(spineGeo, spineMat);
+    spine.userData.noAura = true;
+    this.scene.add(spine);
+
+    // 1b — Canyon walls: two terrain ribbons flanking the path like a valley.
+    // You fly THROUGH the world, not past it.
+    for (const wallSide of [-1, 1]) {
+      const wallGeo = new THREE.BufferGeometry();
+      const wallPos: number[] = [];
+      const wallCol: number[] = [];
+      const wallIdx: number[] = [];
+      for (let i = 0; i < spinePts.length; i++) {
+        const t = i / (spinePts.length - 1);
+        const p = spinePts[i];
+        const tangent = this.curve.getTangentAt(Math.min(t * PATH_END_T, PATH_END_T));
+        const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+        // Inner edge near path, outer edge rising like a hillside.
+        const inner = 3.2;
+        const outer = 9;
+        const liftInner = 0.5;
+        const liftOuter = 3.5 + Math.sin(t * 25 + wallSide) * 1.2;
+        wallPos.push(
+          p.x + side.x * wallSide * inner, p.y - liftInner, p.z + side.z * wallSide * inner,
+          p.x + side.x * wallSide * outer, p.y + liftOuter, p.z + side.z * wallSide * outer,
+        );
+        tmpColor.copy(cyan).lerp(amber, THREE.MathUtils.smoothstep(t, 0.15, 0.85));
+        tmpColor.multiplyScalar(0.35); // Darker than spine — terrain, not light.
+        wallCol.push(tmpColor.r, tmpColor.g, tmpColor.b, tmpColor.r * 0.6, tmpColor.g * 0.6, tmpColor.b * 0.6);
+        if (i < spinePts.length - 1) {
+          const a = i * 2;
+          if (wallSide > 0) wallIdx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+          else wallIdx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        }
+      }
+      wallGeo.setAttribute("position", new THREE.Float32BufferAttribute(wallPos, 3));
+      wallGeo.setAttribute("color", new THREE.Float32BufferAttribute(wallCol, 3));
+      wallGeo.setIndex(wallIdx);
+      const wallMat = new THREE.MeshBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.5,
+        blending: this.particleBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const wall = new THREE.Mesh(wallGeo, wallMat);
+      wall.userData.noAura = true;
+      this.scene.add(wall);
+    }
+
+    // 2 — Scatter field: instanced crystals filling the world tube.
+    const scatterCount = this.quality === "full" ? 420 : 200;
+    const crystalGeo = new THREE.OctahedronGeometry(0.34, 0);
+    const crystalMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.75,
+      blending: this.particleBlending,
+      depthWrite: false,
+    });
+    const scatter = new THREE.InstancedMesh(crystalGeo, crystalMat, scatterCount);
+    scatter.userData.noAura = true;
+    const dummy = new THREE.Object3D();
+    const col = new THREE.Color();
+    for (let i = 0; i < scatterCount; i++) {
+      const t = Math.random() * PATH_END_T;
+      const p = this.curve.getPointAt(t);
+      const tangent = this.curve.getTangentAt(t);
+      const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+      const up = new THREE.Vector3().crossVectors(side, tangent).normalize();
+      const lateral = (Math.random() - 0.5) * 16;
+      const vertical = (Math.random() - 0.5) * 10;
+      // Keep clear of the immediate flight corridor.
+      const clear = Math.abs(lateral) < 2.5 && Math.abs(vertical) < 2 ? 4 : 0;
+      dummy.position
+        .copy(p)
+        .addScaledVector(side, lateral + Math.sign(lateral || 1) * clear)
+        .addScaledVector(up, vertical);
+      dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+      const s = 0.4 + Math.random() * 1.4;
+      dummy.scale.setScalar(s);
+      dummy.updateMatrix();
+      scatter.setMatrixAt(i, dummy.matrix);
+      col.copy(cyan).lerp(amber, THREE.MathUtils.smoothstep(t, 0.15, 0.85));
+      // Vary brightness for depth.
+      col.multiplyScalar(0.5 + Math.random() * 0.5);
+      scatter.setColorAt(i, col);
+    }
+    scatter.instanceMatrix.needsUpdate = true;
+    if (scatter.instanceColor) scatter.instanceColor.needsUpdate = true;
+    this.scene.add(scatter);
+
+    // 3 — Biome outriders: each chapter's motif echoes along the path,
+    // extending the biome beyond its station so regions blend together.
+    const outriderGeo = new THREE.TetrahedronGeometry(0.3, 0);
+    const outriderMat = new THREE.MeshBasicMaterial({
+      color: accent,
+      transparent: true,
+      opacity: 0.4,
+      blending: this.particleBlending,
+      depthWrite: false,
+      wireframe: true,
+    });
+    const outriders = new THREE.InstancedMesh(outriderGeo, outriderMat, 120);
+    outriders.userData.noAura = true;
+    for (let i = 0; i < 120; i++) {
+      // Cluster around chapter regions, spilling into the gaps.
+      const chapter = Math.floor(Math.random() * 6);
+      const centerT = STATION_PATH_T[chapter];
+      const t = THREE.MathUtils.clamp(
+        centerT + (Math.random() - 0.5) * 0.12,
+        0,
+        PATH_END_T,
+      );
+      const p = this.curve.getPointAt(t);
+      dummy.position.set(
+        p.x + (Math.random() - 0.5) * 14,
+        p.y + (Math.random() - 0.5) * 8,
+        p.z + (Math.random() - 0.5) * 14,
+      );
+      dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+      dummy.scale.setScalar(0.5 + Math.random());
+      dummy.updateMatrix();
+      outriders.setMatrixAt(i, dummy.matrix);
+    }
+    outriders.instanceMatrix.needsUpdate = true;
+    this.scene.add(outriders);
+  }
+
   private buildChapterGates() {
     const gateColor = new THREE.Color(this.palette.cyan);
     for (let i = 0; i < STATION_PATH_T.length - 1; i++) {
       const t = (STATION_PATH_T[i] + STATION_PATH_T[i + 1]) / 2;
       const gate = new THREE.Mesh(
-        new THREE.TorusGeometry(2.6, 0.06, 8, 64),
+        new THREE.TorusGeometry(3.4, 0.09, 8, 64),
         new THREE.MeshBasicMaterial({
           color: gateColor,
           transparent: true,
-          opacity: 0.35,
+          opacity: 0.5,
           blending: this.particleBlending,
           depthWrite: false,
         }),
@@ -1530,9 +1709,9 @@ export class JourneyScene {
     const p = this.curve.getPointAt(t);
     const idx = Math.round(t * FRENET_SEGMENTS);
     const { binormals, normals, tangents } = this.frenet;
-    // Desktop parks sculptures close to the flight path so chapters read as
-    // immersive environments; phones need ~3.4 to stay framed.
-    const sideDist = this.phoneLayout ? 3.4 : 5.5;
+    // Stations hug the flight path so chapters surround the camera like
+    // biomes; phones need ~3.4 to stay framed.
+    const sideDist = this.phoneLayout ? 3.4 : 4.0;
     object.position
       .copy(p)
       .addScaledVector(binormals[idx], side * sideDist)
