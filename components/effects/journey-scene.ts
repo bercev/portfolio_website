@@ -2,6 +2,13 @@ import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+
+import {
+  createAsciiPass,
+  updateAsciiResolution,
+} from "./ascii-pass";
 
 import type { JourneyPropManifest } from "@/data/journey-props";
 
@@ -831,6 +838,8 @@ export class JourneyScene {
   private readonly floatingIslands: THREE.Group[] = [];
   private fogCool: THREE.Color | null = null;
   private fogWarm: THREE.Color | null = null;
+  private useAscii = false;
+  private asciiPass: ShaderPass | null = null;
   private readonly stars: THREE.Points;
 
   private readonly tangent = new THREE.Vector3();
@@ -894,7 +903,9 @@ export class JourneyScene {
     this.renderer.setClearColor(new THREE.Color(spaceBg), 1);
     this.renderer.domElement.dataset.journeyTheme = lightTheme ? "light" : "dark";
 
-    this.scene.fog = new THREE.FogExp2(new THREE.Color(fog), 0.014);
+    // Dense fog constrains the background: each frame shows a complete
+    // environment, not the entire journey stretching into the distance.
+    this.scene.fog = new THREE.FogExp2(new THREE.Color(fog), 0.024);
     this.camera = new THREE.PerspectiveCamera(
       66,
       width / height,
@@ -1171,17 +1182,40 @@ export class JourneyScene {
     }
 
     // Bloom + additive glow only reads on dark clears; skip in light theme.
-    if (quality === "full" && !lightTheme) {
+    // ?ascii=1 enables full-scene ASCII postprocessing (after bloom).
+    const useAscii =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("ascii");
+    this.useAscii = useAscii;
+    if ((quality === "full" && !lightTheme) || useAscii) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      this.composer.addPass(
-        new UnrealBloomPass(
-          new THREE.Vector2(window.innerWidth, window.innerHeight),
-          0.08,
-          0.16,
-          0.88,
-        ),
-      );
+      if (quality === "full" && !lightTheme) {
+        this.composer.addPass(
+          new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.08,
+            0.16,
+            0.88,
+          ),
+        );
+      }
+      if (useAscii) {
+        this.asciiPass = createAsciiPass({
+          ink: new THREE.Color(palette.accent),
+          background: new THREE.Color(spaceBg),
+          colorMode: 1,
+          invert: lightTheme ? 1 : 0,
+        });
+        this.composer.addPass(this.asciiPass);
+        const pr = this.renderer.getPixelRatio();
+        updateAsciiResolution(
+          this.asciiPass,
+          window.innerWidth,
+          window.innerHeight,
+          pr,
+        );
+      }
       this.composer.setSize(window.innerWidth, window.innerHeight);
     } else {
       this.composer = null;
@@ -1538,18 +1572,69 @@ export class JourneyScene {
     }
     spineGeo.setAttribute("position", new THREE.Float32BufferAttribute(spinePos, 3));
     spineGeo.setAttribute("color", new THREE.Float32BufferAttribute(spineCol, 3));
+    // vT: 0→1 along the path for shader dashes; aAcross: 0 left, 1 right.
+    const spineT: number[] = [];
+    const spineAcross: number[] = [];
+    for (let i = 0; i < spinePts.length; i++) {
+      const t = i / (spinePts.length - 1);
+      spineT.push(t, t);
+      spineAcross.push(0, 1);
+    }
+    spineGeo.setAttribute("aT", new THREE.Float32BufferAttribute(spineT, 1));
+    spineGeo.setAttribute("aAcross", new THREE.Float32BufferAttribute(spineAcross, 1));
     spineGeo.setIndex(spineIdx);
-    const spineMat = new THREE.MeshBasicMaterial({
-      vertexColors: true,
+    // Rainbow Road surface: center dashes, grid, grain — not a flat ribbon.
+    const spineMat = new THREE.ShaderMaterial({
       transparent: true,
-      opacity: 0.85,
-      blending: this.particleBlending,
       depthWrite: false,
+      blending: this.particleBlending,
       side: THREE.DoubleSide,
+      uniforms: {
+        uTime: { value: 0 },
+      },
+      vertexShader: `
+        attribute float aT;
+        attribute float aAcross;
+        attribute vec3 color;
+        varying vec3 vColor;
+        varying float vT;
+        varying float vAcross;
+        void main() {
+          vColor = color;
+          vT = aT;
+          vAcross = aAcross;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        varying vec3 vColor;
+        varying float vT;
+        varying float vAcross;
+        float hash(float n) { return fract(sin(n) * 43758.5453); }
+        void main() {
+          vec3 col = vColor;
+          // Center dashes (Mario Kart).
+          float across = vAcross;
+          float dashMask = smoothstep(0.42, 0.46, across) * smoothstep(0.58, 0.54, across);
+          float dash = step(0.5, fract(vT * 160.0)) * dashMask;
+          col = mix(col, vec3(1.0), dash * 0.85);
+          // Subtle grid.
+          float grid = step(0.92, fract(vT * 80.0)) + step(0.92, fract(across * 6.0));
+          col += vec3(0.12) * clamp(grid, 0.0, 1.0);
+          // Grain.
+          col *= 0.92 + 0.16 * hash(floor(vT * 400.0) + floor(across * 40.0));
+          // Flowing energy pulse.
+          float pulse = pow(fract(vT * 6.0 - uTime * 0.9), 10.0);
+          col += vColor * pulse * 1.6;
+          gl_FragColor = vec4(col, 0.9);
+        }
+      `,
     });
     const spine = new THREE.Mesh(spineGeo, spineMat);
     spine.userData.noAura = true;
     this.scene.add(spine);
+    this.animatedMaterials.push(spineMat);
 
     // 1b — Canyon walls: two terrain ribbons flanking the path like a valley.
     // You fly THROUGH the world, not past it.
@@ -1676,6 +1761,199 @@ export class JourneyScene {
   }
 
   /**
+   * Build a detailed planet with displaced terrain, atmosphere shell,
+   * and banded rings. Far beyond a wireframe sphere.
+   */
+  private buildDetailedPlanet(
+    radius: number,
+    color: THREE.Color,
+    seed: number,
+    hasRings: boolean,
+  ): THREE.Group {
+    const group = new THREE.Group();
+    const simplex = new SimplexNoise();
+
+    // Displaced terrain core — fBm + ridged mountains + craters.
+    const geo = new THREE.IcosahedronGeometry(radius, 24);
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    const v = new THREE.Vector3();
+    const heights = new Float32Array(pos.count);
+    const craters: Array<{ dir: THREE.Vector3; r: number; depth: number }> = [];
+    for (let c = 0; c < 28; c++) {
+      const dir = new THREE.Vector3(
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+      ).normalize();
+      craters.push({ dir, r: 0.08 + Math.random() * 0.16, depth: 0.05 + Math.random() * 0.08 });
+    }
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).normalize();
+      let h = 0;
+      let amp = 1;
+      let freq = 1.6;
+      for (let o = 0; o < 4; o++) {
+        h += amp * simplex.noise3d(v.x * freq + seed, v.y * freq, v.z * freq);
+        amp *= 0.5;
+        freq *= 2.15;
+      }
+      const r = simplex.noise3d(v.x * 3.1 + seed * 2.7, v.y * 3.1, v.z * 3.1);
+      const ridged = Math.pow(1 - Math.abs(r), 3);
+      let d = h * 0.09 + ridged * 0.14;
+      // Craters.
+      for (const crater of craters) {
+        const angle = v.angleTo(crater.dir);
+        if (angle < crater.r * 1.4) {
+          const t = angle / (crater.r * 1.4);
+          d -= crater.depth * Math.max(0, 1 - t * 1.4);
+          // Rim.
+          if (t > 0.7 && t < 1.1) d += crater.depth * 0.4 * Math.sin((t - 0.7) * Math.PI / 0.4);
+        }
+      }
+      heights[i] = d;
+      v.multiplyScalar(radius * (1 + d));
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    geo.setAttribute("aHeight", new THREE.BufferAttribute(heights, 1));
+    geo.computeVertexNormals();
+
+    // Height-colored terrain material.
+    const terrainMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: this.particleBlending,
+      uniforms: {
+        uColor: { value: color.clone() },
+        uTime: { value: 0 },
+      },
+      vertexShader: `
+        attribute float aHeight;
+        varying float vHeight;
+        varying vec3 vNormal;
+        varying vec3 vView;
+        void main() {
+          vHeight = aHeight;
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vView = normalize(-mv.xyz);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        varying float vHeight;
+        varying vec3 vNormal;
+        varying vec3 vView;
+        void main() {
+          vec3 deep = uColor * 0.35;
+          vec3 mid = uColor;
+          vec3 peak = mix(uColor, vec3(1.0), 0.65);
+          vec3 col = mix(deep, mid, smoothstep(-0.12, 0.02, vHeight));
+          col = mix(col, peak, smoothstep(0.06, 0.2, vHeight));
+          float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 1.6);
+          gl_FragColor = vec4(col, 0.85 * (0.55 + 0.45 * fresnel));
+        }
+      `,
+    });
+    const terrain = new THREE.Mesh(geo, terrainMat);
+    terrain.userData.noAura = true;
+    group.add(terrain);
+    this.animatedMaterials.push(terrainMat);
+
+    // Wireframe overlay on the displaced terrain (1.002x).
+    const wire = new THREE.Mesh(
+      geo,
+      new THREE.MeshBasicMaterial({
+        color,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.28,
+        blending: this.particleBlending,
+        depthWrite: false,
+      }),
+    );
+    wire.scale.setScalar(1.002);
+    wire.userData.noAura = true;
+    group.add(wire);
+
+    // Atmosphere shell — fresnel glow at 1.18x.
+    const atmoMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
+      uniforms: {
+        uColor: { value: color.clone() },
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vView;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vView = normalize(-mv.xyz);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        varying vec3 vNormal;
+        varying vec3 vView;
+        void main() {
+          float rim = pow(max(0.0, 0.28 - dot(normalize(vNormal), normalize(vView))), 3.2);
+          gl_FragColor = vec4(uColor * rim * 2.2, rim * 0.85);
+        }
+      `,
+    });
+    const atmo = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.18, 32, 24), atmoMat);
+    atmo.userData.noAura = true;
+    group.add(atmo);
+
+    // Banded rings (if requested).
+    if (hasRings) {
+      const ringMat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: this.particleBlending,
+        side: THREE.DoubleSide,
+        uniforms: {
+          uColor: { value: color.clone() },
+          uTime: { value: 0 },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          varying vec2 vUv;
+          float hash(float n) { return fract(sin(n) * 43758.5453); }
+          void main() {
+            float band = fract(vUv.x * 14.0);
+            float brightness = 0.35 + 0.65 * hash(floor(vUv.x * 14.0));
+            float grain = 0.85 + 0.3 * hash(floor(vUv.x * 140.0));
+            float alpha = smoothstep(0.0, 0.12, band) * smoothstep(1.0, 0.88, band);
+            gl_FragColor = vec4(uColor * brightness * grain, alpha * 0.75);
+          }
+        `,
+      });
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(radius * 1.35, radius * 1.95, 64, 4),
+        ringMat,
+      );
+      ring.rotation.x = Math.PI / 2.4;
+      ring.userData.noAura = true;
+      group.add(ring);
+      this.animatedMaterials.push(ringMat);
+    }
+
+    return group;
+  }
+
+  /**
    * The cosmos — planets, city, forests, nebulae. A rich world you fly
    * through, Mario Kart Rainbow Road energy: dense, playful, surprising.
    */
@@ -1688,64 +1966,23 @@ export class JourneyScene {
     const dummy = new THREE.Object3D();
     const col = new THREE.Color();
 
-    // 1 — Planets: one per chapter region, large enough to fly past.
+    // 1 — Planets: detailed worlds with terrain, atmosphere, banded rings.
     const planetDefs = [
-      { t: 0.1, r: 2.2, color: cyan, rings: false }, // Hero
-      { t: 0.24, r: 1.8, color: accent, rings: true }, // About
-      { t: 0.38, r: 2.4, color: cyan, rings: true }, // Publications
-      { t: 0.52, r: 2.0, color: emerald, rings: false }, // Experience
-      { t: 0.66, r: 2.6, color: amber, rings: true }, // Projects
-      { t: 0.8, r: 2.2, color: amber, rings: false }, // Skills/Contact
+      { t: 0.1, r: 2.2, color: cyan, rings: false, seed: 1.7 }, // Hero
+      { t: 0.24, r: 1.8, color: accent, rings: true, seed: 4.2 }, // About
+      { t: 0.38, r: 2.4, color: cyan, rings: true, seed: 8.9 }, // Publications
+      { t: 0.52, r: 2.0, color: emerald, rings: false, seed: 3.3 }, // Experience
+      { t: 0.66, r: 2.6, color: amber, rings: true, seed: 6.1 }, // Projects
+      { t: 0.8, r: 2.2, color: amber, rings: false, seed: 9.4 }, // Skills/Contact
     ];
     for (const def of planetDefs) {
       const p = this.curve.getPointAt(def.t);
       const tangent = this.curve.getTangentAt(def.t);
       const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
-      const planetGroup = new THREE.Group();
+      const planetGroup = this.buildDetailedPlanet(def.r, def.color, def.seed, def.rings);
       // Offset to the side so you fly PAST, not through.
-      planetGroup.position.copy(p).addScaledVector(side, 7 * (Math.random() > 0.5 ? 1 : -1));
+      planetGroup.position.copy(p).addScaledVector(side, 7 * (def.seed > 5 ? 1 : -1));
       planetGroup.position.y += 2;
-      const planet = new THREE.Mesh(
-        new THREE.SphereGeometry(def.r, 24, 18),
-        new THREE.MeshBasicMaterial({
-          color: def.color,
-          transparent: true,
-          opacity: 0.35,
-          wireframe: true,
-          blending: this.particleBlending,
-          depthWrite: false,
-        }),
-      );
-      planet.userData.noAura = true;
-      planetGroup.add(planet);
-      // Solid core.
-      const core = new THREE.Mesh(
-        new THREE.SphereGeometry(def.r * 0.55, 16, 12),
-        new THREE.MeshBasicMaterial({
-          color: def.color,
-          transparent: true,
-          opacity: 0.5,
-          blending: this.particleBlending,
-          depthWrite: false,
-        }),
-      );
-      core.userData.noAura = true;
-      planetGroup.add(core);
-      if (def.rings) {
-        const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(def.r * 1.5, 0.06, 8, 48),
-          new THREE.MeshBasicMaterial({
-            color: def.color,
-            transparent: true,
-            opacity: 0.6,
-            blending: this.particleBlending,
-            depthWrite: false,
-          }),
-        );
-        ring.rotation.x = Math.PI / 2.4;
-        ring.userData.noAura = true;
-        planetGroup.add(ring);
-      }
       // Moons.
       for (let m = 0; m < 2; m++) {
         const moon = new THREE.Mesh(
@@ -1758,8 +1995,12 @@ export class JourneyScene {
             depthWrite: false,
           }),
         );
-        const a = (m / 2) * Math.PI * 2;
-        moon.position.set(Math.cos(a) * def.r * 1.9, Math.sin(a) * 0.8, Math.sin(a) * def.r * 1.9);
+        const a = (m / 2) * Math.PI * 2 + def.seed;
+        moon.position.set(
+          Math.cos(a) * def.r * 2.1,
+          Math.sin(a) * 0.9,
+          Math.sin(a) * def.r * 2.1,
+        );
         moon.userData.noAura = true;
         planetGroup.add(moon);
       }
@@ -2322,6 +2563,14 @@ export class JourneyScene {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.composer?.setSize(window.innerWidth, window.innerHeight);
+    if (this.asciiPass) {
+      updateAsciiResolution(
+        this.asciiPass,
+        window.innerWidth,
+        window.innerHeight,
+        this.renderer.getPixelRatio(),
+      );
+    }
     this.fitWordmarks();
     const pixelScale = window.innerHeight * 0.5;
     for (const mat of this.animatedMaterials) {
