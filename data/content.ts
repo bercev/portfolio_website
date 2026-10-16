@@ -14,6 +14,7 @@ export interface ExternalLink {
 }
 
 export interface Publication {
+  readonly slug: string;
   readonly title: string;
   /** Plain-English gloss — the paper's claim without the title's jargon. */
   readonly gloss: string;
@@ -21,6 +22,9 @@ export interface Publication {
   readonly date: string;
   readonly href: string;
   readonly pdfUrl: string;
+  readonly authors: readonly { name: string; orcid?: string }[];
+  /** Ready-to-copy BibTeX entry. */
+  readonly bibtex: string;
   readonly preview: {
     readonly src: string;
     readonly alt: string;
@@ -159,6 +163,7 @@ export const portfolio = {
   },
   publications: [
     {
+      slug: "skilloptimizer",
       title:
         "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision.",
       gloss:
@@ -167,6 +172,14 @@ export const portfolio = {
       date: "2026",
       href: "https://openreview.net/forum?id=nZYF0aPAMP",
       pdfUrl: "/assets/publications/skilloptimizer.pdf",
+      authors: [{ name: "Berat Ercevik" }],
+      bibtex: `@inproceedings{ercevik2026skilloptimizer,
+  title={SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision},
+  author={Berat Ercevik},
+  booktitle={ICML 2026 AIWILD Workshop},
+  year={2026},
+  url={https://openreview.net/forum?id=nZYF0aPAMP}
+}`,
       preview: {
         src: "/assets/publications/skilloptimizer.png",
         alt: "First-page preview of the SkillOptimizer paper.",
@@ -176,6 +189,7 @@ export const portfolio = {
       },
     },
     {
+      slug: "grokset",
       title: "@GrokSet: Multi-party Human-LLM Interactions in Social Media.",
       gloss:
         "A dataset and analysis of 1M+ public Grok conversations: what changes when people talk to an LLM in front of an audience instead of alone.",
@@ -183,6 +197,14 @@ export const portfolio = {
       date: "February 2026",
       href: "https://arxiv.org/abs/2602.21236",
       pdfUrl: "/assets/publications/grokset.pdf",
+      authors: [{ name: "Berat Ercevik" }],
+      bibtex: `@article{ercevik2026grokset,
+  title={{@GrokSet}: Multi-party Human-LLM Interactions in Social Media},
+  author={Berat Ercevik},
+  journal={arXiv preprint arXiv:2602.21236},
+  year={2026},
+  url={https://arxiv.org/abs/2602.21236}
+}`,
       preview: {
         src: "/assets/publications/grokset.png",
         alt: "First-page preview of the @GrokSet paper.",
