@@ -78,7 +78,8 @@ const fragmentShader = /* glsl */ `
     field += 0.2 * sin(uScroll * 20.0 + cellIdx.x * 0.01); // Scroll ripple
 
     // Braille dots: 2x4 grid, threshold by field
-    float threshold = 0.45;
+    // LOWER threshold = more dots = denser, more detailed art.
+    float threshold = 0.38;
     int pattern = 0;
     vec2 dotOffsets[8];
     dotOffsets[0] = vec2(0.25, 0.125); dotOffsets[1] = vec2(0.25, 0.375);
@@ -111,12 +112,13 @@ const fragmentShader = /* glsl */ `
     }
 
     // Color: lerp between phosphors by field + chapter
+    // BRIGHTER for more visual impact.
     vec3 col = mix(uColorA, uColorB, smoothstep(0.3, 0.7, field));
-    col *= 0.4 + 0.6 * smoothstep(0.3, 0.8, field);
+    col *= 0.6 + 0.8 * smoothstep(0.3, 0.8, field);
 
     // Dark background
     vec3 bg = vec3(0.008, 0.012, 0.02);
-    vec3 final = mix(bg, col, alpha * 0.9);
+    vec3 final = mix(bg, col, alpha * 0.95);
 
     gl_FragColor = vec4(final, 1.0);
   }
@@ -132,9 +134,9 @@ export function createProceduralAscii(
   options: ProceduralAsciiOptions = {},
 ): THREE.ShaderMaterial {
   const {
-    cellSize = { x: 12, y: 24 },
-    colorA = new THREE.Color(0.2, 0.9, 0.9), // Cyan
-    colorB = new THREE.Color(1.0, 0.7, 0.2), // Amber
+    cellSize = { x: 10, y: 20 }, // Denser for more detail
+    colorA = new THREE.Color(0.25, 0.95, 0.95), // Brighter cyan
+    colorB = new THREE.Color(1.0, 0.75, 0.25), // Warmer amber
   } = options;
 
   const material = new THREE.ShaderMaterial({
