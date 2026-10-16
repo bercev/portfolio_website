@@ -16,10 +16,19 @@ const journeyStationCounts = [
 
 const journeyProps = buildJourneyPropManifest();
 
+/**
+ * The Journey geometry background is retired in favor of the shader backdrop
+ * (wired in EffectStage). Kept as a fallback: set to true to restore the
+ * three.js scene instead of the shader.
+ */
+const USE_JOURNEY_BACKGROUND = false;
+
 export default function Home() {
   return (
     <>
-      <Journey stationCounts={journeyStationCounts} props={journeyProps} />
+      {USE_JOURNEY_BACKGROUND ? (
+        <Journey stationCounts={journeyStationCounts} props={journeyProps} />
+      ) : null}
       <EffectStage />
       <ContentFrost />
       <PortfolioMain />

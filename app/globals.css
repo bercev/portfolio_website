@@ -422,6 +422,19 @@ textarea {
   opacity: 0.5;
 }
 
+/*
+ * The shader backdrop is authored to be atmospheric on its own (its palette
+ * already leans on the paper/void tones), so it gets more headroom than the
+ * generic background layer above.
+ */
+[data-effect="shader-backdrop"] {
+  opacity: 0.65;
+}
+
+.dark [data-effect="shader-backdrop"] {
+  opacity: 0.85;
+}
+
 [data-effect-layer="pointer"] {
   z-index: var(--z-effect-pointer);
 }
