@@ -255,7 +255,32 @@ html[data-ascii="active"][data-palette] {
 
 /* Readability halo over the canvas — subtle, inherits. */
 html[data-ascii="active"] body {
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+  text-shadow:
+    0 1px 8px rgba(0, 0, 0, 0.95),
+    0 0 3px rgba(0, 0, 0, 0.9);
+}
+
+/* Dark scrim behind publication rows and project cards so text reads
+   over bright 3D areas. Keeps the terminal visible at the edges. */
+html[data-ascii="active"] .journey-pub-row,
+html[data-ascii="active"] .journey-project,
+html[data-ascii="active"] .journey-panel {
+  background: linear-gradient(
+    180deg,
+    rgba(5, 7, 12, 0.72) 0%,
+    rgba(5, 7, 12, 0.55) 100%
+  );
+  border-radius: 10px;
+}
+
+/* Body copy gets a stronger halo in ASCII mode. */
+html[data-ascii="active"] .journey-pub-gloss,
+html[data-ascii="active"] .journey-project-copy,
+html[data-ascii="active"] .journey-station-note,
+html[data-ascii="active"] [data-hero-tagline] {
+  text-shadow:
+    0 1px 10px rgba(0, 0, 0, 1),
+    0 0 4px rgba(0, 0, 0, 0.95);
 }
 
 /* Phosphor bloom on display type only. */
@@ -2292,15 +2317,25 @@ html:not(.dark) .skill-pill {
 /* BERAT ASCII art hero — hand-designed block letterform wordmark. */
 .ascii-berat {
   margin: 0;
+  padding: clamp(1rem, 3vh, 2rem) clamp(1rem, 4vw, 3rem);
   font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(0.32rem, 1.05vw, 0.72rem);
   line-height: 1.04;
   letter-spacing: 0;
   color: #2fd8ff;
+  /* Dark radial backdrop separates the letters from the busy 3D background. */
+  background: radial-gradient(
+    ellipse 75% 85% at 50% 50%,
+    rgba(5, 7, 12, 0.82) 0%,
+    rgba(5, 7, 12, 0.55) 55%,
+    rgba(5, 7, 12, 0) 100%
+  );
+  border-radius: 12px;
   text-shadow:
-    0 0 22px rgba(47, 216, 255, 0.45),
-    0 0 6px rgba(47, 216, 255, 0.6),
-    0 2px 10px rgba(0, 0, 0, 0.9);
+    0 0 28px rgba(47, 216, 255, 0.65),
+    0 0 8px rgba(47, 216, 255, 0.8),
+    0 2px 12px rgba(0, 0, 0, 1),
+    0 0 2px rgba(234, 246, 251, 0.9);
   white-space: pre;
   user-select: none;
   animation: ascii-berat-flicker 7s ease-in-out infinite;

@@ -9,6 +9,11 @@ import {
   updateProceduralAscii,
 } from "./procedural-ascii";
 import { buildAsciiHeroPoints } from "./ascii-hero";
+import {
+  buildAsciiPoints,
+  makeAsciiGlyphSprite,
+  makeAsciiRingTexture,
+} from "./ascii-sprites";
 
 import type { JourneyPropManifest } from "@/data/journey-props";
 
@@ -832,9 +837,9 @@ export class JourneyScene {
   private readonly textPoints: THREE.Points;
   private readonly arrivalPoints: THREE.Points;
   private readonly comet: THREE.Mesh;
-  private heroSpark: THREE.Mesh | null = null;
-  private readonly heroRings: THREE.Mesh[] = [];
-  private readonly chapterGates: THREE.Mesh[] = [];
+  private heroSpark: THREE.Sprite | null = null;
+  private readonly heroRings: THREE.Sprite[] = [];
+  private readonly chapterGates: THREE.Sprite[] = [];
   private readonly floatingIslands: THREE.Group[] = [];
   private fogCool: THREE.Color | null = null;
   private fogWarm: THREE.Color | null = null;
@@ -933,34 +938,37 @@ export class JourneyScene {
     this.textPoints.renderOrder = 8;
     this.scene.add(this.textGroup);
 
-    // Chapter 0 — HERO · "First Compile": a spark of curiosity igniting above
-    // the wordmark, with expanding compile-ring shockwaves.
+    // Chapter 0 — HERO · "First Compile": an ASCII ✦ spark of curiosity
+    // igniting above the wordmark, with expanding ○ compile-ring shockwaves.
+    // (Was: icosahedron + tori — replaced with ASCII art.)
     const sparkGroup = new THREE.Group();
     const sparkColor = new THREE.Color(palette.accent);
-    const spark = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(0.34, 1),
-      new THREE.MeshBasicMaterial({
-        color: sparkColor,
+    const sparkTex = makeAsciiGlyphSprite("✦", `#${sparkColor.getHexString()}`, 128);
+    const spark = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: sparkTex,
         transparent: true,
         opacity: 0.95,
         blending: particleBlending,
         depthWrite: false,
       }),
     );
+    spark.scale.setScalar(1.2);
     spark.userData.noAura = true;
     sparkGroup.add(spark);
     this.heroSpark = spark;
+    const ringTex = makeAsciiGlyphSprite("○", `#${sparkColor.getHexString()}`, 128);
     for (let i = 0; i < 3; i++) {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.35 + i * 0.22, 0.016, 6, 48),
-        new THREE.MeshBasicMaterial({
-          color: sparkColor,
+      const ring = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: ringTex,
           transparent: true,
           opacity: 0.5 - i * 0.12,
           blending: particleBlending,
           depthWrite: false,
         }),
       );
+      ring.scale.setScalar(0.7 + i * 0.44);
       ring.userData.noAura = true;
       ring.userData.compileRing = i;
       sparkGroup.add(ring);
@@ -1710,82 +1718,76 @@ export class JourneyScene {
       this.scene.add(wall);
     }
 
-    // 2 — Scatter field: instanced crystals filling the world tube.
+    // 2 — Scatter field: ASCII ◆ glyphs filling the world tube
+    // (was: instanced octahedron crystals — replaced with ASCII art).
     const scatterCount = this.quality === "full" ? 420 : 200;
-    const crystalGeo = new THREE.OctahedronGeometry(0.34, 0);
-    const crystalMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0.75,
-      blending: this.particleBlending,
-      depthWrite: false,
-    });
-    const scatter = new THREE.InstancedMesh(crystalGeo, crystalMat, scatterCount);
-    scatter.userData.noAura = true;
-    const dummy = new THREE.Object3D();
-    const col = new THREE.Color();
-    for (let i = 0; i < scatterCount; i++) {
-      const t = Math.random() * PATH_END_T;
-      const p = this.curve.getPointAt(t);
-      const tangent = this.curve.getTangentAt(t);
-      const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
-      const up = new THREE.Vector3().crossVectors(side, tangent).normalize();
-      const lateral = (Math.random() - 0.5) * 16;
-      const vertical = (Math.random() - 0.5) * 10;
-      // Keep clear of the immediate flight corridor.
-      const clear = Math.abs(lateral) < 2.5 && Math.abs(vertical) < 2 ? 4 : 0;
-      dummy.position
-        .copy(p)
-        .addScaledVector(side, lateral + Math.sign(lateral || 1) * clear)
-        .addScaledVector(up, vertical);
-      dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-      const s = 0.4 + Math.random() * 1.4;
-      dummy.scale.setScalar(s);
-      dummy.updateMatrix();
-      scatter.setMatrixAt(i, dummy.matrix);
-      col.copy(cyan).lerp(amber, THREE.MathUtils.smoothstep(t, 0.15, 0.85));
-      // Vary brightness for depth.
-      col.multiplyScalar(0.5 + Math.random() * 0.5);
-      scatter.setColorAt(i, col);
+    {
+      const specs = [];
+      const col = new THREE.Color();
+      const pos = new THREE.Vector3();
+      for (let i = 0; i < scatterCount; i++) {
+        const t = Math.random() * PATH_END_T;
+        const p = this.curve.getPointAt(t);
+        const tangent = this.curve.getTangentAt(t);
+        const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+        const up = new THREE.Vector3().crossVectors(side, tangent).normalize();
+        const lateral = (Math.random() - 0.5) * 16;
+        const vertical = (Math.random() - 0.5) * 10;
+        // Keep clear of the immediate flight corridor.
+        const clear = Math.abs(lateral) < 2.5 && Math.abs(vertical) < 2 ? 4 : 0;
+        pos
+          .copy(p)
+          .addScaledVector(side, lateral + Math.sign(lateral || 1) * clear)
+          .addScaledVector(up, vertical);
+        const s = 0.4 + Math.random() * 1.4;
+        col.copy(cyan).lerp(amber, THREE.MathUtils.smoothstep(t, 0.15, 0.85));
+        // Vary brightness for depth.
+        col.multiplyScalar(0.5 + Math.random() * 0.5);
+        specs.push({
+          position: pos.clone(),
+          color: col.clone(),
+          size: 0.34 * s * 2.2,
+          glyph: 0 as const,
+          opacity: 0.75,
+        });
+      }
+      const scatter = buildAsciiPoints(specs, this.particleBlending);
+      this.scene.add(scatter);
     }
-    scatter.instanceMatrix.needsUpdate = true;
-    if (scatter.instanceColor) scatter.instanceColor.needsUpdate = true;
-    this.scene.add(scatter);
 
-    // 3 — Biome outriders: each chapter's motif echoes along the path,
-    // extending the biome beyond its station so regions blend together.
-    const outriderGeo = new THREE.TetrahedronGeometry(0.3, 0);
-    const outriderMat = new THREE.MeshBasicMaterial({
-      color: accent,
-      transparent: true,
-      opacity: 0.4,
-      blending: this.particleBlending,
-      depthWrite: false,
-      wireframe: true,
-    });
-    const outriders = new THREE.InstancedMesh(outriderGeo, outriderMat, 120);
-    outriders.userData.noAura = true;
-    for (let i = 0; i < 120; i++) {
-      // Cluster around chapter regions, spilling into the gaps.
-      const chapter = Math.floor(Math.random() * 6);
-      const centerT = STATION_PATH_T[chapter];
-      const t = THREE.MathUtils.clamp(
-        centerT + (Math.random() - 0.5) * 0.12,
-        0,
-        PATH_END_T,
-      );
-      const p = this.curve.getPointAt(t);
-      dummy.position.set(
-        p.x + (Math.random() - 0.5) * 14,
-        p.y + (Math.random() - 0.5) * 8,
-        p.z + (Math.random() - 0.5) * 14,
-      );
-      dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-      dummy.scale.setScalar(0.5 + Math.random());
-      dummy.updateMatrix();
-      outriders.setMatrixAt(i, dummy.matrix);
+    // 3 — Biome outriders: ASCII ▲ glyphs echoing each chapter's motif
+    // (was: instanced wireframe tetrahedrons — replaced with ASCII art).
+    const outriderCount = 120;
+    {
+      const specs = [];
+      const pos = new THREE.Vector3();
+      for (let i = 0; i < outriderCount; i++) {
+        // Cluster around chapter regions, spilling into the gaps.
+        const chapter = Math.floor(Math.random() * 6);
+        const centerT = STATION_PATH_T[chapter];
+        const t = THREE.MathUtils.clamp(
+          centerT + (Math.random() - 0.5) * 0.12,
+          0,
+          PATH_END_T,
+        );
+        const p = this.curve.getPointAt(t);
+        pos.set(
+          p.x + (Math.random() - 0.5) * 14,
+          p.y + (Math.random() - 0.5) * 8,
+          p.z + (Math.random() - 0.5) * 14,
+        );
+        const s = 0.5 + Math.random();
+        specs.push({
+          position: pos.clone(),
+          color: accent.clone(),
+          size: 0.3 * s * 2.2,
+          glyph: 1 as const,
+          opacity: 0.4,
+        });
+      }
+      const outriders = buildAsciiPoints(specs, this.particleBlending);
+      this.scene.add(outriders);
     }
-    outriders.instanceMatrix.needsUpdate = true;
-    this.scene.add(outriders);
   }
 
   /**
@@ -2046,16 +2048,8 @@ export class JourneyScene {
     });
     const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeCount);
     trunks.userData.noAura = true;
-    const topGeo = new THREE.OctahedronGeometry(0.42, 0);
-    const topMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0.75,
-      blending: this.particleBlending,
-      depthWrite: false,
-      wireframe: true,
-    });
-    const tops = new THREE.InstancedMesh(topGeo, topMat, treeCount);
-    tops.userData.noAura = true;
+    // Glowing tops as ASCII ▲ glyphs (was: wireframe octahedrons).
+    const topSpecs = [];
     for (let i = 0; i < treeCount; i++) {
       const t = Math.random() * PATH_END_T;
       const p = this.curve.getPointAt(t);
@@ -2073,17 +2067,24 @@ export class JourneyScene {
       col.copy(cyan).lerp(amber, THREE.MathUtils.smoothstep(t, 0.15, 0.85));
       trunks.setColorAt(i, col);
       // Glowing top.
-      dummy.position.y = baseY + h + 0.3;
-      dummy.scale.setScalar(0.7 + Math.random() * 0.8);
-      dummy.updateMatrix();
-      tops.setMatrixAt(i, dummy.matrix);
-      tops.setColorAt(i, col);
+      const topPos = new THREE.Vector3(
+        dummy.position.x,
+        baseY + h + 0.3,
+        dummy.position.z,
+      );
+      const topScale = 0.7 + Math.random() * 0.8;
+      topSpecs.push({
+        position: topPos,
+        color: col.clone(),
+        size: 0.42 * topScale * 2.4,
+        glyph: 1 as const,
+        opacity: 0.75,
+      });
     }
     trunks.instanceMatrix.needsUpdate = true;
-    tops.instanceMatrix.needsUpdate = true;
     if (trunks.instanceColor) trunks.instanceColor.needsUpdate = true;
-    if (tops.instanceColor) tops.instanceColor.needsUpdate = true;
     this.scene.add(trunks);
+    const tops = buildAsciiPoints(topSpecs, this.particleBlending);
     this.scene.add(tops);
 
     // 3 — Cityscape: buildings with emissive window grids (in-shader).
@@ -2187,49 +2188,40 @@ export class JourneyScene {
       this.scene.add(neb);
     }
 
-    // 5 — Floating islands: rock chunks with glowing caps.
+    // 5 — Floating islands: ASCII ◆ rock masses with ✦ glowing caps
+    // (was: wireframe icosahedron + octahedron — replaced with ASCII art).
     const islandCount = this.quality === "full" ? 24 : 12;
-    for (let i = 0; i < islandCount; i++) {
-      const t = Math.random() * PATH_END_T;
-      const p = this.curve.getPointAt(t);
-      const tangent = this.curve.getTangentAt(t);
-      const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
-      const island = new THREE.Group();
-      island.position
-        .copy(p)
-        .addScaledVector(side, (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 6));
-      island.position.y += 1 + Math.random() * 4;
-      const rock = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.8 + Math.random() * 1.2, 0),
-        new THREE.MeshBasicMaterial({
-          color: col.copy(cyan).lerp(amber, t / PATH_END_T).clone(),
-          transparent: true,
-          opacity: 0.4,
-          wireframe: true,
-          blending: this.particleBlending,
-          depthWrite: false,
-        }),
-      );
-      rock.scale.y = 0.6;
-      rock.userData.noAura = true;
-      island.add(rock);
-      // Glowing cap.
-      const cap = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.3, 0),
-        new THREE.MeshBasicMaterial({
-          color: amber,
-          transparent: true,
-          opacity: 0.8,
-          blending: this.particleBlending,
-          depthWrite: false,
-        }),
-      );
-      cap.position.y = 0.9;
-      cap.userData.noAura = true;
-      island.add(cap);
-      island.userData.floatPhase = Math.random() * Math.PI * 2;
-      this.floatingIslands.push(island);
-      this.scene.add(island);
+    {
+      const specs = [];
+      for (let i = 0; i < islandCount; i++) {
+        const t = Math.random() * PATH_END_T;
+        const p = this.curve.getPointAt(t);
+        const tangent = this.curve.getTangentAt(t);
+        const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+        const basePos = p
+          .clone()
+          .addScaledVector(side, (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 6));
+        basePos.y += 1 + Math.random() * 4;
+        const rockSize = 0.8 + Math.random() * 1.2;
+        // Rock mass as a large dim diamond.
+        specs.push({
+          position: basePos.clone(),
+          color: col.copy(cyan).lerp(amber, t / PATH_END_T).clone().multiplyScalar(0.7),
+          size: rockSize * 2.4,
+          glyph: 0 as const,
+          opacity: 0.5,
+        });
+        // Glowing cap as a bright spark above.
+        specs.push({
+          position: basePos.clone().add(new THREE.Vector3(0, 0.9, 0)),
+          color: amber.clone(),
+          size: 0.9,
+          glyph: 3 as const,
+          opacity: 0.9,
+        });
+      }
+      const islands = buildAsciiPoints(specs, this.particleBlending);
+      this.scene.add(islands);
     }
 
     // 6 — Rainbow road rails: glowing tubes along the spine edges.
@@ -2266,25 +2258,22 @@ export class JourneyScene {
   }
 
   private buildChapterGates() {
-    const gateColor = new THREE.Color(this.palette.cyan);
+    // ASCII ○ ring portals (was: 3D torus meshes — replaced with ASCII art).
+    const ringTex = makeAsciiRingTexture(this.palette.cyan, 28, 256);
     for (let i = 0; i < STATION_PATH_T.length - 1; i++) {
       const t = (STATION_PATH_T[i] + STATION_PATH_T[i + 1]) / 2;
-      const gate = new THREE.Mesh(
-        new THREE.TorusGeometry(3.4, 0.09, 8, 64),
-        new THREE.MeshBasicMaterial({
-          color: gateColor,
-          transparent: true,
-          opacity: 0.5,
-          blending: this.particleBlending,
-          depthWrite: false,
-        }),
-      );
+      const mat = new THREE.SpriteMaterial({
+        map: ringTex,
+        transparent: true,
+        opacity: 0.5,
+        blending: this.particleBlending,
+        depthWrite: false,
+      });
+      const gate = new THREE.Sprite(mat);
+      gate.scale.setScalar(7.5);
       gate.userData.noAura = true;
       const p = this.curve.getPointAt(t);
-      const tangent = this.curve.getTangentAt(t, new THREE.Vector3());
       gate.position.copy(p);
-      // Face the gate along the path so the camera flies through it.
-      gate.lookAt(p.clone().add(tangent));
       gate.userData.gateT = t;
       this.scene.add(gate);
       this.chapterGates.push(gate);
@@ -2316,107 +2305,49 @@ export class JourneyScene {
    * Mixed drift through the journey volume: tide rings, kelp needles,
    * crystal shards, seed pods. Never a tiled page of the same rectangle.
    */
+  /**
+   * Mixed drift through the journey volume: ASCII ○ rings, ✦ sparks,
+   * ▲ shards, ◆ crystals. (Was: wireframe tori/cones/tetras/octas —
+   * replaced with ASCII art.) Never a tiled page of the same rectangle.
+   */
   private buildDriftField() {
-    const dummy = new THREE.Object3D();
-    const look = new THREE.Vector3();
     const ink = new THREE.Color(this.palette.accent).lerp(
       new THREE.Color(this.palette.cyan),
       0.35,
     );
+    // [glyph, count, size()]
     const kinds: Array<{
-      geo: THREE.BufferGeometry;
+      glyph: 0 | 1 | 2 | 3;
       count: number;
-      scale: () => [number, number, number];
+      size: () => number;
     }> = [
-      {
-        geo: new THREE.TorusGeometry(1.05, 0.032, 5, 20),
-        count: 72,
-        scale: () => {
-          const s = 0.32 + Math.random() * 1.15;
-          return [s, s * (0.35 + Math.random() * 0.7), s];
-        },
-      },
-      {
-        geo: new THREE.ConeGeometry(0.11, 2.35, 5, 1, true),
-        count: 58,
-        scale: () => {
-          const s = 0.45 + Math.random() * 1.25;
-          return [s * (0.55 + Math.random() * 0.6), s, s * (0.55 + Math.random() * 0.6)];
-        },
-      },
-      {
-        geo: new THREE.TetrahedronGeometry(0.82),
-        count: 48,
-        scale: () => {
-          const s = 0.4 + Math.random() * 0.95;
-          return [s, s * (0.7 + Math.random() * 0.8), s * (0.55 + Math.random() * 0.7)];
-        },
-      },
-      {
-        geo: new THREE.OctahedronGeometry(0.52, 0),
-        count: 42,
-        scale: () => {
-          const s = 0.35 + Math.random() * 0.85;
-          return [s, s, s];
-        },
-      },
+      { glyph: 2, count: 72, size: () => 0.32 + Math.random() * 1.15 },
+      { glyph: 3, count: 58, size: () => 0.45 + Math.random() * 1.25 },
+      { glyph: 1, count: 48, size: () => 0.4 + Math.random() * 0.95 },
+      { glyph: 0, count: 42, size: () => 0.35 + Math.random() * 0.85 },
     ];
 
+    const specs = [];
+    const pos = new THREE.Vector3();
     for (const kind of kinds) {
-      const mat = new THREE.ShaderMaterial({
-        wireframe: true,
-        transparent: true,
-        depthWrite: false,
-        blending: this.particleBlending,
-        defines: { USE_INSTANCING: "" },
-        uniforms: {
-          uTime: { value: 0 },
-          uOpacity: { value: (this.lightTheme ? 0.34 : 0.36) * this.inkAlpha },
-          uColor: { value: ink.clone() },
-        },
-        vertexShader: `
-          varying float vZ;
-          void main() {
-            vec3 transformed = position;
-            #ifdef USE_INSTANCING
-              transformed = (instanceMatrix * vec4(transformed, 1.0)).xyz;
-            #endif
-            vZ = transformed.z;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 uColor;
-          uniform float uOpacity;
-          uniform float uTime;
-          varying float vZ;
-          void main() {
-            float pulse = 0.82 + 0.18 * sin(uTime * 0.35 + vZ * 0.07);
-            gl_FragColor = vec4(uColor, uOpacity * pulse);
-          }
-        `,
-      });
-      const mesh = new THREE.InstancedMesh(kind.geo, mat, kind.count);
       for (let i = 0; i < kind.count; i++) {
-        dummy.position.set(
+        pos.set(
           (Math.random() - 0.5) * 52,
           (Math.random() - 0.5) * 28,
           22 - Math.random() * 160,
         );
-        const t = THREE.MathUtils.clamp((22 - dummy.position.z) / 160, 0, 1);
-        this.curve.getPointAt(t, look);
-        dummy.lookAt(look);
-        dummy.rotateX((Math.random() - 0.5) * 1.6);
-        dummy.rotateZ((Math.random() - 0.5) * 2.1);
-        dummy.scale.set(...kind.scale());
-        dummy.updateMatrix();
-        mesh.setMatrixAt(i, dummy.matrix);
+        const c = ink.clone().multiplyScalar(0.7 + Math.random() * 0.5);
+        specs.push({
+          position: pos.clone(),
+          color: c,
+          size: kind.size() * 2.0,
+          glyph: kind.glyph,
+          opacity: (this.lightTheme ? 0.34 : 0.36) * this.inkAlpha,
+        });
       }
-      mesh.instanceMatrix.needsUpdate = true;
-      mesh.frustumCulled = false;
-      this.scene.add(mesh);
-      this.animatedMaterials.push(mat);
     }
+    const drift = buildAsciiPoints(specs, this.particleBlending);
+    this.scene.add(drift);
   }
 
   /** Soft motes filling the journey AABB, not a cylinder around the camera path. */
@@ -2821,16 +2752,14 @@ export class JourneyScene {
     // Hero spark ignition pulse.
     if (this.heroSpark) {
       const s = 1 + Math.sin(t * 2.2) * 0.18;
-      this.heroSpark.scale.setScalar(s);
-      this.heroSpark.rotation.y = t * 0.8;
-      this.heroSpark.rotation.x = t * 0.5;
+      this.heroSpark.scale.setScalar(1.2 * s);
     }
     for (const ring of this.heroRings) {
       const i = (ring.userData.compileRing ?? 0) as number;
       const cycle = (t * 0.35 + i / 3) % 1;
       const r = 0.35 + cycle * 1.4;
-      ring.scale.setScalar(r / 0.35);
-      (ring.material as THREE.MeshBasicMaterial).opacity = 0.5 * (1 - cycle);
+      ring.scale.setScalar((r / 0.35) * (0.7 + i * 0.44));
+      (ring.material as THREE.SpriteMaterial).opacity = 0.5 * (1 - cycle);
     }
     // Citation pulses travel the beam; beacon rings expand.
     for (const station of this.stations) {
@@ -2856,7 +2785,7 @@ export class JourneyScene {
       const gateT = gate.userData.gateT as number;
       const dist = Math.abs(pathT - gateT);
       const flash = Math.max(0, 1 - dist / 0.03);
-      (gate.material as THREE.MeshBasicMaterial).opacity = 0.22 + flash * 0.65;
+      (gate.material as THREE.SpriteMaterial).opacity = 0.22 + flash * 0.65;
       const s = 1 + flash * 0.12;
       gate.scale.setScalar(s);
     }
