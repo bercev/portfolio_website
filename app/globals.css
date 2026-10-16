@@ -2555,6 +2555,103 @@ html[data-journey="active"] [data-hero-name-fallback] {
   scrollbar-width: thin;
 }
 
+/* Contact form — phosphor terminal styling. */
+.journey-contact-form {
+  margin-top: 1.75rem;
+  max-width: 640px;
+  padding: 1.25rem 1.4rem 1.4rem;
+  font-family: var(--font-mono);
+  background: rgba(5, 7, 12, 0.72);
+  border: 1px solid rgba(47, 216, 255, 0.28);
+  border-radius: 8px;
+  box-shadow: 0 0 24px rgba(47, 216, 255, 0.08);
+}
+.journey-contact-form-prompt {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+.journey-contact-form-ps1 {
+  color: var(--portfolio-accent);
+}
+.journey-contact-form-field {
+  display: block;
+  margin-bottom: 1rem;
+}
+.journey-contact-form-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--portfolio-accent);
+  letter-spacing: 0.02em;
+}
+.journey-contact-form-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--foreground);
+  background: rgba(5, 7, 12, 0.9);
+  border: 1px solid rgba(234, 246, 251, 0.18);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.journey-contact-form-input::placeholder {
+  color: rgba(125, 147, 168, 0.55);
+}
+.journey-contact-form-input:focus {
+  border-color: var(--portfolio-accent);
+  box-shadow: 0 0 0 2px rgba(47, 216, 255, 0.18);
+}
+.journey-contact-form-input:disabled {
+  opacity: 0.6;
+}
+.journey-contact-form-textarea {
+  resize: vertical;
+  min-height: 7rem;
+  line-height: 1.5;
+}
+.journey-contact-form-error {
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  color: #ff6b57;
+}
+.journey-contact-form-submit {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.65rem 1.4rem;
+  color: #05070c;
+  background: var(--portfolio-accent);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.journey-contact-form-submit:hover:not(:disabled) {
+  opacity: 0.92;
+}
+.journey-contact-form-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.journey-contact-form-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.journey-contact-form-receipt {
+  margin: 1.75rem 0 0;
+  max-width: 640px;
+  padding: 1.25rem 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--portfolio-accent);
+  background: rgba(5, 7, 12, 0.72);
+  border: 1px solid rgba(47, 216, 255, 0.28);
+  border-radius: 8px;
+}
+
 .journey-tech-line {
   max-width: 58ch;
   color: var(--muted-foreground);
@@ -2665,4 +2762,21 @@ html.dark .plain-backdrop {
 
 [data-plain-root] [data-effect-layer="pointer"] {
   display: none !important;
+}
+
+/* Boot sequence cursor (moved from inline <style> for cleanliness). */
+.boot-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background-color: #2fd8ff;
+  animation: boot-blink 0.8s steps(1) infinite;
+}
+@keyframes boot-blink {
+  50% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot-cursor { animation: none; }
 }

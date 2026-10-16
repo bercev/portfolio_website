@@ -84,8 +84,14 @@ export function AsciiSnake() {
   // Game tick.
   useEffect(() => {
     if (phase !== "playing") return;
+    let paused = document.hidden;
+    const onVis = () => {
+      paused = document.hidden;
+    };
+    document.addEventListener("visibilitychange", onVis);
     const speed = Math.max(70, 150 - stateRef.current.eaten * 6);
     const id = window.setInterval(() => {
+      if (paused) return; // don't advance while the tab is hidden
       const s = stateRef.current;
       if (s.queued && !opposite(s.queued, s.dir)) s.dir = s.queued;
       s.queued = null;
@@ -115,7 +121,10 @@ export function AsciiSnake() {
         s.snake.pop();
       }
     }, speed);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [phase]);
 
   // Render loop.

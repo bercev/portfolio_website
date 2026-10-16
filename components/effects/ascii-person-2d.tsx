@@ -429,6 +429,11 @@ export function AsciiPerson2D(): React.JSX.Element | null {
         zIndex: 4, // above the journey canvas (2), below the content frost (5)
         pointerEvents: "none",
         opacity: 0.95,
+        // Soft left-edge fade so the figure never hard-overlaps body copy.
+        WebkitMaskImage:
+          "linear-gradient(90deg, transparent 0%, black 18%, black 100%)",
+        maskImage:
+          "linear-gradient(90deg, transparent 0%, black 18%, black 100%)",
       }}
     />
   );

@@ -119,22 +119,9 @@ export function BootSequence() {
         {BOOT_LINES.slice(0, shownCount).map((line, i) => (
           <div key={i} style={{ color: colorFor(line.color), minHeight: "1.9em" }}>
             {line.text}
-            {i === shownCount - 1 && (
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "0.6em",
-                  height: "1.1em",
-                  marginLeft: 2,
-                  verticalAlign: "-0.15em",
-                  backgroundColor: "#2fd8ff",
-                  animation: "boot-blink 0.8s steps(1) infinite",
-                }}
-              />
-            )}
+            {i === shownCount - 1 && <span className="boot-cursor" />}
           </div>
         ))}
-        <style>{`@keyframes boot-blink { 50% { opacity: 0; } }`}</style>
       </div>
       <div
         style={{

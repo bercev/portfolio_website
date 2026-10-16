@@ -5,6 +5,8 @@ import { Terminal } from "@/components/terminal/Terminal";
 import { ExternalLink } from "@/components/ui/external-link";
 import { Station } from "@/components/ui/station";
 
+import { ContactForm } from "./contact-form";
+
 export function ContactFooter({
   content,
 }: {
@@ -19,11 +21,7 @@ export function ContactFooter({
     >
       <div className="journey-col-main journey-copy journey-copy--connect">
         <p className="journey-lead text-lg leading-8">{content.message}</p>
-        {content.links[0]?.href.startsWith("mailto:") ? (
-          <p className="journey-contact-email">
-            <a href={content.links[0].href}>{content.links[0].href.replace("mailto:", "")}</a>
-          </p>
-        ) : null}
+        <ContactForm />
         <p className="journey-spec-label" style={{ marginTop: "2rem" }}>
           Prefer a shell? Type <code>help</code> below.
         </p>

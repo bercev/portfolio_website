@@ -199,7 +199,10 @@ export function EasterEggs() {
         target &&
         (target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
+          target.isContentEditable ||
+          // Don't fire while the Snake game has focus (arrow keys are gameplay).
+          target.closest("[data-snake-focused]")
+        )
       ) {
         return;
       }

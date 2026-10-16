@@ -52,7 +52,7 @@ export function Terminal({ className }: { className?: string }) {
       term = new XTerm({
         theme: PHOSPHOR_THEME,
         fontFamily: `"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace`,
-        fontSize: 14,
+        fontSize: window.innerWidth < 640 ? 12 : 14,
         lineHeight: 1.25,
         cursorBlink: true,
         cursorStyle: "block",

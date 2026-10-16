@@ -109,13 +109,9 @@ const resume = {
   download: true,
 } as const satisfies ExternalLink;
 
-// TODO(bercev): replace with your public email address before launch.
-const email = {
-  label: "Email",
-  href: "mailto:hello@bercev.dev",
-} as const satisfies ExternalLink;
-
-const profileLinks = [email, github, linkedin, resume] as const;
+// Contact is handled via the on-site form (see app/api/contact/route.ts) so the
+// address stays private. Configure CONTACT_TO_EMAIL in the environment.
+const profileLinks = [github, linkedin, resume] as const;
 
 export const portfolio = {
   identity: {
