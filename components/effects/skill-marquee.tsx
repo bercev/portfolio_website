@@ -64,13 +64,18 @@ export function SkillMarquee({
   return (
     <div className="skill-marquee-stack" data-skill-cluster>
       {rows.map((rowGroups, index) => (
-        <SkillRow
-          key={`${index}-${rowGroups.map((group) => group.category).join("-")}`}
-          groups={rowGroups}
-          direction={index === 0 ? "forward" : "reverse"}
-          reduceMotion={reduceMotion}
-          label={index === 0 ? "Skills" : "More skills"}
-        />
+        <div key={`row-${index}`} className="skill-marquee-row">
+          <p className="journey-spec-label" aria-hidden="true">
+            {rowGroups.map((group) => group.category).join(" · ")}
+          </p>
+          <SkillRow
+            key={`${index}-${rowGroups.map((group) => group.category).join("-")}`}
+            groups={rowGroups}
+            direction={index === 0 ? "forward" : "reverse"}
+            reduceMotion={reduceMotion}
+            label={rowGroups.map((group) => group.category).join(", ")}
+          />
+        </div>
       ))}
     </div>
   );

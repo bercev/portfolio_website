@@ -62,7 +62,7 @@ function ProjectDetails({ project }: { readonly project: Project }) {
 }
 
 export function Projects({ content, heading }: ProjectsProps) {
-  const [featured, supporting] = content;
+  const [featured, supporting, ...rest] = content;
 
   return (
     <Station
@@ -89,6 +89,16 @@ export function Projects({ content, heading }: ProjectsProps) {
             <ProjectDetails project={supporting} />
           </article>
         ) : null}
+
+        {rest.map((project) => (
+          <article
+            key={project.title}
+            data-project-supporting
+            className="journey-panel journey-project"
+          >
+            <ProjectDetails project={project} />
+          </article>
+        ))}
       </div>
 
       {/* Shipped code you can touch: playable ASCII snake. */}
