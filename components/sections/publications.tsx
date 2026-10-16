@@ -8,6 +8,33 @@ type PublicationsProps = {
   readonly heading: PortfolioContent["navigation"][number]["label"];
 };
 
+function scholarlyArticleJsonLd(
+  publication: PortfolioContent["publications"][number],
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ScholarlyArticle",
+    headline: publication.title,
+    description: publication.gloss,
+    author: publication.authors.map((author) => ({
+      "@type": "Person",
+      name: author.name,
+      ...(author.orcid ? { identifier: author.orcid } : {}),
+    })),
+    datePublished: publication.date,
+    publisher: {
+      "@type": "Organization",
+      name: publication.venue,
+    },
+    sameAs: publication.href,
+    encoding: {
+      "@type": "MediaObject",
+      contentUrl: publication.pdfUrl,
+      encodingFormat: "application/pdf",
+    },
+  };
+}
+
 export function Publications({ content, heading }: PublicationsProps) {
   return (
     <Station
@@ -16,6 +43,15 @@ export function Publications({ content, heading }: PublicationsProps) {
       heading={heading}
       className="journey-station--proof"
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": content.map(scholarlyArticleJsonLd),
+          }),
+        }}
+      />
       <div className="journey-pub-list journey-ledger">
         {content.map((publication, index) => (
           <article
