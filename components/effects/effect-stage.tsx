@@ -81,6 +81,7 @@ export function EffectStage() {
         aria-hidden="true"
         className="pointer-events-none"
         data-effect-mode={mode}
+        style={{ position: "fixed", inset: 0, zIndex: 1 }}
       >
       {showShaderBackdrop ? <ShaderBackdrop profile={profile} /> : null}
       {profile?.pointerEffects ? (
