@@ -2796,38 +2796,7 @@ export class JourneyScene {
       );
     }
 
-    // BIG ASCII PERSON: update pose per chapter, animate.
-    if (this.asciiPerson) {
-      const pose = poseForProgress(this.smoothT);
-      if (pose !== this.currentPose) {
-        // Rebuild person with new pose.
-        this.scene.remove(this.asciiPerson);
-        this.asciiPerson.geometry.dispose();
-        (this.asciiPerson.material as THREE.Material).dispose();
-        this.currentPose = pose;
-        this.asciiPerson = createAsciiPerson({
-          pose,
-          colorA: new THREE.Color(this.palette.accent),
-          colorB: new THREE.Color(this.palette.amber ?? "#ffb454"),
-        });
-        this.asciiPerson.position.set(6, 0, 0);
-        this.scene.add(this.asciiPerson);
-      }
-      updateAsciiPerson(this.asciiPerson, t);
-      // Person follows the camera along the journey.
-      // Position to the side, at normal scale, so the humanoid shape reads.
-      const pathPos = this.curve.getPointAt(this.smoothT);
-      const pathTangent = this.curve.getTangentAt(this.smoothT);
-      const side = new THREE.Vector3()
-        .crossVectors(pathTangent, new THREE.Vector3(0, 1, 0))
-        .normalize();
-      const ahead = pathTangent.clone().multiplyScalar(6);
-      this.asciiPerson.position.copy(pathPos).addScaledVector(side, 4.5).add(ahead);
-      this.asciiPerson.position.y = pathPos.y;
-      this.asciiPerson.scale.setScalar(1.0); // Normal scale — shape matters more than size
-      // Face the camera.
-      this.asciiPerson.lookAt(this.camera.position);
-    }
+    // (2D Braille person is rendered by AsciiPerson2D; the 3D version is gone.)
 
     this.composer?.render();
     if (!this.composer) {
