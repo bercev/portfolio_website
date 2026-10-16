@@ -173,15 +173,18 @@ function buildTextPoints(
 }
 
 /**
- * One silhouette per chapter — different geometry families, never a box grid:
- *   0 About        — nested orbits around a knowledge core
- *   1 Publications — two interlocking knots (two papers)
- *   2 Experience   — four distinct polyhedra on one arc
- *   3 Projects     — a flowing ribbon + community rings
- *   4 Skills       — constellation rings with mixed gems
- *   5 Contact      — a core with three outbound flares
+ * Story chapters — one visual metaphor per portfolio section:
+ *   0 About        — "The Current": river of milestones, amber human moments
+ *   1 Publications — "Binary Star": fracturing SkillOptimizer + @GrokSet nebula
+ *   2 Experience   — "Monolith Valley": four architectural role monoliths
+ *   3 Projects     — "The Shipyard": wireframe hulls carrying people (amber)
+ *   4 Skills       — "The Orrery": orbital skill system around a core
+ *   5 Contact      — "The Beacon": lighthouse spire broadcasting outward
  */
-const STATION_BUILDERS: ((color: THREE.Color) => THREE.Object3D)[] = [
+const STATION_BUILDERS: ((
+  color: THREE.Color,
+  palette: JourneyPalette,
+) => THREE.Object3D)[] = [
   buildEducationMark,
   buildTwoPapers,
   buildRoleBadges,
@@ -396,178 +399,392 @@ function withSpin(group: THREE.Group, spin: StationSpin) {
   return group;
 }
 
-/** About — nested orbits around a knowledge core, not an open book of boxes. */
-function buildEducationMark(color: THREE.Color): THREE.Object3D {
-  const group = new THREE.Group();
-  group.add(stationMesh(new THREE.IcosahedronGeometry(0.72, 0), color));
-  group.add(
-    stationMesh(new THREE.TorusGeometry(1.48, 0.045, 8, 48), color, [0, 0.08, 0], [
-      Math.PI / 2.35,
-      0.18,
-      0,
-    ]),
-  );
-  group.add(
-    stationMesh(new THREE.TorusGeometry(1.12, 0.03, 6, 40), color, [0, 0.14, 0], [
-      0.42,
-      0.82,
-      0.18,
-    ]),
-  );
-  for (let i = 0; i < 7; i++) {
-    const a = i * 0.78;
-    group.add(
-      stationMesh(new THREE.OctahedronGeometry(0.13, 0), color, [
-        Math.cos(a) * 1.08,
-        -0.92 + i * 0.3,
-        Math.sin(a) * 1.08,
-      ]),
-    );
+/**
+ * Story chapters — one visual metaphor per portfolio section, sharing one art
+ * direction (wireframe + emissive + additive points, cyan tech / amber human).
+ * Each builder receives the chapter tint and the full palette for accents.
+ */
+
+function amberColor(palette: JourneyPalette): THREE.Color {
+  return new THREE.Color(palette.amber);
+}
+
+/** Soft round sprite texture for point clouds (shared). */
+let softDotTexture: THREE.Texture | null = null;
+function getSoftDotTexture(): THREE.Texture {
+  if (softDotTexture) return softDotTexture;
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const ctx = c.getContext("2d");
+  if (ctx) {
+    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.4, "rgba(255,255,255,0.6)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 64, 64);
   }
-  return withSpin(group, { y: 0.22, x: 0.06, bob: 0.16 });
+  softDotTexture = new THREE.CanvasTexture(c);
+  return softDotTexture;
 }
 
-/** Publications — two interlocking knots, one for each paper. */
-function buildTwoPapers(color: THREE.Color): THREE.Object3D {
-  const group = new THREE.Group();
-  group.add(
-    stationMesh(
-      new THREE.TorusKnotGeometry(1.12, 0.08, 96, 12, 2, 3),
-      color,
-      [-0.32, 0, 0],
-      [0.38, 0.18, 0],
-    ),
-  );
-  group.add(
-    stationMesh(
-      new THREE.TorusKnotGeometry(0.92, 0.065, 80, 10, 3, 2),
-      color,
-      [0.42, 0.12, 0.08],
-      [-0.28, 0.52, 0.18],
-    ),
-  );
-  group.add(
-    stationMesh(new THREE.TorusGeometry(0.52, 0.038, 8, 32), color, [0, -0.18, 0.36], [
-      1.12,
-      0.18,
-      0,
-    ]),
-  );
-  return withSpin(group, { y: 0.16, x: 0.08, bob: 0.1 });
+/** Small glowing points that skip the aura-shell treatment (perf). */
+function glowPoints(
+  positions: Float32Array,
+  color: THREE.Color,
+  size: number,
+  opacity = 0.9,
+): THREE.Points {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({
+    color,
+    size,
+    map: getSoftDotTexture(),
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    sizeAttenuation: true,
+  });
+  const points = new THREE.Points(geo, mat);
+  points.userData.noAura = true;
+  return points;
 }
 
-/** Experience — four different solids on one career arc. */
-function buildRoleBadges(color: THREE.Color): THREE.Object3D {
+/** Tiny emissive sphere that skips the aura shell (perf). */
+function ember(
+  color: THREE.Color,
+  radius: number,
+  position: readonly [number, number, number],
+): THREE.Mesh {
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 10, 8),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }),
+  );
+  mesh.position.set(...position);
+  mesh.userData.noAura = true;
+  return mesh;
+}
+
+/**
+ * Chapter 1 — ABOUT · "The Current"
+ * His life as a luminous river: a winding tube-ribbon with six milestone orbs
+ * in story order. Human moments (Discord bot, Vitae) glow amber; the rest cyan.
+ */
+function buildEducationMark(color: THREE.Color, palette: JourneyPalette): THREE.Object3D {
   const group = new THREE.Group();
-  const solids: THREE.BufferGeometry[] = [
-    new THREE.TetrahedronGeometry(0.55),
-    new THREE.OctahedronGeometry(0.5, 0),
-    new THREE.DodecahedronGeometry(0.48, 0),
-    new THREE.IcosahedronGeometry(0.46, 0),
+  const amber = amberColor(palette);
+  // Winding river.
+  const river = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-2.6, -0.7, 0.3),
+    new THREE.Vector3(-1.5, 0.1, -0.4),
+    new THREE.Vector3(-0.4, 0.75, 0.25),
+    new THREE.Vector3(0.8, 0.15, -0.35),
+    new THREE.Vector3(1.9, -0.5, 0.2),
+    new THREE.Vector3(2.8, 0.35, -0.15),
+  ]);
+  group.add(stationMesh(new THREE.TubeGeometry(river, 64, 0.07, 8, false), color));
+  // Six milestone orbs along the river: first code, hackathon, discord (amber),
+  // trustd, algoverse, vitae (amber).
+  const milestones: Array<{ t: number; human: boolean; s: number }> = [
+    { t: 0.04, human: false, s: 0.16 },
+    { t: 0.22, human: false, s: 0.14 },
+    { t: 0.4, human: true, s: 0.2 },
+    { t: 0.58, human: false, s: 0.17 },
+    { t: 0.76, human: false, s: 0.18 },
+    { t: 0.94, human: true, s: 0.22 },
   ];
-  for (let i = 0; i < solids.length; i++) {
-    const a = (i / 3) * Math.PI * 0.92 - 0.46;
+  for (const m of milestones) {
+    const p = river.getPointAt(m.t);
+    const orb = stationMesh(
+      new THREE.IcosahedronGeometry(m.s, 1),
+      m.human ? amber : color,
+      [p.x, p.y + 0.42, p.z],
+    );
+    group.add(orb);
+    // Tributary stream feeding the milestone.
+    const trib = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(p.x - 0.7, p.y - 1.1, p.z + 0.5),
+      new THREE.Vector3(p.x - 0.3, p.y - 0.4, p.z + 0.2),
+      new THREE.Vector3(p.x, p.y + 0.28, p.z),
+    );
     group.add(
-      stationMesh(solids[i], color, [
-        Math.sin(a) * 2.05,
-        Math.cos(a) * 0.52 - 0.18,
-        -i * 0.2,
-      ]),
+      stationMesh(
+        new THREE.TubeGeometry(trib, 16, 0.022, 5, false),
+        m.human ? amber : color,
+      ),
     );
   }
-  const arc = new THREE.QuadraticBezierCurve3(
-    new THREE.Vector3(-2.05, 0.18, 0.05),
-    new THREE.Vector3(0, 1.15, -0.35),
-    new THREE.Vector3(2.05, 0.12, -0.65),
-  );
-  group.add(stationMesh(new THREE.TubeGeometry(arc, 28, 0.032, 5, false), color));
   return withSpin(group, { y: 0.1, x: 0.04, bob: 0.14 });
 }
 
-/** Projects — a vitae ribbon beside two community rings. */
-function buildShippedWork(color: THREE.Color): THREE.Object3D {
+/**
+ * Chapter 2 — PUBLICATIONS · "Binary Star"
+ * Two papers as a binary system. SkillOptimizer: an icosahedron fracturing
+ * into orbiting sub-polyhedra (performing the paper's claim). @GrokSet:
+ * a 1M-conversation nebula. A citation beam with traveling pulses links them.
+ */
+function buildTwoPapers(color: THREE.Color, palette: JourneyPalette): THREE.Object3D {
   const group = new THREE.Group();
-  const ribbon = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-2.15, -0.85, 0.18),
-    new THREE.Vector3(-1.15, 0.42, -0.28),
-    new THREE.Vector3(-0.15, 0.95, 0.12),
-    new THREE.Vector3(0.42, 0.08, 0.38),
-  ]);
-  group.add(stationMesh(new THREE.TubeGeometry(ribbon, 42, 0.11, 8, false), color));
-  group.add(
-    stationMesh(new THREE.TorusGeometry(0.92, 0.075, 10, 28), color, [1.52, 0.22, 0], [
-      0.48,
-      0.28,
-      0.16,
-    ]),
-  );
-  group.add(
-    stationMesh(new THREE.TorusGeometry(0.52, 0.04, 8, 22), color, [1.52, 0.22, 0], [
-      1.18,
-      0.08,
-      -0.38,
-    ]),
-  );
-  return withSpin(group, { y: 0.14, x: 0.05, bob: 0.12 });
-}
-
-/** Skills — concentric rings with mixed gems, not a tile rack. */
-function buildSkillRack(color: THREE.Color): THREE.Object3D {
-  const group = new THREE.Group();
-  group.add(
-    stationMesh(new THREE.TorusGeometry(1.72, 0.038, 6, 48), color, [0, 0, 0], [
-      Math.PI / 2,
-      0,
-      0,
-    ]),
-  );
-  group.add(
-    stationMesh(new THREE.TorusGeometry(1.12, 0.032, 6, 40), color, [0, 0, 0], [
-      0.92,
-      0.38,
-      0.18,
-    ]),
-  );
-  group.add(
-    stationMesh(new THREE.TorusGeometry(0.58, 0.038, 6, 32), color, [0, 0, 0], [
-      0.22,
-      1.08,
-      0.28,
-    ]),
-  );
-  const gems: THREE.BufferGeometry[] = [
-    new THREE.TetrahedronGeometry(0.2),
-    new THREE.OctahedronGeometry(0.18, 0),
-    new THREE.IcosahedronGeometry(0.16, 0),
-  ];
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2;
-    group.add(
-      stationMesh(gems[i % 3], color, [
-        Math.cos(a) * 1.72,
-        Math.sin(a) * 0.32,
-        Math.sin(a) * 1.72,
+  const amber = amberColor(palette);
+  // Star A — SkillOptimizer: core + fracturing sub-skills in orbit.
+  const coreA = new THREE.Group();
+  coreA.position.set(-1.15, 0.15, 0);
+  coreA.add(stationMesh(new THREE.IcosahedronGeometry(0.5, 0), color));
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    coreA.add(
+      stationMesh(new THREE.OctahedronGeometry(0.13, 0), color, [
+        Math.cos(a) * 0.95,
+        Math.sin(a * 1.3) * 0.35,
+        Math.sin(a) * 0.95,
       ]),
     );
   }
-  return withSpin(group, { y: 0.2, x: 0.07, bob: 0.08 });
+  coreA.add(
+    stationMesh(new THREE.TorusGeometry(1.0, 0.028, 6, 48), color, [0, 0, 0], [
+      Math.PI / 2.4,
+      0.2,
+      0,
+    ]),
+  );
+  group.add(coreA);
+  // Star B — @GrokSet nebula: conversation galaxy.
+  const nebCount = 500;
+  const nebPos = new Float32Array(nebCount * 3);
+  for (let i = 0; i < nebCount; i++) {
+    const r = 0.55 + Math.random() * 0.75;
+    const th = Math.random() * Math.PI * 2;
+    const ph = Math.acos(2 * Math.random() - 1);
+    nebPos[i * 3] = 1.25 + r * Math.sin(ph) * Math.cos(th);
+    nebPos[i * 3 + 1] = 0.1 + r * Math.sin(ph) * Math.sin(th) * 0.7;
+    nebPos[i * 3 + 2] = r * Math.cos(ph) * 0.8;
+  }
+  group.add(glowPoints(nebPos, amber, 0.09, 0.85));
+  group.add(
+    stationMesh(new THREE.IcosahedronGeometry(0.3, 1), amber, [1.25, 0.1, 0]),
+  );
+  // Citation beam with traveling pulses.
+  const beam = new THREE.LineCurve3(
+    new THREE.Vector3(-0.65, 0.15, 0),
+    new THREE.Vector3(0.85, 0.12, 0),
+  );
+  group.add(stationMesh(new THREE.TubeGeometry(beam, 12, 0.025, 5, false), color));
+  for (let i = 0; i < 3; i++) {
+    const pulse = ember(color, 0.07, [-0.65 + i * 0.5, 0.15, 0]);
+    pulse.userData.pulseOffset = i / 3;
+    group.add(pulse);
+  }
+  group.userData.pulses = true;
+  return withSpin(group, { y: 0.14, x: 0.05, bob: 0.1 });
 }
 
-/** Contact — a core with three outbound flares (GitHub, LinkedIn, resume). */
-function buildEnvelope(color: THREE.Color): THREE.Object3D {
+/**
+ * Chapter 3 — EXPERIENCE · "Monolith Valley"
+ * Four architectural monoliths, one per role, on a lit career path.
+ * Trustd.ai: crystal tower in a test-grid cage. Algoverse: geodesic dome.
+ * UCSC tutor: inverted amphitheater rings. Stealth: dark engine block.
+ */
+function buildRoleBadges(color: THREE.Color, palette: JourneyPalette): THREE.Object3D {
   const group = new THREE.Group();
-  group.add(stationMesh(new THREE.OctahedronGeometry(0.62, 0), color));
-  const tips = [
-    new THREE.Vector3(1.78, 1.08, 0.38),
-    new THREE.Vector3(-1.58, 1.28, 0.18),
-    new THREE.Vector3(0.18, 1.82, -0.78),
-  ];
-  for (const tip of tips) {
-    const ray = new THREE.LineCurve3(new THREE.Vector3(0, 0.18, 0), tip);
-    group.add(stationMesh(new THREE.TubeGeometry(ray, 8, 0.038, 5, false), color));
-    group.add(stationMesh(new THREE.SphereGeometry(0.17, 10, 8), color, [tip.x, tip.y, tip.z]));
+  const amber = amberColor(palette);
+  // Career path lighting the valley floor.
+  const path = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-2.6, -1.05, 0.4),
+    new THREE.Vector3(-0.9, -1.0, -0.2),
+    new THREE.Vector3(0.9, -1.05, 0.25),
+    new THREE.Vector3(2.6, -1.0, -0.3),
+  ]);
+  group.add(stationMesh(new THREE.TubeGeometry(path, 40, 0.035, 6, false), color));
+  // 1 — Trustd.ai crystal tower in a test-grid cage.
+  const m1 = new THREE.Group();
+  m1.position.set(-1.95, 0, 0.2);
+  m1.add(stationMesh(new THREE.CylinderGeometry(0.22, 0.34, 1.5, 6), color, [0, 0.1, 0]));
+  m1.add(
+    stationMesh(new THREE.BoxGeometry(1.0, 1.9, 1.0), color, [0, 0.1, 0]),
+  );
+  group.add(m1);
+  // 2 — Algoverse geodesic dome.
+  const m2 = new THREE.Group();
+  m2.position.set(-0.65, -0.15, -0.1);
+  const dome = stationMesh(new THREE.SphereGeometry(0.62, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), color, [0, -0.2, 0]);
+  group.add(m2);
+  m2.add(dome);
+  // 3 — UCSC tutor amphitheater: three ascending rings (students rising).
+  const m3 = new THREE.Group();
+  m3.position.set(0.75, 0, 0.15);
+  for (let i = 0; i < 3; i++) {
+    m3.add(
+      stationMesh(
+        new THREE.TorusGeometry(0.55 - i * 0.14, 0.03, 6, 36),
+        amber,
+        [0, -0.25 + i * 0.42, 0],
+        [Math.PI / 2, 0, 0],
+      ),
+    );
   }
-  return withSpin(group, { y: 0.12, x: 0.05, bob: 0.18 });
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    m3.add(ember(amber, 0.05, [Math.cos(a) * 0.4, 0.35 + (i % 3) * 0.3, Math.sin(a) * 0.4]));
+  }
+  group.add(m3);
+  // 4 — Stealth engine block with four agent cores in a repair loop.
+  const m4 = new THREE.Group();
+  m4.position.set(2.0, -0.1, -0.15);
+  m4.add(stationMesh(new THREE.BoxGeometry(0.7, 0.9, 0.7), color, [0, 0.1, 0]));
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    m4.add(ember(color, 0.08, [Math.cos(a) * 0.55, 0.1 + Math.sin(a * 2) * 0.2, Math.sin(a) * 0.55]));
+  }
+  group.add(m4);
+  return withSpin(group, { y: 0.08, x: 0.03, bob: 0.1 });
+}
+
+/**
+ * Chapter 4 — PROJECTS · "The Shipyard"
+ * Software as vessels carrying people: two scaffolded wireframe hulls
+ * (Vitae larger), amber crew lights roaming the hull, passenger dots inside
+ * the chatbot hull — the warmest chapter.
+ */
+function buildShippedWork(color: THREE.Color, palette: JourneyPalette): THREE.Object3D {
+  const group = new THREE.Group();
+  const amber = amberColor(palette);
+  // Vitae hull — large, sleek.
+  const vitae = new THREE.Group();
+  vitae.position.set(-1.0, 0.1, 0);
+  const hullGeo = new THREE.CylinderGeometry(0.32, 0.55, 2.4, 8, 3, true);
+  vitae.add(stationMesh(hullGeo, color, [0, 0, 0], [0, 0, Math.PI / 2]));
+  // Scaffold ribs.
+  for (let i = -1; i <= 1; i++) {
+    vitae.add(
+      stationMesh(new THREE.TorusGeometry(0.5, 0.025, 6, 24), color, [i * 0.8, 0, 0], [0, Math.PI / 2, 0]),
+    );
+  }
+  // Five amber crew lights roaming the hull.
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    vitae.add(ember(amber, 0.07, [Math.cos(a) * 1.0, Math.sin(a * 1.7) * 0.4, Math.sin(a) * 0.5]));
+  }
+  group.add(vitae);
+  // Chatbot hull — smaller, full of passengers.
+  const bot = new THREE.Group();
+  bot.position.set(1.35, -0.15, 0.25);
+  bot.add(stationMesh(new THREE.CylinderGeometry(0.28, 0.42, 1.7, 8, 2, true), amber, [0, 0, 0], [0, 0, Math.PI / 2]));
+  const passCount = 46;
+  const passPos = new Float32Array(passCount * 3);
+  for (let i = 0; i < passCount; i++) {
+    passPos[i * 3] = (Math.random() - 0.5) * 1.4;
+    passPos[i * 3 + 1] = (Math.random() - 0.5) * 0.5;
+    passPos[i * 3 + 2] = (Math.random() - 0.5) * 0.5;
+  }
+  bot.add(glowPoints(passPos, amber, 0.08, 0.9));
+  group.add(bot);
+  // Welding sparks between hulls.
+  const sparkCount = 40;
+  const sparkPos = new Float32Array(sparkCount * 3);
+  for (let i = 0; i < sparkCount; i++) {
+    sparkPos[i * 3] = 0.15 + (Math.random() - 0.5) * 0.5;
+    sparkPos[i * 3 + 1] = (Math.random() - 0.5) * 0.8;
+    sparkPos[i * 3 + 2] = (Math.random() - 0.5) * 0.6;
+  }
+  group.add(glowPoints(sparkPos, color, 0.06, 0.8));
+  return withSpin(group, { y: 0.12, x: 0.04, bob: 0.12 });
+}
+
+/**
+ * Chapter 5 — SKILLS · "The Orrery"
+ * A mechanical solar system: central dodecahedron core, four tilted rings
+ * (foundations → systems → full-stack → AI/agents), glowing skill nodes.
+ */
+function buildSkillRack(color: THREE.Color, palette: JourneyPalette): THREE.Object3D {
+  const group = new THREE.Group();
+  const amber = amberColor(palette);
+  group.add(stationMesh(new THREE.DodecahedronGeometry(0.42, 0), amber, [0, 0, 0]));
+  const rings: Array<{ r: number; tilt: readonly [number, number, number]; n: number }> = [
+    { r: 0.85, tilt: [Math.PI / 2.15, 0.1, 0], n: 6 },
+    { r: 1.25, tilt: [Math.PI / 1.85, -0.15, 0.2], n: 8 },
+    { r: 1.65, tilt: [Math.PI / 2.35, 0.25, -0.15], n: 9 },
+    { r: 2.05, tilt: [Math.PI / 2.0, -0.3, 0.1], n: 7 },
+  ];
+  const nodeGeos = [
+    new THREE.OctahedronGeometry(0.09, 0),
+    new THREE.TetrahedronGeometry(0.1),
+    new THREE.IcosahedronGeometry(0.08, 0),
+  ];
+  rings.forEach((ring, ri) => {
+    group.add(
+      stationMesh(new THREE.TorusGeometry(ring.r, 0.022, 6, 64), color, [0, 0, 0], ring.tilt),
+    );
+    for (let i = 0; i < ring.n; i++) {
+      const a = (i / ring.n) * Math.PI * 2 + ri * 0.5;
+      // Place on the tilted ring: rotate the flat-circle point by the tilt.
+      const v = new THREE.Vector3(Math.cos(a) * ring.r, 0, Math.sin(a) * ring.r);
+      const e = new THREE.Euler(...ring.tilt);
+      v.applyEuler(e);
+      const nodeColor = ri === 3 ? amber : ri === 0 ? color.clone().multiplyScalar(0.75) : color;
+      const node = stationMesh(nodeGeos[(i + ri) % 3], nodeColor, [v.x, v.y, v.z]);
+      node.userData.noAura = true;
+      group.add(node);
+    }
+  });
+  return withSpin(group, { y: 0.18, x: 0.06, bob: 0.08 });
+}
+
+/**
+ * Chapter 6 — CONTACT · "The Beacon"
+ * A lighthouse spire broadcasting to the viewer: stacked rings, expanding
+ * signal rings, amber warmth — the warmest frame of the journey.
+ */
+function buildEnvelope(color: THREE.Color, palette: JourneyPalette): THREE.Object3D {
+  const group = new THREE.Group();
+  const amber = amberColor(palette);
+  // Tapered spire of stacked rings.
+  for (let i = 0; i < 6; i++) {
+    const r = 0.55 - i * 0.07;
+    group.add(
+      stationMesh(new THREE.TorusGeometry(r, 0.035, 8, 40), amber, [0, -0.9 + i * 0.42, 0], [
+        Math.PI / 2,
+        0,
+        0,
+      ]),
+    );
+  }
+  // Beacon core.
+  group.add(stationMesh(new THREE.OctahedronGeometry(0.3, 0), amber, [0, 1.85, 0]));
+  // Expanding signal rings.
+  for (let i = 0; i < 3; i++) {
+    const ring = stationMesh(
+      new THREE.TorusGeometry(0.9 + i * 0.55, 0.03, 6, 48),
+      i === 1 ? color : amber,
+      [0, 1.85, 0],
+      [Math.PI / 2.2, 0.15 * i, 0],
+    );
+    ring.userData.signalRing = i;
+    group.add(ring);
+  }
+  // Volumetric beam upward.
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.3, 6, 12, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: amber,
+      transparent: true,
+      opacity: 0.16,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  );
+  beam.position.set(0, 4.4, 0);
+  beam.userData.noAura = true;
+  group.add(beam);
+  return withSpin(group, { y: 0.1, x: 0.04, bob: 0.12 });
 }
 
 export class JourneyScene {
@@ -608,6 +825,11 @@ export class JourneyScene {
   private readonly textPoints: THREE.Points;
   private readonly arrivalPoints: THREE.Points;
   private readonly comet: THREE.Mesh;
+  private heroSpark: THREE.Mesh | null = null;
+  private readonly heroRings: THREE.Mesh[] = [];
+  private readonly chapterGates: THREE.Mesh[] = [];
+  private fogCool: THREE.Color | null = null;
+  private fogWarm: THREE.Color | null = null;
   private readonly stars: THREE.Points;
 
   private readonly tangent = new THREE.Vector3();
@@ -693,6 +915,42 @@ export class JourneyScene {
     this.textPoints.renderOrder = 8;
     this.scene.add(this.textGroup);
 
+    // Chapter 0 — HERO · "First Compile": a spark of curiosity igniting above
+    // the wordmark, with expanding compile-ring shockwaves.
+    const sparkGroup = new THREE.Group();
+    const sparkColor = new THREE.Color(palette.accent);
+    const spark = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.34, 1),
+      new THREE.MeshBasicMaterial({
+        color: sparkColor,
+        transparent: true,
+        opacity: 0.95,
+        blending: particleBlending,
+        depthWrite: false,
+      }),
+    );
+    spark.userData.noAura = true;
+    sparkGroup.add(spark);
+    this.heroSpark = spark;
+    for (let i = 0; i < 3; i++) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.35 + i * 0.22, 0.016, 6, 48),
+        new THREE.MeshBasicMaterial({
+          color: sparkColor,
+          transparent: true,
+          opacity: 0.5 - i * 0.12,
+          blending: particleBlending,
+          depthWrite: false,
+        }),
+      );
+      ring.userData.noAura = true;
+      ring.userData.compileRing = i;
+      sparkGroup.add(ring);
+      this.heroRings.push(ring);
+    }
+    sparkGroup.position.set(0, 3.1, 7);
+    this.scene.add(sparkGroup);
+
     this.arrivalPoints = buildTextPoints(
       "LET'S CONNECT",
       quality === "full" ? 11000 : 6200,
@@ -714,6 +972,11 @@ export class JourneyScene {
     this.scene.add(this.stars);
 
     this.buildStations(stationCounts, Boolean(props));
+    this.buildChapterGates();
+    // Emotional color arc: fog starts cool (cyan tech) and warms toward amber
+    // (human moments) as the journey progresses.
+    this.fogCool = new THREE.Color(fog);
+    this.fogWarm = new THREE.Color(fog).lerp(new THREE.Color(palette.amber), 0.35);
     if (quality === "full") {
       this.buildDriftField();
       this.buildNearMotes();
@@ -1037,10 +1300,10 @@ export class JourneyScene {
     ];
 
     const stationScale = this.phoneLayout
-      ? [2.0, 1.9, 1.75, 1.9, 1.8, 2.0]
-      : [2.6, 2.5, 2.2, 2.45, 2.3, 2.6];
+      ? [2.8, 2.7, 2.5, 2.7, 2.6, 2.8]
+      : [3.8, 3.7, 3.3, 3.6, 3.4, 3.8];
     for (let i = 0; i < STATION_BUILDERS.length; i++) {
-      const object = STATION_BUILDERS[i](tintColors[i]);
+      const object = STATION_BUILDERS[i](tintColors[i], this.palette);
       this.parkOnPath(object, STATION_PATH_T[i], i % 2 ? 1 : -1, (i % 3 - 1) * 1.2, 3.2);
       object.scale.setScalar(stationScale[i]);
       this.stations.push(object);
@@ -1053,6 +1316,8 @@ export class JourneyScene {
         if ((child as THREE.Mesh).isMesh) meshes.push(child as THREE.Mesh);
       });
       for (const mesh of meshes) {
+        // Tiny emissive elements (nodes, lights, pulses) skip the aura shell.
+        if (mesh.userData.noAura) continue;
         const mat = mesh.material as THREE.ShaderMaterial;
         if (mat?.uniforms?.uTime) this.animatedMaterials.push(mat);
         const aura = new THREE.Mesh(mesh.geometry, auraMaterial(tintColors[i]));
@@ -1225,6 +1490,36 @@ export class JourneyScene {
   }
 
   /** Park a sculpture on the camera-path Frenet frame so scale-up never clips the tube. */
+  /**
+   * Chapter gates — numbered torus portals at the midpoint between stations.
+   * The camera flies through them; they flash as chapters change.
+   */
+  private buildChapterGates() {
+    const gateColor = new THREE.Color(this.palette.cyan);
+    for (let i = 0; i < STATION_PATH_T.length - 1; i++) {
+      const t = (STATION_PATH_T[i] + STATION_PATH_T[i + 1]) / 2;
+      const gate = new THREE.Mesh(
+        new THREE.TorusGeometry(2.6, 0.06, 8, 64),
+        new THREE.MeshBasicMaterial({
+          color: gateColor,
+          transparent: true,
+          opacity: 0.35,
+          blending: this.particleBlending,
+          depthWrite: false,
+        }),
+      );
+      gate.userData.noAura = true;
+      const p = this.curve.getPointAt(t);
+      const tangent = this.curve.getTangentAt(t, new THREE.Vector3());
+      gate.position.copy(p);
+      // Face the gate along the path so the camera flies through it.
+      gate.lookAt(p.clone().add(tangent));
+      gate.userData.gateT = t;
+      this.scene.add(gate);
+      this.chapterGates.push(gate);
+    }
+  }
+
   private parkOnPath(
     object: THREE.Object3D,
     t: number,
@@ -1235,8 +1530,9 @@ export class JourneyScene {
     const p = this.curve.getPointAt(t);
     const idx = Math.round(t * FRENET_SEGMENTS);
     const { binormals, normals, tangents } = this.frenet;
-    // Desktop parks sculptures ~11 units off-axis; phones need ~3.4 to stay framed.
-    const sideDist = this.phoneLayout ? 3.4 : 11;
+    // Desktop parks sculptures close to the flight path so chapters read as
+    // immersive environments; phones need ~3.4 to stay framed.
+    const sideDist = this.phoneLayout ? 3.4 : 5.5;
     object.position
       .copy(p)
       .addScaledVector(binormals[idx], side * sideDist)
@@ -1680,7 +1976,7 @@ export class JourneyScene {
       textPos: this.textGroup.position,
       arrivalPos: this.arrivalGroup.position,
       stationPos,
-      stationWeight: this.phoneLayout ? 0.1 : 0.28,
+      stationWeight: this.phoneLayout ? 0.18 : 0.42,
     });
     this.lookTarget.set(look.x, look.y, look.z);
     if (!this.reducedMotion && pathT < 0.78) {
@@ -1705,8 +2001,66 @@ export class JourneyScene {
       arrivalPos: this.arrivalGroup.position,
     });
 
+    if (!this.reducedMotion) {
+      this.updateStoryBeats(t, pathT);
+    }
+
     this.composer?.render();
     if (!this.composer) this.renderer.render(this.scene, this.camera);
+  }
+
+  /**
+   * Story beats driven by time + scroll progress: hero spark pulse, compile
+   * rings, citation pulses, beacon signal rings, gate flashes, fog warming.
+   */
+  private updateStoryBeats(t: number, pathT: number) {
+    // Hero spark ignition pulse.
+    if (this.heroSpark) {
+      const s = 1 + Math.sin(t * 2.2) * 0.18;
+      this.heroSpark.scale.setScalar(s);
+      this.heroSpark.rotation.y = t * 0.8;
+      this.heroSpark.rotation.x = t * 0.5;
+    }
+    for (const ring of this.heroRings) {
+      const i = (ring.userData.compileRing ?? 0) as number;
+      const cycle = (t * 0.35 + i / 3) % 1;
+      const r = 0.35 + cycle * 1.4;
+      ring.scale.setScalar(r / 0.35);
+      (ring.material as THREE.MeshBasicMaterial).opacity = 0.5 * (1 - cycle);
+    }
+    // Citation pulses travel the beam; beacon rings expand.
+    for (const station of this.stations) {
+      station.traverse((child) => {
+        const u = child.userData;
+        if (u.pulseOffset !== undefined) {
+          const cycle = (t * 0.4 + (u.pulseOffset as number)) % 1;
+          child.position.x = -0.65 + cycle * 1.5;
+          (child as THREE.Mesh).scale.setScalar(0.7 + Math.sin(cycle * Math.PI) * 0.6);
+        }
+        if (u.signalRing !== undefined) {
+          const i = u.signalRing as number;
+          const cycle = (t * 0.3 + i / 3) % 1;
+          const s = 1 + cycle * 1.6;
+          child.scale.setScalar(s);
+          const mat = (child as THREE.Mesh).material as THREE.ShaderMaterial;
+          if (mat.uniforms?.uOpacity) mat.uniforms.uOpacity.value = 0.5 * (1 - cycle);
+        }
+      });
+    }
+    // Gate flash as the camera crosses each chapter threshold.
+    for (const gate of this.chapterGates) {
+      const gateT = gate.userData.gateT as number;
+      const dist = Math.abs(pathT - gateT);
+      const flash = Math.max(0, 1 - dist / 0.03);
+      (gate.material as THREE.MeshBasicMaterial).opacity = 0.22 + flash * 0.65;
+      const s = 1 + flash * 0.12;
+      gate.scale.setScalar(s);
+    }
+    // Fog warms from cyan-tech to amber-human along the journey.
+    if (this.fogCool && this.fogWarm && this.scene.fog instanceof THREE.FogExp2) {
+      const warm = THREE.MathUtils.smoothstep(pathT, 0.15, 0.85);
+      this.scene.fog.color.copy(this.fogCool).lerp(this.fogWarm, warm * 0.8);
+    }
   }
 
   private loop = (now: number) => {

@@ -695,8 +695,8 @@ html:not(.dark) .content-frost {
 
 /* Keep Journey content props readable through the mid-page wash. */
 html[data-journey="active"] .content-frost {
-  -webkit-backdrop-filter: blur(6px) saturate(124%);
-  backdrop-filter: blur(6px) saturate(124%);
+  -webkit-backdrop-filter: blur(3px) saturate(118%);
+  backdrop-filter: blur(3px) saturate(118%);
 }
 
 html[data-journey="active"]:not(.dark) .content-frost {

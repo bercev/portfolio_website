@@ -17,11 +17,12 @@ const journeyStationCounts = [
 const journeyProps = buildJourneyPropManifest();
 
 /**
- * The Journey geometry background is retired in favor of the shader backdrop
- * (wired in EffectStage). Kept as a fallback: set to true to restore the
- * three.js scene instead of the shader.
+ * The Journey is a scroll-driven 3D story: seven chapters (First Compile,
+ * The Current, Binary Star, Monolith Valley, The Shipyard, The Orrery,
+ * The Beacon), one per portfolio section. The shader backdrop stays mounted
+ * underneath as the atmospheric base layer.
  */
-const USE_JOURNEY_BACKGROUND = false;
+const USE_JOURNEY_BACKGROUND = true;
 
 export default function Home() {
   return (

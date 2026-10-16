@@ -3,6 +3,7 @@ import { Agentation } from "agentation";
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
 
+import { LenisProvider } from "@/components/providers/lenis-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
 import "./globals.css";
@@ -85,7 +86,9 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <LenisProvider>{children}</LenisProvider>
+        </ThemeProvider>
         <Analytics />
         {process.env.NODE_ENV === "development" ? (
           <Agentation endpoint="http://localhost:4747" />
