@@ -53,6 +53,15 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Berat Ercevik",
+  jobTitle: "Software Engineer",
+  url: metadataBase.toString(),
+  sameAs: ["https://github.com/bercev", "https://linkedin.com/in/berat-ercevik"],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -65,6 +74,10 @@ export default function RootLayout({
       className={grotesk.variable}
     >
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ThemeProvider>{children}</ThemeProvider>
         <Analytics />
         {process.env.NODE_ENV === "development" ? (
