@@ -15,6 +15,8 @@ import { ClickSpark } from "./click-spark";
 import { ShaderBackdrop } from "./shader-backdrop";
 import { SpecularControls } from "./specular-controls";
 import { TargetCursor } from "./target-cursor";
+import { BootSequence } from "./boot-sequence";
+import { EasterEggs } from "./easter-eggs";
 
 export function EffectStage() {
   const [profile, setProfile] = useState<EffectProfile | null>(null);
@@ -70,11 +72,14 @@ export function EffectStage() {
     profile !== null && !isJourneyBackgroundActive(journey);
 
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none"
-      data-effect-mode={mode}
-    >
+    <>
+      <BootSequence />
+      <EasterEggs />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none"
+        data-effect-mode={mode}
+      >
       {showShaderBackdrop ? <ShaderBackdrop profile={profile} /> : null}
       {profile?.pointerEffects ? (
         <>
@@ -86,6 +91,7 @@ export function EffectStage() {
           <ClickSpark />
         </>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }
