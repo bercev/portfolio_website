@@ -10,6 +10,10 @@ import {
   updateAsciiPass,
   type AsciiTheme,
 } from "./ascii-pass";
+import {
+  createProceduralAscii,
+  updateProceduralAscii,
+} from "./procedural-ascii";
 
 import type { JourneyPropManifest } from "@/data/journey-props";
 
@@ -842,6 +846,10 @@ export class JourneyScene {
   private useAscii = false;
   private asciiPass: ShaderPass | null = null;
   private asciiMeltStart = -1; // Timestamp when melt animation begins.
+  private proceduralAsciiMat: THREE.ShaderMaterial | null = null;
+  private proceduralBgScene: THREE.Scene | null = null;
+  private proceduralBgCamera: THREE.OrthographicCamera | null = null;
+  private useProcedural = true; // Pure procedural ASCII, not 3D conversion.
   private readonly stars: THREE.Points;
 
   private readonly tangent = new THREE.Vector3();
@@ -1190,7 +1198,57 @@ export class JourneyScene {
       new URLSearchParams(window.location.search).has("noascii");
     const useAscii = !disableAscii;
     this.useAscii = useAscii;
-    if (quality === "full" || useAscii) {
+
+    // PURE PROCEDURAL ASCII: no 3D conversion. Math-generated Braille art.
+    // Rendered as background via separate ortho scene.
+    if (useAscii && this.useProcedural) {
+      this.proceduralAsciiMat = createProceduralAscii({
+        cellSize: { x: 12, y: 24 },
+        colorA: new THREE.Color(palette.accent),
+        colorB: new THREE.Color(palette.amber ?? "#ffb454"),
+      });
+      // Background scene with fullscreen quad.
+      this.proceduralBgScene = new THREE.Scene();
+      this.proceduralBgCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      const bgMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(2, 2),
+        this.proceduralAsciiMat,
+      );
+      bgMesh.frustumCulled = false;
+      this.proceduralBgScene.add(bgMesh);
+      updateProceduralAscii(
+        this.proceduralAsciiMat,
+        0,
+        0,
+        window.innerWidth,
+        window.innerHeight,
+      );
+      // Mark ASCII active for CSS text readability overrides.
+      if (typeof document !== "undefined") {
+        document.documentElement.setAttribute("data-ascii", "active");
+        const style = document.createElement("style");
+        style.id = "ascii-text-override";
+        style.textContent = `
+          html[data-ascii="active"] body,
+          html[data-ascii="active"] h1,
+          html[data-ascii="active"] h2,
+          html[data-ascii="active"] h3,
+          html[data-ascii="active"] p,
+          html[data-ascii="active"] span,
+          html[data-ascii="active"] div,
+          html[data-ascii="active"] a,
+          html[data-ascii="active"] li {
+            color: #ffffff !important;
+            text-shadow: 0 2px 12px rgba(0,0,0,1), 0 0 4px rgba(0,0,0,1) !important;
+          }
+        `;
+        if (!document.getElementById("ascii-text-override")) {
+          document.head.appendChild(style);
+        }
+      }
+    }
+
+    if ((quality === "full" && !this.useProcedural) || (useAscii && !this.useProcedural)) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
       if (quality === "full" && !useAscii) {
@@ -1203,46 +1261,8 @@ export class JourneyScene {
           ),
         );
       }
-      if (useAscii) {
-        // INSANE ASCII: Braille + themed charsets, phosphor terminal aesthetic.
-        this.asciiPass = createAsciiPass({
-          cellSize: { x: 10, y: 20 }, // Balanced: dense but characters are recognizable
-          mode: 0, // Pure Braille for max resolution
-          theme: "hero",
-          phosphorColor: new THREE.Color(palette.accent),
-          shimmer: 0.3,
-        });
-        this.composer.addPass(this.asciiPass);
-        updateAsciiPass(
-          this.asciiPass,
-          0,
-          window.innerWidth,
-          window.innerHeight,
-        );
-        // Mark ASCII active for CSS text readability overrides.
-        if (typeof document !== "undefined") {
-          document.documentElement.setAttribute("data-ascii", "active");
-          // Inject direct style override — CSS variables aren't cutting it.
-          const style = document.createElement("style");
-          style.id = "ascii-text-override";
-          style.textContent = `
-            html[data-ascii="active"] body,
-            html[data-ascii="active"] h1,
-            html[data-ascii="active"] h2,
-            html[data-ascii="active"] h3,
-            html[data-ascii="active"] p,
-            html[data-ascii="active"] span,
-            html[data-ascii="active"] div,
-            html[data-ascii="active"] a,
-            html[data-ascii="active"] li {
-              color: #ffffff !important;
-              text-shadow: 0 2px 12px rgba(0,0,0,1), 0 0 4px rgba(0,0,0,1) !important;
-            }
-          `;
-          if (!document.getElementById("ascii-text-override")) {
-            document.head.appendChild(style);
-          }
-        }
+      // Old 3D-to-ASCII pass disabled when using procedural.
+      if (useAscii && !this.useProcedural) {
       }
       this.composer.setSize(window.innerWidth, window.innerHeight);
     } else {
@@ -2784,7 +2804,18 @@ export class JourneyScene {
       this.updateStoryBeats(t, pathT);
     }
 
-    // INSANE ASCII: update time + melt + switch theme per chapter.
+    // PROCEDURAL ASCII: update time + scroll. Pure math art, no 3D conversion.
+    if (this.proceduralAsciiMat) {
+      updateProceduralAscii(
+        this.proceduralAsciiMat,
+        t,
+        this.smoothT,
+        window.innerWidth,
+        window.innerHeight,
+      );
+    }
+
+    // Old 3D-to-ASCII pass (disabled when using procedural).
     if (this.asciiPass) {
       // Melt-down on load: starts at 0 (full static), eases to 1 (revealed) over ~3.5s.
       if (this.asciiMeltStart < 0) this.asciiMeltStart = t;
@@ -2808,7 +2839,18 @@ export class JourneyScene {
     }
 
     this.composer?.render();
-    if (!this.composer) this.renderer.render(this.scene, this.camera);
+    if (!this.composer) {
+      // Render procedural ASCII background first, then 3D scene on top.
+      if (this.proceduralBgScene && this.proceduralBgCamera) {
+        this.renderer.autoClear = false;
+        this.renderer.clear();
+        this.renderer.render(this.proceduralBgScene, this.proceduralBgCamera);
+        this.renderer.render(this.scene, this.camera);
+        this.renderer.autoClear = true;
+      } else {
+        this.renderer.render(this.scene, this.camera);
+      }
+    }
   }
 
   /**
