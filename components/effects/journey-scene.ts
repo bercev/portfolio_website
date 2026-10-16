@@ -7,7 +7,8 @@ import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
 
 import {
   createAsciiPass,
-  updateAsciiResolution,
+  updateAsciiPass,
+  type AsciiTheme,
 } from "./ascii-pass";
 
 import type { JourneyPropManifest } from "@/data/journey-props";
@@ -1181,16 +1182,17 @@ export class JourneyScene {
       }
     }
 
-    // Bloom + additive glow only reads on dark clears; skip in light theme.
-    // ?ascii=1 enables full-scene ASCII postprocessing (after bloom).
-    const useAscii =
+    // ASCII IS THE AESTHETIC — always on. The entire journey is living terminal art.
+    // ?noascii=1 disables it (for comparison).
+    const disableAscii =
       typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).has("ascii");
+      new URLSearchParams(window.location.search).has("noascii");
+    const useAscii = !disableAscii;
     this.useAscii = useAscii;
-    if ((quality === "full" && !lightTheme) || useAscii) {
+    if (quality === "full" || useAscii) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      if (quality === "full" && !lightTheme) {
+      if (quality === "full" && !useAscii) {
         this.composer.addPass(
           new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -1201,20 +1203,25 @@ export class JourneyScene {
         );
       }
       if (useAscii) {
+        // INSANE ASCII: Braille + themed charsets, phosphor terminal aesthetic.
         this.asciiPass = createAsciiPass({
-          ink: new THREE.Color(palette.accent),
-          background: new THREE.Color(spaceBg),
-          colorMode: 1,
-          invert: lightTheme ? 1 : 0,
+          cellSize: { x: 14, y: 28 }, // Larger cells for readable Braille
+          mode: 2, // Blend Braille + themed
+          theme: "hero",
+          phosphorColor: new THREE.Color(palette.accent),
+          shimmer: 0.6, // Subtler shimmer
         });
         this.composer.addPass(this.asciiPass);
-        const pr = this.renderer.getPixelRatio();
-        updateAsciiResolution(
+        updateAsciiPass(
           this.asciiPass,
+          0,
           window.innerWidth,
           window.innerHeight,
-          pr,
         );
+        // Mark ASCII active for CSS text readability overrides.
+        if (typeof document !== "undefined") {
+          document.documentElement.setAttribute("data-ascii", "active");
+        }
       }
       this.composer.setSize(window.innerWidth, window.innerHeight);
     } else {
@@ -2604,11 +2611,11 @@ export class JourneyScene {
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.composer?.setSize(window.innerWidth, window.innerHeight);
     if (this.asciiPass) {
-      updateAsciiResolution(
+      updateAsciiPass(
         this.asciiPass,
+        this.timer.getElapsed(),
         window.innerWidth,
         window.innerHeight,
-        this.renderer.getPixelRatio(),
       );
     }
     this.fitWordmarks();
@@ -2756,6 +2763,22 @@ export class JourneyScene {
       this.updateStoryBeats(t, pathT);
     }
 
+    // INSANE ASCII: update time + switch theme per chapter.
+    if (this.asciiPass) {
+      updateAsciiPass(
+        this.asciiPass,
+        t,
+        window.innerWidth,
+        window.innerHeight,
+      );
+      // Per-chapter ASCII themes — the terminal mood shifts with the story.
+      const theme = this.getAsciiThemeForProgress(this.smoothT);
+      const pass = this.asciiPass as any;
+      if (pass.asciiTheme !== theme && pass.setTheme) {
+        pass.setTheme(theme);
+      }
+    }
+
     this.composer?.render();
     if (!this.composer) this.renderer.render(this.scene, this.camera);
   }
@@ -2818,6 +2841,20 @@ export class JourneyScene {
       island.position.y += Math.sin(t * 0.6 + phase) * 0.003;
       island.rotation.y = t * 0.05 + phase;
     }
+  }
+
+  /**
+   * Map scroll progress to ASCII theme — each chapter gets its own
+   * character set mood. The terminal tells the story.
+   */
+  private getAsciiThemeForProgress(progress: number): AsciiTheme {
+    if (progress < 0.14) return "hero";         // First Compile
+    if (progress < 0.28) return "about";       // The Current
+    if (progress < 0.42) return "publications"; // Binary Star
+    if (progress < 0.56) return "experience";  // Monolith Valley
+    if (progress < 0.70) return "projects";    // The Shipyard
+    if (progress < 0.84) return "skills";      // The Orrery
+    return "contact";                           // The Beacon
   }
 
   private loop = (now: number) => {

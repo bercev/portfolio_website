@@ -108,6 +108,12 @@
   --journey-space-bg: #eef5fb;
   --journey-space-fog: #eef5fb;
 
+/* ASCII terminal mode: dark phosphor background, light text for readability. */
+html[data-ascii="active"] {
+  --foreground: #e8f4f8;
+  --muted-foreground: #9fb3c8;
+}
+
   --glass-bg: color-mix(in srgb, var(--card) 58%, transparent);
   --glass-bg-strong: color-mix(in srgb, var(--card) 76%, transparent);
   --glass-border: color-mix(in srgb, var(--border) 88%, transparent);
