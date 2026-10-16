@@ -841,6 +841,7 @@ export class JourneyScene {
   private fogWarm: THREE.Color | null = null;
   private useAscii = false;
   private asciiPass: ShaderPass | null = null;
+  private asciiMeltStart = -1; // Timestamp when melt animation begins.
   private readonly stars: THREE.Points;
 
   private readonly tangent = new THREE.Vector3();
@@ -1205,11 +1206,11 @@ export class JourneyScene {
       if (useAscii) {
         // INSANE ASCII: Braille + themed charsets, phosphor terminal aesthetic.
         this.asciiPass = createAsciiPass({
-          cellSize: { x: 14, y: 28 }, // Larger cells for readable Braille
-          mode: 2, // Blend Braille + themed
+          cellSize: { x: 10, y: 20 }, // Balanced: dense but characters are recognizable
+          mode: 0, // Pure Braille for max resolution
           theme: "hero",
           phosphorColor: new THREE.Color(palette.accent),
-          shimmer: 0.6, // Subtler shimmer
+          shimmer: 0.3,
         });
         this.composer.addPass(this.asciiPass);
         updateAsciiPass(
@@ -1221,6 +1222,26 @@ export class JourneyScene {
         // Mark ASCII active for CSS text readability overrides.
         if (typeof document !== "undefined") {
           document.documentElement.setAttribute("data-ascii", "active");
+          // Inject direct style override — CSS variables aren't cutting it.
+          const style = document.createElement("style");
+          style.id = "ascii-text-override";
+          style.textContent = `
+            html[data-ascii="active"] body,
+            html[data-ascii="active"] h1,
+            html[data-ascii="active"] h2,
+            html[data-ascii="active"] h3,
+            html[data-ascii="active"] p,
+            html[data-ascii="active"] span,
+            html[data-ascii="active"] div,
+            html[data-ascii="active"] a,
+            html[data-ascii="active"] li {
+              color: #ffffff !important;
+              text-shadow: 0 2px 12px rgba(0,0,0,1), 0 0 4px rgba(0,0,0,1) !important;
+            }
+          `;
+          if (!document.getElementById("ascii-text-override")) {
+            document.head.appendChild(style);
+          }
         }
       }
       this.composer.setSize(window.innerWidth, window.innerHeight);
@@ -2763,13 +2784,20 @@ export class JourneyScene {
       this.updateStoryBeats(t, pathT);
     }
 
-    // INSANE ASCII: update time + switch theme per chapter.
+    // INSANE ASCII: update time + melt + switch theme per chapter.
     if (this.asciiPass) {
+      // Melt-down on load: starts at 0 (full static), eases to 1 (revealed) over ~3.5s.
+      if (this.asciiMeltStart < 0) this.asciiMeltStart = t;
+      const meltT = Math.min(1, (t - this.asciiMeltStart) / 3.5);
+      // Ease with a slight hold at the start for drama.
+      const melt = meltT < 0.15 ? 0 : (meltT - 0.15) / 0.85;
+      const easedMelt = melt * melt * (3 - 2 * melt); // smoothstep
       updateAsciiPass(
         this.asciiPass,
         t,
         window.innerWidth,
         window.innerHeight,
+        easedMelt,
       );
       // Per-chapter ASCII themes — the terminal mood shifts with the story.
       const theme = this.getAsciiThemeForProgress(this.smoothT);

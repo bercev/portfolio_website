@@ -110,8 +110,21 @@
 
 /* ASCII terminal mode: dark phosphor background, light text for readability. */
 html[data-ascii="active"] {
-  --foreground: #e8f4f8;
-  --muted-foreground: #9fb3c8;
+  --foreground: #ffffff !important;
+  --muted-foreground: #d0e0f0 !important;
+}
+
+/* Text over ASCII needs to be white with strong shadow. */
+html[data-ascii="active"] body,
+html[data-ascii="active"] h1,
+html[data-ascii="active"] h2,
+html[data-ascii="active"] h3,
+html[data-ascii="active"] p,
+html[data-ascii="active"] span,
+html[data-ascii="active"] div,
+html[data-ascii="active"] a {
+  color: #ffffff !important;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 1), 0 0 4px rgba(0, 0, 0, 1) !important;
 }
 
   --glass-bg: color-mix(in srgb, var(--card) 58%, transparent);

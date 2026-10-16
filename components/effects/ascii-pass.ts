@@ -114,8 +114,15 @@ const asciiFragmentShader = /* glsl */ `
   uniform float uMode;         // 0 = Braille, 1 = Themed, 2 = Blend
   uniform vec3 uPhosphorColor; // Terminal phosphor tint
   uniform float uShimmer;      // Animated shimmer intensity
+  uniform float uMelt;         // 0 = full ASCII static, 1 = fully melted/revealed
 
   varying vec2 vUv;
+
+  float hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+  }
 
   // Sample luminance at a sub-pixel offset within the Braille cell
   float sampleLum(vec2 uv, vec2 offset) {
@@ -130,7 +137,8 @@ const asciiFragmentShader = /* glsl */ `
     vec2 cellUv = fract(vUv * uResolution / uCellSize);
 
     // Sample 8 sub-pixels for Braille dots (2x4 grid)
-    float threshold = 0.35;
+    // HIGH threshold: only real 3D content gets characters, empty space stays dark.
+    float threshold = 0.55;
     int pattern = 0;
     // Dot positions: (0,0)=bit0, (1,0)=bit3, (0,1)=bit1, (1,1)=bit4, etc.
     // Braille dot numbering: 1-2-3-4 down left, 5-6-7-8 down right
@@ -173,13 +181,19 @@ const asciiFragmentShader = /* glsl */ `
     }
 
     // Phosphor color with luminance-based intensity
+    // DIMMER: text needs to win over the background.
     vec3 col = texture2D(tDiffuse, centerUv).rgb;
-    vec3 phosphor = mix(uPhosphorColor, col, 0.4); // Blend phosphor with source color
-    float intensity = 0.3 + 0.7 * centerLum;
+    vec3 phosphor = mix(uPhosphorColor, col, 0.3);
+    float intensity = 0.2 + 0.5 * centerLum;
 
-    // Dark terminal background
-    vec3 bg = vec3(0.02, 0.03, 0.05); // Deep terminal black-blue
-    vec3 final = mix(bg, phosphor * intensity * 1.8, alpha);
+    // Dark terminal background — darker for text contrast.
+    vec3 bg = vec3(0.01, 0.015, 0.025);
+    vec3 asciiCol = mix(bg, phosphor * intensity * 1.2, alpha * 0.85);
+
+    // MELT-DOWN: simple global fade from dense static to refined ASCII.
+    // uMelt 0 = full static (dense, bright), 1 = refined (dimmer, text-readable).
+    vec3 refinedAscii = mix(bg, phosphor * intensity * 0.55, alpha * 0.6);
+    vec3 final = mix(asciiCol, refinedAscii, uMelt);
 
     gl_FragColor = vec4(final, 1.0);
   }
@@ -217,6 +231,7 @@ export function createAsciiPass(options: AsciiPassOptions = {}): ShaderPass {
       uMode: { value: mode },
       uPhosphorColor: { value: phosphorColor.clone() },
       uShimmer: { value: shimmer },
+      uMelt: { value: 0 }, // Start as full ASCII static, melts on load.
     },
     vertexShader: asciiVertexShader,
     fragmentShader: asciiFragmentShader,
@@ -239,8 +254,10 @@ export function updateAsciiPass(
   time: number,
   width: number,
   height: number,
+  melt?: number,
 ) {
   const u = pass.uniforms as any;
   if (u.uTime) u.uTime.value = time;
   if (u.uResolution) u.uResolution.value.set(width, height);
+  if (u.uMelt && melt !== undefined) u.uMelt.value = melt;
 }
