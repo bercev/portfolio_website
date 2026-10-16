@@ -8,6 +8,12 @@ import {
   createProceduralAscii,
   updateProceduralAscii,
 } from "./procedural-ascii";
+import {
+  createAsciiPerson,
+  updateAsciiPerson,
+  poseForProgress,
+  type PersonPose,
+} from "./ascii-person";
 
 import type { JourneyPropManifest } from "@/data/journey-props";
 
@@ -842,6 +848,8 @@ export class JourneyScene {
   private proceduralBgScene: THREE.Scene | null = null;
   private proceduralBgCamera: THREE.OrthographicCamera | null = null;
   private useProcedural = true; // Pure procedural ASCII, not 3D conversion.
+  private asciiPerson: THREE.Points | null = null;
+  private currentPose: PersonPose | null = null;
   private readonly stars: THREE.Points;
 
   private readonly tangent = new THREE.Vector3();
@@ -1259,6 +1267,19 @@ export class JourneyScene {
       this.composer.setSize(window.innerWidth, window.innerHeight);
     } else {
       this.composer = null;
+    }
+
+    // BIG ASCII PERSON — posed per chapter, positioned along the journey.
+    if (useAscii) {
+      this.currentPose = "typing";
+      this.asciiPerson = createAsciiPerson({
+        pose: this.currentPose,
+        colorA: new THREE.Color(palette.accent),
+        colorB: new THREE.Color(palette.amber ?? "#ffb454"),
+      });
+      // Position to the side of the path, big and visible.
+      this.asciiPerson.position.set(6, 0, 0);
+      this.scene.add(this.asciiPerson);
     }
 
     if (!reducedMotion) {
@@ -2806,6 +2827,39 @@ export class JourneyScene {
         window.innerWidth,
         window.innerHeight,
       );
+    }
+
+    // BIG ASCII PERSON: update pose per chapter, animate.
+    if (this.asciiPerson) {
+      const pose = poseForProgress(this.smoothT);
+      if (pose !== this.currentPose) {
+        // Rebuild person with new pose.
+        this.scene.remove(this.asciiPerson);
+        this.asciiPerson.geometry.dispose();
+        (this.asciiPerson.material as THREE.Material).dispose();
+        this.currentPose = pose;
+        this.asciiPerson = createAsciiPerson({
+          pose,
+          colorA: new THREE.Color(this.palette.accent),
+          colorB: new THREE.Color(this.palette.amber ?? "#ffb454"),
+        });
+        this.asciiPerson.position.set(6, 0, 0);
+        this.scene.add(this.asciiPerson);
+      }
+      updateAsciiPerson(this.asciiPerson, t);
+      // Person follows the camera along the journey.
+      // Position to the side, at normal scale, so the humanoid shape reads.
+      const pathPos = this.curve.getPointAt(this.smoothT);
+      const pathTangent = this.curve.getTangentAt(this.smoothT);
+      const side = new THREE.Vector3()
+        .crossVectors(pathTangent, new THREE.Vector3(0, 1, 0))
+        .normalize();
+      const ahead = pathTangent.clone().multiplyScalar(6);
+      this.asciiPerson.position.copy(pathPos).addScaledVector(side, 4.5).add(ahead);
+      this.asciiPerson.position.y = pathPos.y;
+      this.asciiPerson.scale.setScalar(1.0); // Normal scale — shape matters more than size
+      // Face the camera.
+      this.asciiPerson.lookAt(this.camera.position);
     }
 
     this.composer?.render();
