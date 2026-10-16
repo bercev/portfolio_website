@@ -14,6 +14,7 @@ import {
   poseForProgress,
   type PersonPose,
 } from "./ascii-person";
+import { buildAsciiHeroPoints } from "./ascii-hero";
 
 import type { JourneyPropManifest } from "@/data/journey-props";
 
@@ -923,7 +924,7 @@ export class JourneyScene {
       220,
     );
 
-    this.textPoints = buildTextPoints(
+    this.textPoints = buildAsciiHeroPoints(
       "BERAT",
       quality === "full" ? 10000 : 5600,
       palette,
@@ -1204,8 +1205,8 @@ export class JourneyScene {
     if (useAscii && this.useProcedural) {
       this.proceduralAsciiMat = createProceduralAscii({
         cellSize: { x: 12, y: 24 },
-        colorA: new THREE.Color(palette.accent),
-        colorB: new THREE.Color(palette.amber ?? "#ffb454"),
+        // Circadian: phosphors follow the visitor's local time of day.
+        circadian: true,
       });
       // Background scene with fullscreen quad.
       this.proceduralBgScene = new THREE.Scene();
@@ -1223,28 +1224,10 @@ export class JourneyScene {
         window.innerWidth,
         window.innerHeight,
       );
-      // Mark ASCII active for CSS text readability overrides.
+      // Mark ASCII active — the PHOSPHOR token theme in globals.css handles
+      // text readability via remapped tokens (no JS style injection needed).
       if (typeof document !== "undefined") {
         document.documentElement.setAttribute("data-ascii", "active");
-        const style = document.createElement("style");
-        style.id = "ascii-text-override";
-        style.textContent = `
-          html[data-ascii="active"] body,
-          html[data-ascii="active"] h1,
-          html[data-ascii="active"] h2,
-          html[data-ascii="active"] h3,
-          html[data-ascii="active"] p,
-          html[data-ascii="active"] span,
-          html[data-ascii="active"] div,
-          html[data-ascii="active"] a,
-          html[data-ascii="active"] li {
-            color: #ffffff !important;
-            text-shadow: 0 2px 12px rgba(0,0,0,1), 0 0 4px rgba(0,0,0,1) !important;
-          }
-        `;
-        if (!document.getElementById("ascii-text-override")) {
-          document.head.appendChild(style);
-        }
       }
     }
 

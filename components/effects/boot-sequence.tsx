@@ -24,8 +24,18 @@ const BOOT_LINES: Array<{ text: string; delay: number; color?: "ok" | "dim" | "a
 
 const BOOT_DURATION_MS = 2600;
 
+function shouldBoot(): boolean {
+  if (typeof window === "undefined") return false;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  try {
+    return window.localStorage.getItem(BOOT_KEY) !== "1";
+  } catch {
+    return true;
+  }
+}
+
 export function BootSequence() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(shouldBoot);
   const [fading, setFading] = useState(false);
   const [shownCount, setShownCount] = useState(0);
   const timers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
@@ -49,18 +59,7 @@ export function BootSequence() {
   }, []);
 
   useEffect(() => {
-    // Skip: reduced motion, repeat visit, or SSR.
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let seen = false;
-    try {
-      seen = window.localStorage.getItem(BOOT_KEY) === "1";
-    } catch {
-      seen = false;
-    }
-    if (seen) return;
-
-    setVisible(true);
+    if (!visible) return;
     BOOT_LINES.forEach((line, i) => {
       const t = setTimeout(() => setShownCount(i + 1), line.delay);
       timers.current.push(t);
@@ -72,7 +71,7 @@ export function BootSequence() {
       timers.current.forEach(clearTimeout);
       timers.current = [];
     };
-  }, [finish]);
+  }, [finish, visible]);
 
   if (!visible) return null;
 

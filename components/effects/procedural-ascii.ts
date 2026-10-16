@@ -128,6 +128,55 @@ export interface ProceduralAsciiOptions {
   cellSize?: { x: number; y: number };
   colorA?: THREE.Color;
   colorB?: THREE.Color;
+  /** When true, phosphor colors follow the visitor's local time of day. */
+  circadian?: boolean;
+}
+
+/** Phosphor palettes keyed to time of day — subtle, never announced. */
+const CIRCADIAN_KEYS: ReadonlyArray<{
+  readonly hour: number;
+  readonly colorA: readonly [number, number, number];
+  readonly colorB: readonly [number, number, number];
+}> = [
+  { hour: 0, colorA: [1.0, 0.23, 0.19], colorB: [0.55, 0.08, 0.1] }, // night: deep red
+  { hour: 5, colorA: [1.0, 0.23, 0.19], colorB: [0.55, 0.08, 0.1] },
+  { hour: 7, colorA: [0.25, 0.95, 0.95], colorB: [1.0, 0.75, 0.25] }, // day: cyan
+  { hour: 17, colorA: [0.25, 0.95, 0.95], colorB: [1.0, 0.75, 0.25] },
+  { hour: 19, colorA: [1.0, 0.71, 0.28], colorB: [0.9, 0.4, 0.12] }, // evening: amber
+  { hour: 23, colorA: [1.0, 0.71, 0.28], colorB: [0.9, 0.4, 0.12] },
+  { hour: 24, colorA: [1.0, 0.23, 0.19], colorB: [0.55, 0.08, 0.1] },
+];
+
+/**
+ * Phosphor colors for the current local time, lerped between keyframes.
+ * Day (7–17): cyan. Evening (19–23): amber. Night (0–5): deep red.
+ */
+export function getCircadianPalette(): {
+  colorA: THREE.Color;
+  colorB: THREE.Color;
+} {
+  const hour = new Date().getHours() + new Date().getMinutes() / 60;
+  let prev = CIRCADIAN_KEYS[0];
+  let next = CIRCADIAN_KEYS[CIRCADIAN_KEYS.length - 1];
+  for (let i = 0; i < CIRCADIAN_KEYS.length - 1; i++) {
+    if (hour >= CIRCADIAN_KEYS[i].hour && hour <= CIRCADIAN_KEYS[i + 1].hour) {
+      prev = CIRCADIAN_KEYS[i];
+      next = CIRCADIAN_KEYS[i + 1];
+      break;
+    }
+  }
+  const span = Math.max(next.hour - prev.hour, 0.001);
+  const t = THREE.MathUtils.clamp((hour - prev.hour) / span, 0, 1);
+  const lerp3 = (
+    a: readonly [number, number, number],
+    b: readonly [number, number, number],
+  ): THREE.Color =>
+    new THREE.Color(
+      a[0] + (b[0] - a[0]) * t,
+      a[1] + (b[1] - a[1]) * t,
+      a[2] + (b[2] - a[2]) * t,
+    );
+  return { colorA: lerp3(prev.colorA, next.colorA), colorB: lerp3(prev.colorB, next.colorB) };
 }
 
 export function createProceduralAscii(
@@ -135,17 +184,22 @@ export function createProceduralAscii(
 ): THREE.ShaderMaterial {
   const {
     cellSize = { x: 10, y: 20 }, // Denser for more detail
-    colorA = new THREE.Color(0.25, 0.95, 0.95), // Brighter cyan
-    colorB = new THREE.Color(1.0, 0.75, 0.25), // Warmer amber
+    circadian = false,
   } = options;
+  const base = circadian
+    ? getCircadianPalette()
+    : {
+        colorA: options.colorA ?? new THREE.Color(0.25, 0.95, 0.95),
+        colorB: options.colorB ?? new THREE.Color(1.0, 0.75, 0.25),
+      };
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uResolution: { value: new THREE.Vector2(1, 1) },
       uTime: { value: 0 },
       uScroll: { value: 0 },
-      uColorA: { value: colorA.clone() },
-      uColorB: { value: colorB.clone() },
+      uColorA: { value: base.colorA.clone() },
+      uColorB: { value: base.colorB.clone() },
       uCellSize: { value: new THREE.Vector2(cellSize.x, cellSize.y) },
     },
     vertexShader,
@@ -153,6 +207,7 @@ export function createProceduralAscii(
     depthTest: false,
     depthWrite: false,
   });
+  material.userData.circadian = circadian;
 
   return material;
 }
@@ -168,4 +223,10 @@ export function updateProceduralAscii(
   u.uTime.value = time;
   u.uScroll.value = scroll;
   u.uResolution.value.set(width, height);
+  // Circadian drift: ease phosphors toward the current time-of-day palette.
+  if (material.userData.circadian) {
+    const target = getCircadianPalette();
+    (u.uColorA.value as THREE.Color).lerp(target.colorA, 0.02);
+    (u.uColorB.value as THREE.Color).lerp(target.colorB, 0.02);
+  }
 }

@@ -1,4 +1,6 @@
-import type { PortfolioContent } from "@/data/content";
+import { useState } from "react";
+
+import type { PortfolioContent, Publication } from "@/data/content";
 
 import { HoverPreview } from "@/components/ui/hover-preview";
 import { Station } from "@/components/ui/station";
@@ -7,6 +9,38 @@ type PublicationsProps = {
   readonly content: PortfolioContent["publications"];
   readonly heading: PortfolioContent["navigation"][number]["label"];
 };
+
+function CiteButton({ publication }: { readonly publication: Publication }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(publication.bibtex);
+    } catch {
+      // Fallback for non-secure contexts: temp textarea.
+      const textarea = document.createElement("textarea");
+      textarea.value = publication.bibtex;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="journey-pub-cite"
+      aria-live="polite"
+      title="Copy BibTeX citation"
+    >
+      {copied ? "[copied ✓]" : "[cite]"}
+    </button>
+  );
+}
 
 function scholarlyArticleJsonLd(
   publication: PortfolioContent["publications"][number],
@@ -89,6 +123,7 @@ export function Publications({ content, heading }: PublicationsProps) {
             >
               <span className="journey-pub-venue">{publication.venue}</span>
               <span className="journey-pub-date">{publication.date}</span>
+              <CiteButton publication={publication} />
             </aside>
           </article>
         ))}

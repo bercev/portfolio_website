@@ -1,5 +1,6 @@
 import type { PortfolioContent, Project } from "@/data/content";
 
+import { AsciiSnake } from "@/components/effects/ascii-snake";
 import { ExternalLink } from "@/components/ui/external-link";
 import { HoverPreview } from "@/components/ui/hover-preview";
 import { Station } from "@/components/ui/station";
@@ -89,6 +90,9 @@ export function Projects({ content, heading }: ProjectsProps) {
           </article>
         ) : null}
       </div>
+
+      {/* Shipped code you can touch: playable ASCII snake. */}
+      <AsciiSnake />
     </Station>
   );
 }

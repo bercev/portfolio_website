@@ -160,7 +160,9 @@ export function EasterEggs() {
   const [toast, setToast] = useState<string | null>(null);
   const [toastIsArt, setToastIsArt] = useState(false);
   const [matrix, setMatrix] = useState(false);
-  const [found, setFound] = useState<string[]>([]);
+  const [found, setFound] = useState<string[]>(() =>
+    typeof window === "undefined" ? [] : loadSecrets(),
+  );
   const konamiIdx = useRef(0);
   const typeBuffer = useRef("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -182,7 +184,6 @@ export function EasterEggs() {
   );
 
   useEffect(() => {
-    setFound(loadSecrets());
     // Announce the counter in the console for completionists.
     // eslint-disable-next-line no-console
     console.log(
