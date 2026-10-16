@@ -1,6 +1,6 @@
 import { Analytics } from "@vercel/analytics/next";
 import { Agentation } from "agentation";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
 
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -51,6 +51,13 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3f7fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#141d2b" },
+  ],
 };
 
 const jsonLd = {
