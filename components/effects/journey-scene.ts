@@ -2058,15 +2058,54 @@ export class JourneyScene {
     this.scene.add(trunks);
     this.scene.add(tops);
 
-    // 3 — Cityscape: a skyline you fly through (middle chapters).
+    // 3 — Cityscape: buildings with emissive window grids (in-shader).
     const bldgCount = this.quality === "full" ? 120 : 60;
     const bldgGeo = new THREE.BoxGeometry(1, 1, 1);
-    const bldgMat = new THREE.MeshBasicMaterial({
+    const bldgMat = new THREE.ShaderMaterial({
       transparent: true,
-      opacity: 0.45,
-      blending: this.particleBlending,
       depthWrite: false,
-      wireframe: true,
+      blending: this.particleBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uColorA: { value: cyan.clone() },
+        uColorB: { value: amber.clone() },
+      },
+      vertexShader: `
+        varying vec3 vWPos;
+        varying vec3 vNormal;
+        void main() {
+          vec4 wp = instanceMatrix * vec4(position, 1.0);
+          vWPos = (modelMatrix * wp).xyz;
+          vNormal = normalize(mat3(modelMatrix) * mat3(instanceMatrix) * normal);
+          gl_Position = projectionMatrix * modelMatrix * wp;
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform vec3 uColorA;
+        uniform vec3 uColorB;
+        varying vec3 vWPos;
+        varying vec3 vNormal;
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+        void main() {
+          // Window grid from world position.
+          vec2 gv = abs(vNormal.y) > 0.5 ? vWPos.xz / vec2(0.9, 0.9) : vWPos.xy / vec2(0.9, 1.1);
+          vec2 cell = floor(gv);
+          vec2 f = fract(gv);
+          float winMask = step(0.2, f.x) * step(f.x, 0.8) * step(0.3, f.y) * step(f.y, 0.7);
+          float rnd = hash(cell + floor(uTime * 0.1));
+          vec3 winColor = mix(uColorA, uColorB, step(0.6, hash(cell + 7.0)));
+          float lit = step(0.4, rnd);
+          // Base facade.
+          vec3 col = mix(uColorA * 0.25, uColorB * 0.25, 0.5);
+          // Emissive windows.
+          col += winColor * winMask * lit * 1.4;
+          // Floor slabs.
+          float slab = smoothstep(0.0, 0.08, f.y) * smoothstep(1.0, 0.92, f.y);
+          col *= 0.7 + 0.3 * slab;
+          gl_FragColor = vec4(col, 0.85);
+        }
+      `,
     });
     const buildings = new THREE.InstancedMesh(bldgGeo, bldgMat, bldgCount);
     buildings.userData.noAura = true;
@@ -2092,6 +2131,7 @@ export class JourneyScene {
     buildings.instanceMatrix.needsUpdate = true;
     if (buildings.instanceColor) buildings.instanceColor.needsUpdate = true;
     this.scene.add(buildings);
+    this.animatedMaterials.push(bldgMat as THREE.ShaderMaterial);
 
     // 4 — Nebula clouds: soft additive sprites for depth.
     for (let i = 0; i < 14; i++) {
