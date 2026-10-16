@@ -2457,6 +2457,20 @@ html[data-journey="active"] [data-hero-name-fallback] {
   background: linear-gradient(90deg, var(--portfolio-accent), var(--effect-chroma-emerald));
 }
 
+/* Interactive portfolio terminal (Contact / "The Beacon"). */
+.journey-terminal {
+  margin-top: 1.5rem;
+  max-width: 640px;
+  font-family: var(--font-mono);
+}
+.journey-terminal .xterm {
+  padding: 12px;
+  height: 100%;
+}
+.journey-terminal .xterm-viewport {
+  scrollbar-width: thin;
+}
+
 .journey-tech-line {
   max-width: 58ch;
   color: var(--muted-foreground);
