@@ -41,7 +41,7 @@ export function Experience({ content, heading }: ExperienceProps) {
               </p>
             </div>
             <div className="journey-xp-stack">
-              <TechPills technologies={experience.technologies} marquee />
+              <TechPills technologies={experience.technologies} marquee={index === 0} />
             </div>
           </article>
         ))}
