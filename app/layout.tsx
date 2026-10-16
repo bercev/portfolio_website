@@ -38,6 +38,13 @@ const ogImage = {
   height: 630,
   alt: "Berat Ercevik software engineering portfolio",
 };
+/** Google Search Console HTML-tag verification token.
+ *  Set GOOGLE_SITE_VERIFICATION (or NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION)
+ *  to the token from search.google.com → Settings → Verification, e.g.
+ *  `abc123xyz`. When unset, no verification tag is emitted. */
+const googleSiteVerification =
+  process.env.GOOGLE_SITE_VERIFICATION ??
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 export const metadata: Metadata = {
   metadataBase,
   title,
@@ -64,6 +71,9 @@ export const metadata: Metadata = {
     description,
     images: [ogImage],
   },
+  ...(googleSiteVerification
+    ? { verification: { google: googleSiteVerification } }
+    : {}),
   robots: {
     index: true,
     follow: true,
