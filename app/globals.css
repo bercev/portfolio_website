@@ -15,6 +15,12 @@
   --muted-foreground: #3f4856;
   --accent: #e7edf6;
   --accent-foreground: #101723;
+  /* PHOSPHOR type scale */
+  --text-display: clamp(2.6rem, 6.2vw, 4.75rem);
+  --text-title: clamp(1.5rem, 3vw, 2.1rem);
+  --text-lede: clamp(1.1rem, 1.7vw, 1.32rem);
+  --text-kicker: 0.875rem;
+  --text-label: 0.6875rem;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
   --border: #d8dfe9;
@@ -36,7 +42,7 @@
   --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   --radius: 0.125rem;
   --shadow-color: oklch(0 0 0);
   --shadow-opacity: 0.1;
@@ -108,25 +114,6 @@
   --journey-space-bg: #eef5fb;
   --journey-space-fog: #eef5fb;
 
-/* ASCII terminal mode: dark phosphor background, light text for readability. */
-html[data-ascii="active"] {
-  --foreground: #ffffff !important;
-  --muted-foreground: #d0e0f0 !important;
-}
-
-/* Text over ASCII needs to be white with strong shadow. */
-html[data-ascii="active"] body,
-html[data-ascii="active"] h1,
-html[data-ascii="active"] h2,
-html[data-ascii="active"] h3,
-html[data-ascii="active"] p,
-html[data-ascii="active"] span,
-html[data-ascii="active"] div,
-html[data-ascii="active"] a {
-  color: #ffffff !important;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 1), 0 0 4px rgba(0, 0, 0, 1) !important;
-}
-
   --glass-bg: color-mix(in srgb, var(--card) 58%, transparent);
   --glass-bg-strong: color-mix(in srgb, var(--card) 76%, transparent);
   --glass-border: color-mix(in srgb, var(--border) 88%, transparent);
@@ -178,7 +165,7 @@ html[data-ascii="active"] a {
   --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   --radius: 0.125rem;
   --shadow-color: oklch(0 0 0);
   --shadow-opacity: 0.1;
@@ -203,6 +190,87 @@ html[data-ascii="active"] a {
   --glass-shadow: 0 28px 70px color-mix(in srgb, var(--shadow-color) 42%, transparent);
 
   color-scheme: dark;
+}
+
+/* ================= PHOSPHOR TERMINAL THEME =================
+   Active when the ASCII journey runs. First-class theme, not a hack:
+   tokens are remapped so the existing color hierarchy SURVIVES
+   (kickers stay cyan, metadata stays dim) instead of being flattened
+   to !important white. Palette switcher is neutralized here. */
+html[data-ascii="active"] {
+  --background: #05070c;
+  --foreground: #eaf6fb;
+  --card: rgba(13, 20, 32, 0.72);
+  --card-foreground: #eaf6fb;
+  --popover: #0b1220;
+  --popover-foreground: #eaf6fb;
+  --primary: #eaf6fb;
+  --primary-foreground: #05070c;
+  --secondary: rgba(47, 216, 255, 0.1);
+  --secondary-foreground: #eaf6fb;
+  --muted: rgba(125, 147, 168, 0.12);
+  --muted-foreground: #7d93a8;
+  --accent: rgba(47, 216, 255, 0.14);
+  --accent-foreground: #2fd8ff;
+  --border: rgba(234, 246, 251, 0.14);
+  --input: rgba(234, 246, 251, 0.14);
+  --ring: #2fd8ff;
+  --portfolio-accent: #2fd8ff;
+  --portfolio-accent-foreground: #05070c;
+  --accent-neon: #2fd8ff;
+  --effect-cursor: #2fd8ff;
+  --effect-spark: #2fd8ff;
+  --effect-glow: rgba(47, 216, 255, 0.35);
+  --effect-chroma-cyan: #2fd8ff;
+  --effect-chroma-amber: #ffb648;
+  --journey-space-bg: #05070c;
+  --journey-space-fog: #05070c;
+  --journey-rule: rgba(234, 246, 251, 0.16);
+  --journey-rule-soft: rgba(234, 246, 251, 0.08);
+  --selection-background: #2fd8ff;
+  --selection-foreground: #05070c;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: dark;
+}
+
+/* Palette lock: terminal is always ocean. */
+html[data-ascii="active"][data-palette] {
+  --accent-neon: #2fd8ff;
+  --chroma-cyan-neon: #2fd8ff;
+  --chroma-emerald-neon: #20d98b;
+  --chroma-amber-neon: #ffb648;
+  --chroma-coral-neon: #ff6b57;
+  --portfolio-accent: #2fd8ff;
+  --portfolio-accent-foreground: #05070c;
+  --effect-cursor: #2fd8ff;
+  --effect-spark: #2fd8ff;
+  --effect-glow: rgba(47, 216, 255, 0.35);
+}
+
+/* Readability halo over the canvas — subtle, inherits. */
+html[data-ascii="active"] body {
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+}
+
+/* Phosphor bloom on display type only. */
+html[data-ascii="active"] .journey-station-heading,
+html[data-ascii="active"] [data-hero-tagline],
+html[data-ascii="active"] .journey-pub-title,
+html[data-ascii="active"] .journey-project-title,
+html[data-ascii="active"] .journey-xp-title {
+  text-shadow:
+    0 0 18px rgba(47, 216, 255, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+/* Amber is rationed: only elements explicitly marked .term-emphasis. */
+html[data-ascii="active"] .term-emphasis {
+  color: #ffb648;
+}
+
+/* Hide palette switcher in terminal mode — terminal is always ocean. */
+html[data-ascii="active"] .theme-selector {
+  display: none;
 }
 
 /* Palette accents are neon on dark space; light mode remixes `--*-neon` into ink. */
@@ -362,7 +430,7 @@ html:not(.dark) {
   --font-sans: var(--font-grotesk);
   --font-serif: var(--font-grotesk);
   --font-display: var(--font-grotesk);
-  --font-mono: var(--font-grotesk);
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -1189,6 +1257,51 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--portfolio-accent);
 }
 
+/* Compile narrative: terminal build-log lines in chapter gates. */
+.journey-build-log {
+  grid-column: 1 / span 9;
+  margin: clamp(0.9rem, 1.8vh, 1.4rem) 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+  color: var(--muted-foreground);
+}
+
+.journey-build-log-line {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.journey-build-log-prompt {
+  color: var(--portfolio-accent);
+  margin-right: 0.5em;
+  user-select: none;
+}
+
+.journey-build-log-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  margin-left: 0.5em;
+  vertical-align: text-bottom;
+  background: var(--portfolio-accent);
+  animation: journey-build-log-blink 1.06s steps(1) infinite;
+}
+
+@keyframes journey-build-log-blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-build-log-cursor {
+    animation: none;
+  }
+}
+
 .journey-station-note {
   grid-column: 7 / -1;
   margin: 0;
@@ -1314,6 +1427,27 @@ html[data-journey] [data-effect-layer="background"] {
 
 .journey-contact-link:hover {
   color: var(--portfolio-accent);
+}
+
+/* Primary email CTA — the highest-intent recruiter action. */
+.journey-contact-email {
+  margin: 1.75rem 0 0;
+}
+
+.journey-contact-email a {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--portfolio-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  transition: opacity 180ms ease;
+}
+
+.journey-contact-email a:hover {
+  opacity: 0.75;
 }
 
 .journey-spec-tags {
@@ -1602,6 +1736,92 @@ html[data-journey] [data-effect-layer="background"] {
   gap: 6px;
   padding-top: 6px;
   text-align: right;
+}
+
+/* Terminal-style cite button: copies BibTeX, ClickSpark fires the burst. */
+.journey-pub-cite {
+  margin-top: 4px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--portfolio-accent);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+}
+
+.journey-pub-cite:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.journey-pub-cite:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+
+/* ASCII Snake: playable terminal game in The Shipyard. */
+.journey-snake {
+  grid-column: 1 / -1;
+  margin-top: clamp(1.5rem, 3vh, 2.5rem);
+  border: 1px solid var(--journey-rule-soft);
+  border-radius: 6px;
+  background: rgba(5, 7, 12, 0.6);
+  padding: 12px 14px 14px;
+  cursor: pointer;
+}
+
+.journey-snake:focus {
+  outline: none;
+}
+
+.journey-snake:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+
+.journey-snake[data-snake-focused] {
+  border-color: var(--journey-rule);
+}
+
+.journey-snake-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.journey-snake-title {
+  color: var(--foreground);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+}
+
+.journey-snake-hint {
+  color: var(--muted-foreground);
+}
+
+.journey-snake-score {
+  color: var(--portfolio-accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.journey-snake-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 28 / 18;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-snake {
+    display: none;
+  }
 }
 
 @media (max-width: 900px) {
