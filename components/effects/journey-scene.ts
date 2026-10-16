@@ -8,12 +8,6 @@ import {
   createProceduralAscii,
   updateProceduralAscii,
 } from "./procedural-ascii";
-import {
-  createAsciiPerson,
-  updateAsciiPerson,
-  poseForProgress,
-  type PersonPose,
-} from "./ascii-person";
 import { buildAsciiHeroPoints } from "./ascii-hero";
 
 import type { JourneyPropManifest } from "@/data/journey-props";
@@ -849,8 +843,6 @@ export class JourneyScene {
   private proceduralBgScene: THREE.Scene | null = null;
   private proceduralBgCamera: THREE.OrthographicCamera | null = null;
   private useProcedural = true; // Pure procedural ASCII, not 3D conversion.
-  private asciiPerson: THREE.Points | null = null;
-  private currentPose: PersonPose | null = null;
   private readonly stars: THREE.Points;
 
   private readonly tangent = new THREE.Vector3();
@@ -932,6 +924,9 @@ export class JourneyScene {
       particleBlending,
       lightTheme,
     );
+    // DOM ASCII art (AsciiBerat) is now the hero wordmark — keep the 3D
+    // particles parked far below the camera so they never render as noise.
+    this.textPoints.visible = false;
     this.textGroup.add(this.textPoints);
     this.textGroup.position.set(0, 0.4, 7);
     this.textGroup.renderOrder = 8;
@@ -1252,18 +1247,7 @@ export class JourneyScene {
       this.composer = null;
     }
 
-    // BIG ASCII PERSON — posed per chapter, positioned along the journey.
-    if (useAscii) {
-      this.currentPose = "typing";
-      this.asciiPerson = createAsciiPerson({
-        pose: this.currentPose,
-        colorA: new THREE.Color(palette.accent),
-        colorB: new THREE.Color(palette.amber ?? "#ffb454"),
-      });
-      // Position to the side of the path, big and visible.
-      this.asciiPerson.position.set(6, 0, 0);
-      this.scene.add(this.asciiPerson);
-    }
+    // 2D Braille person (AsciiPerson2D) replaces the old 3D point-cloud person.
 
     if (!reducedMotion) {
       this.bindScroll();

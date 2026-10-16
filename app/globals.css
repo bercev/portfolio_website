@@ -223,6 +223,12 @@ html[data-ascii="active"] {
   --effect-glow: rgba(47, 216, 255, 0.35);
   --effect-chroma-cyan: #2fd8ff;
   --effect-chroma-amber: #ffb648;
+  /* Muted kin: emerald/coral collapse into desaturated versions of the two
+     phosphor hues so the 3D scene never introduces competing colors. */
+  --chroma-emerald-neon: #5b8fa3;
+  --chroma-coral-neon: #b98a5e;
+  --effect-chroma-emerald: #5b8fa3;
+  --effect-chroma-coral: #b98a5e;
   --journey-space-bg: #05070c;
   --journey-space-fog: #05070c;
   --journey-rule: rgba(234, 246, 251, 0.16);
@@ -237,9 +243,9 @@ html[data-ascii="active"] {
 html[data-ascii="active"][data-palette] {
   --accent-neon: #2fd8ff;
   --chroma-cyan-neon: #2fd8ff;
-  --chroma-emerald-neon: #20d98b;
+  --chroma-emerald-neon: #5b8fa3;
   --chroma-amber-neon: #ffb648;
-  --chroma-coral-neon: #ff6b57;
+  --chroma-coral-neon: #b98a5e;
   --portfolio-accent: #2fd8ff;
   --portfolio-accent-foreground: #05070c;
   --effect-cursor: #2fd8ff;
@@ -2283,7 +2289,39 @@ html:not(.dark) .skill-pill {
   text-align: left;
 }
 
-/* Spacer for the BERAT particle glyph — must remain even when fallback is hidden. */
+/* BERAT ASCII art hero — hand-designed block letterform wordmark. */
+.ascii-berat {
+  margin: 0;
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: clamp(0.32rem, 1.05vw, 0.72rem);
+  line-height: 1.04;
+  letter-spacing: 0;
+  color: #2fd8ff;
+  text-shadow:
+    0 0 22px rgba(47, 216, 255, 0.45),
+    0 0 6px rgba(47, 216, 255, 0.6),
+    0 2px 10px rgba(0, 0, 0, 0.9);
+  white-space: pre;
+  user-select: none;
+  animation: ascii-berat-flicker 7s ease-in-out infinite;
+}
+
+@keyframes ascii-berat-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.86; }
+  94% { opacity: 1; }
+  96% { opacity: 0.94; }
+  97% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ascii-berat {
+    animation: none;
+  }
+}
+
+/* Spacer for the BERAT ASCII art — must remain even when fallback is hidden. */
 [data-hero-glyph-band] {
   flex: 1 1 auto;
   display: grid;

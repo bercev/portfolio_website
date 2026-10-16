@@ -132,24 +132,26 @@ export interface ProceduralAsciiOptions {
   circadian?: boolean;
 }
 
-/** Phosphor palettes keyed to time of day — subtle, never announced. */
+/** Phosphor palettes keyed to time of day — subtle, never announced.
+ *  All keys stay inside the two phosphor hue families (cyan / amber);
+ *  night is dim amber phosphor, never red. */
 const CIRCADIAN_KEYS: ReadonlyArray<{
   readonly hour: number;
   readonly colorA: readonly [number, number, number];
   readonly colorB: readonly [number, number, number];
 }> = [
-  { hour: 0, colorA: [1.0, 0.23, 0.19], colorB: [0.55, 0.08, 0.1] }, // night: deep red
-  { hour: 5, colorA: [1.0, 0.23, 0.19], colorB: [0.55, 0.08, 0.1] },
-  { hour: 7, colorA: [0.25, 0.95, 0.95], colorB: [1.0, 0.75, 0.25] }, // day: cyan
-  { hour: 17, colorA: [0.25, 0.95, 0.95], colorB: [1.0, 0.75, 0.25] },
+  { hour: 0, colorA: [0.85, 0.55, 0.22], colorB: [0.38, 0.2, 0.09] }, // night: dim amber
+  { hour: 5, colorA: [0.85, 0.55, 0.22], colorB: [0.38, 0.2, 0.09] },
+  { hour: 7, colorA: [0.18, 0.85, 1.0], colorB: [1.0, 0.71, 0.28] }, // day: cyan
+  { hour: 17, colorA: [0.18, 0.85, 1.0], colorB: [1.0, 0.71, 0.28] },
   { hour: 19, colorA: [1.0, 0.71, 0.28], colorB: [0.9, 0.4, 0.12] }, // evening: amber
   { hour: 23, colorA: [1.0, 0.71, 0.28], colorB: [0.9, 0.4, 0.12] },
-  { hour: 24, colorA: [1.0, 0.23, 0.19], colorB: [0.55, 0.08, 0.1] },
+  { hour: 24, colorA: [0.85, 0.55, 0.22], colorB: [0.38, 0.2, 0.09] },
 ];
 
 /**
  * Phosphor colors for the current local time, lerped between keyframes.
- * Day (7–17): cyan. Evening (19–23): amber. Night (0–5): deep red.
+ * Day (7–17): cyan. Evening (19–23): amber. Night (0–5): dim amber.
  */
 export function getCircadianPalette(): {
   colorA: THREE.Color;

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
+import { AsciiBerat } from "@/components/effects/ascii-berat";
 import { useMotionPreference } from "@/components/providers/motion-provider";
 import type { PortfolioContent } from "@/data/content";
 import { BUILD_LOGS } from "@/data/story";
@@ -45,9 +46,9 @@ export function Hero({ content }: { content: HeroContent }) {
           {identity.name}
         </h1>
 
-        {/* Reserves the BERAT particle band so meta never sits over the glyph. */}
+        {/* BERAT as hand-designed ASCII art. */}
         <div data-hero-glyph-band aria-hidden="true">
-          <div data-hero-name-fallback>{identity.shortName.toUpperCase()}</div>
+          <AsciiBerat />
         </div>
 
         {/* Role / location / tagline / scroll — always below the glyph band. */}
