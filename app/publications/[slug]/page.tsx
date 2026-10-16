@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { portfolio, type Publication } from "@/data/content";
@@ -109,13 +110,13 @@ export default async function PublicationPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <nav aria-label="Breadcrumb" className="mb-8 text-sm">
-        <a href="/" className="underline underline-offset-4">
+        <Link href="/" className="underline underline-offset-4">
           Berat Ercevik
-        </a>
+        </Link>
         <span aria-hidden="true"> / </span>
-        <a href="/#publications" className="underline underline-offset-4">
+        <Link href="/#publications" className="underline underline-offset-4">
           Publications
-        </a>
+        </Link>
       </nav>
       <p className="text-sm font-medium uppercase tracking-[0.2em] opacity-70">
         {publication.venue} · {publication.date}
