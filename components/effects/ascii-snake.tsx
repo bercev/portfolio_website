@@ -43,7 +43,9 @@ export function AsciiSnake() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>("ready");
   const [score, setScore] = useState(0);
-  const [high, setHigh] = useState(0);
+  const [high, setHigh] = useState<number>(() =>
+    typeof window === "undefined" ? 0 : readHighScore(),
+  );
   const [focused, setFocused] = useState(false);
   const stateRef = useRef<{
     snake: Vec[];
@@ -62,10 +64,6 @@ export function AsciiSnake() {
     bug: { x: 20, y: 9 },
     eaten: 0,
   });
-
-  useEffect(() => {
-    setHigh(readHighScore());
-  }, []);
 
   const reset = useCallback(() => {
     stateRef.current = {
