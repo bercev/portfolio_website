@@ -185,7 +185,6 @@ export function EasterEggs() {
 
   useEffect(() => {
     // Announce the counter in the console for completionists.
-    // eslint-disable-next-line no-console
     console.log(
       `%csecrets found: ${loadSecrets().length}/${TOTAL_SECRETS} — try the konami code.`,
       "color:#2fd8ff;font-family:monospace",
