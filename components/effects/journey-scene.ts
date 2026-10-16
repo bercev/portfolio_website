@@ -2,14 +2,8 @@ import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
 
-import {
-  createAsciiPass,
-  updateAsciiPass,
-  type AsciiTheme,
-} from "./ascii-pass";
 import {
   createProceduralAscii,
   updateProceduralAscii,
@@ -844,8 +838,6 @@ export class JourneyScene {
   private fogCool: THREE.Color | null = null;
   private fogWarm: THREE.Color | null = null;
   private useAscii = false;
-  private asciiPass: ShaderPass | null = null;
-  private asciiMeltStart = -1; // Timestamp when melt animation begins.
   private proceduralAsciiMat: THREE.ShaderMaterial | null = null;
   private proceduralBgScene: THREE.Scene | null = null;
   private proceduralBgCamera: THREE.OrthographicCamera | null = null;
@@ -2651,10 +2643,11 @@ export class JourneyScene {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.composer?.setSize(window.innerWidth, window.innerHeight);
-    if (this.asciiPass) {
-      updateAsciiPass(
-        this.asciiPass,
+    if (this.proceduralAsciiMat) {
+      updateProceduralAscii(
+        this.proceduralAsciiMat,
         this.timer.getElapsed(),
+        this.smoothT,
         window.innerWidth,
         window.innerHeight,
       );
@@ -2815,29 +2808,6 @@ export class JourneyScene {
       );
     }
 
-    // Old 3D-to-ASCII pass (disabled when using procedural).
-    if (this.asciiPass) {
-      // Melt-down on load: starts at 0 (full static), eases to 1 (revealed) over ~3.5s.
-      if (this.asciiMeltStart < 0) this.asciiMeltStart = t;
-      const meltT = Math.min(1, (t - this.asciiMeltStart) / 3.5);
-      // Ease with a slight hold at the start for drama.
-      const melt = meltT < 0.15 ? 0 : (meltT - 0.15) / 0.85;
-      const easedMelt = melt * melt * (3 - 2 * melt); // smoothstep
-      updateAsciiPass(
-        this.asciiPass,
-        t,
-        window.innerWidth,
-        window.innerHeight,
-        easedMelt,
-      );
-      // Per-chapter ASCII themes — the terminal mood shifts with the story.
-      const theme = this.getAsciiThemeForProgress(this.smoothT);
-      const pass = this.asciiPass as any;
-      if (pass.asciiTheme !== theme && pass.setTheme) {
-        pass.setTheme(theme);
-      }
-    }
-
     this.composer?.render();
     if (!this.composer) {
       // Render procedural ASCII background first, then 3D scene on top.
@@ -2911,20 +2881,6 @@ export class JourneyScene {
       island.position.y += Math.sin(t * 0.6 + phase) * 0.003;
       island.rotation.y = t * 0.05 + phase;
     }
-  }
-
-  /**
-   * Map scroll progress to ASCII theme — each chapter gets its own
-   * character set mood. The terminal tells the story.
-   */
-  private getAsciiThemeForProgress(progress: number): AsciiTheme {
-    if (progress < 0.14) return "hero";         // First Compile
-    if (progress < 0.28) return "about";       // The Current
-    if (progress < 0.42) return "publications"; // Binary Star
-    if (progress < 0.56) return "experience";  // Monolith Valley
-    if (progress < 0.70) return "projects";    // The Shipyard
-    if (progress < 0.84) return "skills";      // The Orrery
-    return "contact";                           // The Beacon
   }
 
   private loop = (now: number) => {
