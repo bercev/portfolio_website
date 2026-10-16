@@ -828,6 +828,7 @@ export class JourneyScene {
   private heroSpark: THREE.Mesh | null = null;
   private readonly heroRings: THREE.Mesh[] = [];
   private readonly chapterGates: THREE.Mesh[] = [];
+  private readonly floatingIslands: THREE.Group[] = [];
   private fogCool: THREE.Color | null = null;
   private fogWarm: THREE.Color | null = null;
   private readonly stars: THREE.Points;
@@ -974,6 +975,7 @@ export class JourneyScene {
     this.buildStations(stationCounts, Boolean(props));
     this.buildChapterGates();
     this.buildContinuousWorld();
+    this.buildCosmos();
     // Emotional color arc: fog starts cool (cyan tech) and warms toward amber
     // (human moments) as the journey progresses.
     this.fogCool = new THREE.Color(fog);
@@ -1673,6 +1675,287 @@ export class JourneyScene {
     this.scene.add(outriders);
   }
 
+  /**
+   * The cosmos — planets, city, forests, nebulae. A rich world you fly
+   * through, Mario Kart Rainbow Road energy: dense, playful, surprising.
+   */
+  private buildCosmos() {
+    const cyan = new THREE.Color(this.palette.cyan);
+    const amber = new THREE.Color(this.palette.amber);
+    const accent = new THREE.Color(this.palette.accent);
+    const emerald = new THREE.Color(this.palette.emerald);
+    const upVec = new THREE.Vector3(0, 1, 0);
+    const dummy = new THREE.Object3D();
+    const col = new THREE.Color();
+
+    // 1 — Planets: one per chapter region, large enough to fly past.
+    const planetDefs = [
+      { t: 0.1, r: 2.2, color: cyan, rings: false }, // Hero
+      { t: 0.24, r: 1.8, color: accent, rings: true }, // About
+      { t: 0.38, r: 2.4, color: cyan, rings: true }, // Publications
+      { t: 0.52, r: 2.0, color: emerald, rings: false }, // Experience
+      { t: 0.66, r: 2.6, color: amber, rings: true }, // Projects
+      { t: 0.8, r: 2.2, color: amber, rings: false }, // Skills/Contact
+    ];
+    for (const def of planetDefs) {
+      const p = this.curve.getPointAt(def.t);
+      const tangent = this.curve.getTangentAt(def.t);
+      const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+      const planetGroup = new THREE.Group();
+      // Offset to the side so you fly PAST, not through.
+      planetGroup.position.copy(p).addScaledVector(side, 7 * (Math.random() > 0.5 ? 1 : -1));
+      planetGroup.position.y += 2;
+      const planet = new THREE.Mesh(
+        new THREE.SphereGeometry(def.r, 24, 18),
+        new THREE.MeshBasicMaterial({
+          color: def.color,
+          transparent: true,
+          opacity: 0.35,
+          wireframe: true,
+          blending: this.particleBlending,
+          depthWrite: false,
+        }),
+      );
+      planet.userData.noAura = true;
+      planetGroup.add(planet);
+      // Solid core.
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(def.r * 0.55, 16, 12),
+        new THREE.MeshBasicMaterial({
+          color: def.color,
+          transparent: true,
+          opacity: 0.5,
+          blending: this.particleBlending,
+          depthWrite: false,
+        }),
+      );
+      core.userData.noAura = true;
+      planetGroup.add(core);
+      if (def.rings) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(def.r * 1.5, 0.06, 8, 48),
+          new THREE.MeshBasicMaterial({
+            color: def.color,
+            transparent: true,
+            opacity: 0.6,
+            blending: this.particleBlending,
+            depthWrite: false,
+          }),
+        );
+        ring.rotation.x = Math.PI / 2.4;
+        ring.userData.noAura = true;
+        planetGroup.add(ring);
+      }
+      // Moons.
+      for (let m = 0; m < 2; m++) {
+        const moon = new THREE.Mesh(
+          new THREE.SphereGeometry(0.25, 10, 8),
+          new THREE.MeshBasicMaterial({
+            color: def.color,
+            transparent: true,
+            opacity: 0.7,
+            blending: this.particleBlending,
+            depthWrite: false,
+          }),
+        );
+        const a = (m / 2) * Math.PI * 2;
+        moon.position.set(Math.cos(a) * def.r * 1.9, Math.sin(a) * 0.8, Math.sin(a) * def.r * 1.9);
+        moon.userData.noAura = true;
+        planetGroup.add(moon);
+      }
+      this.scene.add(planetGroup);
+    }
+
+    // 2 — Crystal forests: clusters of glowing spires.
+    const treeCount = this.quality === "full" ? 180 : 90;
+    const trunkGeo = new THREE.CylinderGeometry(0.08, 0.14, 1.6, 6);
+    const trunkMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.6,
+      blending: this.particleBlending,
+      depthWrite: false,
+    });
+    const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, treeCount);
+    trunks.userData.noAura = true;
+    const topGeo = new THREE.OctahedronGeometry(0.42, 0);
+    const topMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.75,
+      blending: this.particleBlending,
+      depthWrite: false,
+      wireframe: true,
+    });
+    const tops = new THREE.InstancedMesh(topGeo, topMat, treeCount);
+    tops.userData.noAura = true;
+    for (let i = 0; i < treeCount; i++) {
+      const t = Math.random() * PATH_END_T;
+      const p = this.curve.getPointAt(t);
+      const tangent = this.curve.getTangentAt(t);
+      const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+      const lateral = (Math.random() > 0.5 ? 1 : -1) * (4 + Math.random() * 7);
+      const baseY = p.y - 1.2;
+      const h = 1 + Math.random() * 2.2;
+      dummy.position.copy(p).addScaledVector(side, lateral);
+      dummy.position.y = baseY + h / 2;
+      dummy.scale.set(1, h / 1.6, 1);
+      dummy.rotation.set(0, Math.random() * Math.PI, 0);
+      dummy.updateMatrix();
+      trunks.setMatrixAt(i, dummy.matrix);
+      col.copy(cyan).lerp(amber, THREE.MathUtils.smoothstep(t, 0.15, 0.85));
+      trunks.setColorAt(i, col);
+      // Glowing top.
+      dummy.position.y = baseY + h + 0.3;
+      dummy.scale.setScalar(0.7 + Math.random() * 0.8);
+      dummy.updateMatrix();
+      tops.setMatrixAt(i, dummy.matrix);
+      tops.setColorAt(i, col);
+    }
+    trunks.instanceMatrix.needsUpdate = true;
+    tops.instanceMatrix.needsUpdate = true;
+    if (trunks.instanceColor) trunks.instanceColor.needsUpdate = true;
+    if (tops.instanceColor) tops.instanceColor.needsUpdate = true;
+    this.scene.add(trunks);
+    this.scene.add(tops);
+
+    // 3 — Cityscape: a skyline you fly through (middle chapters).
+    const bldgCount = this.quality === "full" ? 120 : 60;
+    const bldgGeo = new THREE.BoxGeometry(1, 1, 1);
+    const bldgMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.45,
+      blending: this.particleBlending,
+      depthWrite: false,
+      wireframe: true,
+    });
+    const buildings = new THREE.InstancedMesh(bldgGeo, bldgMat, bldgCount);
+    buildings.userData.noAura = true;
+    for (let i = 0; i < bldgCount; i++) {
+      // Concentrate in the Experience/Projects region (t 0.45-0.7).
+      const t = 0.42 + Math.random() * 0.3;
+      const p = this.curve.getPointAt(t);
+      const tangent = this.curve.getTangentAt(t);
+      const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+      const lateral = (Math.random() > 0.5 ? 1 : -1) * (5 + Math.random() * 8);
+      const w = 0.8 + Math.random() * 1.6;
+      const h = 2 + Math.random() * 6;
+      const d = 0.8 + Math.random() * 1.6;
+      dummy.position.copy(p).addScaledVector(side, lateral);
+      dummy.position.y = p.y - 1 + h / 2;
+      dummy.scale.set(w, h, d);
+      dummy.rotation.set(0, Math.random() * Math.PI, 0);
+      dummy.updateMatrix();
+      buildings.setMatrixAt(i, dummy.matrix);
+      col.copy(cyan).lerp(amber, 0.4 + Math.random() * 0.4);
+      buildings.setColorAt(i, col);
+    }
+    buildings.instanceMatrix.needsUpdate = true;
+    if (buildings.instanceColor) buildings.instanceColor.needsUpdate = true;
+    this.scene.add(buildings);
+
+    // 4 — Nebula clouds: soft additive sprites for depth.
+    for (let i = 0; i < 14; i++) {
+      const t = (i / 14) * PATH_END_T;
+      const p = this.curve.getPointAt(t);
+      const tangent = this.curve.getTangentAt(t);
+      const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+      const neb = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: getSoftDotTexture(),
+          color: col.copy(cyan).lerp(amber, t / PATH_END_T).clone(),
+          transparent: true,
+          opacity: 0.14,
+          blending: this.particleBlending,
+          depthWrite: false,
+        }),
+      );
+      neb.position
+        .copy(p)
+        .addScaledVector(side, (Math.random() - 0.5) * 24)
+        .add(new THREE.Vector3(0, (Math.random() - 0.5) * 12, 0));
+      const s = 14 + Math.random() * 18;
+      neb.scale.set(s, s, 1);
+      neb.userData.noAura = true;
+      this.scene.add(neb);
+    }
+
+    // 5 — Floating islands: rock chunks with glowing caps.
+    const islandCount = this.quality === "full" ? 24 : 12;
+    for (let i = 0; i < islandCount; i++) {
+      const t = Math.random() * PATH_END_T;
+      const p = this.curve.getPointAt(t);
+      const tangent = this.curve.getTangentAt(t);
+      const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+      const island = new THREE.Group();
+      island.position
+        .copy(p)
+        .addScaledVector(side, (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 6));
+      island.position.y += 1 + Math.random() * 4;
+      const rock = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.8 + Math.random() * 1.2, 0),
+        new THREE.MeshBasicMaterial({
+          color: col.copy(cyan).lerp(amber, t / PATH_END_T).clone(),
+          transparent: true,
+          opacity: 0.4,
+          wireframe: true,
+          blending: this.particleBlending,
+          depthWrite: false,
+        }),
+      );
+      rock.scale.y = 0.6;
+      rock.userData.noAura = true;
+      island.add(rock);
+      // Glowing cap.
+      const cap = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.3, 0),
+        new THREE.MeshBasicMaterial({
+          color: amber,
+          transparent: true,
+          opacity: 0.8,
+          blending: this.particleBlending,
+          depthWrite: false,
+        }),
+      );
+      cap.position.y = 0.9;
+      cap.userData.noAura = true;
+      island.add(cap);
+      island.userData.floatPhase = Math.random() * Math.PI * 2;
+      this.floatingIslands.push(island);
+      this.scene.add(island);
+    }
+
+    // 6 — Rainbow road rails: glowing tubes along the spine edges.
+    const railPts = this.curve.getSpacedPoints(80);
+    for (const railSide of [-1, 1]) {
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i < railPts.length; i++) {
+        const t = i / (railPts.length - 1);
+        const p = railPts[i];
+        const tangent = this.curve.getTangentAt(Math.min(t * PATH_END_T, PATH_END_T));
+        const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
+        pts.push(
+          new THREE.Vector3(
+            p.x + side.x * railSide * 1.1,
+            p.y - 0.5,
+            p.z + side.z * railSide * 1.1,
+          ),
+        );
+      }
+      const railCurve = new THREE.CatmullRomCurve3(pts);
+      const rail = new THREE.Mesh(
+        new THREE.TubeGeometry(railCurve, 80, 0.07, 6, false),
+        new THREE.MeshBasicMaterial({
+          color: railSide > 0 ? amber : cyan,
+          transparent: true,
+          opacity: 0.8,
+          blending: this.particleBlending,
+          depthWrite: false,
+        }),
+      );
+      rail.userData.noAura = true;
+      this.scene.add(rail);
+    }
+  }
+
   private buildChapterGates() {
     const gateColor = new THREE.Color(this.palette.cyan);
     for (let i = 0; i < STATION_PATH_T.length - 1; i++) {
@@ -2239,6 +2522,12 @@ export class JourneyScene {
     if (this.fogCool && this.fogWarm && this.scene.fog instanceof THREE.FogExp2) {
       const warm = THREE.MathUtils.smoothstep(pathT, 0.15, 0.85);
       this.scene.fog.color.copy(this.fogCool).lerp(this.fogWarm, warm * 0.8);
+    }
+    // Floating islands bob gently.
+    for (const island of this.floatingIslands) {
+      const phase = (island.userData.floatPhase ?? 0) as number;
+      island.position.y += Math.sin(t * 0.6 + phase) * 0.003;
+      island.rotation.y = t * 0.05 + phase;
     }
   }
 
