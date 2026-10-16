@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
-import { MotionVersionLink } from "@/components/chrome/motion-version-link";
 import { useMotionPreference } from "@/components/providers/motion-provider";
 import type { PortfolioContent } from "@/data/content";
+import { BUILD_LOGS } from "@/data/story";
 
 type HeroContent = {
   readonly identity: PortfolioContent["identity"];
@@ -16,6 +17,16 @@ export function Hero({ content }: { content: HeroContent }) {
   const { forced } = useMotionPreference();
   const osReduce = useReducedMotion();
   const reduceMotion = Boolean(forced) || osReduce;
+  const [hasScrolled, setHasScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (window.scrollY > 48) setHasScrolled(true);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <section
@@ -51,6 +62,18 @@ export function Hero({ content }: { content: HeroContent }) {
             </div>
 
             {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
+
+            <p className="journey-build-log" aria-hidden="true">
+              {BUILD_LOGS.home.map((line) => (
+                <span key={line} className="journey-build-log-line">
+                  <span className="journey-build-log-prompt">$</span> {line}
+                </span>
+              ))}
+            </p>
+
+            {!hasScrolled ? (
+              <p className="journey-scroll-hint">Scroll to travel</p>
+            ) : null}
           </div>
 
           <dl data-hero-signals>
