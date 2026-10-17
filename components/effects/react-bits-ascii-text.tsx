@@ -19,6 +19,7 @@ export type ASCIITextProps = {
   textColor?: string;
   colors?: string[];
   textScale?: number;
+  letterSpacing?: number;
   blocks?: number;
   waves?: number;
   waveSpeed?: number;
@@ -195,20 +196,30 @@ const toRgb = (color: string): number[] => {
   return [parts[0] / 255, parts[1] / 255, parts[2] / 255];
 };
 
-const drawText = (text: string, fontFamily: string, fontWeight: number | string, color: string) => {
+const drawText = (text: string, fontFamily: string, fontWeight: number | string, color: string, letterSpacing = 0) => {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
   const font = `${fontWeight} ${TEXT_PX}px ${fontFamily}`;
   ctx.font = font;
-  const width = Math.max(TEXT_PX * 0.6, ctx.measureText(text || ' ').width);
+  const chars = Array.from(text || ' ');
+  const widths = chars.map((ch) => ctx.measureText(ch).width);
+  const spacingPx = letterSpacing * TEXT_PX;
+  const width = Math.max(
+    TEXT_PX * 0.6,
+    widths.reduce((a, b) => a + b, 0) + spacingPx * Math.max(0, chars.length - 1)
+  );
   canvas.width = Math.ceil(width + TEXT_PX * 0.3);
   canvas.height = Math.ceil(TEXT_PX * 1.3);
   ctx.font = font;
   ctx.fillStyle = color;
-  ctx.textAlign = 'center';
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  let x = (canvas.width - width) / 2;
+  chars.forEach((ch, i) => {
+    ctx.fillText(ch, x, canvas.height / 2);
+    x += widths[i] + spacingPx;
+  });
   return canvas;
 };
 
@@ -237,6 +248,7 @@ export default function ASCIIText({
   textColor = '#fdf9f3',
   colors = ['#ff6188', '#fc9867', '#ffd866'],
   textScale = 1,
+  letterSpacing = 0,
   blocks = 0.9,
   waves = 1,
   waveSpeed = 1,
@@ -261,6 +273,7 @@ export default function ASCIIText({
   const settings = {
     cellSize: Math.max(3, asciiFontSize),
     textScale: clamp(textScale, 0.1, 3),
+    letterSpacing: Math.max(0, letterSpacing),
     blocks: clamp(blocks, 0, 1),
     waves: Math.max(0, waves),
     waveSpeed: Math.max(0, waveSpeed),
@@ -394,7 +407,7 @@ export default function ASCIIText({
       characters: string,
       playIntro: boolean
     ) => {
-      const textCanvas = drawText(value, family, weight, color);
+      const textCanvas = drawText(value, family, weight, color, settingsRef.current.letterSpacing);
       const glyphCanvas = drawGlyphs(characters, family);
       if (!textCanvas || !glyphCanvas) return;
       upload(textTexture, textCanvas, false);

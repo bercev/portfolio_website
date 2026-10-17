@@ -42,9 +42,10 @@ export function Hero({ content }: { content: HeroContent }) {
             fontFamily="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
             fontWeight={700}
             textColor="#ffffff"
-            colors={["#ffffff", "#7dd3fc", "#38bdf8"]}
-            textScale={1.15}
-            blocks={0.3}
+            colors={["#ffffff", "#e8f7ff", "#b8e6ff"]}
+            textScale={1.4}
+            letterSpacing={0.12}
+            blocks={0}
             waves={1}
             waveSpeed={0.8}
             chroma={0.5}
