@@ -44,7 +44,7 @@ export function Hero({ content }: { content: HeroContent }) {
             textColor="#ffffff"
             colors={["#ffffff", "#e8f7ff", "#b8e6ff"]}
             textScale={1.4}
-            letterSpacing={0.12}
+            letterSpacing={0.07}
             blocks={0}
             waves={1}
             waveSpeed={0.8}

@@ -165,6 +165,8 @@ void main() {
   vec3 under = base.rgb * blockAlpha;
   vec3 color = mix(under, abs(tint - under), glyphAlpha);
   float alpha = max(blockAlpha, glyphAlpha) * uReady;
+  // Brightness boost for pop — push glyphs toward pure white.
+  color *= 1.35;
   color = clamp(hueRotate(color, uHue), 0.0, 1.0) * uReady;
   if (uLight > 0.5) color = vec3(alpha) - color;
   fragColor = vec4(color, alpha);
