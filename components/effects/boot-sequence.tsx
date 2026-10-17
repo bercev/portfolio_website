@@ -35,7 +35,9 @@ function shouldBoot(): boolean {
 }
 
 export function BootSequence() {
-  const [visible, setVisible] = useState(shouldBoot);
+  // Initialize to false (matches SSR) to avoid hydration mismatch;
+  // the real value is set in useEffect after mount.
+  const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
   const [shownCount, setShownCount] = useState(0);
   const timers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
@@ -56,6 +58,11 @@ export function BootSequence() {
       }
     }, 450);
     timers.current.push(t);
+  }, []);
+
+  // Set the real visibility after mount (avoids SSR hydration mismatch).
+  useEffect(() => {
+    if (shouldBoot()) setVisible(true);
   }, []);
 
   useEffect(() => {

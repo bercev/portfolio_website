@@ -96,17 +96,12 @@ export function buildAsciiPoints(
       attribute float aGlyph;
       attribute float aOpacity;
       varying vec3 vColor;
-      varying vec2 vUv;
+      varying float vGlyph;
       varying float vOpacity;
       void main() {
         vColor = aColor;
+        vGlyph = aGlyph;
         vOpacity = aOpacity;
-        // Map glyph index to atlas cell UV.
-        float gx = mod(aGlyph, 2.0);
-        float gy = floor(aGlyph / 2.0);
-        // gl_PointCoord origin is top-left; atlas cells laid out the same.
-        vec2 cellUv = vec2((gx + gl_PointCoord.x) / 2.0, (gy + gl_PointCoord.y) / 2.0);
-        vUv = cellUv;
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_PointSize = aSize * (280.0 / -mv.z);
         gl_Position = projectionMatrix * mv;
@@ -115,10 +110,15 @@ export function buildAsciiPoints(
     fragmentShader: /* glsl */ `
       uniform sampler2D uAtlas;
       varying vec3 vColor;
-      varying vec2 vUv;
+      varying float vGlyph;
       varying float vOpacity;
       void main() {
-        vec4 tex = texture2D(uAtlas, vUv);
+        // Map glyph index to atlas cell UV (gl_PointCoord only exists in fragment shaders).
+        float gx = mod(vGlyph, 2.0);
+        float gy = floor(vGlyph / 2.0);
+        // gl_PointCoord origin is top-left; atlas cells laid out the same.
+        vec2 cellUv = vec2((gx + gl_PointCoord.x) / 2.0, (gy + gl_PointCoord.y) / 2.0);
+        vec4 tex = texture2D(uAtlas, cellUv);
         if (tex.a < 0.05) discard;
         gl_FragColor = vec4(vColor, tex.a * vOpacity);
       }
