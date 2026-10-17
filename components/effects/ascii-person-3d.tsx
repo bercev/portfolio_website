@@ -676,8 +676,8 @@ export function AsciiPerson3D(): React.JSX.Element | null {
 
       // Crossfade between stage modes (smooth, never a jarring cut).
       modeMix = damp(modeMix, modeRef.current === "bust" ? 1 : 0, 3.5, sdt);
-      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.55 * modeMix;
-      (workMat.uniforms.uOpacity as THREE.IUniform).value = 0.95 * (1 - modeMix);
+      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.32 * modeMix;
+      (workMat.uniforms.uOpacity as THREE.IUniform).value = 0.85 * (1 - modeMix);
 
       if (!reducedMotion) {
         // Breathing: bust rises slowly, worker bobs with the typing rhythm.
