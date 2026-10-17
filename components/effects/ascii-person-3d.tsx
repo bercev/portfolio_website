@@ -40,7 +40,7 @@ const SECTION_POSE: Record<string, Pose3D> = {
 
 const SECTION_IDS = ["home", "about", "publications", "experience", "projects", "skills", "contact"];
 
-const BODY_COLOR = new THREE.Color("#2fd8ff"); // phosphor cyan
+const BODY_COLOR = new THREE.Color("#7dd3fc"); // phosphor cyan
 const DONUT_COLOR = new THREE.Color("#a87f4a"); // dim amber bronze
 
 // ---------------------------------------------------------------------------
