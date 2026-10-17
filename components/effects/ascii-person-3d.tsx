@@ -605,7 +605,7 @@ export function AsciiPerson3D(): React.JSX.Element | null {
     // Bust rig: bigger scale, smaller glyphs, sparse counts — a large airy
     // constellation head, not a solid mass. Glyph quads are world-space so
     // they stay small while positions spread with the group scale.
-    const bustMat = createGlyphMaterial(atlas, 0.048, 0);
+    const bustMat = createGlyphMaterial(atlas, 0.065, 0);
     const workMat = createGlyphMaterial(atlas, 0.052, 0);
     const donutMat = createGlyphMaterial(atlas, 0.07, 0.55);
 
@@ -692,7 +692,7 @@ export function AsciiPerson3D(): React.JSX.Element | null {
 
       // Crossfade between stage modes (smooth, never a jarring cut).
       modeMix = damp(modeMix, modeRef.current === "bust" ? 1 : 0, 3.5, sdt);
-      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.28 * modeMix;
+      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.45 * modeMix;
       (workMat.uniforms.uOpacity as THREE.IUniform).value = 0.85 * (1 - modeMix);
 
       if (!reducedMotion) {

@@ -953,12 +953,12 @@ export class JourneyScene {
       new THREE.SpriteMaterial({
         map: sparkTex,
         transparent: true,
-        opacity: 0.95,
+        opacity: 0.0,
         blending: particleBlending,
         depthWrite: false,
       }),
     );
-    spark.scale.setScalar(1.2);
+    spark.scale.setScalar(0.75);
     spark.userData.noAura = true;
     sparkGroup.add(spark);
     this.heroSpark = spark;
@@ -968,12 +968,12 @@ export class JourneyScene {
         new THREE.SpriteMaterial({
           map: ringTex,
           transparent: true,
-          opacity: 0.5 - i * 0.12,
+          opacity: 0.0,
           blending: particleBlending,
           depthWrite: false,
         }),
       );
-      ring.scale.setScalar(0.7 + i * 0.44);
+      ring.scale.setScalar(0.5 + i * 0.3);
       ring.userData.noAura = true;
       ring.userData.compileRing = i;
       sparkGroup.add(ring);
