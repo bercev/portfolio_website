@@ -2312,7 +2312,10 @@ html:not(.dark) .skill-pill {
 .ascii-berat {
   margin: 0;
   padding: clamp(1rem, 3vh, 2rem) clamp(1rem, 4vw, 3rem);
-  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Serif monospace for a less "terminal blocky" feel — Courier's glyphs have
+     more character than JetBrains Mono's geometric shapes. Must stay monospace
+     or the ASCII art alignment collapses. */
+  font-family: "Courier New", Courier, ui-monospace, monospace;
   font-size: clamp(0.36rem, 1.15vw, 0.8rem);
   line-height: 1.04;
   letter-spacing: 0;
