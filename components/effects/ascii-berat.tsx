@@ -3,14 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 
 /**
- * BERAT as organic RNG-style ASCII art.
+ * BERAT as classic ASCII art.
  *
- * The letterforms below are density masks (█ = filled, space = empty).
- * At render time each filled cell is mapped through a seeded noise function:
- * interior cells get dense glyphs (█▓), edges get lighter ones (▒░), and a
- * sprinkle of BBS-style texture glyphs (#$%&?/ etc.) plus Braille gives the
- * "emerged from noise" feel. A slow tick re-rolls the noise so the wordmark
- * shimmers without ever losing readability — the mask never changes.
+ * The letterforms below are density masks. At render time each filled cell
+ * is mapped through a seeded noise function to a classic ASCII density ramp
+ * (printable ASCII only — $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.).
+ * Interior cells get the heaviest "ink" (@#$%&), edges get lighter glyphs,
+ * so the wordmark reads as B-E-R-A-T while looking unmistakably like
+ * hand-rolled ASCII art — never block characters. A slow tick re-rolls the
+ * glyphs so the texture shimmers without the letterforms ever moving.
  */
 
 /* Density masks — 17 rows each. Proven readable letterforms. */
@@ -137,19 +138,24 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** Density ramp: index 0 = lightest edge, 3 = solid core. */
-const RAMP: readonly string[] = ["░", "▒", "▓", "█"];
+/**
+ * Classic ASCII density ramp, grouped by visual weight (darkest ink first).
+ * All printable ASCII (0x20–0x7E) — nothing that can render as a broken glyph.
+ *
+ * Bucket 3 = solid core:   the heaviest ink  ($@B%8&WM#)
+ * Bucket 2 = near-core:    heavy-medium      (*oahkbdpqwmZO0Q)
+ * Bucket 1 = mid/edge:     medium-light      (LCJUYXzcvunxrjft)
+ * Bucket 0 = faint edge:   lightest          (/\|()1{}[]?-_+~<>i!lI;:,"^`'.)
+ */
+const DENSITY: ReadonlyArray<readonly string[]> = [
+  ["/", "\\", "|", "(", ")", "1", "{", "}", "[", "]", "?", "-", "_", "+", "~", "<", ">", "i", "!", "l", "I", ";", ":", ",", '"', "^", "`", "'", "."],
+  ["L", "C", "J", "U", "Y", "X", "z", "c", "v", "u", "n", "x", "r", "j", "f", "t"],
+  ["*", "o", "a", "h", "k", "b", "d", "p", "q", "w", "m", "Z", "O", "0", "Q"],
+  ["$", "@", "B", "%", "8", "&", "W", "M", "#"],
+];
 
-/** Texture sprinkles keyed by ramp level — same visual density, RNG flavor. */
-const TEXTURE: Readonly<Record<number, readonly string[]>> = {
-  3: ["█", "█", "▓", "#", "%", "@", "⣿"],
-  2: ["▓", "▓", "▒", "$", "&", "+", "⡿"],
-  1: ["▒", "▒", "░", ":", "=", "*", "⠿"],
-  0: ["░", "░", "░", ".", "·", " "],
-};
-
-/** Sparse static around the letters — the "emerged from noise" halo. */
-const HALO: readonly string[] = ["·", "˙", " "];
+/** Sparse static around the letters — pure ASCII so it never looks broken. */
+const HALO: readonly string[] = [".", "'", "`", ",", " "];
 
 function buildArt(tick: number): string {
   const rng = mulberry32(1337 + tick * 7919);
@@ -167,7 +173,7 @@ function buildArt(tick: number): string {
       let line = "";
       for (let c = 0; c < w; c++) {
         if (mask[r][c] !== " ") {
-          // Filled cell: 8-neighbor count -> interior-ness -> density.
+          // Filled cell: 8-neighbor count -> interior-ness -> density bucket.
           let n = 0;
           for (let dr = -1; dr <= 1; dr++) {
             for (let dc = -1; dc <= 1; dc++) {
@@ -177,16 +183,14 @@ function buildArt(tick: number): string {
               if (rr >= 0 && rr < height && cc >= 0 && cc < w && mask[rr][cc] !== " ") n++;
             }
           }
-          // Cores get texture too — organic throughout, not just edges.
-          // Higher noise = more RNG feel, but letterforms stay readable via the mask.
-          const v = (n / 8) * 0.55 + rng() * 0.55;
+          // Interior cores get the heaviest ink ($@B%8&WM#), edges get
+          // lighter glyphs — classic ASCII-art shading. The tick re-roll
+          // cycles characters within the same density bucket, so the
+          // texture shimmers while letterforms never move.
+          const v = (n / 8) * 0.6 + rng() * 0.5;
           const idx = Math.min(3, Math.floor(v * 4));
-          let g = RAMP[idx] ?? "█";
-          if (rng() < 0.35) {
-            const bucket = TEXTURE[idx] ?? RAMP;
-            g = bucket[Math.floor(rng() * bucket.length)] ?? g;
-          }
-          line += g;
+          const bucket = DENSITY[idx] ?? DENSITY[3];
+          line += bucket[Math.floor(rng() * bucket.length)] ?? "@";
         } else {
           // Empty cell: faint halo noise only adjacent to the letters.
           let near = false;

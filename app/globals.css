@@ -2333,13 +2333,13 @@ html:not(.dark) .skill-pill {
   margin: 0;
   padding: clamp(1rem, 3vh, 2rem) clamp(1rem, 4vw, 3rem);
   font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: clamp(0.32rem, 1.05vw, 0.72rem);
+  font-size: clamp(0.36rem, 1.15vw, 0.8rem);
   line-height: 1.04;
   letter-spacing: 0;
-  color: #7dd3fc;
+  color: #d8f1ff;
   /* No backdrop — the wordmark floats directly over the procedural background.
-     Readability comes from a dark outline halo around each glyph plus cyan
-     bloom, so there is no box or gradient behind the name. */
+     Readability comes from a dark outline halo around each glyph plus a
+     strong ice-cyan bloom, so there is no box or gradient behind the name. */
   background: transparent;
   text-shadow:
     -1px -1px 0 rgba(3, 5, 9, 0.95),
@@ -2350,8 +2350,9 @@ html:not(.dark) .skill-pill {
     0 2px 4px rgba(3, 5, 9, 0.9),
     -2px 0 4px rgba(3, 5, 9, 0.9),
     2px 0 4px rgba(3, 5, 9, 0.9),
-    0 0 28px rgba(125, 211, 252, 0.65),
-    0 0 8px rgba(125, 211, 252, 0.8);
+    0 0 34px rgba(125, 211, 252, 0.9),
+    0 0 12px rgba(216, 241, 255, 0.95),
+    0 0 4px rgba(255, 255, 255, 0.9);
   white-space: pre;
   user-select: none;
   animation: ascii-berat-flicker 12s ease-in-out infinite;
