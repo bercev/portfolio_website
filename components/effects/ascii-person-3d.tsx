@@ -6,42 +6,40 @@ import * as THREE from "three";
 import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 
 /**
- * AsciiPerson3D — a true 3D ASCII humanoid built from instanced glyph
+ * AsciiPerson3D — staged 3D ASCII humanoid built from instanced glyph
  * billboards arranged in 3D space (Effulgence-RPG style: text symbols as
  * geometry, not post-processing).
  *
- * Why this reads as a person (and the old point-cloud didn't): glyphs are
- * sampled on the SURFACE of articulated capsule/sphere limbs — never a volume
- * fill — and each glyph is chosen per-frame from a density ramp by its
- * world-space normal vs. a key light, so the form shades like classic ASCII
- * art as it turns. Limbs are separate parts with real gaps between them.
+ * Two stage modes, cross-faded by scroll chapter:
+ * - "bust": monumental neck-up bust (head + neck + shoulders), scaled large,
+ *   floating center-right BEHIND the content at low opacity, slow turntable,
+ *   watching the cursor. Shown for home / about / publications / skills /
+ *   contact (contact adds a friendly nod).
+ * - "work": full seated figure at an ASCII desk + monitor + keyboard, hands in
+ *   a seamless typing loop. Shown for experience / projects.
  *
- * Behaviors:
- * - Slow turntable rotation of the whole body.
- * - The head WATCHES the cursor: yaw/pitch track the pointer in world space
- *   (compensated for body spin, clamped like a real neck).
- * - Arms pose per scroll chapter (typing / welcome / reading / building /
- *   celebrate / waving), cross-lerped; the waving arm oscillates.
- * - A parametric ASCII donut tumbles slowly behind the person.
- * - All motion is gated off under prefers-reduced-motion.
+ * The figure is never static: breathing, head micro-movements, periodic
+ * blinking, the turntable (bust) and the typing loop (work) run continuously,
+ * independent of scroll. Reduced motion snaps everything to a still pose.
  */
 
-type Pose3D = "typing" | "welcome" | "reading" | "building" | "celebrate" | "waving";
+type StageMode = "bust" | "work";
 
-const SECTION_POSE: Record<string, Pose3D> = {
-  home: "typing",
-  about: "welcome",
-  publications: "reading",
-  experience: "building",
-  projects: "building",
-  skills: "celebrate",
-  contact: "waving",
+const SECTION_MODE: Record<string, StageMode> = {
+  home: "bust",
+  about: "bust",
+  publications: "bust",
+  experience: "work",
+  projects: "work",
+  skills: "bust",
+  contact: "bust",
 };
 
 const SECTION_IDS = ["home", "about", "publications", "experience", "projects", "skills", "contact"];
 
-const BODY_COLOR = new THREE.Color("#7dd3fc"); // phosphor cyan
-const DONUT_COLOR = new THREE.Color("#a87f4a"); // dim amber bronze
+const BODY_COLOR = new THREE.Color("#7dd3fc"); // FROST ice cyan
+const SCREEN_COLOR = new THREE.Color("#eef7ff"); // bright monitor screen
+const DONUT_COLOR = new THREE.Color("#7dd3fc").multiplyScalar(0.5); // dim ice
 
 // ---------------------------------------------------------------------------
 // Seeded RNG (stable glyph layouts across mounts).
@@ -342,24 +340,141 @@ function makeGlyphCloud(
 }
 
 // ---------------------------------------------------------------------------
-// Poses: shoulder Euler targets [x, y, z]. Arms hang along -Y; x=-PI/2 points
-// an arm straight forward (+Z), z=±PI/2 points it out to the side.
+// Stage rigs.
 // ---------------------------------------------------------------------------
 
-interface ArmPose {
-  x: number;
-  y: number;
-  z: number;
+interface BustRig {
+  group: THREE.Group;
+  head: THREE.Group;
 }
 
-const ARM_POSES: Record<Pose3D, { armL: ArmPose; armR: ArmPose; wave: boolean }> = {
-  typing: { armL: { x: -1.15, y: 0, z: -0.28 }, armR: { x: -1.15, y: 0, z: 0.28 }, wave: false },
-  welcome: { armL: { x: -0.15, y: 0, z: -1.32 }, armR: { x: -0.15, y: 0, z: 1.32 }, wave: false },
-  reading: { armL: { x: -0.82, y: 0, z: -0.38 }, armR: { x: -0.82, y: 0, z: 0.38 }, wave: false },
-  building: { armL: { x: -0.25, y: 0, z: -0.22 }, armR: { x: -2.72, y: 0, z: 0.32 }, wave: false },
-  celebrate: { armL: { x: -0.25, y: 0, z: -2.35 }, armR: { x: -0.25, y: 0, z: 2.35 }, wave: false },
-  waving: { armL: { x: -0.25, y: 0, z: -0.22 }, armR: { x: -2.85, y: 0, z: 0.28 }, wave: true },
-};
+/** Monumental neck-up bust: head + neck + shoulders. Scaled up by the caller. */
+function buildBust(rng: () => number, material: THREE.Material): BustRig {
+  const group = new THREE.Group();
+  const V3 = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+
+  // Shoulders / upper chest slab.
+  group.add(
+    makeGlyphCloud(sampleBox(230, V3(0, -0.22, 0), V3(1.24, 0.38, 0.54), rng), material, BODY_COLOR, rng),
+  );
+  // Neck.
+  group.add(
+    makeGlyphCloud(sampleCapsule(90, 0.13, V3(0, -0.08, 0), V3(0, 0.14, 0), rng), material, BODY_COLOR, rng),
+  );
+  // Head in its own pivoted group so it can WATCH the cursor + blink.
+  const head = new THREE.Group();
+  head.position.set(0, 0.1, 0);
+  head.add(makeGlyphCloud(sampleSphere(270, 0.3, V3(0, 0.3, 0), rng), material, BODY_COLOR, rng));
+  group.add(head);
+  return { group, head };
+}
+
+interface WorkerRig {
+  group: THREE.Group;
+  head: THREE.Group;
+  armL: THREE.Group;
+  armR: THREE.Group;
+}
+
+/**
+ * Full seated figure at an ASCII workstation. Faces +Z (toward the camera).
+ * Arms are shoulder-pivot groups built already bent toward the keyboard; the
+ * typing loop oscillates them out of phase.
+ */
+function buildWorker(rng: () => number, material: THREE.Material): WorkerRig {
+  const group = new THREE.Group();
+  const V3 = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+
+  // Torso + pelvis.
+  group.add(
+    makeGlyphCloud(sampleCapsule(330, 0.3, V3(0, 0.95, 0), V3(0, 1.62, 0), rng), material, BODY_COLOR, rng),
+  );
+  group.add(makeGlyphCloud(sampleSphere(110, 0.27, V3(0, 0.92, 0), rng), material, BODY_COLOR, rng));
+
+  // Seated legs: thighs forward, shins down, feet on the floor.
+  for (const sx of [-1, 1]) {
+    group.add(
+      makeGlyphCloud(
+        sampleCapsule(130, 0.13, V3(sx * 0.15, 0.95, 0.06), V3(sx * 0.15, 0.95, 0.5), rng),
+        material,
+        BODY_COLOR,
+        rng,
+      ),
+    );
+    group.add(
+      makeGlyphCloud(
+        sampleCapsule(110, 0.11, V3(sx * 0.15, 0.93, 0.5), V3(sx * 0.15, 0.14, 0.5), rng),
+        material,
+        BODY_COLOR,
+        rng,
+      ),
+    );
+    group.add(
+      makeGlyphCloud(
+        sampleBox(42, V3(sx * 0.15, 0.07, 0.64), V3(0.18, 0.14, 0.42), rng),
+        material,
+        BODY_COLOR,
+        rng,
+      ),
+    );
+  }
+
+  // Arms: shoulder groups, pre-bent toward the keyboard.
+  const mkArm = (sx: -1 | 1): THREE.Group => {
+    const g = new THREE.Group();
+    g.position.set(sx * 0.4, 1.52, 0.02);
+    g.add(
+      makeGlyphCloud(
+        sampleCapsule(110, 0.105, V3(0, 0, 0), V3(sx * 0.02, -0.38, 0.24), rng),
+        material,
+        BODY_COLOR,
+        rng,
+      ),
+    );
+    g.add(
+      makeGlyphCloud(
+        sampleCapsule(90, 0.09, V3(sx * 0.02, -0.38, 0.24), V3(sx * -0.06, -0.52, 0.5), rng),
+        material,
+        BODY_COLOR,
+        rng,
+      ),
+    );
+    g.add(
+      makeGlyphCloud(sampleSphere(52, 0.105, V3(sx * -0.06, -0.53, 0.54), rng), material, BODY_COLOR, rng),
+    );
+    group.add(g);
+    return g;
+  };
+  const armL = mkArm(-1);
+  const armR = mkArm(1);
+
+  // Head on a neck pivot.
+  const head = new THREE.Group();
+  head.position.set(0, 1.72, 0.02);
+  head.add(makeGlyphCloud(sampleSphere(220, 0.26, V3(0, 0.26, 0.02), rng), material, BODY_COLOR, rng));
+  group.add(head);
+
+  // Desk: top slab + legs.
+  group.add(makeGlyphCloud(sampleBox(170, V3(0, 0.9, 0.8), V3(1.75, 0.09, 0.8), rng), material, BODY_COLOR, rng));
+  for (const sx of [-1, 1]) {
+    group.add(
+      makeGlyphCloud(sampleBox(42, V3(sx * 0.78, 0.43, 0.98), V3(0.09, 0.86, 0.09), rng), material, BODY_COLOR, rng),
+    );
+  }
+  // Monitor: stand + shell + bright screen face.
+  group.add(makeGlyphCloud(sampleBox(56, V3(0, 1.0, 0.94), V3(0.1, 0.12, 0.1), rng), material, BODY_COLOR, rng));
+  group.add(makeGlyphCloud(sampleBox(130, V3(0, 1.42, 0.97), V3(0.9, 0.58, 0.09), rng), material, BODY_COLOR, rng));
+  group.add(
+    makeGlyphCloud(sampleBox(70, V3(0, 1.42, 0.92), V3(0.8, 0.48, 0.03), rng), material, SCREEN_COLOR, rng),
+  );
+  // Keyboard.
+  group.add(makeGlyphCloud(sampleBox(62, V3(0, 0.975, 0.56), V3(0.72, 0.05, 0.26), rng), material, BODY_COLOR, rng));
+  // Chair: seat + back.
+  group.add(makeGlyphCloud(sampleBox(80, V3(0, 0.86, -0.12), V3(0.62, 0.1, 0.55), rng), material, BODY_COLOR, rng));
+  group.add(makeGlyphCloud(sampleBox(80, V3(0, 1.22, -0.4), V3(0.56, 0.62, 0.1), rng), material, BODY_COLOR, rng));
+
+  return { group, head, armL, armR };
+}
 
 // ---------------------------------------------------------------------------
 // Component.
@@ -369,7 +484,8 @@ export function AsciiPerson3D(): React.JSX.Element | null {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [asciiActive, setAsciiActive] = useState(false);
   const [wide, setWide] = useState(false);
-  const poseRef = useRef<Pose3D>("typing");
+  const modeRef = useRef<StageMode>("bust");
+  const nodRef = useRef(false);
   const pointerRef = useRef({ x: 0, y: 0, has: false });
 
   // Gate on ASCII mode + desktop widths (same contract as the 2D version).
@@ -390,7 +506,7 @@ export function AsciiPerson3D(): React.JSX.Element | null {
     };
   }, []);
 
-  // Track the most-visible section -> pose.
+  // Track the most-visible section -> stage mode (+ nod on contact).
   useEffect(() => {
     const ratios = new Map<string, number>();
     const apply = () => {
@@ -402,7 +518,10 @@ export function AsciiPerson3D(): React.JSX.Element | null {
           bestId = id;
         }
       }
-      if (bestId) poseRef.current = SECTION_POSE[bestId] ?? "typing";
+      if (bestId) {
+        modeRef.current = SECTION_MODE[bestId] ?? "bust";
+        nodRef.current = bestId === "contact";
+      }
     };
     const io = new IntersectionObserver(
       (entries) => {
@@ -442,6 +561,7 @@ export function AsciiPerson3D(): React.JSX.Element | null {
 
     const reducedMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
     const rng = mulberry32(0xA5C11);
+    const blinkRng = mulberry32(0xb11c);
 
     let renderer: THREE.WebGLRenderer | null = null;
     try {
@@ -456,7 +576,7 @@ export function AsciiPerson3D(): React.JSX.Element | null {
     renderer.domElement.style.display = "block";
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, 460 / 600, 0.1, 60);
+    const camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.1, 60);
     camera.position.set(0, 1.72, 7.4);
     camera.lookAt(0, 1.62, 0);
 
@@ -471,83 +591,38 @@ export function AsciiPerson3D(): React.JSX.Element | null {
       });
     }
 
-    const personMat = createGlyphMaterial(atlas, 0.085, 0.95);
-    const donutMat = createGlyphMaterial(atlas, 0.105, 0.7);
+    // Independent materials per rig so the bust/work crossfade can damp
+    // opacities separately.
+    const bustMat = createGlyphMaterial(atlas, 0.11, 0);
+    const workMat = createGlyphMaterial(atlas, 0.085, 0);
+    const donutMat = createGlyphMaterial(atlas, 0.105, 0.55);
 
-    // ---- Person hierarchy ----
-    const person = new THREE.Group();
-    scene.add(person);
+    // ---- Bust rig: monumental, center-right, behind content ----
+    const bust = buildBust(rng, bustMat);
+    bust.group.scale.setScalar(2.4);
+    const BUST_BASE = new THREE.Vector3(1.55, 1.32, -1.8);
+    bust.group.position.copy(BUST_BASE);
+    scene.add(bust.group);
 
-    const V3 = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
-
-    // Torso + pelvis + head base.
-    person.add(makeGlyphCloud(sampleCapsule(480, 0.34, V3(0, 1.45, 0), V3(0, 2.55, 0), rng), personMat, BODY_COLOR, rng));
-    person.add(makeGlyphCloud(sampleSphere(120, 0.3, V3(0, 1.38, 0), rng), personMat, BODY_COLOR, rng));
-
-    // Legs (static).
-    for (const sx of [-1, 1]) {
-      person.add(
-        makeGlyphCloud(
-          sampleCapsule(200, 0.145, V3(sx * 0.17, 1.3, 0), V3(sx * 0.17, 0.14, 0), rng),
-          personMat,
-          BODY_COLOR,
-          rng,
-        ),
-      );
-      person.add(
-        makeGlyphCloud(
-          sampleBox(50, V3(sx * 0.17, 0.07, 0.1), V3(0.2, 0.14, 0.44), rng),
-          personMat,
-          BODY_COLOR,
-          rng,
-        ),
-      );
-    }
-
-    // Arms: shoulder groups so poses rotate the whole limb.
-    const armGroups: { group: THREE.Group; side: -1 | 1 }[] = [];
-    for (const sx of [-1, 1] as const) {
-      const shoulder = new THREE.Group();
-      shoulder.position.set(sx * 0.5, 2.4, 0);
-      const upper = makeGlyphCloud(
-        sampleCapsule(150, 0.115, V3(0, 0, 0), V3(0, -0.55, 0), rng),
-        personMat,
-        BODY_COLOR,
-        rng,
-      );
-      const fore = makeGlyphCloud(
-        sampleCapsule(120, 0.1, V3(0, -0.55, 0), V3(0, -0.92, 0), rng),
-        personMat,
-        BODY_COLOR,
-        rng,
-      );
-      const hand = makeGlyphCloud(sampleSphere(60, 0.13, V3(0, -1.0, 0), rng), personMat, BODY_COLOR, rng);
-      shoulder.add(upper, fore, hand);
-      person.add(shoulder);
-      armGroups.push({ group: shoulder, side: sx });
-    }
-
-    // Head: its own group pivoted at the neck so it can WATCH the cursor.
-    const headGroup = new THREE.Group();
-    headGroup.position.set(0, 2.58, 0);
-    const headMesh = makeGlyphCloud(sampleSphere(240, 0.3, V3(0, 0.34, 0), rng), personMat, BODY_COLOR, rng);
-    // Simple "face" hint: two slightly brighter eye dots are overkill in glyph
-    // space; the shaded sphere reads as a head on its own.
-    headGroup.add(headMesh);
-    person.add(headGroup);
+    // ---- Worker rig: seated at the desk, right side ----
+    const worker = buildWorker(rng, workMat);
+    worker.group.scale.setScalar(0.95);
+    const WORKER_BASE = new THREE.Vector3(1.5, 0, -0.9);
+    worker.group.position.copy(WORKER_BASE);
+    scene.add(worker.group);
 
     // ---- Background donut: parametric torus, tumbling slowly ----
     const donut = new THREE.Group();
     const donutMesh = makeGlyphCloud(sampleTorus(44, 26, 1.05, 0.4), donutMat, DONUT_COLOR, rng);
     donut.add(donutMesh);
-    donut.position.set(-1.7, 2.35, -2.0);
+    donut.position.set(-1.9, 2.5, -2.4);
     donut.scale.setScalar(0.85);
     scene.add(donut);
 
     // ---- Resize ----
     const resize = () => {
-      const w = mount.clientWidth || 460;
-      const h = mount.clientHeight || 600;
+      const w = mount.clientWidth || window.innerWidth;
+      const h = mount.clientHeight || window.innerHeight;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       renderer!.setPixelRatio(dpr);
       renderer!.setSize(w, h, false);
@@ -560,10 +635,38 @@ export function AsciiPerson3D(): React.JSX.Element | null {
     // ---- Animation ----
     let raf = 0;
     const clock = new THREE.Clock();
-    let bodyYaw = 0;
     const wrapPi = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
     const damp = (cur: number, target: number, lambda: number, dt: number) =>
       cur + (target - cur) * (1 - Math.exp(-lambda * dt));
+
+    let modeMix = 1; // 1 = bust fully visible, 0 = worker fully visible
+    let bustYaw = 0;
+    let workerYaw = 0;
+    let nextBlink = 2.5;
+    let blinkUntil = -1;
+
+    const applyHeadWatch = (
+      head: THREE.Group,
+      groupYaw: number,
+      t: number,
+      sdt: number,
+      nod: boolean,
+    ) => {
+      const px = pointerRef.current;
+      let targetYaw = 0;
+      let targetPitch = 0;
+      if (px.has && !reducedMotion) {
+        targetYaw = THREE.MathUtils.clamp(px.x * 0.8, -0.95, 0.95);
+        targetPitch = THREE.MathUtils.clamp(-px.y * 0.5, -0.5, 0.5);
+        // Micro-movements: the head is never perfectly still.
+        targetYaw += Math.sin(t * 0.9) * 0.03 + Math.sin(t * 2.17) * 0.015;
+        targetPitch += Math.sin(t * 1.3 + 0.7) * 0.02;
+      }
+      if (nod && !reducedMotion) targetPitch += Math.sin(t * 2.6) * 0.14;
+      const localYaw = THREE.MathUtils.clamp(wrapPi(targetYaw - wrapPi(groupYaw)), -1.15, 1.15);
+      head.rotation.y = damp(head.rotation.y, localYaw, 10, sdt);
+      head.rotation.x = damp(head.rotation.x, THREE.MathUtils.clamp(targetPitch, -0.55, 0.55), 10, sdt);
+    };
 
     const animate = () => {
       const dt = Math.min(clock.getDelta(), 0.05);
@@ -571,33 +674,48 @@ export function AsciiPerson3D(): React.JSX.Element | null {
       // Under reduced motion every joint snaps to its target (no animation).
       const sdt = reducedMotion ? 1000 : dt;
 
+      // Crossfade between stage modes (smooth, never a jarring cut).
+      modeMix = damp(modeMix, modeRef.current === "bust" ? 1 : 0, 3.5, sdt);
+      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.55 * modeMix;
+      (workMat.uniforms.uOpacity as THREE.IUniform).value = 0.95 * (1 - modeMix);
+
       if (!reducedMotion) {
-        bodyYaw += dt * 0.22; // slow turntable
-        person.position.y = Math.sin(t * 1.4) * 0.03;
+        // Breathing: bust rises slowly, worker bobs with the typing rhythm.
+        bust.group.position.y = BUST_BASE.y + Math.sin(t * 1.1) * 0.035;
+        worker.group.position.y =
+          WORKER_BASE.y + Math.sin(t * 1.1 + 1.3) * 0.012 + Math.sin(t * Math.PI * 2 * 4.75) * 0.006;
+        // Bust turntable; worker settles to face the camera.
+        bustYaw += dt * 0.16;
+        workerYaw = damp(workerYaw, 0, 4, sdt);
+        // Donut tumbles behind everything.
         donut.rotation.x = t * 0.32;
         donut.rotation.y = t * 0.21;
+        // Seamless typing loop: arms pump out of phase at ~4.75 Hz.
+        const ph = t * Math.PI * 2 * 4.75;
+        worker.armL.rotation.x = Math.sin(ph) * 0.055;
+        worker.armR.rotation.x = Math.sin(ph + Math.PI) * 0.055;
+        worker.armL.rotation.z = Math.sin(ph * 0.5) * 0.02;
+        worker.armR.rotation.z = Math.sin(ph * 0.5 + 1) * 0.02;
+        // Periodic blink schedule.
+        if (t > nextBlink) {
+          blinkUntil = t + 0.14;
+          nextBlink = t + 2.2 + blinkRng() * 3.5;
+        }
       }
-      person.rotation.y = bodyYaw;
+      bust.group.rotation.y = bustYaw;
+      worker.group.rotation.y = workerYaw;
 
-      // Head watches the cursor (world-space, clamped like a real neck).
-      const px = pointerRef.current;
-      const targetYaw = px.has && !reducedMotion ? THREE.MathUtils.clamp(px.x * 0.8, -0.95, 0.95) : 0;
-      const targetPitch = px.has && !reducedMotion ? THREE.MathUtils.clamp(-px.y * 0.5, -0.5, 0.5) : 0;
-      const bodyWrapped = wrapPi(bodyYaw);
-      const localYaw = THREE.MathUtils.clamp(wrapPi(targetYaw - bodyWrapped), -1.15, 1.15);
-      headGroup.rotation.y = damp(headGroup.rotation.y, localYaw, 10, sdt);
-      headGroup.rotation.x = damp(headGroup.rotation.x, targetPitch, 10, sdt);
+      // Blink: quick vertical squash of the head (both rigs).
+      const blinkK =
+        !reducedMotion && t < blinkUntil
+          ? Math.sin(((t - (blinkUntil - 0.14)) / 0.14) * Math.PI)
+          : 0;
+      bust.head.scale.y = 1 - 0.18 * blinkK;
+      worker.head.scale.y = 1 - 0.18 * blinkK;
 
-      // Arm poses per chapter.
-      const pose = ARM_POSES[poseRef.current];
-      for (const { group, side } of armGroups) {
-        const target = side < 0 ? pose.armL : pose.armR;
-        group.rotation.x = damp(group.rotation.x, target.x, 7, sdt);
-        group.rotation.y = damp(group.rotation.y, target.y, 7, sdt);
-        let z = target.z;
-        if (pose.wave && side > 0 && !reducedMotion) z += Math.sin(t * 6.5) * 0.32;
-        group.rotation.z = damp(group.rotation.z, z, 7, sdt);
-      }
+      // Both heads watch the cursor (compensated for their own group yaw).
+      applyHeadWatch(bust.head, bustYaw, t, sdt, false);
+      applyHeadWatch(worker.head, workerYaw, t, sdt, nodRef.current);
 
       renderer!.render(scene, camera);
       raf = requestAnimationFrame(animate);
@@ -630,18 +748,9 @@ export function AsciiPerson3D(): React.JSX.Element | null {
       data-ascii-person-3d
       style={{
         position: "fixed",
-        right: "max(2.5vw, 20px)",
-        top: "50%",
-        transform: "translateY(-50%)",
-        height: "min(62vh, 600px)",
-        width: "auto",
-        aspectRatio: "460 / 600",
-        zIndex: 4, // above the journey canvas (2), below the content frost (5)
+        inset: 0,
+        zIndex: 2, // above the journey canvas (1), below content (5)
         pointerEvents: "none",
-        opacity: 0.95,
-        // Soft left-edge fade so the figure never hard-overlaps body copy.
-        WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 18%, black 100%)",
-        maskImage: "linear-gradient(90deg, transparent 0%, black 18%, black 100%)",
       }}
     />
   );
