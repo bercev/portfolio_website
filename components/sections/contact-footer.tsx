@@ -1,7 +1,7 @@
 import type { PortfolioContent } from "@/data/content";
 
 import { MotionVersionLink } from "@/components/chrome/motion-version-link";
-import { Terminal } from "@/components/terminal/Terminal";
+import { TerminalFlyout } from "@/components/terminal/terminal-flyout";
 import { ExternalLink } from "@/components/ui/external-link";
 import { Station } from "@/components/ui/station";
 
@@ -22,10 +22,9 @@ export function ContactFooter({
       <div className="journey-col-main journey-copy journey-copy--connect">
         <p className="journey-lead text-lg leading-8">{content.message}</p>
         <ContactForm />
-        <p className="journey-spec-label" style={{ marginTop: "2rem" }}>
-          Prefer a shell? Type <code>help</code> below.
-        </p>
-        <Terminal className="journey-terminal" />
+        <div className="journey-terminal-flyout-wrap">
+          <TerminalFlyout />
+        </div>
       </div>
 
       <nav className="journey-col-rail journey-spec" aria-label="Contact links">

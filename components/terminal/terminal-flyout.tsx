@@ -188,7 +188,11 @@ export function TerminalFlyout() {
                 [esc]
               </button>
             </div>
-            <Terminal focusSignal={focusSignal} className="terminal-flyout-term" />
+            <Terminal
+              focusSignal={focusSignal}
+              bare
+              className="terminal-flyout-term"
+            />
             <p className="terminal-flyout-hint">
               type <code>help</code> to begin — <code>esc</code> to close
             </p>

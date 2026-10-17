@@ -11,35 +11,38 @@ import { Shell } from "./shell";
 
 const PHOSPHOR_THEME = {
   background: "#05070c",
-  foreground: "#c9f2ff",
-  cursor: "#2fd8ff",
+  foreground: "#c9e8f7",
+  cursor: "#7dd3fc",
   cursorAccent: "#05070c",
-  selectionBackground: "rgba(47, 216, 255, 0.25)",
+  selectionBackground: "rgba(125, 211, 252, 0.25)",
   black: "#05070c",
-  red: "#ff6b6b",
-  green: "#4ade80",
-  yellow: "#ffb648",
-  blue: "#2fd8ff",
-  magenta: "#c084fc",
-  cyan: "#2fd8ff",
-  white: "#eaf6fb",
+  red: "#f0888f",
+  green: "#5ec9a7",
+  yellow: "#7dd3fc",
+  blue: "#7dd3fc",
+  magenta: "#a8b8d8",
+  cyan: "#7dd3fc",
+  white: "#eef4fa",
   brightBlack: "#4a5d72",
-  brightRed: "#ff8f8f",
-  brightGreen: "#6ee7a0",
-  brightYellow: "#ffd166",
-  brightBlue: "#7ce7ff",
-  brightMagenta: "#d8b4fe",
-  brightCyan: "#7ce7ff",
+  brightRed: "#f5a3a8",
+  brightGreen: "#7ed7b5",
+  brightYellow: "#a5e3fd",
+  brightBlue: "#a5e3fd",
+  brightMagenta: "#b8c8e0",
+  brightCyan: "#a5e3fd",
   brightWhite: "#ffffff",
 };
 
 export function Terminal({
   className,
   focusSignal,
+  bare,
 }: {
   className?: string;
   /** Increment to programmatically focus the xterm instance (e.g. when a flyout opens). */
   focusSignal?: number;
+  /** Skip the framed chrome (border/glow) when the parent provides its own. */
+  bare?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<Shell | null>(null);
@@ -71,6 +74,7 @@ export function Terminal({
       const fit = new FitAddon();
       term.loadAddon(fit);
       term.open(containerRef.current);
+      termRef.current = term;
       fit.fit();
 
       const shell = new Shell({
@@ -125,10 +129,16 @@ export function Terminal({
     return () => {
       disposed = true;
       shellRef.current = null;
+      termRef.current = null;
       term?.dispose();
       term = null;
     };
   }, []);
+
+  // External focus requests (e.g. flyout opened).
+  useEffect(() => {
+    if (focusSignal && focusSignal > 0) termRef.current?.focus();
+  }, [focusSignal]);
 
   return (
     <div
@@ -136,13 +146,17 @@ export function Terminal({
       className={className}
       role="application"
       aria-label="Interactive portfolio terminal. Type help to begin."
-      style={{
-        minHeight: 320,
-        borderRadius: 8,
-        overflow: "hidden",
-        border: "1px solid rgba(47, 216, 255, 0.25)",
-        boxShadow: "0 0 32px rgba(47, 216, 255, 0.12)",
-      }}
+      style={
+        bare
+          ? { minHeight: 280, overflow: "hidden" }
+          : {
+              minHeight: 320,
+              borderRadius: 8,
+              overflow: "hidden",
+              border: "1px solid rgba(125, 211, 252, 0.25)",
+              boxShadow: "0 0 32px rgba(125, 211, 252, 0.12)",
+            }
+      }
     />
   );
 }

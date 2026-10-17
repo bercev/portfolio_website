@@ -192,11 +192,12 @@
   color-scheme: dark;
 }
 
-/* ================= PHOSPHOR TERMINAL THEME =================
+/* ================= FROST TERMINAL THEME =================
    Active when the ASCII journey runs. First-class theme, not a hack:
    tokens are remapped so the existing color hierarchy SURVIVES
-   (kickers stay cyan, metadata stays dim) instead of being flattened
-   to !important white. Palette switcher is neutralized here. */
+   (kickers stay ice, metadata stays dim) instead of being flattened
+   to !important white. Single ice-cyan accent throughout — no competing
+   hues. Palette switcher is neutralized here. */
 html[data-ascii="active"] {
   --background: #05070c;
   --foreground: #eef4fa;
@@ -223,8 +224,8 @@ html[data-ascii="active"] {
   --effect-glow: rgba(125, 211, 252, 0.35);
   --effect-chroma-cyan: #7dd3fc;
   --effect-chroma-amber: #7dd3fc;
-  /* Muted kin: emerald/coral collapse into desaturated versions of the two
-     phosphor hues so the 3D scene never introduces competing colors. */
+  /* All chroma tokens collapse into the single ice family so the 3D scene
+     never introduces competing colors. */
   --chroma-emerald-neon: #4d7c96;
   --chroma-coral-neon: #6b8a9e;
   --effect-chroma-emerald: #4d7c96;
@@ -305,7 +306,7 @@ html[data-ascii="active"] .journey-xp-title {
     0 2px 8px rgba(0, 0, 0, 0.9);
 }
 
-/* Amber is rationed: only elements explicitly marked .term-emphasis. */
+/* Emphasis uses the single ice accent: only elements explicitly marked .term-emphasis. */
 html[data-ascii="active"] .term-emphasis {
   color: #7dd3fc;
 }
@@ -2545,20 +2546,6 @@ html[data-journey="active"] [data-hero-name-fallback] {
   background: linear-gradient(90deg, var(--portfolio-accent), var(--effect-chroma-emerald));
 }
 
-/* Interactive portfolio terminal (Contact / "The Beacon"). */
-.journey-terminal {
-  margin-top: 1.5rem;
-  max-width: 640px;
-  font-family: var(--font-mono);
-}
-.journey-terminal .xterm {
-  padding: 12px;
-  height: 100%;
-}
-.journey-terminal .xterm-viewport {
-  scrollbar-width: thin;
-}
-
 /* Contact form — phosphor terminal styling. */
 .journey-contact-form {
   margin-top: 1.75rem;
@@ -2783,4 +2770,174 @@ html.dark .plain-backdrop {
 }
 @media (prefers-reduced-motion: reduce) {
   .boot-cursor { animation: none; }
+}
+
+/* Terminal flyout (Contact / "The Beacon") — shell behind a hover/tap trigger. */
+.journey-terminal-flyout-wrap {
+  margin-top: 2rem;
+  max-width: 640px;
+}
+
+.terminal-flyout-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  margin-top: 0.75rem;
+  padding: 0.55rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: #c9f2ff;
+  background: rgba(5, 7, 12, 0.72);
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.terminal-flyout-trigger:hover,
+.terminal-flyout-trigger:focus-visible {
+  border-color: rgba(125, 211, 252, 0.65);
+  box-shadow: 0 0 24px rgba(125, 211, 252, 0.18);
+  transform: translateY(-1px);
+  outline: none;
+}
+.terminal-flyout-trigger:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+.terminal-flyout-prompt {
+  color: var(--portfolio-accent);
+  font-weight: 700;
+}
+.terminal-flyout-cmd {
+  color: #eef4fa;
+}
+.terminal-flyout-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.15em;
+  background: var(--portfolio-accent);
+  animation: boot-blink 0.9s steps(1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal-flyout-cursor {
+    animation: none;
+  }
+  .terminal-flyout-trigger:hover {
+    transform: none;
+  }
+}
+
+.terminal-flyout-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-site-navigation) + 30);
+  background: rgba(3, 5, 8, 0.62);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.terminal-flyout-panel {
+  position: fixed;
+  z-index: calc(var(--z-site-navigation) + 31);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #05070c;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  box-shadow: 0 0 64px rgba(125, 211, 252, 0.16), 0 24px 64px rgba(0, 0, 0, 0.55);
+  /* Mobile: bottom sheet. */
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  max-height: 78vh;
+  border-radius: 12px;
+}
+@media (min-width: 768px) {
+  /* Desktop: right-side drawer. */
+  .terminal-flyout-panel {
+    left: auto;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: min(600px, 94vw);
+    max-height: none;
+    border-radius: 0;
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+  }
+}
+
+.terminal-flyout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  padding: 0.7rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #7d93a8;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.16);
+  background: rgba(10, 14, 20, 0.9);
+}
+.terminal-flyout-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-flyout-title::before {
+  content: "● ";
+  color: var(--portfolio-accent);
+}
+.terminal-flyout-close {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #c9f2ff;
+  background: transparent;
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.terminal-flyout-close:hover,
+.terminal-flyout-close:focus-visible {
+  border-color: var(--portfolio-accent);
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.25);
+  outline: none;
+}
+.terminal-flyout-close:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+
+.terminal-flyout-term {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.terminal-flyout-term .xterm {
+  flex: 1 1 auto;
+  min-height: 280px;
+  padding: 12px;
+  height: 100%;
+}
+.terminal-flyout-term .xterm-viewport {
+  scrollbar-width: thin;
+}
+
+.terminal-flyout-hint {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.55rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #5b6b7d;
+  border-top: 1px solid rgba(125, 211, 252, 0.12);
+  background: rgba(10, 14, 20, 0.9);
+}
+.terminal-flyout-hint code {
+  color: var(--portfolio-accent);
 }
