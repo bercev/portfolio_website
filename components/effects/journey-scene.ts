@@ -1212,7 +1212,7 @@ export class JourneyScene {
     // Rendered as background via separate ortho scene.
     if (useAscii && this.useProcedural) {
       this.proceduralAsciiMat = createProceduralAscii({
-        cellSize: { x: 12, y: 24 },
+        cellSize: { x: 8, y: 16 }, // High-density ASCII (React Bits technique)
         // Circadian: phosphors follow the visitor's local time of day.
         circadian: true,
       });

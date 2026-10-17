@@ -2,8 +2,9 @@ import * as THREE from "three";
 
 /**
  * Pure procedural ASCII art — no 3D scene conversion.
- * Generates Braille patterns directly from math: fBm noise, sine waves,
- * scroll-reactive morphing. Each chapter is a different procedural world.
+ * High-density ASCII grid (React Bits technique): the field value from fBm
+ * noise + sine waves maps each cell to a glyph from a density-ordered
+ * charset, rendered via a pre-built glyph atlas texture.
  */
 
 const vertexShader = /* glsl */ `
@@ -14,17 +15,69 @@ const vertexShader = /* glsl */ `
   }
 `;
 
+// React Bits density-ordered charset (light → dark). Each cell's field value
+// picks a glyph from this ramp — the core of the high-density ASCII look.
+const CHARSET =
+  ' .\'`^",:;Il!i~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$';
+const ATLAS_COLS = 8;
+const ATLAS_GLYPH_W = 32;
+const ATLAS_GLYPH_H = 64;
+
+let cachedAtlas: THREE.CanvasTexture | null = null;
+
+/**
+ * Pre-render each charset glyph to a texture atlas (white on black).
+ * Cached across calls. Returns null during SSR (no document).
+ */
+function getGlyphAtlas(): THREE.CanvasTexture | null {
+  if (typeof document === "undefined") return null;
+  if (cachedAtlas) return cachedAtlas;
+
+  const rows = Math.ceil(CHARSET.length / ATLAS_COLS);
+  const canvas = document.createElement("canvas");
+  canvas.width = ATLAS_COLS * ATLAS_GLYPH_W;
+  canvas.height = rows * ATLAS_GLYPH_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `600 ${Math.floor(ATLAS_GLYPH_H * 0.75)}px "Courier New", ui-monospace, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  for (let i = 0; i < CHARSET.length; i++) {
+    const col = i % ATLAS_COLS;
+    const row = Math.floor(i / ATLAS_COLS);
+    const x = col * ATLAS_GLYPH_W + ATLAS_GLYPH_W / 2;
+    const y = row * ATLAS_GLYPH_H + ATLAS_GLYPH_H / 2;
+    ctx.fillText(CHARSET[i], x, y);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  cachedAtlas = texture;
+  return texture;
+}
+
 const fragmentShader = /* glsl */ `
   uniform vec2 uResolution;
   uniform float uTime;
   uniform float uScroll;      // 0..1 scroll progress
   uniform vec3 uColorA;       // Primary phosphor
   uniform vec3 uColorB;       // Secondary phosphor
-  uniform vec2 uCellSize;     // Braille cell size in pixels
+  uniform vec2 uCellSize;     // ASCII cell size in pixels
   uniform vec2 uMouse;        // Cursor in pixels, y-up (GL space). Far offscreen = no lens.
   uniform float uMouseVel;    // 0..1 normalized cursor velocity
   uniform float uBurst;       // Chapter-transition scramble burst, 0..1 (decays)
   uniform float uMotionOK;    // 0 under prefers-reduced-motion (kills lens/scramble)
+  uniform sampler2D uGlyphAtlas;
+  uniform float uGlyphCount;
+  uniform float uAtlasCols;
+  uniform float uAtlasRows;
 
   varying vec2 vUv;
 
@@ -81,11 +134,11 @@ const fragmentShader = /* glsl */ `
     float lens = (1.0 - smoothstep(90.0, 170.0, md)) * uMotionOK;
     effCell *= mix(1.0, 0.55, lens);
 
-    // Braille cell (from effective size, so the lens truly sharpens detail)
+    // ASCII cell (from effective size, so the lens truly sharpens detail)
     vec2 cellIdx = floor(px / effCell);
     vec2 cellUv = fract(px / effCell);
 
-    // Base pattern: flowing fBm (slow drift)
+    // Base pattern: flowing fBm (slow drift) — sampled ONCE per cell.
     vec2 p = cellIdx * 0.08;
     p.x += t * 0.25;
     p.y += sin(t * 0.15 + cellIdx.x * 0.02) * 0.5;
@@ -99,13 +152,14 @@ const fragmentShader = /* glsl */ `
     float field = n * 0.7 + waves * 0.3;
     field += 0.2 * sin(uScroll * 20.0 + cellIdx.x * 0.01); // Scroll ripple
 
-    // Bayer-ordered threshold: dithers dot density on smooth gradients.
-    // LOWER threshold = more dots = denser, more detailed art.
+    // Map field to charset index (light → dark density ramp).
+    // Bayer dithering perturbs the selection for organic halftone texture.
     float bayer = bayer4(px);
-    float threshold = 0.38 + (bayer - 0.5) * 0.14;
+    float norm = clamp((field - 0.25) / 0.5, 0.0, 1.0);
+    norm = clamp(norm + (bayer - 0.5) * 0.18, 0.0, 1.0);
+    float charsetIdx = floor(norm * (uGlyphCount - 1.0));
 
-    // Scramble ring at the lens edge: dots re-roll gently (~6x/sec, faster with velocity).
-    // (Our "glyphs" are Braille dots, so re-rolling = random on/off flips.)
+    // Scramble ring at the lens edge: glyphs re-roll gently (~6x/sec, faster with velocity).
     float ring = smoothstep(90.0, 120.0, md) * (1.0 - smoothstep(150.0, 200.0, md));
     ring *= uMotionOK;
     float scrRate = 6.0 + uMouseVel * 10.0;
@@ -113,35 +167,19 @@ const fragmentShader = /* glsl */ `
     float burstAmt = uBurst * uMotionOK;
     float scrambleMix = clamp(ring + burstAmt * 0.7, 0.0, 1.0);
 
-    // Braille dots: 2x4 grid, threshold by field
-    vec2 dotOffsets[8];
-    dotOffsets[0] = vec2(0.25, 0.125); dotOffsets[1] = vec2(0.25, 0.375);
-    dotOffsets[2] = vec2(0.25, 0.625); dotOffsets[3] = vec2(0.25, 0.875);
-    dotOffsets[4] = vec2(0.75, 0.125); dotOffsets[5] = vec2(0.75, 0.375);
-    dotOffsets[6] = vec2(0.75, 0.625); dotOffsets[7] = vec2(0.75, 0.875);
-
-    // Braille atlas lookup (16x16 grid, built in JS)
-    // For now, render dots directly as circles (simpler, no atlas needed)
-    vec2 brailleUv = cellUv;
-    float alpha = 0.0;
     vec2 cellHashBase = fract(cellIdx * 0.173); // keep hash inputs small for precision
-    for (int i = 0; i < 8; i++) {
-      // Sample field at dot position with slight offset for variation
-      vec2 dotCell = cellIdx + (dotOffsets[i] - 0.5) * 0.5;
-      vec2 dp = dotCell * 0.08;
-      dp.x += t * 0.25;
-      float dotField = fbm(dp + chapter * 10.0) * 0.7 +
-                       sin(dotCell.x * 0.05 + t * 1.0) * sin(dotCell.y * 0.04 - t * 0.75) * 0.3;
-      float on = step(threshold, dotField);
-      // Scramble: random re-roll for dots in the ring / during chapter burst
-      float scr = step(hash(cellHashBase * 7.13 + vec2(float(i) * 1.31, scrTick * 0.717)), 0.5);
-      on = mix(on, scr, scrambleMix);
-      if (on > 0.5) {
-        vec2 dotPos = dotOffsets[i];
-        float d = length((brailleUv - dotPos) * vec2(1.0, 2.0)); // Elliptical for cell aspect
-        alpha = max(alpha, smoothstep(0.18, 0.12, d));
-      }
-    }
+    float scrHash = hash(cellHashBase * 7.13 + vec2(scrTick * 0.717, 3.7));
+    float scrIdx = floor(scrHash * (uGlyphCount - 1.0));
+    charsetIdx = mix(charsetIdx, scrIdx, scrambleMix);
+
+    // Glyph atlas lookup (white glyphs on black — luminance becomes alpha mask).
+    float atlasCol = mod(charsetIdx, uAtlasCols);
+    float atlasRow = floor(charsetIdx / uAtlasCols);
+    vec2 glyphUv = vec2(
+      (atlasCol + cellUv.x) / uAtlasCols,
+      1.0 - (atlasRow + 1.0 - cellUv.y) / uAtlasRows
+    );
+    float glyphAlpha = texture2D(uGlyphAtlas, glyphUv).r;
 
     // Color: lerp between phosphors by field + chapter
     // BRIGHTER for more visual impact.
@@ -156,7 +194,7 @@ const fragmentShader = /* glsl */ `
 
     // Dark background
     vec3 bg = vec3(0.008, 0.012, 0.02);
-    vec3 final = mix(bg, col, alpha * 0.95);
+    vec3 final = mix(bg, col, glyphAlpha * 0.95);
 
     gl_FragColor = vec4(final, 1.0);
   }
@@ -223,7 +261,7 @@ export function createProceduralAscii(
   options: ProceduralAsciiOptions = {},
 ): THREE.ShaderMaterial {
   const {
-    cellSize = { x: 10, y: 20 }, // Denser for more detail
+    cellSize = { x: 8, y: 16 }, // High-density: smaller cells, more ASCII chars
     circadian = false,
   } = options;
   const base = circadian
@@ -232,6 +270,22 @@ export function createProceduralAscii(
         colorA: options.colorA ?? new THREE.Color(0.49, 0.83, 0.99), // #7dd3fc ice
         colorB: options.colorB ?? new THREE.Color(0.22, 0.74, 0.97), // #38bdf8 deep sky
       };
+
+  // Glyph atlas (null during SSR — falls back to a 1x1 black texture).
+  const atlas = getGlyphAtlas();
+  const atlasRows = Math.ceil(CHARSET.length / ATLAS_COLS);
+  let atlasTexture: THREE.Texture;
+  if (atlas) {
+    atlasTexture = atlas;
+  } else {
+    const fallback = new THREE.DataTexture(
+      new Uint8Array([0, 0, 0, 255]),
+      1,
+      1,
+    );
+    fallback.needsUpdate = true;
+    atlasTexture = fallback;
+  }
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -245,6 +299,10 @@ export function createProceduralAscii(
       uMouseVel: { value: 0 },
       uBurst: { value: 0 },
       uMotionOK: { value: 1 },
+      uGlyphAtlas: { value: atlasTexture },
+      uGlyphCount: { value: CHARSET.length },
+      uAtlasCols: { value: ATLAS_COLS },
+      uAtlasRows: { value: atlasRows },
     },
     vertexShader,
     fragmentShader,
