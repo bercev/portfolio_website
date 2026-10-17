@@ -1,5 +1,6 @@
 import { ContentFrost } from "@/components/effects/content-frost";
 import { EffectStage } from "@/components/effects/effect-stage";
+import { HeroDim } from "@/components/effects/hero-dim";
 import { Journey } from "@/components/effects/journey";
 import { PortfolioChrome } from "@/components/portfolio/portfolio-chrome";
 import { PortfolioMain } from "@/components/portfolio/portfolio-main";
@@ -31,6 +32,7 @@ export default function Home() {
         <Journey stationCounts={journeyStationCounts} props={journeyProps} />
       ) : null}
       <EffectStage />
+      <HeroDim />
       <ContentFrost />
       <PortfolioMain />
       <PortfolioChrome />

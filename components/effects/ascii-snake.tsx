@@ -242,9 +242,6 @@ export function AsciiSnake() {
       <div className="journey-snake-head">
         <span className="journey-snake-title">
           <span className="journey-build-log-prompt">$</span> ./snake
-          <span className="journey-snake-hint">
-            {focused ? " — arrows/WASD" : " — click to focus"}
-          </span>
         </span>
         <span className="journey-snake-score" aria-live="polite">
           score {score} · best {high}

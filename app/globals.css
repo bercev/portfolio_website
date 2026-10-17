@@ -849,6 +849,28 @@ html[data-journey="active"]:not(.dark) .content-frost {
   }
 }
 
+/* ---------- Hero dim: frosted wash over the background, strongest at top ----------
+   Takes the edge off the procedural ASCII field where it's most overwhelming
+   (hero). Scroll-aware fade is driven by HeroDim (opacity 1 -> 0 over the
+   first viewport); the gradient itself is top-heavy so the fold stays calm.
+   Sits above the journey canvas (z 2) and vignette (z 3), below content-frost
+   (z 5) and page content (z 10). No backdrop-filter here: the canvas already
+   carries its own blur and another fullscreen backdrop blur over animating
+   WebGL would cost frames. Theme-adaptive via --background. */
+.hero-dim {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-journey-scene) + 2);
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--background) 45%, transparent) 0%,
+    color-mix(in srgb, var(--background) 28%, transparent) 38%,
+    color-mix(in srgb, var(--background) 12%, transparent) 68%,
+    transparent 100%
+  );
+}
+
 
 /* ---------- Vitae deep-dive artifact ---------- */
 
@@ -2501,25 +2523,6 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 }
 
-.journey-scroll-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 0;
-  font: 600 11px/1 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--muted-foreground) 88%, transparent);
-}
-
-.journey-scroll-hint::before {
-  content: "";
-  width: 36px;
-  height: 2px;
-  border-radius: 0;
-  background: linear-gradient(90deg, var(--portfolio-accent), var(--effect-chroma-emerald));
-}
-
 /* Contact form — phosphor terminal styling. */
 .journey-contact-form {
   margin-top: 1.75rem;
@@ -2900,18 +2903,4 @@ html.dark .plain-backdrop {
 }
 .terminal-flyout-term .xterm-viewport {
   scrollbar-width: thin;
-}
-
-.terminal-flyout-hint {
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 0.55rem 1rem;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: #5b6b7d;
-  border-top: 1px solid rgba(125, 211, 252, 0.12);
-  background: rgba(10, 14, 20, 0.9);
-}
-.terminal-flyout-hint code {
-  color: var(--portfolio-accent);
 }

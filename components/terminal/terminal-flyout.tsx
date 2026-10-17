@@ -130,9 +130,6 @@ export function TerminalFlyout() {
 
   return (
     <>
-      <p className="journey-spec-label" style={{ margin: 0 }}>
-        Prefer a shell? Hover or tap below.
-      </p>
       <button
         ref={triggerRef}
         type="button"
@@ -193,9 +190,6 @@ export function TerminalFlyout() {
               bare
               className="terminal-flyout-term"
             />
-            <p className="terminal-flyout-hint">
-              type <code>help</code> to begin — <code>esc</code> to close
-            </p>
           </motion.aside>
         </>
       )}

@@ -130,21 +130,6 @@ export function BootSequence() {
           </div>
         ))}
       </div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 28,
-          width: "100%",
-          textAlign: "center",
-          fontFamily: "var(--font-mono, ui-monospace, monospace)",
-          fontSize: 11,
-          letterSpacing: "0.2em",
-          color: "rgba(234, 246, 251, 0.35)",
-          textTransform: "uppercase",
-        }}
-      >
-        click to skip
-      </div>
     </div>
   );
 }
