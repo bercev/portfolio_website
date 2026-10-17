@@ -261,7 +261,16 @@ const GLYPH_VERT = /* glsl */ `
     vec4 wp4 = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
     vec3 wn = normalize(mat3(modelMatrix) * (mat3(instanceMatrix) * aNormal));
     float lum = 0.10 + 0.90 * max(dot(wn, normalize(uLightDir)), 0.0);
-    vGlyph = clamp(floor(lum * 63.999 + (aJitter - 0.5) * 7.0), 0.0, 63.0);
+    float glyph = clamp(floor(lum * 63.999 + (aJitter - 0.5) * 7.0), 0.0, 63.0);
+    // BACKFACE CULLING (root-cause fix for the white blob): glyphs whose
+    // surface normal faces away from the camera fade to the space glyph
+    // (index 0, discarded in the fragment shader). Without this, far-side
+    // glyphs render through the head via depthWrite:false and the two
+    // hemispheres composite into a solid mass.
+    vec3 viewDir = normalize(cameraPosition - wp4.xyz);
+    float facing = dot(wn, viewDir);
+    float vis = smoothstep(-0.05, 0.25, facing);
+    vGlyph = mix(0.0, glyph, vis);
     vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
     vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
     vec3 wp = wp4.xyz + (right * position.x + up * position.y) * uSize;
