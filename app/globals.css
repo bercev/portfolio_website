@@ -199,41 +199,41 @@
    to !important white. Palette switcher is neutralized here. */
 html[data-ascii="active"] {
   --background: #05070c;
-  --foreground: #eaf6fb;
+  --foreground: #eef4fa;
   --card: rgba(13, 20, 32, 0.72);
-  --card-foreground: #eaf6fb;
+  --card-foreground: #eef4fa;
   --popover: #0b1220;
-  --popover-foreground: #eaf6fb;
-  --primary: #eaf6fb;
+  --popover-foreground: #eef4fa;
+  --primary: #eef4fa;
   --primary-foreground: #05070c;
-  --secondary: rgba(47, 216, 255, 0.1);
-  --secondary-foreground: #eaf6fb;
-  --muted: rgba(125, 147, 168, 0.12);
-  --muted-foreground: #7d93a8;
-  --accent: rgba(47, 216, 255, 0.14);
-  --accent-foreground: #2fd8ff;
-  --border: rgba(234, 246, 251, 0.14);
-  --input: rgba(234, 246, 251, 0.14);
-  --ring: #2fd8ff;
-  --portfolio-accent: #2fd8ff;
+  --secondary: rgba(125, 211, 252, 0.1);
+  --secondary-foreground: #eef4fa;
+  --muted: rgba(139, 156, 179, 0.12);
+  --muted-foreground: #8b9cb3;
+  --accent: rgba(125, 211, 252, 0.14);
+  --accent-foreground: #7dd3fc;
+  --border: rgba(238, 244, 250, 0.14);
+  --input: rgba(238, 244, 250, 0.14);
+  --ring: #7dd3fc;
+  --portfolio-accent: #7dd3fc;
   --portfolio-accent-foreground: #05070c;
-  --accent-neon: #2fd8ff;
-  --effect-cursor: #2fd8ff;
-  --effect-spark: #2fd8ff;
-  --effect-glow: rgba(47, 216, 255, 0.35);
-  --effect-chroma-cyan: #2fd8ff;
-  --effect-chroma-amber: #ffb648;
+  --accent-neon: #7dd3fc;
+  --effect-cursor: #7dd3fc;
+  --effect-spark: #7dd3fc;
+  --effect-glow: rgba(125, 211, 252, 0.35);
+  --effect-chroma-cyan: #7dd3fc;
+  --effect-chroma-amber: #7dd3fc;
   /* Muted kin: emerald/coral collapse into desaturated versions of the two
      phosphor hues so the 3D scene never introduces competing colors. */
-  --chroma-emerald-neon: #5b8fa3;
-  --chroma-coral-neon: #b98a5e;
-  --effect-chroma-emerald: #5b8fa3;
-  --effect-chroma-coral: #b98a5e;
+  --chroma-emerald-neon: #4d7c96;
+  --chroma-coral-neon: #6b8a9e;
+  --effect-chroma-emerald: #4d7c96;
+  --effect-chroma-coral: #6b8a9e;
   --journey-space-bg: #05070c;
   --journey-space-fog: #05070c;
-  --journey-rule: rgba(234, 246, 251, 0.16);
-  --journey-rule-soft: rgba(234, 246, 251, 0.08);
-  --selection-background: #2fd8ff;
+  --journey-rule: rgba(238, 244, 250, 0.16);
+  --journey-rule-soft: rgba(238, 244, 250, 0.08);
+  --selection-background: #7dd3fc;
   --selection-foreground: #05070c;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   color-scheme: dark;
@@ -241,16 +241,16 @@ html[data-ascii="active"] {
 
 /* Palette lock: terminal is always ocean. */
 html[data-ascii="active"][data-palette] {
-  --accent-neon: #2fd8ff;
-  --chroma-cyan-neon: #2fd8ff;
-  --chroma-emerald-neon: #5b8fa3;
-  --chroma-amber-neon: #ffb648;
-  --chroma-coral-neon: #b98a5e;
-  --portfolio-accent: #2fd8ff;
+  --accent-neon: #7dd3fc;
+  --chroma-cyan-neon: #7dd3fc;
+  --chroma-emerald-neon: #4d7c96;
+  --chroma-amber-neon: #7dd3fc;
+  --chroma-coral-neon: #6b8a9e;
+  --portfolio-accent: #7dd3fc;
   --portfolio-accent-foreground: #05070c;
-  --effect-cursor: #2fd8ff;
-  --effect-spark: #2fd8ff;
-  --effect-glow: rgba(47, 216, 255, 0.35);
+  --effect-cursor: #7dd3fc;
+  --effect-spark: #7dd3fc;
+  --effect-glow: rgba(125, 211, 252, 0.35);
 }
 
 /* Readability halo over the canvas — subtle, inherits. */
@@ -269,7 +269,7 @@ html[data-ascii="active"] .journey-pub-row,
 html[data-ascii="active"] .journey-project,
 html[data-ascii="active"] .journey-panel:not(.journey-panel--open):not(.journey-panel--strip):not(.journey-panel--ruled) {
   background: rgba(5, 7, 12, 0.3);
-  border: 1px solid rgba(47, 216, 255, 0.16);
+  border: 1px solid rgba(125, 211, 252, 0.16);
   border-radius: 0;
 }
 
@@ -301,13 +301,13 @@ html[data-ascii="active"] .journey-pub-title,
 html[data-ascii="active"] .journey-project-title,
 html[data-ascii="active"] .journey-xp-title {
   text-shadow:
-    0 0 18px rgba(47, 216, 255, 0.28),
+    0 0 18px rgba(125, 211, 252, 0.28),
     0 2px 8px rgba(0, 0, 0, 0.9);
 }
 
 /* Amber is rationed: only elements explicitly marked .term-emphasis. */
 html[data-ascii="active"] .term-emphasis {
-  color: #ffb648;
+  color: #7dd3fc;
 }
 
 /* Hide palette switcher in terminal mode — terminal is always ocean. */
@@ -1054,6 +1054,8 @@ html[data-journey="active"]:not(.dark) .content-frost {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  /* Slight defocus so foreground text pops; bg stays alive but calm. */
+  filter: blur(2px);
 }
 
 .journey-vignette,
@@ -1330,7 +1332,7 @@ html[data-journey] [data-effect-layer="background"] {
   margin-left: 0.5em;
   vertical-align: text-bottom;
   background: var(--portfolio-accent);
-  animation: journey-build-log-blink 1.06s steps(1) infinite;
+  animation: journey-build-log-blink 1.4s steps(1) infinite;
 }
 
 @keyframes journey-build-log-blink {
@@ -2333,7 +2335,7 @@ html:not(.dark) .skill-pill {
   font-size: clamp(0.32rem, 1.05vw, 0.72rem);
   line-height: 1.04;
   letter-spacing: 0;
-  color: #2fd8ff;
+  color: #7dd3fc;
   /* No backdrop — the wordmark floats directly over the procedural background.
      Readability comes from a dark outline halo around each glyph plus cyan
      bloom, so there is no box or gradient behind the name. */
@@ -2347,11 +2349,11 @@ html:not(.dark) .skill-pill {
     0 2px 4px rgba(3, 5, 9, 0.9),
     -2px 0 4px rgba(3, 5, 9, 0.9),
     2px 0 4px rgba(3, 5, 9, 0.9),
-    0 0 28px rgba(47, 216, 255, 0.65),
-    0 0 8px rgba(47, 216, 255, 0.8);
+    0 0 28px rgba(125, 211, 252, 0.65),
+    0 0 8px rgba(125, 211, 252, 0.8);
   white-space: pre;
   user-select: none;
-  animation: ascii-berat-flicker 7s ease-in-out infinite;
+  animation: ascii-berat-flicker 12s ease-in-out infinite;
 }
 
 @keyframes ascii-berat-flicker {
@@ -2564,9 +2566,9 @@ html[data-journey="active"] [data-hero-name-fallback] {
   padding: 1.25rem 1.4rem 1.4rem;
   font-family: var(--font-mono);
   background: rgba(5, 7, 12, 0.72);
-  border: 1px solid rgba(47, 216, 255, 0.28);
+  border: 1px solid rgba(125, 211, 252, 0.28);
   border-radius: 8px;
-  box-shadow: 0 0 24px rgba(47, 216, 255, 0.08);
+  box-shadow: 0 0 24px rgba(125, 211, 252, 0.08);
 }
 .journey-contact-form-prompt {
   margin: 0 0 1rem;
@@ -2594,17 +2596,17 @@ html[data-journey="active"] [data-hero-name-fallback] {
   font-size: 0.9rem;
   color: var(--foreground);
   background: rgba(5, 7, 12, 0.9);
-  border: 1px solid rgba(234, 246, 251, 0.18);
+  border: 1px solid rgba(238, 244, 250, 0.18);
   border-radius: 4px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .journey-contact-form-input::placeholder {
-  color: rgba(125, 147, 168, 0.55);
+  color: rgba(139, 156, 179, 0.55);
 }
 .journey-contact-form-input:focus {
   border-color: var(--portfolio-accent);
-  box-shadow: 0 0 0 2px rgba(47, 216, 255, 0.18);
+  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.18);
 }
 .journey-contact-form-input:disabled {
   opacity: 0.6;
@@ -2650,7 +2652,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   line-height: 1.5;
   color: var(--portfolio-accent);
   background: rgba(5, 7, 12, 0.72);
-  border: 1px solid rgba(47, 216, 255, 0.28);
+  border: 1px solid rgba(125, 211, 252, 0.28);
   border-radius: 8px;
 }
 
@@ -2773,7 +2775,7 @@ html.dark .plain-backdrop {
   height: 1.1em;
   margin-left: 2px;
   vertical-align: -0.15em;
-  background-color: #2fd8ff;
+  background-color: #7dd3fc;
   animation: boot-blink 0.8s steps(1) infinite;
 }
 @keyframes boot-blink {
