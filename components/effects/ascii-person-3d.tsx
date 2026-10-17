@@ -599,8 +599,8 @@ export function AsciiPerson3D(): React.JSX.Element | null {
 
     // ---- Bust rig: monumental, center-right, behind content ----
     const bust = buildBust(rng, bustMat);
-    bust.group.scale.setScalar(2.4);
-    const BUST_BASE = new THREE.Vector3(1.55, 1.32, -1.8);
+    bust.group.scale.setScalar(1.7);
+    const BUST_BASE = new THREE.Vector3(1.8, 1.1, -3.2);
     bust.group.position.copy(BUST_BASE);
     scene.add(bust.group);
 
