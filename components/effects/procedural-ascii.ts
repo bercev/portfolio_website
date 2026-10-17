@@ -21,6 +21,10 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uColorA;       // Primary phosphor
   uniform vec3 uColorB;       // Secondary phosphor
   uniform vec2 uCellSize;     // Braille cell size in pixels
+  uniform vec2 uMouse;        // Cursor in pixels, y-up (GL space). Far offscreen = no lens.
+  uniform float uMouseVel;    // 0..1 normalized cursor velocity
+  uniform float uBurst;       // Chapter-transition scramble burst, 0..1 (decays)
+  uniform float uMotionOK;    // 0 under prefers-reduced-motion (kills lens/scramble)
 
   varying vec2 vUv;
 
@@ -51,17 +55,35 @@ const fragmentShader = /* glsl */ `
     return v;
   }
 
+  // Ordered Bayer dithering (4x4 via 2x2 trick) — organic texture on gradients.
+  float bayer2(vec2 a) {
+    a = floor(a);
+    return fract(a.x * 0.5 + a.y * a.y * 0.75);
+  }
+  float bayer4(vec2 a) {
+    return bayer2(a * 0.5) * 0.25 + bayer2(a);
+  }
+
   void main() {
     vec2 uv = vUv;
     vec2 px = uv * uResolution;
 
-    // Braille cell
-    vec2 cellIdx = floor(px / uCellSize);
-    vec2 cellUv = fract(px / uCellSize);
-
     // Scroll-reactive: different procedural worlds per chapter
     float chapter = uScroll * 7.0; // 0..7
     float t = uTime * 0.3;
+
+    // Scroll-reactive density: cells breathe subtly per chapter (+/-14%).
+    float chapPulse = 1.0 + 0.14 * sin(chapter * 3.14159265);
+    vec2 effCell = uCellSize * chapPulse;
+
+    // Mouse lens: cells near the cursor subdivide (sharper detail where you point).
+    float md = distance(px, uMouse);
+    float lens = (1.0 - smoothstep(90.0, 170.0, md)) * uMotionOK;
+    effCell *= mix(1.0, 0.55, lens);
+
+    // Braille cell (from effective size, so the lens truly sharpens detail)
+    vec2 cellIdx = floor(px / effCell);
+    vec2 cellUv = fract(px / effCell);
 
     // Base pattern: flowing fBm
     vec2 p = cellIdx * 0.08;
@@ -77,16 +99,32 @@ const fragmentShader = /* glsl */ `
     float field = n * 0.7 + waves * 0.3;
     field += 0.2 * sin(uScroll * 20.0 + cellIdx.x * 0.01); // Scroll ripple
 
-    // Braille dots: 2x4 grid, threshold by field
+    // Bayer-ordered threshold: dithers dot density on smooth gradients.
     // LOWER threshold = more dots = denser, more detailed art.
-    float threshold = 0.38;
-    int pattern = 0;
+    float bayer = bayer4(px);
+    float threshold = 0.38 + (bayer - 0.5) * 0.14;
+
+    // Scramble ring at the lens edge: dots re-roll ~14x/sec, faster with velocity.
+    // (Our "glyphs" are Braille dots, so re-rolling = random on/off flips.)
+    float ring = smoothstep(90.0, 120.0, md) * (1.0 - smoothstep(150.0, 200.0, md));
+    ring *= uMotionOK;
+    float scrRate = 14.0 + uMouseVel * 26.0;
+    float scrTick = floor(uTime * scrRate);
+    float burstAmt = uBurst * uMotionOK;
+    float scrambleMix = clamp(ring + burstAmt * 0.7, 0.0, 1.0);
+
+    // Braille dots: 2x4 grid, threshold by field
     vec2 dotOffsets[8];
     dotOffsets[0] = vec2(0.25, 0.125); dotOffsets[1] = vec2(0.25, 0.375);
     dotOffsets[2] = vec2(0.25, 0.625); dotOffsets[3] = vec2(0.25, 0.875);
     dotOffsets[4] = vec2(0.75, 0.125); dotOffsets[5] = vec2(0.75, 0.375);
     dotOffsets[6] = vec2(0.75, 0.625); dotOffsets[7] = vec2(0.75, 0.875);
 
+    // Braille atlas lookup (16x16 grid, built in JS)
+    // For now, render dots directly as circles (simpler, no atlas needed)
+    vec2 brailleUv = cellUv;
+    float alpha = 0.0;
+    vec2 cellHashBase = fract(cellIdx * 0.173); // keep hash inputs small for precision
     for (int i = 0; i < 8; i++) {
       // Sample field at dot position with slight offset for variation
       vec2 dotCell = cellIdx + (dotOffsets[i] - 0.5) * 0.5;
@@ -94,17 +132,11 @@ const fragmentShader = /* glsl */ `
       dp.x += t * 0.5;
       float dotField = fbm(dp + chapter * 10.0) * 0.7 +
                        sin(dotCell.x * 0.05 + t * 2.0) * sin(dotCell.y * 0.04 - t * 1.5) * 0.3;
-      if (dotField > threshold) {
-        pattern |= (1 << i);
-      }
-    }
-
-    // Braille atlas lookup (16x16 grid, built in JS)
-    // For now, render dots directly as circles (simpler, no atlas needed)
-    vec2 brailleUv = cellUv;
-    float alpha = 0.0;
-    for (int i = 0; i < 8; i++) {
-      if ((pattern & (1 << i)) != 0) {
+      float on = step(threshold, dotField);
+      // Scramble: random re-roll for dots in the ring / during chapter burst
+      float scr = step(hash(cellHashBase * 7.13 + vec2(float(i) * 1.31, scrTick * 0.717)), 0.5);
+      on = mix(on, scr, scrambleMix);
+      if (on > 0.5) {
         vec2 dotPos = dotOffsets[i];
         float d = length((brailleUv - dotPos) * vec2(1.0, 2.0)); // Elliptical for cell aspect
         alpha = max(alpha, smoothstep(0.18, 0.12, d));
@@ -114,7 +146,13 @@ const fragmentShader = /* glsl */ `
     // Color: lerp between phosphors by field + chapter
     // BRIGHTER for more visual impact.
     vec3 col = mix(uColorA, uColorB, smoothstep(0.3, 0.7, field));
+    // Color-the-type: subtle per-cell hue variation from the field itself.
+    // Stays inside the phosphor families — tint, never rainbow.
+    float hw = sin(field * 12.566 + chapter * 1.7);
+    col *= vec3(1.0 + 0.07 * hw, 1.0 + 0.04 * sin(field * 12.566 + 2.1), 1.0 - 0.05 * hw);
     col *= 0.6 + 0.8 * smoothstep(0.3, 0.8, field);
+    // Lens sharpen lift + chapter-burst glow pop
+    col *= 1.0 + lens * 0.25 + burstAmt * 0.35;
 
     // Dark background
     vec3 bg = vec3(0.008, 0.012, 0.02);
@@ -203,6 +241,10 @@ export function createProceduralAscii(
       uColorA: { value: base.colorA.clone() },
       uColorB: { value: base.colorB.clone() },
       uCellSize: { value: new THREE.Vector2(cellSize.x, cellSize.y) },
+      uMouse: { value: new THREE.Vector2(-10000, -10000) }, // offscreen = no lens
+      uMouseVel: { value: 0 },
+      uBurst: { value: 0 },
+      uMotionOK: { value: 1 },
     },
     vertexShader,
     fragmentShader,
@@ -210,8 +252,28 @@ export function createProceduralAscii(
     depthWrite: false,
   });
   material.userData.circadian = circadian;
+  material.userData.burst = 0;
+  material.userData.lastChapter = -1;
 
   return material;
+}
+
+/**
+ * Feed cursor position (client px, top-down) + normalized velocity (0..1)
+ * into the ASCII field. Drives the mouse lens + scramble ring.
+ * Safe to call every pointermove; velocity decays per-frame in update.
+ */
+export function setProceduralAsciiMouse(
+  material: THREE.ShaderMaterial,
+  clientX: number,
+  clientY: number,
+  velocity: number,
+  viewportHeight: number,
+) {
+  const u = material.uniforms;
+  (u.uMouse.value as THREE.Vector2).set(clientX, viewportHeight - clientY);
+  const vel = u.uMouseVel.value as number;
+  u.uMouseVel.value = Math.min(1, Math.max(velocity, vel));
 }
 
 export function updateProceduralAscii(
@@ -220,11 +282,27 @@ export function updateProceduralAscii(
   scroll: number,
   width: number,
   height: number,
+  reducedMotion = false,
 ) {
   const u = material.uniforms;
   u.uTime.value = time;
   u.uScroll.value = scroll;
   u.uResolution.value.set(width, height);
+  u.uMotionOK.value = reducedMotion ? 0 : 1;
+  // Mouse velocity decays each frame so the scramble ring calms when still.
+  u.uMouseVel.value = (u.uMouseVel.value as number) * 0.9;
+  // Chapter-transition scramble burst: fires once per chapter change, decays.
+  const chapter = Math.floor(scroll * 7.0);
+  if (
+    material.userData.lastChapter !== -1 &&
+    material.userData.lastChapter !== chapter
+  ) {
+    material.userData.burst = 1.0;
+  }
+  material.userData.lastChapter = chapter;
+  const burst = ((material.userData.burst as number) ?? 0) * 0.93;
+  material.userData.burst = burst;
+  u.uBurst.value = reducedMotion ? 0 : burst;
   // Circadian drift: ease phosphors toward the current time-of-day palette.
   if (material.userData.circadian) {
     const target = getCircadianPalette();

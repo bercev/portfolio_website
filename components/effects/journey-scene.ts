@@ -6,6 +6,7 @@ import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
 
 import {
   createProceduralAscii,
+  setProceduralAsciiMouse,
   updateProceduralAscii,
 } from "./procedural-ascii";
 import { buildAsciiHeroPoints } from "./ascii-hero";
@@ -856,6 +857,10 @@ export class JourneyScene {
   private readonly arrivalPark = new THREE.Vector3(0, 0.4, -114);
   private lookPrimed = false;
   private readonly pointer = { x: 0, y: 0 };
+  // Last pointer sample for ASCII lens velocity tracking.
+  private lastPX = 0;
+  private lastPY = 0;
+  private lastPXt = 0;
   private readonly timer = new THREE.Timer();
   private targetT = 0;
   private smoothT = 0;
@@ -1226,6 +1231,7 @@ export class JourneyScene {
         0,
         window.innerWidth,
         window.innerHeight,
+        this.reducedMotion,
       );
       // Mark ASCII active — the PHOSPHOR token theme in globals.css handles
       // text readability via remapped tokens (no JS style injection needed).
@@ -2569,6 +2575,7 @@ export class JourneyScene {
         this.smoothT,
         window.innerWidth,
         window.innerHeight,
+        this.reducedMotion,
       );
     }
     this.fitWordmarks();
@@ -2581,6 +2588,26 @@ export class JourneyScene {
   private readonly handlePointerMove = (event: PointerEvent) => {
     this.pointer.x = (event.clientX / window.innerWidth - 0.5) * 2;
     this.pointer.y = -(event.clientY / window.innerHeight - 0.5) * 2;
+    // Feed the procedural ASCII mouse lens + scramble ring (with velocity).
+    if (this.proceduralAsciiMat) {
+      const now = performance.now();
+      const dt = Math.max((now - this.lastPXt) / 1000, 0.001);
+      const dist = Math.hypot(
+        event.clientX - this.lastPX,
+        event.clientY - this.lastPY,
+      );
+      const vel = Math.min(dist / dt / 2500, 1);
+      this.lastPX = event.clientX;
+      this.lastPY = event.clientY;
+      this.lastPXt = now;
+      setProceduralAsciiMouse(
+        this.proceduralAsciiMat,
+        event.clientX,
+        event.clientY,
+        vel,
+        window.innerHeight,
+      );
+    }
   };
 
   private readonly handleScroll = () => {
@@ -2724,6 +2751,7 @@ export class JourneyScene {
         this.smoothT,
         window.innerWidth,
         window.innerHeight,
+        this.reducedMotion,
       );
     }
 
