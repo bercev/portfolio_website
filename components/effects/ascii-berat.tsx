@@ -187,10 +187,16 @@ function buildArt(tick: number): string {
           // lighter glyphs — classic ASCII-art shading. The tick re-roll
           // cycles characters within the same density bucket, so the
           // texture shimmers while letterforms never move.
+          // Use mostly solid chars for readability — texture is subtle.
           const v = (n / 8) * 0.6 + rng() * 0.5;
           const idx = Math.min(3, Math.floor(v * 4));
-          const bucket = DENSITY[idx] ?? DENSITY[3];
-          line += bucket[Math.floor(rng() * bucket.length)] ?? "@";
+          // 70% solid heavy char, 30% texture variation (was 100% random)
+          if (rng() < 0.7) {
+            line += idx >= 2 ? "@" : (idx === 1 ? "+" : ".");
+          } else {
+            const bucket = DENSITY[idx] ?? DENSITY[3];
+            line += bucket[Math.floor(rng() * bucket.length)] ?? "@";
+          }
         } else {
           // Empty cell: faint halo noise only adjacent to the letters.
           let near = false;
