@@ -171,25 +171,25 @@ export interface ProceduralAsciiOptions {
 }
 
 /** Phosphor palettes keyed to time of day — subtle, never announced.
- *  All keys stay inside the two phosphor hue families (cyan / amber);
- *  night is dim amber phosphor, never red. */
+ *  All keys stay in a single ice-cyan family; time of day shifts brightness
+ *  and depth, never hue. No competing colors. */
 const CIRCADIAN_KEYS: ReadonlyArray<{
   readonly hour: number;
   readonly colorA: readonly [number, number, number];
   readonly colorB: readonly [number, number, number];
 }> = [
-  { hour: 0, colorA: [0.85, 0.55, 0.22], colorB: [0.38, 0.2, 0.09] }, // night: dim amber
-  { hour: 5, colorA: [0.85, 0.55, 0.22], colorB: [0.38, 0.2, 0.09] },
-  { hour: 7, colorA: [0.18, 0.85, 1.0], colorB: [1.0, 0.71, 0.28] }, // day: cyan
-  { hour: 17, colorA: [0.18, 0.85, 1.0], colorB: [1.0, 0.71, 0.28] },
-  { hour: 19, colorA: [1.0, 0.71, 0.28], colorB: [0.9, 0.4, 0.12] }, // evening: amber
-  { hour: 23, colorA: [1.0, 0.71, 0.28], colorB: [0.9, 0.4, 0.12] },
-  { hour: 24, colorA: [0.85, 0.55, 0.22], colorB: [0.38, 0.2, 0.09] },
+  { hour: 0, colorA: [0.35, 0.58, 0.72], colorB: [0.16, 0.28, 0.36] }, // night: dim ice
+  { hour: 5, colorA: [0.35, 0.58, 0.72], colorB: [0.16, 0.28, 0.36] },
+  { hour: 7, colorA: [0.49, 0.83, 0.99], colorB: [0.22, 0.74, 0.97] }, // day: bright ice
+  { hour: 17, colorA: [0.49, 0.83, 0.99], colorB: [0.22, 0.74, 0.97] },
+  { hour: 19, colorA: [0.42, 0.70, 0.85], colorB: [0.18, 0.38, 0.50] }, // evening: softer ice
+  { hour: 23, colorA: [0.42, 0.70, 0.85], colorB: [0.18, 0.38, 0.50] },
+  { hour: 24, colorA: [0.35, 0.58, 0.72], colorB: [0.16, 0.28, 0.36] },
 ];
 
 /**
  * Phosphor colors for the current local time, lerped between keyframes.
- * Day (7–17): cyan. Evening (19–23): amber. Night (0–5): dim amber.
+ * Single ice-cyan family throughout — time shifts luminance, not hue.
  */
 export function getCircadianPalette(): {
   colorA: THREE.Color;
@@ -229,8 +229,8 @@ export function createProceduralAscii(
   const base = circadian
     ? getCircadianPalette()
     : {
-        colorA: options.colorA ?? new THREE.Color(0.25, 0.95, 0.95),
-        colorB: options.colorB ?? new THREE.Color(1.0, 0.75, 0.25),
+        colorA: options.colorA ?? new THREE.Color(0.49, 0.83, 0.99), // #7dd3fc ice
+        colorB: options.colorB ?? new THREE.Color(0.22, 0.74, 0.97), // #38bdf8 deep sky
       };
 
   const material = new THREE.ShaderMaterial({

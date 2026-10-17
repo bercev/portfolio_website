@@ -121,7 +121,7 @@ function MatrixRain({ onDone }: { onDone: () => void }) {
     const tick = () => {
       ctx.fillStyle = "rgba(5, 7, 12, 0.08)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#2fd8ff";
+      ctx.fillStyle = "#7dd3fc";
       ctx.font = `${fontSize}px ui-monospace, monospace`;
       for (let i = 0; i < drops.length; i++) {
         const ch = chars[Math.floor(Math.random() * chars.length)];
@@ -187,7 +187,7 @@ export function EasterEggs() {
     // Announce the counter in the console for completionists.
     console.log(
       `%csecrets found: ${loadSecrets().length}/${TOTAL_SECRETS} — try the konami code.`,
-      "color:#2fd8ff;font-family:monospace",
+      "color:#7dd3fc;font-family:monospace",
     );
   }, []);
 
@@ -260,16 +260,16 @@ export function EasterEggs() {
             maxWidth: "min(560px, 90vw)",
             padding: toastIsArt ? "20px 24px" : "14px 20px",
             backgroundColor: "rgba(5, 7, 12, 0.92)",
-            border: "1px solid rgba(47, 216, 255, 0.4)",
+            border: "1px solid rgba(125, 211, 252, 0.4)",
             borderRadius: 6,
-            color: "#2fd8ff",
+            color: "#7dd3fc",
             fontFamily:
               "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)",
             fontSize: 13,
             lineHeight: 1.7,
             whiteSpace: "pre-wrap",
             cursor: "pointer",
-            boxShadow: "0 0 32px rgba(47, 216, 255, 0.25)",
+            boxShadow: "0 0 32px rgba(125, 211, 252, 0.25)",
           }}
         >
           {toast}

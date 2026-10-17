@@ -17,7 +17,7 @@ import { SpecularControls } from "./specular-controls";
 import { TargetCursor } from "./target-cursor";
 import { BootSequence } from "./boot-sequence";
 import { EasterEggs } from "./easter-eggs";
-import { AsciiPerson2D } from "./ascii-person-2d";
+import { AsciiPerson3D } from "./ascii-person-3d";
 
 export function EffectStage() {
   const [profile, setProfile] = useState<EffectProfile | null>(null);
@@ -76,7 +76,7 @@ export function EffectStage() {
     <>
       <BootSequence />
       <EasterEggs />
-      <AsciiPerson2D />
+      <AsciiPerson3D />
       <div
         aria-hidden="true"
         className="pointer-events-none"

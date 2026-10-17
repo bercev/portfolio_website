@@ -82,9 +82,9 @@ export function BootSequence() {
       case "dim":
         return "rgba(234, 246, 251, 0.55)";
       case "accent":
-        return "#2fd8ff"; // cyan phosphor
+        return "#7dd3fc"; // cyan phosphor
       default:
-        return "#eaf6fb";
+        return "#eef4fa";
     }
   };
 

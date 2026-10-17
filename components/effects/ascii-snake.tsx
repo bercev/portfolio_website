@@ -159,10 +159,10 @@ export function AsciiSnake() {
             const isHead = s.snake[0].x === x && s.snake[0].y === y;
             const isBody = s.snake.some((seg, i) => i > 0 && seg.x === x && seg.y === y);
             if (isHead) {
-              ctx.fillStyle = "#2fd8ff";
+              ctx.fillStyle = "#7dd3fc";
               ctx.fillText("█", cx, cy);
             } else if (isBody) {
-              ctx.fillStyle = "rgba(47, 216, 255, 0.75)";
+              ctx.fillStyle = "rgba(125, 211, 252, 0.75)";
               ctx.fillText("▓", cx, cy);
             } else if (s.bug.x === x && s.bug.y === y) {
               ctx.fillText("🐛", cx, cy);
@@ -177,14 +177,14 @@ export function AsciiSnake() {
         if (phase !== "playing") {
           ctx.fillStyle = "rgba(5, 7, 12, 0.72)";
           ctx.fillRect(0, 0, w, h);
-          ctx.fillStyle = "#eaf6fb";
+          ctx.fillStyle = "#eef4fa";
           const lines =
             phase === "over"
               ? ["SEGFAULT — like my first internship", `score ${s.eaten}`, "press enter to recompile"]
               : ["SNAKE // debug build", "eat the 🐛", "press enter to run"];
           ctx.font = `${Math.min(20, w / 26)}px ui-monospace, Menlo, monospace`;
           lines.forEach((line, i) => {
-            ctx.fillStyle = i === 0 ? "#ffb648" : "#eaf6fb";
+            ctx.fillStyle = i === 0 ? "#7dd3fc" : "#eef4fa";
             ctx.fillText(line, w / 2, h / 2 - (lines.length - 1) * 16 + i * 32);
           });
         }
