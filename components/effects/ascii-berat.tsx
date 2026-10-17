@@ -7,23 +7,24 @@ import type { ReactNode } from "react";
  * BERAT as high-density canvas-sampled ASCII art (React-Bits-style).
  *
  * Instead of hand-designed letter masks, the word "BERAT" is rasterized to an
- * offscreen canvas at high resolution and sampled on a fine 180x36 grid —
- * roughly 2x the symbol density of the old 17-row masks (~4x total glyphs).
- * Each cell's brightness maps through a 67-glyph density ramp (light -> dark),
- * so anti-aliased edges become natural ASCII shading with much finer detail,
- * like https://reactbits.dev/text-animations/ascii-text (MIT).
+ * offscreen canvas at high resolution and sampled on a fine 400x80 grid —
+ * 32,000 cells, ~5x the density of the 180x36 grid. Each cell's brightness
+ * maps through a 67-glyph density ramp (light -> dark), so anti-aliased edges
+ * become natural ASCII shading with very fine detail, like
+ * https://reactbits.dev/text-animations/ascii-text (MIT).
  *
  * Artistic touches kept: every glyph is its own <span> with seeded jitter
- * (+/-1.5px, +/-2.5 deg rotation, 0.92-1.08x scale) plus row undulation, so it
- * feels hand-placed, not computer-perfect. A 2s shimmer tick re-rolls glyphs
- * and jitter at the same brightness — texture shifts, letterforms stay.
+ * (rotation, scale, sub-pixel offsets proportional to the smaller glyph size)
+ * plus row undulation, so it feels hand-placed, not computer-perfect. A 2s
+ * shimmer tick re-rolls glyphs and jitter at the same brightness — texture
+ * shifts, letterforms stay.
  *
  * Client-only: sampling needs a canvas, so the art builds on mount
  * (layout effect -> no paint flash) and SSR renders an empty shell.
  */
 
-const COLS = 180;
-const ROWS = 36;
+const COLS = 400;
+const ROWS = 80;
 const CELL_PX = 10;
 const WORD = "BERAT";
 
@@ -99,7 +100,8 @@ function buildRows(bright: Float32Array, tick: number): ReactNode[][] {
   const rows: ReactNode[][] = [];
   for (let r = 0; r < ROWS; r++) {
     // Gentle row undulation — rows breathe instead of running laser-straight.
-    const rowWave = Math.sin(r * 0.35) * 1.5;
+    // Amplitude scaled down for the smaller glyphs (400-col grid).
+    const rowWave = Math.sin(r * 0.16) * 0.7;
     const segs: ReactNode[] = [];
     let spaces = 0;
     for (let c = 0; c < COLS; c++) {
@@ -122,7 +124,7 @@ function buildRows(bright: Float32Array, tick: number): ReactNode[][] {
           className="ascii-berat-cell"
           aria-hidden="true"
           style={{
-            transform: `translate(${((rng() - 0.5) * 3).toFixed(2)}px, ${((rng() - 0.5) * 3 + rowWave).toFixed(2)}px) rotate(${((rng() - 0.5) * 5).toFixed(2)}deg) scale(${(0.92 + rng() * 0.16).toFixed(3)})`,
+            transform: `translate(${((rng() - 0.5) * 1.4).toFixed(2)}px, ${((rng() - 0.5) * 1.4 + rowWave).toFixed(2)}px) rotate(${((rng() - 0.5) * 5).toFixed(2)}deg) scale(${(0.92 + rng() * 0.16).toFixed(3)})`,
           }}
         >
           {ch}

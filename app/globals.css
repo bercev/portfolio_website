@@ -2318,11 +2318,12 @@ html:not(.dark) .skill-pill {
      more character than JetBrains Mono's geometric shapes. Must stay monospace
      or the ASCII art alignment collapses. */
   font-family: "Courier New", Courier, ui-monospace, monospace;
-  /* HD rebuild: canvas-sampled 180x36 grid (~4x the glyphs of the old 17-row
-     masks). Width math: 180 columns x Courier 0.6em advance = 108em. At
-     1280px, 0.83vw = 10.6px -> ~1147px < 1184px available (after padding).
-     The min clamp keeps narrow viewports from overflowing. */
-  font-size: clamp(0.2rem, 0.83vw, 0.58rem);
+  /* 5x density: canvas-sampled 400x80 grid (32,000 cells). Width math:
+     400 columns x Courier 0.6em advance = 240em. At 1280px, 0.375vw = 4.8px
+     -> ~1152px < 1184px available (after padding). The min clamp keeps narrow
+     viewports from overflowing. Glyphs are smaller but far denser — same
+     overall wordmark size, much finer detail. */
+  font-size: clamp(0.09rem, 0.375vw, 0.26rem);
   line-height: 1.04;
   letter-spacing: 0;
   /* Pop: near-white ice, brighter than the old #d8f1ff. */
