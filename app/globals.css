@@ -1302,49 +1302,11 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--portfolio-accent);
 }
 
-/* Compile narrative: terminal build-log lines in chapter gates. */
-.journey-build-log {
-  grid-column: 1 / span 9;
-  margin: clamp(0.9rem, 1.8vh, 1.4rem) 0 0;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.9;
-  letter-spacing: 0.02em;
-  color: var(--muted-foreground);
-}
-
-.journey-build-log-line {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
+/* Kept for the snake game title prompt. */
 .journey-build-log-prompt {
   color: var(--portfolio-accent);
   margin-right: 0.5em;
   user-select: none;
-}
-
-.journey-build-log-cursor {
-  display: inline-block;
-  width: 0.6em;
-  height: 1.1em;
-  margin-left: 0.5em;
-  vertical-align: text-bottom;
-  background: var(--portfolio-accent);
-  animation: journey-build-log-blink 1.4s steps(1) infinite;
-}
-
-@keyframes journey-build-log-blink {
-  0%, 55% { opacity: 1; }
-  56%, 100% { opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .journey-build-log-cursor {
-    animation: none;
-  }
 }
 
 .journey-station-note {
@@ -1844,10 +1806,6 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-snake-title {
   color: var(--foreground);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
-}
-
-.journey-snake-hint {
-  color: var(--muted-foreground);
 }
 
 .journey-snake-score {
@@ -2353,9 +2311,24 @@ html:not(.dark) .skill-pill {
     0 0 34px rgba(125, 211, 252, 0.9),
     0 0 12px rgba(216, 241, 255, 0.95),
     0 0 4px rgba(255, 255, 255, 0.9);
-  white-space: pre;
   user-select: none;
   animation: ascii-berat-flicker 12s ease-in-out infinite;
+}
+
+/* Fluid imperfection layout: each glyph is its own inline-block span with a
+   seeded jitter transform, so characters sit slightly off-grid — hand-placed,
+   not computer-perfect. Layout boxes stay on the grid (transforms don't affect
+   layout), so the wordmark always reads B-E-R-A-T. */
+.ascii-berat-row {
+  display: block;
+  white-space: nowrap;
+}
+
+.ascii-berat-cell {
+  display: inline-block;
+  /* transform-origin center keeps rotation balanced on the glyph */
+  transform-origin: center;
+  /* text-shadow is inherited from .ascii-berat */
 }
 
 @keyframes ascii-berat-flicker {
