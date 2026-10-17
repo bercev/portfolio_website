@@ -2318,15 +2318,15 @@ html:not(.dark) .skill-pill {
      more character than JetBrains Mono's geometric shapes. Must stay monospace
      or the ASCII art alignment collapses. */
   font-family: "Courier New", Courier, ui-monospace, monospace;
-  /* Resolution boost (artistic): ~1.35x larger than the original
-     clamp(0.36rem, 1.15vw, 0.8rem). Width math: the art is ~96 columns and
-     Courier advances at 0.6em, so total width ≈ 57.6em. At 1280px this is
-     57.6 × 1.55vw ≈ 1143px < 1184px available (after 3rem side padding) —
-     fits; scales down safely on narrow viewports. */
-  font-size: clamp(0.48rem, 1.55vw, 1.08rem);
+  /* HD rebuild: canvas-sampled 180x36 grid (~4x the glyphs of the old 17-row
+     masks). Width math: 180 columns x Courier 0.6em advance = 108em. At
+     1280px, 0.83vw = 10.6px -> ~1147px < 1184px available (after padding).
+     The min clamp keeps narrow viewports from overflowing. */
+  font-size: clamp(0.2rem, 0.83vw, 0.58rem);
   line-height: 1.04;
   letter-spacing: 0;
-  color: #d8f1ff;
+  /* Pop: near-white ice, brighter than the old #d8f1ff. */
+  color: #f2fbff;
   /* No backdrop — the wordmark floats directly over the procedural background.
      Readability comes from a dark outline halo around each glyph plus a
      strong ice-cyan bloom, so there is no box or gradient behind the name. */
@@ -2340,9 +2340,10 @@ html:not(.dark) .skill-pill {
     0 2px 4px rgba(3, 5, 9, 0.9),
     -2px 0 4px rgba(3, 5, 9, 0.9),
     2px 0 4px rgba(3, 5, 9, 0.9),
-    0 0 34px rgba(125, 211, 252, 0.9),
-    0 0 12px rgba(216, 241, 255, 0.95),
-    0 0 4px rgba(255, 255, 255, 0.9);
+    0 0 64px rgba(125, 211, 252, 0.55),
+    0 0 40px rgba(125, 211, 252, 0.9),
+    0 0 16px rgba(220, 242, 255, 0.95),
+    0 0 5px rgba(255, 255, 255, 1);
   user-select: none;
   animation: ascii-berat-flicker 12s ease-in-out infinite;
 }
