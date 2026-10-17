@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 
-import { AsciiBerat } from "@/components/effects/ascii-berat";
+import ASCIIText from "@/components/effects/react-bits-ascii-text";
 import { useMotionPreference } from "@/components/providers/motion-provider";
 import type { PortfolioContent } from "@/data/content";
 
@@ -34,9 +34,30 @@ export function Hero({ content }: { content: HeroContent }) {
           {identity.name}
         </h1>
 
-        {/* BERAT as hand-designed ASCII art. */}
+        {/* BERAT as React Bits ASCIIText (MIT) — real canvas-sampled ASCII art. */}
         <div data-hero-glyph-band aria-hidden="true">
-          <AsciiBerat />
+          <ASCIIText
+            text="BERAT"
+            asciiFontSize={5}
+            fontFamily="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
+            fontWeight={700}
+            textColor="#ffffff"
+            colors={["#ffffff", "#7dd3fc", "#38bdf8"]}
+            textScale={1.15}
+            blocks={0.3}
+            waves={1}
+            waveSpeed={0.8}
+            chroma={0.5}
+            tilt={1}
+            hueShift={0}
+            scramble={0.6}
+            clickRipple
+            intro
+            idle
+            interactive
+            theme="dark"
+            style={{ pointerEvents: "auto" }}
+          />
         </div>
 
         {/* Role / location / tagline / scroll — always below the glyph band. */}

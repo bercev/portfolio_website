@@ -2386,6 +2386,8 @@ html:not(.dark) .skill-pill {
   display: grid;
   align-content: end;
   width: 100%;
+  /* Contains the absolutely-positioned React Bits ASCIIText canvas. */
+  position: relative;
   /* More vertical room so the larger wordmark dominates the hero. */
   min-height: clamp(46vh, 56vh, 66vh);
   padding-top: clamp(4.5rem, 12vh, 7.5rem);
