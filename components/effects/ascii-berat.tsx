@@ -177,11 +177,12 @@ function buildArt(tick: number): string {
               if (rr >= 0 && rr < height && cc >= 0 && cc < w && mask[rr][cc] !== " ") n++;
             }
           }
-          // Cores stay solid (n=8 -> always █); edges shimmer across ticks.
-          const v = (n / 8) * 0.78 + rng() * 0.32;
+          // Cores get texture too — organic throughout, not just edges.
+          // Higher noise = more RNG feel, but letterforms stay readable via the mask.
+          const v = (n / 8) * 0.55 + rng() * 0.55;
           const idx = Math.min(3, Math.floor(v * 4));
           let g = RAMP[idx] ?? "█";
-          if (rng() < 0.08) {
+          if (rng() < 0.35) {
             const bucket = TEXTURE[idx] ?? RAMP;
             g = bucket[Math.floor(rng() * bucket.length)] ?? g;
           }
