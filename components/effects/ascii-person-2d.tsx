@@ -388,7 +388,7 @@ export function AsciiPerson2D(): React.JSX.Element | null {
       if (blend < 1) {
         blend = reducedMotion ? 1 : Math.min(1, (now - blendStart) / BLEND_MS);
       }
-      const bob = reducedMotion ? 0 : Math.sin(now / 900) * 5;
+      const bob = reducedMotion ? 0 : Math.sin(now / 1800) * 3;
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);

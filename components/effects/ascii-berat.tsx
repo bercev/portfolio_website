@@ -216,7 +216,8 @@ export function AsciiBerat() {
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = window.setInterval(() => setTick((t) => t + 1), 450);
+    // Calmed: gentle shimmer every 2s instead of 0.45s — texture, not flicker.
+    const id = window.setInterval(() => setTick((t) => t + 1), 2000);
     return () => window.clearInterval(id);
   }, []);
 

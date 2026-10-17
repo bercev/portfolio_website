@@ -62,23 +62,23 @@
   --shell-gap: clamp(14px, 1.7vw, 28px);
   --journey-rule: color-mix(in srgb, var(--foreground) 24%, transparent);
   --journey-rule-soft: color-mix(in srgb, var(--foreground) 12%, transparent);
-  --portfolio-accent: #00d8ff;
+  --portfolio-accent: #7dd3fc;
   --portfolio-accent-foreground: #060a12;
-  --accent-neon: #00d8ff;
-  --chroma-cyan-neon: #00d8ff;
-  --chroma-emerald-neon: #20d98b;
-  --chroma-amber-neon: #ffbf3f;
-  --chroma-coral-neon: #ff6b57;
+  --accent-neon: #7dd3fc;
+  --chroma-cyan-neon: #7dd3fc;
+  --chroma-emerald-neon: #4d7c96;
+  --chroma-amber-neon: #7dd3fc;
+  --chroma-coral-neon: #6b8a9e;
   --selection-background: #000000;
   --selection-foreground: #ffffff;
   --effect-cursor: #101723;
   --effect-spark: #101723;
   --effect-glow: #3f4856;
   --effect-ascii-mask: #ffffff;
-  --effect-chroma-cyan: #00d8ff;
-  --effect-chroma-emerald: #20d98b;
-  --effect-chroma-amber: #ffbf3f;
-  --effect-chroma-coral: #ff6b57;
+  --effect-chroma-cyan: #7dd3fc;
+  --effect-chroma-emerald: #4d7c96;
+  --effect-chroma-amber: #7dd3fc;
+  --effect-chroma-coral: #6b8a9e;
   --hero-particle-accent: color-mix(
     in srgb,
     var(--portfolio-accent) 60%,
@@ -317,16 +317,16 @@ html[data-ascii="active"] .theme-selector {
 
 /* Palette accents are neon on dark space; light mode remixes `--*-neon` into ink. */
 [data-palette="ocean"] {
-  --accent-neon: #00d8ff;
-  --chroma-cyan-neon: #00d8ff;
-  --chroma-emerald-neon: #20d98b;
-  --chroma-amber-neon: #ffbf3f;
-  --chroma-coral-neon: #ff6b57;
+  --accent-neon: #7dd3fc;
+  --chroma-cyan-neon: #7dd3fc;
+  --chroma-emerald-neon: #4d7c96;
+  --chroma-amber-neon: #7dd3fc;
+  --chroma-coral-neon: #6b8a9e;
   --portfolio-accent: var(--accent-neon);
   --portfolio-accent-foreground: #060a12;
   --effect-cursor: var(--accent-neon);
   --effect-spark: var(--accent-neon);
-  --effect-glow: #9cf1ff;
+  --effect-glow: #bae6fd;
   --effect-chroma-cyan: var(--chroma-cyan-neon);
   --effect-chroma-emerald: var(--chroma-emerald-neon);
   --effect-chroma-amber: var(--chroma-amber-neon);

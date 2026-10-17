@@ -70,10 +70,10 @@ const fragmentShader = /* glsl */ `
 
     // Scroll-reactive: different procedural worlds per chapter
     float chapter = uScroll * 7.0; // 0..7
-    float t = uTime * 0.3;
+    float t = uTime * 0.15; // Calmed: half-speed drift so the bg feels alive, not busy.
 
-    // Scroll-reactive density: cells breathe subtly per chapter (+/-14%).
-    float chapPulse = 1.0 + 0.14 * sin(chapter * 3.14159265);
+    // Scroll-reactive density: cells breathe subtly per chapter (+/-7%).
+    float chapPulse = 1.0 + 0.07 * sin(chapter * 3.14159265);
     vec2 effCell = uCellSize * chapPulse;
 
     // Mouse lens: cells near the cursor subdivide (sharper detail where you point).
@@ -85,15 +85,15 @@ const fragmentShader = /* glsl */ `
     vec2 cellIdx = floor(px / effCell);
     vec2 cellUv = fract(px / effCell);
 
-    // Base pattern: flowing fBm
+    // Base pattern: flowing fBm (slow drift)
     vec2 p = cellIdx * 0.08;
-    p.x += t * 0.5;
-    p.y += sin(t * 0.3 + cellIdx.x * 0.02) * 0.5;
+    p.x += t * 0.25;
+    p.y += sin(t * 0.15 + cellIdx.x * 0.02) * 0.5;
     float n = fbm(p + chapter * 10.0);
 
     // Sine wave interference (changes per chapter)
-    float waves = sin(cellIdx.x * 0.05 + t * 2.0 + chapter) *
-                  sin(cellIdx.y * 0.04 - t * 1.5 + chapter * 2.0);
+    float waves = sin(cellIdx.x * 0.05 + t * 1.0 + chapter) *
+                  sin(cellIdx.y * 0.04 - t * 0.75 + chapter * 2.0);
 
     // Combine: noise + waves, modulated by chapter
     float field = n * 0.7 + waves * 0.3;
@@ -104,11 +104,11 @@ const fragmentShader = /* glsl */ `
     float bayer = bayer4(px);
     float threshold = 0.38 + (bayer - 0.5) * 0.14;
 
-    // Scramble ring at the lens edge: dots re-roll ~14x/sec, faster with velocity.
+    // Scramble ring at the lens edge: dots re-roll gently (~6x/sec, faster with velocity).
     // (Our "glyphs" are Braille dots, so re-rolling = random on/off flips.)
     float ring = smoothstep(90.0, 120.0, md) * (1.0 - smoothstep(150.0, 200.0, md));
     ring *= uMotionOK;
-    float scrRate = 14.0 + uMouseVel * 26.0;
+    float scrRate = 6.0 + uMouseVel * 10.0;
     float scrTick = floor(uTime * scrRate);
     float burstAmt = uBurst * uMotionOK;
     float scrambleMix = clamp(ring + burstAmt * 0.7, 0.0, 1.0);
@@ -129,9 +129,9 @@ const fragmentShader = /* glsl */ `
       // Sample field at dot position with slight offset for variation
       vec2 dotCell = cellIdx + (dotOffsets[i] - 0.5) * 0.5;
       vec2 dp = dotCell * 0.08;
-      dp.x += t * 0.5;
+      dp.x += t * 0.25;
       float dotField = fbm(dp + chapter * 10.0) * 0.7 +
-                       sin(dotCell.x * 0.05 + t * 2.0) * sin(dotCell.y * 0.04 - t * 1.5) * 0.3;
+                       sin(dotCell.x * 0.05 + t * 1.0) * sin(dotCell.y * 0.04 - t * 0.75) * 0.3;
       float on = step(threshold, dotField);
       // Scramble: random re-roll for dots in the ring / during chapter burst
       float scr = step(hash(cellHashBase * 7.13 + vec2(float(i) * 1.31, scrTick * 0.717)), 0.5);
@@ -151,8 +151,8 @@ const fragmentShader = /* glsl */ `
     float hw = sin(field * 12.566 + chapter * 1.7);
     col *= vec3(1.0 + 0.07 * hw, 1.0 + 0.04 * sin(field * 12.566 + 2.1), 1.0 - 0.05 * hw);
     col *= 0.6 + 0.8 * smoothstep(0.3, 0.8, field);
-    // Lens sharpen lift + chapter-burst glow pop
-    col *= 1.0 + lens * 0.25 + burstAmt * 0.35;
+    // Lens sharpen lift + chapter-burst glow pop (both subtle)
+    col *= 1.0 + lens * 0.15 + burstAmt * 0.2;
 
     // Dark background
     vec3 bg = vec3(0.008, 0.012, 0.02);
@@ -300,7 +300,7 @@ export function updateProceduralAscii(
     material.userData.burst = 1.0;
   }
   material.userData.lastChapter = chapter;
-  const burst = ((material.userData.burst as number) ?? 0) * 0.93;
+  const burst = ((material.userData.burst as number) ?? 0) * 0.88;
   material.userData.burst = burst;
   u.uBurst.value = reducedMotion ? 0 : burst;
   // Circadian drift: ease phosphors toward the current time-of-day palette.

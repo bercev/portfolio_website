@@ -33,9 +33,17 @@ const PHOSPHOR_THEME = {
   brightWhite: "#ffffff",
 };
 
-export function Terminal({ className }: { className?: string }) {
+export function Terminal({
+  className,
+  focusSignal,
+}: {
+  className?: string;
+  /** Increment to programmatically focus the xterm instance (e.g. when a flyout opens). */
+  focusSignal?: number;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<Shell | null>(null);
+  const termRef = useRef<import("@xterm/xterm").Terminal | null>(null);
 
   useEffect(() => {
     let disposed = false;
