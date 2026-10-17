@@ -261,7 +261,7 @@ export function createProceduralAscii(
   options: ProceduralAsciiOptions = {},
 ): THREE.ShaderMaterial {
   const {
-    cellSize = { x: 8, y: 16 }, // High-density: smaller cells, more ASCII chars
+    cellSize = { x: 3.5, y: 7 }, // 5x density: 5x the cells of the old 8x16 grid
     circadian = false,
   } = options;
   const base = circadian
