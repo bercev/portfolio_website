@@ -100,8 +100,8 @@ function buildAtlasTexture(glyphs: string[]): THREE.CanvasTexture {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#ffffff";
-  ctx.shadowColor = "rgba(255,255,255,0.9)";
-  ctx.shadowBlur = S * 0.06;
+  // No shadowBlur: glow makes adjacent glyphs bleed into a solid mass.
+  // Crisp glyph edges are what make ASCII art read as characters.
   for (let g = 0; g < 64; g++) {
     const col = g % 8;
     const row = Math.floor(g / 8);
@@ -593,9 +593,9 @@ export function AsciiPerson3D(): React.JSX.Element | null {
 
     // Independent materials per rig so the bust/work crossfade can damp
     // opacities separately.
-    const bustMat = createGlyphMaterial(atlas, 0.11, 0);
-    const workMat = createGlyphMaterial(atlas, 0.085, 0);
-    const donutMat = createGlyphMaterial(atlas, 0.105, 0.55);
+    const bustMat = createGlyphMaterial(atlas, 0.062, 0);
+    const workMat = createGlyphMaterial(atlas, 0.052, 0);
+    const donutMat = createGlyphMaterial(atlas, 0.07, 0.55);
 
     // ---- Bust rig: monumental, center-right, behind content ----
     const bust = buildBust(rng, bustMat);
