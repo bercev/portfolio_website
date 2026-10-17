@@ -353,18 +353,18 @@ function buildBust(rng: () => number, material: THREE.Material): BustRig {
   const group = new THREE.Group();
   const V3 = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
-  // Shoulders / upper chest slab.
+  // Shoulders / upper chest slab — sparse constellation sampling.
   group.add(
-    makeGlyphCloud(sampleBox(230, V3(0, -0.22, 0), V3(1.24, 0.38, 0.54), rng), material, BODY_COLOR, rng),
+    makeGlyphCloud(sampleBox(130, V3(0, -0.22, 0), V3(1.45, 0.42, 0.62), rng), material, BODY_COLOR, rng),
   );
   // Neck.
   group.add(
-    makeGlyphCloud(sampleCapsule(90, 0.13, V3(0, -0.08, 0), V3(0, 0.14, 0), rng), material, BODY_COLOR, rng),
+    makeGlyphCloud(sampleCapsule(55, 0.15, V3(0, -0.08, 0), V3(0, 0.14, 0), rng), material, BODY_COLOR, rng),
   );
   // Head in its own pivoted group so it can WATCH the cursor + blink.
   const head = new THREE.Group();
   head.position.set(0, 0.1, 0);
-  head.add(makeGlyphCloud(sampleSphere(270, 0.3, V3(0, 0.3, 0), rng), material, BODY_COLOR, rng));
+  head.add(makeGlyphCloud(sampleSphere(160, 0.38, V3(0, 0.3, 0), rng), material, BODY_COLOR, rng));
   group.add(head);
   return { group, head };
 }
@@ -593,13 +593,17 @@ export function AsciiPerson3D(): React.JSX.Element | null {
 
     // Independent materials per rig so the bust/work crossfade can damp
     // opacities separately.
-    const bustMat = createGlyphMaterial(atlas, 0.062, 0);
+    // Bust rig: bigger scale, smaller glyphs, sparse counts — a large airy
+    // constellation head, not a solid mass. Glyph quads are world-space so
+    // they stay small while positions spread with the group scale.
+    const bustMat = createGlyphMaterial(atlas, 0.048, 0);
     const workMat = createGlyphMaterial(atlas, 0.052, 0);
     const donutMat = createGlyphMaterial(atlas, 0.07, 0.55);
 
     // ---- Bust rig: monumental, center-right, behind content ----
     const bust = buildBust(rng, bustMat);
-    bust.group.scale.setScalar(1.7);
+    const BUST_SCALE = 2.3;
+    bust.group.scale.setScalar(BUST_SCALE);
     const BUST_BASE = new THREE.Vector3(1.8, 1.1, -3.2);
     bust.group.position.copy(BUST_BASE);
     scene.add(bust.group);
@@ -658,9 +662,12 @@ export function AsciiPerson3D(): React.JSX.Element | null {
       if (px.has && !reducedMotion) {
         targetYaw = THREE.MathUtils.clamp(px.x * 0.8, -0.95, 0.95);
         targetPitch = THREE.MathUtils.clamp(-px.y * 0.5, -0.5, 0.5);
-        // Micro-movements: the head is never perfectly still.
-        targetYaw += Math.sin(t * 0.9) * 0.03 + Math.sin(t * 2.17) * 0.015;
-        targetPitch += Math.sin(t * 1.3 + 0.7) * 0.02;
+        // Micro-movements: the head is never perfectly still, and slowly
+        // scans the room on a ~18s cycle so the bust feels alive.
+        targetYaw +=
+          Math.sin(t * 0.35) * 0.22 + Math.sin(t * 0.9) * 0.06 + Math.sin(t * 2.17) * 0.03;
+        targetPitch +=
+          Math.sin(t * 0.27 + 1.1) * 0.08 + Math.sin(t * 1.3 + 0.7) * 0.04;
       }
       if (nod && !reducedMotion) targetPitch += Math.sin(t * 2.6) * 0.14;
       const localYaw = THREE.MathUtils.clamp(wrapPi(targetYaw - wrapPi(groupYaw)), -1.15, 1.15);
@@ -676,16 +683,29 @@ export function AsciiPerson3D(): React.JSX.Element | null {
 
       // Crossfade between stage modes (smooth, never a jarring cut).
       modeMix = damp(modeMix, modeRef.current === "bust" ? 1 : 0, 3.5, sdt);
-      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.32 * modeMix;
+      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.28 * modeMix;
       (workMat.uniforms.uOpacity as THREE.IUniform).value = 0.85 * (1 - modeMix);
 
       if (!reducedMotion) {
-        // Breathing: bust rises slowly, worker bobs with the typing rhythm.
-        bust.group.position.y = BUST_BASE.y + Math.sin(t * 1.1) * 0.035;
+        // The bust floats: layered drift on all three axes at different
+        // frequencies so the motion feels organic, never mechanical.
+        bust.group.position.set(
+          BUST_BASE.x + Math.sin(t * 0.5) * 0.12 + Math.sin(t * 1.63 + 1.0) * 0.045,
+          BUST_BASE.y + Math.sin(t * 1.1) * 0.055 + Math.sin(t * 2.31 + 0.5) * 0.016,
+          BUST_BASE.z + Math.cos(t * 0.37) * 0.12 + Math.sin(t * 0.83) * 0.05,
+        );
+        // Gentle sway (roll + tilt) layered on top of the drift.
+        bust.group.rotation.z = Math.sin(t * 0.7) * 0.045 + Math.sin(t * 1.9) * 0.015;
+        bust.group.rotation.x = Math.sin(t * 0.52 + 2.0) * 0.03;
+        // Slow scale pulse — the bust "breathes" in size as well as position.
+        bust.group.scale.setScalar(
+          BUST_SCALE * (1 + Math.sin(t * 1.3) * 0.022 + Math.sin(t * 3.1) * 0.008),
+        );
+        // Worker bobs with the typing rhythm.
         worker.group.position.y =
           WORKER_BASE.y + Math.sin(t * 1.1 + 1.3) * 0.012 + Math.sin(t * Math.PI * 2 * 4.75) * 0.006;
-        // Bust turntable; worker settles to face the camera.
-        bustYaw += dt * 0.16;
+        // Bust turntable (lively but never dizzying); worker settles to face the camera.
+        bustYaw += dt * 0.24;
         workerYaw = damp(workerYaw, 0, 4, sdt);
         // Donut tumbles behind everything.
         donut.rotation.x = t * 0.32;
