@@ -2505,7 +2505,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
   column-gap: var(--shell-gap);
   align-items: end;
-  padding-top: clamp(0.85rem, 1.4vh, 1.25rem);
+  padding-top: clamp(2rem, 4vh, 3.5rem);
   padding-bottom: clamp(6vh, 8vh, 11vh);
 }
 

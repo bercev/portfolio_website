@@ -702,7 +702,7 @@ export function AsciiPerson3D(): React.JSX.Element | null {
 
       // Crossfade between stage modes (smooth, never a jarring cut).
       modeMix = damp(modeMix, modeRef.current === "bust" ? 1 : 0, 3.5, sdt);
-      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.45 * modeMix;
+      (bustMat.uniforms.uOpacity as THREE.IUniform).value = 0.25 * modeMix;
       (workMat.uniforms.uOpacity as THREE.IUniform).value = 0.85 * (1 - modeMix);
 
       if (!reducedMotion) {

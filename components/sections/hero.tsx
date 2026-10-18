@@ -46,13 +46,12 @@ export function Hero({ content }: { content: HeroContent }) {
             textScale={1.9}
             letterSpacing={0.07}
             blocks={0}
-            waves={0.2}
-            waveSpeed={0.4}
-            chroma={0.2}
+            waves={0}
+            waveSpeed={0}
+            chroma={0}
             tilt={1}
             hueShift={0}
-            scramble={0.6}
-            clickRipple
+            scramble={0}
             intro
             idle
             interactive
