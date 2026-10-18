@@ -46,9 +46,9 @@ export function Hero({ content }: { content: HeroContent }) {
             textScale={1.9}
             letterSpacing={0.07}
             blocks={0}
-            waves={1}
-            waveSpeed={0.8}
-            chroma={1}
+            waves={0.2}
+            waveSpeed={0.4}
+            chroma={0.2}
             tilt={1}
             hueShift={0}
             scramble={0.6}
