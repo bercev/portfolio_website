@@ -109,6 +109,16 @@ function buildAtlasTexture(glyphs: string[]): THREE.CanvasTexture {
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 4;
+  // No mipmaps: glyph quads render at ~10px on screen while atlas cells are
+  // 128px, so the GPU would minify through mipmap levels ~3-4, bleeding glyph
+  // strokes into the transparent background. Then the `tex.a < 0.04` discard
+  // in the fragment shader almost never fires, and hundreds of overlapping
+  // half-alpha quads (depthWrite:false) composite into the white blob instead
+  // of distinct glyphs. Bilinear sampling of the base level keeps glyph edges
+  // crisp and the background truly transparent.
+  tex.generateMipmaps = false;
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
   return tex;
 }
 
