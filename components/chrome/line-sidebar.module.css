@@ -116,23 +116,10 @@
   outline-offset: 0.35rem;
 }
 
-.index {
-  color: color-mix(in srgb, var(--foreground) 46%, transparent);
-  font-size: 0.6875rem;
-  font-variant-numeric: tabular-nums;
-  transition: color 100ms ease-out;
-}
-
 .item:has(.link:hover) .marker,
 .item:has(.link:focus-visible) .marker,
 .item:has(.link[aria-current="location"]) .marker {
   background: var(--line-sidebar-accent);
-}
-
-.link:hover .index,
-.link:focus-visible .index,
-.link[aria-current="location"] .index {
-  color: inherit;
 }
 
 :global(.dark) .sidebar {

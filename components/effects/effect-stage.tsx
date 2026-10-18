@@ -11,10 +11,8 @@ import {
   type EffectProfile,
 } from "@/lib/effect-policy";
 
-import { ClickSpark } from "./click-spark";
 import { ShaderBackdrop } from "./shader-backdrop";
 import { SpecularControls } from "./specular-controls";
-import { TargetCursor } from "./target-cursor";
 import { BootSequence } from "./boot-sequence";
 import { EasterEggs } from "./easter-eggs";
 import { AsciiPerson3D } from "./ascii-person-3d";
@@ -87,11 +85,6 @@ export function EffectStage() {
       {profile?.pointerEffects ? (
         <>
           <SpecularControls />
-          <TargetCursor
-            cursorColor="var(--effect-cursor)"
-            cursorColorOnTarget="var(--effect-cursor)"
-          />
-          <ClickSpark />
         </>
       ) : null}
       </div>

@@ -240,7 +240,6 @@ export function LineSidebar({ items }: LineSidebarProps) {
                 startLoop();
               }}
             >
-              <span className={styles.index}>{index + 1}</span>
               <span>{item.label}</span>
             </a>
           </li>
