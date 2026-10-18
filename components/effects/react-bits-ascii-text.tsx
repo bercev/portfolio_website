@@ -291,7 +291,9 @@ export default function ASCIIText({
     colors: [palette[0], palette[1] ?? palette[0], palette[2] ?? palette[1] ?? palette[0]]
   };
   const settingsRef = useRef(settings);
-  settingsRef.current = settings;
+  useEffect(() => {
+    settingsRef.current = settings;
+  });
 
   useEffect(() => {
     const container = containerRef.current;

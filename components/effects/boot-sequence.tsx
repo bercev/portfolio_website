@@ -62,6 +62,8 @@ export function BootSequence() {
 
   // Set the real visibility after mount (avoids SSR hydration mismatch).
   useEffect(() => {
+    // Intentional mount guard: real visibility is client-only.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (shouldBoot()) setVisible(true);
   }, []);
 

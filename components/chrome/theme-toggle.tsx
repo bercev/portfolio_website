@@ -23,6 +23,9 @@ export function ThemeToggle({
   const resolvedClassName = className ?? toggleClassName;
 
   useEffect(() => {
+    // Intentional mount guard (standard next-themes pattern): avoids hydration
+    // mismatch by rendering the placeholder until the client mounts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
