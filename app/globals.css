@@ -2459,6 +2459,8 @@ html:not(.dark) .skill-pill {
   width: 100%;
   /* Contains the absolutely-positioned React Bits ASCIIText canvas. */
   position: relative;
+  /* White panel behind the BERAT (React Bits default light-mode look). */
+  background: #ffffff;
   /* More vertical room so the larger wordmark dominates the hero. */
   min-height: clamp(46vh, 56vh, 66vh);
   padding-top: clamp(4.5rem, 12vh, 7.5rem);

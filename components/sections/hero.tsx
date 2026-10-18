@@ -42,8 +42,8 @@ export function Hero({ content }: { content: HeroContent }) {
             fontFamily="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
             fontWeight={700}
             textColor="#ffffff"
-            colors={["#ffffff", "#00e5ff", "#0090ff"]}
-            textScale={1.4}
+            colors={["#ffffff", "#f5f5f5", "#e0e0e0"]}
+            textScale={1.9}
             letterSpacing={0.07}
             blocks={0}
             waves={1}
@@ -56,7 +56,7 @@ export function Hero({ content }: { content: HeroContent }) {
             intro
             idle
             interactive
-            theme="dark"
+            theme="light"
             style={{ pointerEvents: "auto" }}
           />
         </div>
