@@ -28,9 +28,9 @@ export function WarpText({
             key={`${character}-${index}`}
             data-warp-glyph
             className="inline-block whitespace-pre"
-            initial={reducedMotion ? false : { y: 10, rotate: 1.5 }}
-            animate={reducedMotion ? { y: 0, rotate: 0 } : undefined}
-            whileInView={reducedMotion ? undefined : { y: 0, rotate: 0 }}
+            initial={reducedMotion ? false : { y: 10 }}
+            animate={reducedMotion ? { y: 0 } : undefined}
+            whileInView={reducedMotion ? undefined : { y: 0 }}
             viewport={{ once: true, amount: 0.72 }}
             transition={{
               duration: reducedMotion ? 0 : 0.45,
