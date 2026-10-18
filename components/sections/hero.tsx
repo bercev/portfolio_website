@@ -53,7 +53,6 @@ export function Hero({ content }: { content: HeroContent }) {
             hueShift={0}
             scramble={0}
             intro
-            idle
             interactive
             theme="dark"
             style={{ pointerEvents: "auto" }}
