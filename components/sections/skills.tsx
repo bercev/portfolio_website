@@ -12,7 +12,6 @@ export function Skills({ content, heading }: SkillsProps) {
   return (
     <Station
       id="skills"
-      station={6}
       heading={heading}
       className="journey-station--vocab"
     >

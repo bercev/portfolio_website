@@ -12,7 +12,6 @@ export function Experience({ content, heading }: ExperienceProps) {
   return (
     <Station
       id="experience"
-      station={4}
       heading={heading}
       className="journey-station--systems"
     >

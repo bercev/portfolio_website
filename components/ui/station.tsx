@@ -3,10 +3,8 @@ import { cn } from "@/lib/utils";
 
 type StationProps = {
   readonly id: SectionId;
-  /** Numbered chapter on the journey, e.g. 2 for the About chapter. */
-  readonly station: number;
   readonly heading: string;
-  /** Scannable fact pinned to the right edge of the masthead rule. */
+  /** Scannable fact pinned to the right edge of the masthead. */
   readonly note?: string;
   readonly className?: string;
   readonly children: React.ReactNode;
@@ -14,7 +12,6 @@ type StationProps = {
 
 export function Station({
   id,
-  station,
   heading,
   note,
   className,
@@ -31,7 +28,6 @@ export function Station({
       )}
     >
       <header className="journey-station-head">
-        <p className="journey-kicker">{station}</p>
         {note ? <p className="journey-station-note">{note}</p> : null}
         <h2 id={`${id}-heading`} className="journey-station-heading">
           {heading}

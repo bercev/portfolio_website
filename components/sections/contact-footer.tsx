@@ -15,7 +15,6 @@ export function ContactFooter({
   return (
     <Station
       id="contact"
-      station={7}
       heading={content.heading}
       className="journey-station--connect"
     >

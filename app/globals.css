@@ -1311,19 +1311,9 @@ html[data-journey] [data-effect-layer="background"] {
   grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
   column-gap: var(--shell-gap);
   align-items: baseline;
-  margin-bottom: clamp(1.4rem, 2.8vh, 2.2rem);
-  padding-top: clamp(0.85rem, 1.4vh, 1.25rem);
-  border-top: 1px solid var(--journey-rule);
-}
-
-.journey-kicker {
-  grid-column: 1 / span 6;
-  margin: 0;
-  font: 600 14px/1 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  font-variant-numeric: tabular-nums;
-  color: var(--portfolio-accent);
+  margin-bottom: clamp(2.5rem, 5vh, 4rem);
+  /* No hairline rule — sections are separated by space, not lines. */
+  padding-top: clamp(4rem, 10vh, 8rem);
 }
 
 /* Kept for the snake game title prompt. */
@@ -1336,9 +1326,8 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-station-note {
   grid-column: 7 / -1;
   margin: 0;
-  font: 400 11px/1.5 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
+  font: 400 0.95rem/1.6 var(--font-sans);
+  letter-spacing: -0.01em;
   text-align: right;
   text-wrap: balance;
   color: var(--muted-foreground);
@@ -1350,10 +1339,11 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--foreground);
   font-family: var(--font-display);
   font-optical-sizing: auto;
-  font-size: clamp(2.6rem, 6.2vw, 4.75rem);
+  /* Confident scale: headlines do the visible work. */
+  font-size: clamp(3.2rem, 8vw, 6.5rem);
   font-weight: 600;
   line-height: 0.96;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.03em;
   text-transform: none;
   text-wrap: balance;
 }
@@ -1361,11 +1351,10 @@ html[data-journey] [data-effect-layer="background"] {
 /* The closing line is a sentence, not a label — let it use the full measure. */
 .journey-station--connect .journey-station-heading {
   grid-column: 1 / span 10;
-  font-size: clamp(2.7rem, 6.8vw, 5.1rem);
+  font-size: clamp(3.4rem, 8.6vw, 7rem);
 }
 
 @media (max-width: 900px) {
-  .journey-kicker,
   .journey-station-note,
   .journey-station-heading,
   .journey-station--connect .journey-station-heading {
@@ -1390,10 +1379,9 @@ html[data-journey] [data-effect-layer="background"] {
 
 .journey-spec-label {
   margin: 0;
-  font: 500 10px/1 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--portfolio-accent);
+  font: 600 0.95rem/1.5 var(--font-sans);
+  letter-spacing: -0.01em;
+  color: var(--foreground);
 }
 
 .journey-spec-label--inset {
@@ -2114,6 +2102,89 @@ html:not(.dark) .skill-pill {
   min-height: 100%;
 }
 
+/* Editorial ledger: projects as full-width entries with varied rhythm,
+   not a grid of identical cards. */
+.journey-project-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3.5rem, 7vh, 5.5rem);
+}
+
+.journey-project-featured {
+  max-width: 60rem;
+}
+
+.journey-project-featured-title {
+  margin: 0.9rem 0 0;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: clamp(2.6rem, 5.5vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+
+.journey-project-featured-copy {
+  margin-top: 1.25rem;
+  max-width: 62ch;
+  font-size: 1.12rem;
+}
+
+.journey-project-row {
+  display: grid;
+  grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
+  column-gap: var(--shell-gap);
+  align-items: baseline;
+}
+
+.journey-project-row-main {
+  grid-column: 1 / span 5;
+}
+
+.journey-project-row-title {
+  margin: 0;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: clamp(1.8rem, 3.6vw, 2.9rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.024em;
+  text-wrap: balance;
+}
+
+.journey-project-row-when {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
+}
+
+.journey-project-row-copy {
+  grid-column: 6 / span 5;
+  margin: 0;
+  max-width: 52ch;
+}
+
+.journey-project-row > :last-child {
+  grid-column: 11 / span 2;
+}
+
+@media (max-width: 900px) {
+  .journey-project-row-main,
+  .journey-project-row-copy,
+  .journey-project-row > :last-child {
+    grid-column: 1 / -1;
+  }
+  .journey-project-row-copy {
+    margin-top: 1rem;
+  }
+  .journey-project-row > :last-child {
+    margin-top: 1rem;
+  }
+}
+
 .journey-project.journey-panel {
   background: transparent;
   border: 0;
@@ -2435,7 +2506,6 @@ html[data-journey="active"] [data-hero-name-fallback] {
   align-items: end;
   padding-top: clamp(0.85rem, 1.4vh, 1.25rem);
   padding-bottom: clamp(6vh, 8vh, 11vh);
-  border-top: 1px solid var(--journey-rule);
 }
 
 [data-hero-lede] {
@@ -2447,15 +2517,11 @@ html[data-journey="active"] [data-hero-name-fallback] {
 }
 
 [data-hero-editorial] [data-hero-meta] {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem 0.7rem;
   margin: 0;
-  font: 500 11px/1 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--muted-foreground);
+  /* A statement, not a label: sentence case, readable size. */
+  font: 500 1.05rem/1.5 var(--font-sans);
+  letter-spacing: -0.01em;
+  color: var(--foreground);
 }
 
 [data-hero-editorial] [data-hero-meta-sep] {
@@ -2468,10 +2534,10 @@ html[data-journey="active"] [data-hero-name-fallback] {
   color: var(--foreground);
   font-family: var(--font-display);
   font-optical-sizing: auto;
-  font-size: clamp(1.75rem, 3.6vw, 2.9rem);
-  font-weight: 400;
-  line-height: 1.08;
-  letter-spacing: -0.018em;
+  font-size: clamp(2.25rem, 4.8vw, 3.9rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
   text-wrap: balance;
 }
 
@@ -2486,19 +2552,13 @@ html[data-journey="active"] [data-hero-name-fallback] {
   display: grid;
   grid-template-columns: 5.25rem minmax(0, 1fr);
   gap: 0.75rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--journey-rule-soft);
-}
-
-[data-hero-signal]:last-child {
-  border-bottom: 0;
+  padding: 0.75rem 0;
 }
 
 [data-hero-signal] dt {
   margin: 0;
-  font: 400 10px/1.7 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
+  font: 500 0.82rem/1.6 var(--font-sans);
+  letter-spacing: -0.01em;
   color: var(--muted-foreground);
 }
 

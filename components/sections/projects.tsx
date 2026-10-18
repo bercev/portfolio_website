@@ -24,80 +24,95 @@ function previewFor(title: Project["title"]) {
   return projectPreviews[title];
 }
 
-function ProjectDetails({ project }: { readonly project: Project }) {
+function ProjectRow({ project }: { readonly project: Project }) {
   const preview = previewFor(project.title);
 
   return (
-    <>
-      <p className="journey-project-when">{project.dates}</p>
+    <article className="journey-project-row">
+      <div className="journey-project-row-main">
+        {project.href && preview ? (
+          <HoverPreview
+            title={project.title}
+            href={project.href}
+            image={preview}
+            headingClassName="journey-project-row-title"
+            linkClassName="decoration-portfolio-accent"
+            linkIconSize={26}
+            previewClassName="journey-project-preview"
+          />
+        ) : project.href ? (
+          <h3 className="journey-project-row-title">
+            <ExternalLink
+              href={project.href}
+              className="decoration-portfolio-accent"
+              iconSize={26}
+            >
+              {project.title}
+            </ExternalLink>
+          </h3>
+        ) : (
+          <h3 className="journey-project-row-title">{project.title}</h3>
+        )}
+        <p className="journey-project-row-when">{project.dates}</p>
+      </div>
+      <p className="journey-body journey-project-row-copy">
+        {project.description}
+      </p>
+      <TechPills technologies={project.technologies} />
+    </article>
+  );
+}
+
+function FeaturedProject({ project }: { readonly project: Project }) {
+  const preview = previewFor(project.title);
+
+  return (
+    <article className="journey-project-featured">
+      <p className="journey-project-row-when">{project.dates}</p>
       {project.href && preview ? (
         <HoverPreview
           title={project.title}
           href={project.href}
           image={preview}
-          headingClassName="journey-project-title"
+          headingClassName="journey-project-featured-title"
           linkClassName="decoration-portfolio-accent"
-          linkIconSize={22}
+          linkIconSize={30}
           previewClassName="journey-project-preview"
         />
       ) : project.href ? (
-        <h3 className="journey-project-title">
+        <h3 className="journey-project-featured-title">
           <ExternalLink
             href={project.href}
             className="decoration-portfolio-accent"
-            iconSize={22}
+            iconSize={30}
           >
             {project.title}
           </ExternalLink>
         </h3>
       ) : (
-        <h3 className="journey-project-title">{project.title}</h3>
+        <h3 className="journey-project-featured-title">{project.title}</h3>
       )}
-      <p className="journey-body journey-project-copy">{project.description}</p>
-      <div className="mt-auto pt-5">
-        <TechPills technologies={project.technologies} />
-      </div>
-    </>
+      <p className="journey-body journey-project-featured-copy">
+        {project.description}
+      </p>
+      <TechPills technologies={project.technologies} />
+    </article>
   );
 }
 
 export function Projects({ content, heading }: ProjectsProps) {
-  const [featured, supporting, ...rest] = content;
+  const [featured, ...rest] = content;
 
   return (
     <Station
       id="projects"
-      station={5}
       heading={heading}
       className="journey-station--ships"
     >
-      <div className="journey-grid journey-grid--ships">
-        {featured ? (
-          <article
-            data-project-featured
-            className="journey-panel journey-project"
-          >
-            <ProjectDetails project={featured} />
-          </article>
-        ) : null}
-
-        {supporting ? (
-          <article
-            data-project-supporting
-            className="journey-panel journey-project"
-          >
-            <ProjectDetails project={supporting} />
-          </article>
-        ) : null}
-
+      <div className="journey-project-ledger">
+        {featured ? <FeaturedProject project={featured} /> : null}
         {rest.map((project) => (
-          <article
-            key={project.title}
-            data-project-supporting
-            className="journey-panel journey-project"
-          >
-            <ProjectDetails project={project} />
-          </article>
+          <ProjectRow key={project.title} project={project} />
         ))}
       </div>
 

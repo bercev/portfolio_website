@@ -75,7 +75,6 @@ export function Publications({ content, heading }: PublicationsProps) {
   return (
     <Station
       id="publications"
-      station={3}
       heading={heading}
       className="journey-station--proof"
     >

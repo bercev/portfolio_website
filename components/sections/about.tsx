@@ -13,7 +13,6 @@ export function About({ content, heading }: AboutProps) {
   return (
     <Station
       id="about"
-      station={2}
       heading={heading}
       className="journey-station--origin"
     >
