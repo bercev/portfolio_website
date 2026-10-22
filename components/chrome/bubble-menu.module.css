@@ -1,12 +1,13 @@
 .anchor {
+  /* Top-right dock below the fixed masthead. Bottom-center collided with the
+     hero headline; bottom-right collided with full-bleed mobile body copy.
+     The top-right slot is text-free at every section anchor, desktop + mobile,
+     so the dock is uniform across breakpoints. */
   position: fixed;
-  inset-inline: 0;
-  bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  top: calc(env(safe-area-inset-top) + 4.5rem);
+  right: max(1.25rem, env(safe-area-inset-right));
   z-index: var(--z-site-navigation);
   display: flex;
-  justify-content: center;
-  padding-left: max(1rem, env(safe-area-inset-left));
-  padding-right: max(1rem, env(safe-area-inset-right));
   pointer-events: none;
 }
 
@@ -56,14 +57,20 @@
 
 .overlay {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom) + 1.375rem);
-  left: 50%;
+  /* The fan is a vertical bubble column below the trigger: the overlay's top
+     edge aligns with the trigger's top, its horizontal center sits on the
+     trigger's center (right edge = anchor right + half trigger − half width),
+     and its height covers the 5-bubble column. */
+  top: calc(env(safe-area-inset-top) + 4.5rem);
+  right: calc(
+    max(1.25rem, env(safe-area-inset-right)) + 1.75rem -
+      min(11rem, calc(100vw - 2rem)) / 2
+  );
   z-index: 1;
   width: min(11rem, calc(100vw - 2rem));
-  height: 5.75rem;
+  height: 20rem;
   background: transparent;
   pointer-events: none;
-  transform: translateX(-50%);
 }
 
 .overlay[data-open="true"] {
@@ -97,36 +104,39 @@
 
 .item {
   position: absolute;
-  bottom: 0;
+  /* Anchored at the overlay's top (= trigger top); --bubble-y translates down. */
+  top: 0;
   left: 50%;
   z-index: 2;
   transform: translateX(calc(-50% + var(--bubble-x)))
     translateY(var(--bubble-y)) rotate(var(--bubble-rotation));
 }
 
+/* Fan is a vertical bubble column below the trigger: 3.25rem pitch gives
+   8px gaps between the 2.75rem bubbles, starting 0.375rem under the trigger. */
 .item:nth-child(1) {
-  --bubble-x: -3.875rem;
-  --bubble-y: 0rem;
+  --bubble-x: 0rem;
+  --bubble-y: 3.875rem;
 }
 
 .item:nth-child(2) {
-  --bubble-x: -2.74rem;
-  --bubble-y: -2.74rem;
+  --bubble-x: 0rem;
+  --bubble-y: 7.125rem;
 }
 
 .item:nth-child(3) {
   --bubble-x: 0rem;
-  --bubble-y: -3.875rem;
+  --bubble-y: 10.375rem;
 }
 
 .item:nth-child(4) {
-  --bubble-x: 2.74rem;
-  --bubble-y: -2.74rem;
+  --bubble-x: 0rem;
+  --bubble-y: 13.625rem;
 }
 
 .item:nth-child(5) {
-  --bubble-x: 3.875rem;
-  --bubble-y: 0rem;
+  --bubble-x: 0rem;
+  --bubble-y: 16.875rem;
 }
 
 .link {
