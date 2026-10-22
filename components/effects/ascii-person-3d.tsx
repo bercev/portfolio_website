@@ -315,12 +315,14 @@ const GLYPH_FRAG = /* glsl */ `
     // "dither / noise / ascii" reference — not a soft glow.
     vec2 cell = vUv - 0.5;
     float dist = length(cell) * 2.0;
-    float radius = 0.16 + 0.86 * sqrt(density);
+    // Radius caps at ~0.62 of the cell so dots NEVER merge into a solid
+    // mass — the gaps between dots are what make it read as dot-matrix.
+    float radius = 0.10 + 0.52 * sqrt(density);
     float dither = bayer4(gl_FragCoord.xy * 0.5);
     float dot = 1.0 - smoothstep(
-      radius - 0.30,
+      radius - 0.26,
       radius + 0.03,
-      dist + (dither - 0.5) * 0.34
+      dist + (dither - 0.5) * 0.45
     );
     if (dot < 0.03) discard;
     // Keep a whisper of the glyph texture inside the dot so the figure
@@ -329,8 +331,8 @@ const GLYPH_FRAG = /* glsl */ `
     float gy = floor(vGlyph / 8.0);
     vec2 cellUv = vec2((gx + vUv.x) / 8.0, (7.0 - gy + vUv.y) / 8.0);
     float texA = texture2D(uAtlas, cellUv).a;
-    float a = dot * mix(0.55, 1.0, texA) * uOpacity;
-    vec3 col = vColor * (0.45 + 0.85 * density);
+    float a = dot * mix(0.35, 1.0, texA) * uOpacity;
+    vec3 col = vColor * (0.35 + 0.80 * density);
     gl_FragColor = vec4(col, a);
   }
 `;
