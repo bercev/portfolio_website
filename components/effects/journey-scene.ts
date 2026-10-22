@@ -1868,10 +1868,154 @@ export class JourneyScene {
     const dummy = new THREE.Object3D();
     const col = new THREE.Color();
 
-    // 1 — Planets: REMOVED (wave-1). The displaced-icosahedron planets
-    // rendered as flat gray cauliflower lumps on chapter sightlines in
-    // every verified screenshot — never as planets. A replacement globe
-    // is a backlog rework item; the cosmos keeps city/forests/nebulae.
+    // 1 — The Orrery Globe: one deliberate ringed planet hanging over
+    // the skills→contact stretch ("The Orrery" chapter). The old
+    // displaced-icosahedron planets read as gray cauliflower lumps on
+    // sightlines in every verified screenshot (wave-1 root cause), so
+    // this rebuild is intentionally conservative: a smooth sphere plus
+    // a tilted banded ring — OPAQUE materials, depthWrite ON, no
+    // additive blending, no atmosphere shells, no displacement.
+    // PLACEMENT (frame-verified, then corrected once): the analytic
+    // camera model put it off-center-left, but the real look aims more
+    // leftward — the first in-scene render sat near frame center at
+    // t=0.76 (bright disc, v26f-t076). Shifted ~-17u along the camera
+    // right and +11u up to land at NDC ≈ (-0.45, 0.30): clearly
+    // off-center through the skills approach, exiting before contact,
+    // never on any chapter sightline. No maintained 3D-planet library
+    // beats the scene's in-house procedural pattern; Aceternity/React
+    // Bits ASCII components are 2D DOM effects, not 3D planets.
+    {
+      const arrivalT = 0.88; // SECTION_PATH_T: contact
+      const ap = this.curve.getPointAt(arrivalT);
+      const atan = this.curve.getTangentAt(arrivalT);
+      const arrivalPos = ap.clone().addScaledVector(atan, 16);
+      const center = arrivalPos.clone().add(new THREE.Vector3(-48, 21, -1));
+
+      const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+      const frost = new THREE.Color(this.palette.cyan);
+      const deep = new THREE.Color("#0a1626");
+      const tmp = new THREE.Color();
+
+      // --- Planet surface: BRIGHT banded FROST sphere, shading baked
+      // in. Bright ice-cyan body with dark navy bands carved out —
+      // the dark-on-dark version was invisible against the night sky.
+      const SW = 1024;
+      const SH = 512;
+      const surf = document.createElement("canvas");
+      surf.width = SW;
+      surf.height = SH;
+      const sctx = surf.getContext("2d");
+      if (sctx) {
+        const img = sctx.createImageData(SW, SH);
+        for (let y = 0; y < SH; y++) {
+          const v = y / SH;
+          // Gas-giant band field: low-frequency sines summed.
+          let f =
+            0.42 +
+            0.26 * Math.sin(v * Math.PI * 6 + 1.4 * Math.sin(v * Math.PI * 2.2)) +
+            0.14 * Math.sin(v * Math.PI * 13 + 2.1);
+          f = Math.min(1, Math.max(0, f));
+          for (let x = 0; x < SW; x++) {
+            const u = x / SW;
+            // Ordered-dither quantization to 5 print levels.
+            const levels = 5;
+            const q = Math.min(
+              levels - 1,
+              Math.floor(f * levels + BAYER[(y % 4) * 4 + (x % 4)]! / 16),
+            );
+            const dithered = q / (levels - 1);
+            // Mild baked light falloff toward the texture wrap so the
+            // sphere reads round without scene lights.
+            const shade = 0.72 + 0.28 * Math.cos((u - 0.35) * Math.PI * 2);
+            // Scanline nod to the reference treatment: faint lines.
+            const scan = y % 3 === 0 ? 0.93 : 1;
+            // Bright body, dark bands carved out (dark-on-dark was
+            // invisible against the night sky).
+            tmp.copy(frost).lerp(deep, 1 - dithered);
+            tmp.multiplyScalar(0.05 + 0.95 * Math.min(1, shade * scan));
+            const idx = (y * SW + x) * 4;
+            img.data[idx] = Math.round(tmp.r * 255);
+            img.data[idx + 1] = Math.round(tmp.g * 255);
+            img.data[idx + 2] = Math.round(tmp.b * 255);
+            img.data[idx + 3] = 255;
+          }
+        }
+        sctx.putImageData(img, 0, 0);
+      }
+      const surfTex = new THREE.CanvasTexture(surf);
+      surfTex.colorSpace = THREE.SRGBColorSpace;
+      const globe = new THREE.Mesh(
+        new THREE.SphereGeometry(6, 48, 32),
+        // fog:false — the globe is a crisp print-like object (the
+        // reference treatment); aerial perspective would wash its
+        // dithered bands into another gray lump.
+        new THREE.MeshBasicMaterial({ map: surfTex, fog: false }),
+      );
+      globe.userData.noAura = true;
+
+      // --- Ring: BRIGHT concentric FROST bands with a Cassini-style
+      // gap. RingGeometry(inner=7.2, outer=12): the texture's radial
+      // band 0.6–1.0 maps exactly onto the geometry (7.2/12 = 0.6).
+      const RS = 512;
+      const ringCanvas = document.createElement("canvas");
+      ringCanvas.width = ringCanvas.height = RS;
+      const rctx = ringCanvas.getContext("2d");
+      if (rctx) {
+        const img = rctx.createImageData(RS, RS);
+        for (let y = 0; y < RS; y++) {
+          for (let x = 0; x < RS; x++) {
+            const dx = x / RS - 0.5;
+            const dy = y / RS - 0.5;
+            const r = Math.sqrt(dx * dx + dy * dy) * 2;
+            let alpha = 0;
+            let bright = 0;
+            if (r >= 0.6 && r <= 1.0) {
+              const rn = (r - 0.6) / 0.4;
+              const gap = Math.exp(-Math.pow((rn - 0.62) * 9, 2));
+              const band =
+                0.55 +
+                0.3 * Math.sin(rn * 40 + 1.7 * Math.sin(rn * 9)) +
+                0.15 * Math.sin(rn * 90);
+              bright = Math.min(1, Math.max(0, band)) * (1 - gap * 0.92);
+              const feather = Math.min(1, Math.min(rn, 1 - rn) * 14);
+              const thresh = (BAYER[(y % 4) * 4 + (x % 4)]! + 0.5) / 16;
+              alpha = Math.min(1, bright * (0.55 + 0.45 * feather));
+              if (alpha < thresh * 0.35) alpha = 0;
+            }
+            // Bright frost bands, dark navy gaps.
+            tmp.copy(frost).lerp(deep, 1 - Math.min(1, bright));
+            const idx = (y * RS + x) * 4;
+            img.data[idx] = Math.round(tmp.r * 255);
+            img.data[idx + 1] = Math.round(tmp.g * 255);
+            img.data[idx + 2] = Math.round(tmp.b * 255);
+            img.data[idx + 3] = Math.round(alpha * 255);
+          }
+        }
+        rctx.putImageData(img, 0, 0);
+      }
+      const ringTex = new THREE.CanvasTexture(ringCanvas);
+      ringTex.colorSpace = THREE.SRGBColorSpace;
+      const ringMesh = new THREE.Mesh(
+        new THREE.RingGeometry(7.2, 12, 128, 1),
+        new THREE.MeshBasicMaterial({
+          map: ringTex,
+          transparent: true,
+          alphaTest: 0.18,
+          side: THREE.DoubleSide,
+          depthWrite: true,
+          fog: false,
+        }),
+      );
+      ringMesh.userData.noAura = true;
+      ringMesh.rotation.x = Math.PI / 2 - 0.46;
+      ringMesh.rotation.z = 0.18;
+
+      const orrery = new THREE.Group();
+      orrery.position.copy(center);
+      orrery.add(globe);
+      orrery.add(ringMesh);
+      this.scene.add(orrery);
+    }
 
     // 2 — Crystal forests: clusters of glowing spires.
     const treeCount = this.quality === "full" ? 180 : 90;
