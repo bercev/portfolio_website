@@ -2072,8 +2072,11 @@ export class JourneyScene {
     const bldgGeo = new THREE.BoxGeometry(1, 1, 1);
     const bldgMat = new THREE.ShaderMaterial({
       transparent: true,
-      depthWrite: false,
-      blending: this.particleBlending,
+      // Depth-correct like the Orrery Globe (iter 4): buildings occlude
+      // instead of additively stacking into the bright wash that sat on
+      // the hero sightline behind BERAT (v34/v36, exit gate #3).
+      depthWrite: true,
+      blending: THREE.NormalBlending,
       uniforms: {
         uTime: { value: 0 },
         uColorA: { value: cyan.clone() },
@@ -2766,9 +2769,16 @@ export class JourneyScene {
     for (const ring of this.heroRings) {
       const i = (ring.userData.compileRing ?? 0) as number;
       const cycle = (t * 0.35 + i / 3) % 1;
-      const r = 0.35 + cycle * 1.4;
-      ring.scale.setScalar((r / 0.35) * (0.7 + i * 0.44));
-      (ring.material as THREE.SpriteMaterial).opacity = 0.5 * (1 - cycle);
+      // Restrained ignition pulse above the wordmark: the old ~8-unit
+      // expansion rendered a pale ring inside the R's bowl on the hero
+      // sightline (v34, exit gate #3). Max outer diameter ~1.8u at
+      // (0, 3.1, 7) never reaches the letters; the pulse fades out as
+      // the camera leaves the hero.
+      const r = 0.4 + cycle * 0.8;
+      ring.scale.setScalar(r * (1 + i * 0.25));
+      const heroFade = 1 - THREE.MathUtils.smoothstep(pathT, 0.0, 0.07);
+      (ring.material as THREE.SpriteMaterial).opacity =
+        0.28 * (1 - cycle) * heroFade;
     }
     // Citation pulses travel the beam; beacon rings expand.
     for (const station of this.stations) {
