@@ -1056,12 +1056,10 @@ export class JourneyScene {
     this.stars = this.buildStarfield(quality === "full" ? 4800 : 2400);
     this.scene.add(this.stars);
 
-    // TEMP DEBUG (wave-1 blob hunt, ?jdbg=stations,gates,world,cosmos,backdrop skips)
-    const jdbg = new URLSearchParams(window.location.search).get("jdbg") ?? "";
-    if (!jdbg.includes("stations")) this.buildStations(stationCounts, Boolean(props));
-    if (!jdbg.includes("gates")) this.buildChapterGates();
-    if (!jdbg.includes("world")) this.buildContinuousWorld();
-    if (!jdbg.includes("cosmos")) this.buildCosmos();
+    this.buildStations(stationCounts, Boolean(props));
+    this.buildChapterGates();
+    this.buildContinuousWorld();
+    this.buildCosmos();
     // Emotional color arc: fog starts cool (cyan tech) and warms toward amber
     // (human moments) as the journey progresses.
     this.fogCool = new THREE.Color(fog);
@@ -1152,7 +1150,7 @@ export class JourneyScene {
       nebula.position.set(0, 0, -170);
       nebula.renderOrder = -1;
       nebula.frustumCulled = false;
-      if (!jdbg.includes("backdrop")) this.camera.add(nebula);
+      this.camera.add(nebula);
       this.animatedMaterials.push(nebulaMat);
 
       const grainMat = new THREE.ShaderMaterial({
@@ -1203,7 +1201,7 @@ export class JourneyScene {
       grain.position.set(0, 0, -168);
       grain.renderOrder = -2;
       grain.frustumCulled = false;
-      if (!jdbg.includes("backdrop")) this.camera.add(grain);
+      this.camera.add(grain);
       this.animatedMaterials.push(grainMat);
 
       if (quality === "full") {
@@ -2240,19 +2238,23 @@ export class JourneyScene {
           map: getDitherCloudTexture(),
           color: col.copy(cyan).lerp(amber, t / PATH_END_T).clone(),
           transparent: true,
-          // Higher than the old soft sprite's 0.14: the halftone dots
-          // cover roughly half the area, so this lands at a similar
-          // overall brightness while reading as print, not blob.
-          opacity: 0.26,
+          // The halftone dots cover roughly half the area, so this
+          // lands dimmer than the old soft sprite's 0.14 while reading
+          // as print, not blob.
+          opacity: 0.2,
           blending: this.particleBlending,
           depthWrite: false,
         }),
       );
       neb.position
         .copy(p)
-        .addScaledVector(side, (Math.random() - 0.5) * 24)
-        .add(new THREE.Vector3(0, (Math.random() - 0.5) * 12, 0));
-      const s = 14 + Math.random() * 18;
+        // Keep the clouds OFF the sightline: always >=15 units to one
+        // side and above the road. Centered sprites stacked additively
+        // near the hero camera and fused into the flat gray "blob"
+        // behind the wordmark (wave-1 root cause).
+        .addScaledVector(side, (Math.random() < 0.5 ? -1 : 1) * (15 + Math.random() * 14))
+        .add(new THREE.Vector3(0, 2 + Math.random() * 8, 0));
+      const s = 9 + Math.random() * 9;
       neb.scale.set(s, s, 1);
       neb.userData.noAura = true;
       this.scene.add(neb);
