@@ -42,12 +42,36 @@ export interface Experience {
   readonly technologies: readonly string[];
 }
 
+export interface ProjectCaseStudy {
+  /** The problem this project solved — the "why". */
+  readonly problem: string;
+  /** The key technical decision and why it was made. */
+  readonly decision: string;
+  /** The outcome in prose. */
+  readonly outcome: string;
+  /** Standalone metric lines — rendered bold next to the outcome. */
+  readonly metrics?: readonly string[];
+  readonly role?: string;
+  readonly team?: string;
+  readonly timeline?: string;
+  /** What didn't work — the honest failure that taught something. */
+  readonly didntWork?: string;
+  /** Engineering trade-offs behind the decisions. */
+  readonly tradeoffs?: string;
+}
+
 export interface Project {
   readonly title: string;
   readonly dates: string;
   readonly description: string;
   readonly technologies: readonly string[];
+  /** Legacy single link — prefer `live` / `source` below. */
   readonly href?: string;
+  /** Live demo / shipped product URL. */
+  readonly live?: string;
+  /** Source-code repository URL. */
+  readonly source?: string;
+  readonly caseStudy?: ProjectCaseStudy;
 }
 
 export interface PortfolioContent {
@@ -266,6 +290,27 @@ export const portfolio = {
         "SCRUM",
       ],
       href: "https://vitae.tools/",
+      live: "https://vitae.tools/",
+      caseStudy: {
+        problem:
+          "Resumes live in a dozen files and tabs. Every edit risks overwriting someone else's work, and teams reviewing candidates lose real progress to conflicting versions.",
+        decision:
+          "Git-style version control for resumes: branch, diff, and merge on top of Postgres. Clerk handled auth so the team could spend its sprints on the product instead of identity, and Docker plus Neon gave us local/prod parity without ops overhead.",
+        outcome:
+          "Shipped on CI/CD with deploys on every merge. The numbers held up in production:",
+        metrics: [
+          "~30% faster API responses",
+          "~70% fewer merge conflicts",
+          "99.9% uptime",
+        ],
+        role: "Full-stack engineer",
+        team: "5-person Agile team (SCRUM)",
+        timeline: "Jan 2026 – Jun 2026",
+        didntWork:
+          "The first merge implementation diffed whole documents, so concurrent edits still clobbered each other's formatting. Rewriting the merge to diff at the block level is where the 70% drop came from.",
+        tradeoffs:
+          "Neon serverless Postgres in prod with Docker Postgres locally — managed scaling in exchange for serverless connection-pooling care. Clerk for auth — a bespoke identity system traded for sprint speed. Deploys on every merge — build minutes traded for zero-drama releases.",
+      },
     },
     {
       title: "AI Discord Chatbot",
@@ -274,6 +319,23 @@ export const portfolio = {
         "Llama 3 Discord assistant with multi-agent RAG and self-correction (10K+ indexed messages, 50+ community members).",
       technologies: ["Python", "discord.py", "Ollama", "AWS", "LangChain", "SQL"],
       href: "https://github.com/bercev/Discord-Chatbot-AI",
+      source: "https://github.com/bercev/Discord-Chatbot-AI",
+      caseStudy: {
+        problem:
+          "A 50+ member Discord community kept re-asking the same questions. Moderators couldn't be everywhere at once.",
+        decision:
+          "Llama 3 served locally through Ollama — zero inference cost and community data never leaves the box — with multi-agent RAG over 10K+ indexed community messages so answers stay grounded in what the community actually said, plus a self-correction loop.",
+        outcome:
+          "A bot the community actually leans on — questions answered from the server's own history instead of a moderator's evenings:",
+        metrics: ["10K+ messages indexed", "50+ community members"],
+        role: "Sole developer",
+        team: "Solo",
+        timeline: "Aug 2024 – Sep 2024",
+        didntWork:
+          "The first version answered straight from the base model and hallucinated community-specific facts. Grounding every answer in the indexed messages — and adding the self-correction pass — killed that.",
+        tradeoffs:
+          "Local inference over hosted APIs — cutting-edge model quality traded for zero cost and data privacy. RAG over the community's own history — general knowledge traded for answers rooted in the server's own context.",
+      },
     },
   ],
   skills: [

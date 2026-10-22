@@ -2225,6 +2225,136 @@ html:not(.dark) .skill-pill {
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
+/* Expandable case-study rows: the whole at-rest entry is the toggle —
+   title, dates, the problem in one line, and a calm text affordance. */
+.journey-case-study-toggle {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.journey-case-study-toggle:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 8px;
+}
+
+.journey-case-study-toggle .journey-project-featured-title,
+.journey-case-study-toggle .journey-project-row-title {
+  display: block;
+}
+
+.journey-case-study-toggle .journey-project-row-when {
+  display: block;
+}
+
+.journey-case-study-why {
+  display: block;
+  margin-top: 1rem;
+  max-width: 62ch;
+}
+
+.journey-case-study-more {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--portfolio-accent);
+}
+
+.journey-case-study-toggle:hover .journey-case-study-more {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.journey-case-study-pills {
+  margin-top: 1.25rem;
+}
+
+.journey-case-study {
+  margin-top: 2rem;
+  max-width: 64rem;
+}
+
+.journey-case-study-preview {
+  margin: 0 0 2rem;
+  max-width: 42rem;
+  border: 1px solid var(--border);
+}
+
+.journey-case-study-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.journey-case-study-section + .journey-case-study-section {
+  margin-top: 1.6rem;
+}
+
+.journey-case-study-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.journey-case-study-text {
+  margin: 0;
+  max-width: 68ch;
+}
+
+.journey-case-study-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.75rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-case-study-metrics li {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.journey-case-study-roles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0.45rem 0 0;
+}
+
+.journey-case-study-roles dt {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+.journey-case-study-roles dd {
+  margin: 0.2rem 0 0;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.journey-case-study-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .journey-case-study-roles {
+    grid-template-columns: 1fr;
+  }
+}
+
 .journey-skill-heading {
   grid-column: 1 / span 3;
   margin: 0;
