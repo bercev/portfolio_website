@@ -115,7 +115,7 @@ export interface PortfolioContent {
   readonly projects: readonly Project[];
   readonly skills: readonly {
     readonly category: string;
-    readonly items: readonly string[];
+    readonly items: readonly { readonly name: string; readonly note: string }[];
   }[];
   readonly contact: {
     readonly heading: string;
@@ -348,52 +348,40 @@ export const portfolio = {
     {
       category: "AI & agents",
       items: [
-        "Python",
-        "LLMs",
-        "Multi-agent systems",
-        "RAG",
-        "LangChain",
-        "Ollama",
-        "Google ADK",
-        "discord.py",
-        "Hydra",
-        "Tmux",
-        "Runpod",
+        { name: "Python", note: "Discord bot + research" },
+        { name: "LLMs", note: "Research area — see publications" },
+        { name: "Multi-agent systems", note: "Internship + research" },
+        { name: "RAG", note: "Shipped in the Discord bot" },
+        { name: "LangChain", note: "Shipped in the Discord bot" },
+        { name: "Ollama", note: "Shipped in the Discord bot" },
+        { name: "discord.py", note: "Shipped in the Discord bot" },
       ],
     },
     {
       category: "Full-stack",
       items: [
-        "TypeScript",
-        "React",
-        "NextJS",
-        "PostgreSQL",
-        "MongoDB",
-        "SQLite",
-        "SQL",
-        "Express",
-        "Clerk",
-        "Neon",
-        "Zod",
+        { name: "TypeScript", note: "Shipped in Vitae" },
+        { name: "React", note: "Shipped in Vitae" },
+        { name: "NextJS", note: "Shipped in Vitae" },
+        { name: "PostgreSQL", note: "Shipped in Vitae" },
+        { name: "Clerk", note: "Shipped in Vitae" },
       ],
     },
     {
       category: "Systems & delivery",
       items: [
-        "Docker",
-        "GCP",
-        "AWS",
-        "CI/CD",
-        "Jest",
-        "Playwright",
-        "Linux",
-        "Git",
-        "SCRUM",
+        { name: "Docker", note: "Shipped in Vitae" },
+        { name: "AWS", note: "Shipped in the Discord bot" },
+        { name: "Vitest", note: "This site's test suite" },
+        { name: "Git", note: "Daily driver" },
       ],
     },
     {
       category: "Foundations",
-      items: ["Data Structures", "Algorithms"],
+      items: [
+        { name: "Data Structures", note: "Tutored DSA at UC Santa Cruz" },
+        { name: "Algorithms", note: "Tutored DSA at UC Santa Cruz" },
+      ],
     },
   ],
   contact: {

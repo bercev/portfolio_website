@@ -73,7 +73,9 @@ export function buildFilesystem(): FsDir {
   const skillFiles: Record<string, FsFile> = {};
   for (const s of portfolio.skills) {
     skillFiles[slugify(s.category) + ".txt"] = file(
-      `${s.category.toUpperCase()}\n${"=".repeat(s.category.length)}\n${s.items.join("\n")}`,
+      `${s.category.toUpperCase()}\n${"=".repeat(s.category.length)}\n${s.items
+        .map((item) => `${item.name} — ${item.note}`)
+        .join("\n")}`,
     );
   }
 

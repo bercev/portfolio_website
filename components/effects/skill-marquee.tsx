@@ -4,7 +4,7 @@ import { useHydratedReducedMotion } from "@/lib/use-hydrated-reduced-motion";
 
 type SkillGroup = {
   readonly category: string;
-  readonly items: readonly string[];
+  readonly items: readonly { readonly name: string; readonly note: string }[];
 };
 
 function SkillRow({
@@ -39,13 +39,13 @@ function SkillRow({
       <ul className="skill-marquee-track" aria-label={label}>
         {loop.map((pill, index) => (
           <li
-            key={`${pill.item}-${index}`}
+            key={`${pill.item.name}-${index}`}
             data-skill
             className="skill-pill"
-            title={pill.category}
+            title={pill.item.note}
             aria-hidden={index >= pills.length ? true : undefined}
           >
-            {pill.item}
+            {pill.item.name}
           </li>
         ))}
       </ul>
