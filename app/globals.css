@@ -25,7 +25,9 @@
   --destructive-foreground: oklch(1 0 0);
   --border: #d8dfe9;
   --input: #d8dfe9;
-  --ring: #87909d;
+  /* Contrast repair (research iter 36): #87909d measured exactly 3.00:1 on the
+     light background — at the UI-component floor. #6e7c8c measures 3.96:1. */
+  --ring: #6e7c8c;
   --chart-1: oklch(0.81 0.10 252);
   --chart-2: oklch(0.62 0.19 260);
   --chart-3: oklch(0.55 0.22 263);
@@ -417,7 +419,16 @@ html[data-ascii="active"] .theme-selector {
  * foreign teal (#14556a) turned rose purple and citrus muddy.
  */
 html:not(.dark) {
-  --portfolio-accent: var(--accent-neon);
+  /*
+   * Contrast repair (research iter 36): --portfolio-accent is read as text
+   * (labels, links, scores), and the raw neon measured 1.55:1 on the light
+   * background. Darken toward ink in oklch (same pattern as the chroma tokens
+   * below) so every palette clears 4.5:1 on #f3f7fc while keeping its hue —
+   * 56% measures 4.59:1 for the default ice accent, the other four palettes
+   * clear it with margin. ASCII mode is unaffected: the palette lock above
+   * (higher specificity) keeps #7dd3fc on the dark canvas.
+   */
+  --portfolio-accent: color-mix(in oklch, var(--accent-neon) 56%, #111111);
   --effect-cursor: var(--accent-neon);
   --effect-spark: var(--accent-neon);
   --effect-glow: color-mix(in srgb, var(--accent-neon) 55%, #ffffff);
@@ -2911,7 +2922,9 @@ html[data-journey="active"] [data-hero-name-fallback] {
   transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 .journey-contact-form-input::placeholder {
-  color: rgba(139, 156, 179, 0.55);
+  /* Contrast repair (research iter 36): 0.55 alpha measured 2.84:1 on the dark
+     input; 0.85 composites to #77869a = 5.43:1, still clearly a placeholder. */
+  color: rgba(139, 156, 179, 0.85);
 }
 .journey-contact-form-input:focus {
   border-color: var(--portfolio-accent);
