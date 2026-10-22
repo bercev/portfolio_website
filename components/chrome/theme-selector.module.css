@@ -16,7 +16,7 @@
   border: 1px solid var(--border);
   border-radius: 9999px;
   cursor: pointer;
-  transition: border-color 180ms ease, transform 180ms ease;
+  transition: border-color 180ms ease-out, transform 180ms ease-out;
 }
 
 .trigger:hover,
@@ -91,7 +91,7 @@
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, 0) scale(0.25) rotate(-20deg);
-  transition: opacity 180ms ease, transform 420ms cubic-bezier(0.2, 1.45, 0.4, 1);
+  transition: opacity 180ms ease-out, transform 280ms cubic-bezier(0.2, 1.45, 0.4, 1);
   transition-delay: calc(var(--option-index) * 35ms);
 }
 

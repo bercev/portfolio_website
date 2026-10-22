@@ -2,9 +2,13 @@
 
 import { useState, type FormEvent } from "react";
 
+import { StatefulSubmitButton } from "@/components/ui/stateful-button";
+
 type Status = "idle" | "sending" | "sent" | "error";
+type FieldName = "name" | "email" | "message";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ERROR_ID = "contact-form-error";
 
 export function ContactForm() {
   const [name, setName] = useState("");
@@ -12,21 +16,28 @@ export function ContactForm() {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [invalidField, setInvalidField] = useState<FieldName | null>(null);
+
+  function fail(field: FieldName, message: string) {
+    setInvalidField(field);
+    setError(message);
+  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    setInvalidField(null);
 
     if (name.trim().length < 2) {
-      setError("$ name: too short (min 2 chars)");
+      fail("name", "$ name: too short (min 2 chars)");
       return;
     }
     if (!EMAIL_RE.test(email.trim())) {
-      setError("$ email: invalid address");
+      fail("email", "$ email: invalid address");
       return;
     }
     if (message.trim().length < 10) {
-      setError("$ message: too short (min 10 chars)");
+      fail("message", "$ message: too short (min 10 chars)");
       return;
     }
 
@@ -69,6 +80,8 @@ export function ContactForm() {
     );
   }
 
+  const describedBy = error ? ERROR_ID : undefined;
+
   return (
     <form
       className="journey-contact-form"
@@ -87,11 +100,16 @@ export function ContactForm() {
           type="text"
           name="name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setInvalidField(null);
+          }}
           placeholder="your name"
           autoComplete="name"
           maxLength={80}
           disabled={status === "sending"}
+          aria-invalid={invalidField === "name"}
+          aria-describedby={invalidField === "name" ? describedBy : undefined}
           className="journey-contact-form-input"
         />
       </label>
@@ -102,11 +120,16 @@ export function ContactForm() {
           type="email"
           name="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setInvalidField(null);
+          }}
           placeholder="you@example.com"
           autoComplete="email"
           maxLength={120}
           disabled={status === "sending"}
+          aria-invalid={invalidField === "email"}
+          aria-describedby={invalidField === "email" ? describedBy : undefined}
           className="journey-contact-form-input"
         />
       </label>
@@ -116,28 +139,35 @@ export function ContactForm() {
         <textarea
           name="message"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value);
+            setInvalidField(null);
+          }}
           placeholder="what's on your mind?"
           rows={5}
           maxLength={2000}
           disabled={status === "sending"}
+          aria-invalid={invalidField === "message"}
+          aria-describedby={invalidField === "message" ? describedBy : undefined}
           className="journey-contact-form-input journey-contact-form-textarea"
         />
       </label>
 
       {error ? (
-        <p className="journey-contact-form-error" role="alert">
+        <p className="journey-contact-form-error" id={ERROR_ID} role="alert">
           {error}
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={status === "sending"}
+      {/* Pre-built Aceternity Stateful Button: idle -> spinner (sending) ->
+          idle-reset (error). Success is the receipt panel above — the site's
+          intentional success state — so the button never holds a "sent" state. */}
+      <StatefulSubmitButton
+        state={status}
         className="journey-contact-form-submit"
       >
         {status === "sending" ? "[transmitting…]" : "[transmit →]"}
-      </button>
+      </StatefulSubmitButton>
     </form>
   );
 }

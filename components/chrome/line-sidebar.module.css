@@ -131,7 +131,7 @@
   font-size: 0.75rem;
   letter-spacing: -0.01em;
   text-decoration: none;
-  transition: color 150ms ease;
+  transition: color 150ms ease-out;
 }
 
 .utility:hover,

@@ -515,10 +515,10 @@ textarea {
   font: inherit;
 }
 
-.theme-selector select:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
+/* NOTE (micro-interaction pass, iter 19): the old `.theme-selector select`
+   focus-visible rule was removed — it targeted a <select> that no longer
+   exists (the selector is button-based) and would have killed the visible
+   focus ring. The global :focus-visible ring (2px + FROST halo) applies. */
 
 ::selection {
   background: var(--selection-background);
@@ -710,7 +710,7 @@ textarea {
   background: transparent;
   color: var(--card-foreground);
   box-shadow: none;
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .chroma-card:hover {
@@ -1008,8 +1008,8 @@ html:not(.dark) .grain-overlay {
   opacity: 0;
   transform: translateY(4px);
   transition:
-    opacity 220ms ease,
-    transform 220ms ease;
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
 }
 
 .vitae-linger-tags[data-visible="true"] {
@@ -1210,7 +1210,7 @@ html:not(.dark) .journey-masthead {
   color: var(--foreground);
   margin-inline-start: -0.055em;
   text-decoration: none;
-  transition: opacity 150ms ease;
+  transition: opacity 150ms ease-out;
 }
 
 .journey-wordmark:hover {
@@ -1248,7 +1248,7 @@ html:not(.dark) .journey-masthead {
   color: var(--muted-foreground);
   background: none;
   border: 0;
-  transition: color 150ms ease;
+  transition: color 150ms ease-out;
 }
 
 .journey-masthead-toggle:hover {
@@ -1472,7 +1472,7 @@ html[data-journey] [data-effect-layer="background"] {
   font: 500 0.95rem/1.4 var(--font-sans);
   color: var(--foreground);
   text-decoration: none;
-  transition: color 180ms ease;
+  transition: color 180ms ease-out;
 }
 
 .journey-contact-link:hover {
@@ -1493,7 +1493,7 @@ html[data-journey] [data-effect-layer="background"] {
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 6px;
-  transition: opacity 180ms ease;
+  transition: opacity 180ms ease-out;
 }
 
 .journey-contact-email a:hover {
@@ -1707,7 +1707,7 @@ html[data-journey] [data-effect-layer="background"] {
   letter-spacing: var(--label-tracking);
   font-variant-numeric: tabular-nums;
   color: var(--muted-foreground);
-  transition: color 180ms ease;
+  transition: color 180ms ease-out;
 }
 
 .journey-pub-row:hover .journey-pub-index,
@@ -1759,7 +1759,7 @@ html[data-journey] [data-effect-layer="background"] {
   margin-left: 0.22em;
   vertical-align: 0.06em;
   color: var(--muted-foreground);
-  transition: color 180ms ease;
+  transition: color 180ms ease-out;
 }
 
 .journey-pub-row:hover .journey-pub-title a svg,
@@ -2779,7 +2779,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.25em;
   text-decoration-color: color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
-  transition: color 150ms ease, text-decoration-color 150ms ease;
+  transition: color 150ms ease-out, text-decoration-color 150ms ease-out;
 }
 
 [data-hero-cta]:hover {
@@ -2838,7 +2838,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   border: 1px solid rgba(238, 244, 250, 0.18);
   border-radius: 4px;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 .journey-contact-form-input::placeholder {
   color: rgba(139, 156, 179, 0.55);
@@ -2870,7 +2870,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition: opacity 0.15s ease-out, transform 0.1s ease-out;
 }
 .journey-contact-form-submit:hover:not(:disabled) {
   opacity: 0.92;
@@ -3044,7 +3044,7 @@ html.dark .plain-backdrop {
   border: 1px solid rgba(125, 211, 252, 0.28);
   border-radius: 8px;
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, transform 0.2s ease-out;
 }
 .terminal-flyout-trigger:hover,
 .terminal-flyout-trigger:focus-visible {
@@ -3151,7 +3151,7 @@ html.dark .plain-backdrop {
   border-radius: 6px;
   padding: 0.3rem 0.6rem;
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 .terminal-flyout-close:hover,
 .terminal-flyout-close:focus-visible {
