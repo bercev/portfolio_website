@@ -62,6 +62,13 @@ export interface ProjectCaseStudy {
 
 export interface Project {
   readonly title: string;
+  /**
+   * The 30-second problem+proof headline rendered as the row's title at rest —
+   * states the problem solved, not the product name (e.g. "Resume version
+   * control that cut merge conflicts 70%"). `title` stays the product name and
+   * keeps its identity uses (keys, terminal file names, preview lookup).
+   */
+  readonly framing: string;
   readonly dates: string;
   readonly description: string;
   readonly technologies: readonly string[];
@@ -275,19 +282,16 @@ export const portfolio = {
   projects: [
     {
       title: "Vitae",
+      framing: "Resume version control that cut merge conflicts 70%",
       dates: "Jan 2026-Jun 2026",
       description:
         "Resume building and version-control platform shipped with a 5-person Agile team. Postgres (Docker/Neon), Clerk auth, GitHub Actions + Netlify CI/CD; ~30% faster API responses, ~70% fewer merge conflicts, 99.9% uptime.",
       technologies: [
         "NextJS",
         "TypeScript",
-        "Jest",
         "PostgreSQL",
         "Docker",
-        "CI/CD",
-        "Neon",
         "Clerk",
-        "SCRUM",
       ],
       href: "https://vitae.tools/",
       live: "https://vitae.tools/",
@@ -314,10 +318,12 @@ export const portfolio = {
     },
     {
       title: "AI Discord Chatbot",
+      framing:
+        "A Discord assistant that answers from 10K+ of the server's own messages",
       dates: "Aug 2024-Sep 2024",
       description:
         "Llama 3 Discord assistant with multi-agent RAG and self-correction (10K+ indexed messages, 50+ community members).",
-      technologies: ["Python", "discord.py", "Ollama", "AWS", "LangChain", "SQL"],
+      technologies: ["Python", "discord.py", "Ollama", "LangChain", "AWS"],
       href: "https://github.com/bercev/Discord-Chatbot-AI",
       source: "https://github.com/bercev/Discord-Chatbot-AI",
       caseStudy: {

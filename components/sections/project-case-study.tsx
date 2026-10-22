@@ -24,10 +24,17 @@ const projectPreviews: Partial<
     src: "/assets/projects/vitae.png",
     alt: "Vitae landing page: resume version control with Get Started and Why Vitae.",
   },
+  // The chatbot has no screenshot-able product surface (it lives inside
+  // Discord), so its preview is the existing hand-made illustration of the
+  // bot answering in a channel — deliberately labeled as an illustration,
+  // not presented as a screenshot.
+  "AI Discord Chatbot": {
+    src: "/assets/projects/discord-chatbot.svg",
+    alt: "Illustration of the AI Discord chatbot answering a question in a Discord channel.",
+  },
 };
 
 function CaseStudyPanel({ project }: { readonly project: Project }) {
-  const preview = projectPreviews[project.title];
   const caseStudy = project.caseStudy;
   if (!caseStudy) return null;
 
@@ -38,12 +45,6 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
 
   return (
     <div className="journey-case-study">
-      {preview ? (
-        <figure className="journey-case-study-preview">
-          {/* eslint-disable-next-line @next/next/no-img-element -- local static preview crop */}
-          <img src={preview.src} alt={preview.alt} width={800} height={560} />
-        </figure>
-      ) : null}
 
       <div className="journey-case-study-section">
         <p className="journey-case-study-label">Problem</p>
@@ -156,6 +157,7 @@ export function CaseStudyRow({
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const shouldReduceMotion = useReducedMotion();
+  const preview = projectPreviews[project.title];
 
   return (
     <article className={featured ? "journey-project-featured" : undefined}>
@@ -166,35 +168,46 @@ export function CaseStudyRow({
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
       >
-        <span
-          className={
-            featured
-              ? "journey-project-featured-title"
-              : "journey-project-row-title"
-          }
-        >
-          {project.title}
+        {/* At rest: problem-framed headline + product meta + one pill strip on
+            the left, a calm static preview sidecar on the right. The preview
+            stays a static frame (not the hover popover) so it reads at rest
+            and on touch devices. */}
+        <span className="journey-project-rest">
+          <span className="journey-project-rest-text">
+            <span
+              className={
+                featured
+                  ? "journey-project-featured-title"
+                  : "journey-project-row-title"
+              }
+            >
+              {project.framing}
+            </span>
+            <span className="journey-project-row-when">
+              {project.title} · {project.dates}
+            </span>
+            <span className="journey-case-study-pills">
+              <TechPills technologies={project.technologies} />
+            </span>
+            {project.caseStudy ? (
+              <span className="journey-case-study-more" aria-hidden="true">
+                {open ? "Close the case study" : "Read the case study"}
+              </span>
+            ) : null}
+          </span>
+          {preview ? (
+            <span className="journey-project-rest-preview">
+              {/* eslint-disable-next-line @next/next/no-img-element -- local static preview crop */}
+              <img
+                src={preview.src}
+                alt={preview.alt}
+                width={800}
+                height={560}
+              />
+            </span>
+          ) : null}
         </span>
-        <span className="journey-project-row-when">{project.dates}</span>
-        {project.caseStudy ? (
-          <span className="journey-body journey-case-study-why">
-            {project.caseStudy.problem}
-          </span>
-        ) : (
-          <span className="journey-body journey-case-study-why">
-            {project.description}
-          </span>
-        )}
-        {project.caseStudy ? (
-          <span className="journey-case-study-more" aria-hidden="true">
-            {open ? "Close the case study" : "Read the case study"}
-          </span>
-        ) : null}
       </button>
-
-      <div className="journey-case-study-pills">
-        <TechPills technologies={project.technologies} />
-      </div>
 
       <AnimatePresence initial={false}>
         {open && project.caseStudy ? (

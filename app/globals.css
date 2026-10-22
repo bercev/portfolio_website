@@ -2225,8 +2225,10 @@ html:not(.dark) .skill-pill {
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
-/* Expandable case-study rows: the whole at-rest entry is the toggle —
-   title, dates, the problem in one line, and a calm text affordance. */
+/* Expandable case-study rows: the whole at-rest entry is the toggle — a
+   problem-framed headline, the product name + dates, one restrained tech-pill
+   strip, a calm static preview sidecar, and a text affordance. The full
+   problem text lives in the expanded panel, not at rest. */
 .journey-case-study-toggle {
   display: block;
   width: 100%;
@@ -2253,10 +2255,38 @@ html:not(.dark) .skill-pill {
   display: block;
 }
 
-.journey-case-study-why {
+/* At-rest row layout: headline/meta/pills/affordance on the left, the calm
+   static preview on the right. Single column (preview below the text) on
+   narrow viewports. */
+.journey-project-rest {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.journey-project-rest-text {
   display: block;
-  margin-top: 1rem;
-  max-width: 62ch;
+  min-width: 0;
+}
+
+.journey-project-rest-preview {
+  display: block;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.journey-project-rest-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (min-width: 46rem) {
+  .journey-project-rest {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 21rem);
+    gap: 2rem;
+  }
 }
 
 .journey-case-study-more {
@@ -2273,24 +2303,13 @@ html:not(.dark) .skill-pill {
 }
 
 .journey-case-study-pills {
+  display: block;
   margin-top: 1.25rem;
 }
 
 .journey-case-study {
   margin-top: 2rem;
   max-width: 64rem;
-}
-
-.journey-case-study-preview {
-  margin: 0 0 2rem;
-  max-width: 42rem;
-  border: 1px solid var(--border);
-}
-
-.journey-case-study-preview img {
-  display: block;
-  width: 100%;
-  height: auto;
 }
 
 .journey-case-study-section + .journey-case-study-section {
