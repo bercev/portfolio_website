@@ -1942,11 +1942,15 @@ export class JourneyScene {
         void main() {
           vec3 deep = uColor * 0.35;
           vec3 mid = uColor;
-          vec3 peak = mix(uColor, vec3(1.0), 0.65);
+          vec3 peak = mix(uColor, vec3(1.0), 0.45);
           vec3 col = mix(deep, mid, smoothstep(-0.12, 0.02, vHeight));
           col = mix(col, peak, smoothstep(0.06, 0.2, vHeight));
+          // Directional diffuse — without it the displaced ball has no
+          // form shading and reads as a shapeless gray cloud (wave-1).
+          float diff = max(dot(normalize(vNormal), normalize(vec3(-0.5, 0.75, 0.6))), 0.0);
+          col *= 0.28 + 0.9 * diff;
           float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 1.6);
-          gl_FragColor = vec4(col, 0.85 * (0.55 + 0.45 * fresnel));
+          gl_FragColor = vec4(col, 0.8 * (0.55 + 0.45 * fresnel));
         }
       `,
     });
@@ -2067,7 +2071,7 @@ export class JourneyScene {
 
     // 1 — Planets: detailed worlds with terrain, atmosphere, banded rings.
     const planetDefs = [
-      { t: 0.1, r: 2.2, color: cyan, rings: false, seed: 1.7 }, // Hero
+      { t: 0.1, r: 1.8, color: cyan, rings: false, seed: 1.7 }, // Hero
       { t: 0.24, r: 1.8, color: accent, rings: true, seed: 4.2 }, // About
       { t: 0.38, r: 2.4, color: cyan, rings: true, seed: 8.9 }, // Publications
       { t: 0.52, r: 2.0, color: emerald, rings: false, seed: 3.3 }, // Experience
