@@ -24,10 +24,34 @@ export interface ShellCallbacks {
 }
 
 const JOKES: Record<string, string> = {
-  vim: "nice. now type :q to exit... oh wait, you're already stuck. this is a vim household.",
   emacs: "a wise choice. but this is a vim household.",
   nano: "we don't do that here.",
 };
+
+/** Compact block-letter BERAT mark for beratfetch (5 rows x 29 cols). */
+const BERAT_MARK: readonly string[] = [
+  "████  █████ ████    █   █████",
+  "█   █ █     █   █  █ █    █  ",
+  "████  ████  ████  █████   █  ",
+  "█   █ █     █ █   █   █   █  ",
+  "████  █████ █  █  █   █   █  ",
+];
+
+/**
+ * Rotating one-liners for `fortune` — every line is verbatim (or a
+ * clause-trimmed) from his own case-study prose in data/content.ts.
+ * No invented quotes, per the loop's honesty rule.
+ */
+const FORTUNES: readonly string[] = [
+  "Resume version control that cut merge conflicts 70%.",
+  "The first merge implementation diffed whole documents, so concurrent edits still clobbered each other's formatting.",
+  "The self-correction grounding pass stopped the hallucinated community facts.",
+  "I still reach for tests before I call a feature done.",
+  "Next time I'd build the evals first.",
+  "A Discord assistant that answers from 10K+ of the server's own messages.",
+  "Local inference over hosted APIs — cutting-edge model quality traded for zero cost and data privacy.",
+  "Those sessions were a weekly pressure test for walking through recursion, graphs, and complexity out loud.",
+];
 
 export class Shell {
   private root: FsDir = buildFilesystem();
@@ -39,6 +63,9 @@ export class Shell {
   private completions: string[] = [];
   private completionIndex = 0;
   private completionPrefix = "";
+  /** Fake-vim trap state: while true, input goes to vimCommand(), not the shell. */
+  private vimMode = false;
+  private fortuneIndex = 0;
 
   constructor(private cb: ShellCallbacks) {}
 
@@ -77,21 +104,28 @@ export class Shell {
     this.buffer = "";
     this.cursor = 0;
     this.completions = [];
+    if (this.vimMode) {
+      this.vimCommand(line);
+      return;
+    }
     if (line) {
       this.history.unshift(line);
       this.historyIndex = -1;
       this.run(line);
     }
-    this.prompt();
+    // A command may have switched modes (e.g. vim) — it owns the prompt then.
+    if (!this.vimMode) this.prompt();
   }
 
   historyUp() {
+    if (this.vimMode) return;
     if (this.history.length === 0) return;
     this.historyIndex = Math.min(this.historyIndex + 1, this.history.length - 1);
     this.replaceBuffer(this.history[this.historyIndex]);
   }
 
   historyDown() {
+    if (this.vimMode) return;
     if (this.historyIndex <= 0) {
       this.historyIndex = -1;
       this.replaceBuffer("");
@@ -112,6 +146,7 @@ export class Shell {
   }
 
   tab() {
+    if (this.vimMode) return;
     const tokens = this.buffer.split(/\s+/);
     const last = tokens[tokens.length - 1] ?? "";
     const isFirst = tokens.length <= 1;
@@ -276,11 +311,118 @@ export class Shell {
       this.cb.writeln(`    ${p.venue} — ${p.date}`);
     }
   }
+
+  cmdBeratfetch() {
+    const cyan = "\x1b[36m";
+    const reset = "\x1b[0m";
+    for (const row of BERAT_MARK) this.cb.writeln(`${cyan}${row}${reset}`);
+    this.cb.writeln("");
+    this.cb.writeln(`${cyan}berat${reset}@${cyan}portfolio${reset}`);
+    this.cb.writeln(`${cyan}${"─".repeat(16)}${reset}`);
+    const info: ReadonlyArray<readonly [string, string]> = [
+      ["role", "Full-stack software engineer, researcher"],
+      ["based", "Santa Cruz, California"],
+      ["stack", "TypeScript · React · Next.js · Python · Postgres"],
+      ["papers", "SkillOptimizer (ICML 2026 AIWILD) · @GrokSet (arXiv)"],
+      ["shell", "bercevOS v2.6"],
+      ["uptime", "as long as this tab stays open"],
+    ];
+    for (const [label, value] of info) {
+      this.cb.writeln(`${cyan}${label.padEnd(7)}${reset} ${value}`);
+    }
+  }
+
+  cmdFortune() {
+    const line = FORTUNES[this.fortuneIndex % FORTUNES.length];
+    this.fortuneIndex += 1;
+    this.cb.writeln(`\x1b[33m${line}\x1b[0m`);
+  }
+
+  cmdCowsay(args: string[]) {
+    const text = args.join(" ").trim() || "moo.";
+    const words = text.split(/\s+/);
+    const maxWidth = 38;
+    const lines: string[] = [];
+    let current = "";
+    for (const word of words) {
+      const next = current ? `${current} ${word}` : word;
+      if (next.length > maxWidth && current) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = next;
+      }
+    }
+    if (current) lines.push(current);
+    const width = Math.max(...lines.map((l) => l.length));
+    this.cb.writeln(` ${"_".repeat(width + 2)}`);
+    lines.forEach((line, i) => {
+      const padded = line.padEnd(width);
+      let left = "|";
+      let right = "|";
+      if (lines.length === 1) {
+        left = "<";
+        right = ">";
+      } else if (i === 0) {
+        left = "/";
+        right = "\\";
+      } else if (i === lines.length - 1) {
+        left = "\\";
+        right = "/";
+      }
+      this.cb.writeln(`${left} ${padded} ${right}`);
+    });
+    this.cb.writeln(` ${"-".repeat(width + 2)}`);
+    this.cb.writeln(`        \\   ^__^`);
+    this.cb.writeln(`         \\  (oo)\\_______`);
+    this.cb.writeln(`            (__)\\       )\\/\\`);
+    this.cb.writeln(`                ||----w |`);
+    this.cb.writeln(`                ||     ||`);
+  }
+
+  cmdVim() {
+    this.vimMode = true;
+    this.cb.clear();
+    this.cb.writeln(`\x1b[32m"todo.txt" [readonly] 3 lines\x1b[0m`);
+    this.cb.writeln(`buy more coffee`);
+    this.cb.writeln(`ship the portfolio`);
+    this.cb.writeln(`touch grass (optional)`);
+    this.cb.writeln(`\x1b[34m~\x1b[0m`);
+    this.cb.writeln(`\x1b[34m~\x1b[0m`);
+    this.cb.writeln(`\x1b[34m~\x1b[0m`);
+    this.cb.writeln(`\x1b[36m-- INSERT --\x1b[0m`);
+  }
+
+  /**
+   * The vim trap: a fake readonly buffer. Only :q (or :q!) exits —
+   * writes are refused with authentic readonly errors.
+   */
+  private vimCommand(line: string) {
+    if (/^:q!?$/.test(line)) {
+      this.vimMode = false;
+      this.cb.writeln(`\x1b[32myou escaped. most don't.\x1b[0m`);
+      this.prompt();
+      return;
+    }
+    if (/^:(w|wq|x)/.test(line)) {
+      this.cb.writeln(`\x1b[31mE45: 'readonly' option is set (add ! to override)\x1b[0m`);
+      return;
+    }
+    if (line.startsWith(":")) {
+      const cmd = line.slice(1).split(/\s+/)[0];
+      this.cb.writeln(`\x1b[31mE492: Not an editor command: ${cmd}\x1b[0m`);
+      return;
+    }
+    if (line) {
+      this.cb.writeln(`\x1b[31mE21: Cannot make changes, 'modifiable' is off\x1b[0m`);
+    }
+  }
 }
 
 const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["help", "show this help"],
   ["whoami", "who is bercev"],
+  ["beratfetch", "bercev, neofetch-style"],
   ["pwd", "print working directory"],
   ["ls [dir]", "list directory contents"],
   ["cd <dir>", "change directory"],
@@ -289,6 +431,9 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["projects", "list shipped projects"],
   ["publications", "list papers"],
   ["contact", "how to reach bercev"],
+  ["fortune", "one honest line from the case studies"],
+  ["cowsay <text>", "the cow says what you type"],
+  ["vim", "you have been warned"],
   ["clear", "clear the screen"],
   ["sudo hire bercev", "???"],
 ];
@@ -296,7 +441,6 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
 const COMMANDS = [
   ...HELP_TEXT.map(([name]) => name.split(" ")[0]),
   "hello",
-  "vim",
   "emacs",
   "nano",
   "rm",
@@ -305,6 +449,7 @@ const COMMANDS = [
 const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   help: (s) => s.cmdHelp(),
   whoami: (s) => s.cmdWhoami(),
+  beratfetch: (s) => s.cmdBeratfetch(),
   pwd: (s) => s.cmdPwd(),
   ls: (s, a) => s.cmdLs(a),
   cd: (s, a) => s.cmdCd(a),
@@ -312,7 +457,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   echo: (s, a) => s.cmdEcho(a),
   clear: (s) => s.cmdClear(),
   sudo: (s, a) => s.cmdSudo(a),
-  vim: (s) => s.cmdJoke("vim"),
+  vim: (s) => s.cmdVim(),
   emacs: (s) => s.cmdJoke("emacs"),
   nano: (s) => s.cmdJoke("nano"),
   rm: (s) => s.cmdRm(),
@@ -320,4 +465,6 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   contact: (s) => s.cmdContact(),
   projects: (s) => s.cmdProjects(),
   publications: (s) => s.cmdPublications(),
+  fortune: (s) => s.cmdFortune(),
+  cowsay: (s, a) => s.cmdCowsay(a),
 };
