@@ -17,6 +17,8 @@ import { ExternalLink } from "@/components/ui/external-link";
 import { TechPills } from "@/components/ui/tech-pills";
 import type { Project } from "@/data/content";
 
+import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
+
 const projectPreviews: Partial<
   Record<Project["title"], { readonly src: string; readonly alt: string }>
 > = {
@@ -55,6 +57,16 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
         <p className="journey-case-study-label">Key decision</p>
         <p className="journey-body journey-case-study-text">{caseStudy.decision}</p>
       </div>
+
+      {/* The decision made visible: a calm static system diagram alongside
+          Problem / Key decision / Outcome. It must prove in one glance what
+          the prose can't — each system's shape. */}
+      {hasArchitectureDiagram(project.title) ? (
+        <div className="journey-case-study-section">
+          <p className="journey-case-study-label">Architecture</p>
+          <ArchitectureDiagram title={project.title} />
+        </div>
+      ) : null}
 
       <div className="journey-case-study-section">
         <p className="journey-case-study-label">Outcome</p>

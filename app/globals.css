@@ -2330,6 +2330,50 @@ html:not(.dark) .skill-pill {
   color: var(--foreground);
 }
 
+/* Case-study architecture diagrams: calm static SVGs — FROST strokes,
+   square corners, no animation. The diagram proves in one glance what the
+   prose can't: each system's shape. Capped at 30rem so the text stays
+   legible on mobile (viewBox scales to the panel width) without going
+   billboard-sized on desktop. */
+.journey-arch {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: auto;
+  margin-top: 0.75rem;
+}
+
+.journey-arch-box {
+  fill: none;
+  stroke: var(--portfolio-accent);
+  stroke-width: 1.5;
+}
+
+.journey-arch-flow {
+  fill: none;
+  stroke: var(--portfolio-accent);
+  stroke-width: 1.5;
+}
+
+.journey-arch-head {
+  fill: var(--portfolio-accent);
+}
+
+.journey-arch-label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  fill: var(--foreground);
+  text-anchor: middle;
+}
+
+.journey-arch-sub {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  fill: var(--muted-foreground);
+  text-anchor: middle;
+}
+
 .journey-case-study-text {
   margin: 0;
   max-width: 68ch;
