@@ -103,6 +103,17 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
         </div>
       ) : null}
 
+      {caseStudy.differently ? (
+        <div className="journey-case-study-section">
+          <p className="journey-case-study-label">
+            What I&apos;d do differently
+          </p>
+          <p className="journey-body journey-case-study-text">
+            {caseStudy.differently}
+          </p>
+        </div>
+      ) : null}
+
       {caseStudy.tradeoffs ? (
         <div className="journey-case-study-section">
           <p className="journey-case-study-label">Trade-offs</p>

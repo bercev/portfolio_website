@@ -56,6 +56,8 @@ export interface ProjectCaseStudy {
   readonly timeline?: string;
   /** What didn't work — the honest failure that taught something. */
   readonly didntWork?: string;
+  /** What I'd do differently next time — forward-looking, not post-mortem. */
+  readonly differently?: string;
   /** Engineering trade-offs behind the decisions. */
   readonly tradeoffs?: string;
 }
@@ -312,6 +314,8 @@ export const portfolio = {
         timeline: "Jan 2026 – Jun 2026",
         didntWork:
           "The first merge implementation diffed whole documents, so concurrent edits still clobbered each other's formatting. Rewriting the merge to diff at the block level is where the 70% drop came from.",
+        differently:
+          "Next time I'd extract the block-level merge engine as its own library from day one — the diff logic turned out to be the most interesting part of the system, and it's still buried inside a product repo.",
         tradeoffs:
           "Neon serverless Postgres in prod with Docker Postgres locally — managed scaling in exchange for serverless connection-pooling care. Clerk for auth — a bespoke identity system traded for sprint speed. Deploys on every merge — build minutes traded for zero-drama releases.",
       },
@@ -339,6 +343,8 @@ export const portfolio = {
         timeline: "Aug 2024 – Sep 2024",
         didntWork:
           "The first version answered straight from the base model and hallucinated community-specific facts. Grounding every answer in the indexed messages — and adding the self-correction pass — killed that.",
+        differently:
+          "Next time I'd build the evals first: a fixed set of “answer this from the community’s own history” test questions, run on every change, so regressions in grounding show up in CI instead of in a moderator's DMs.",
         tradeoffs:
           "Local inference over hosted APIs — cutting-edge model quality traded for zero cost and data privacy. RAG over the community's own history — general knowledge traded for answers rooted in the server's own context.",
       },
