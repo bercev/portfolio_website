@@ -6,7 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * Boot sequence — BIOS-style cold boot overlay on first visit.
  * 2–3 seconds of hardware checks, then fades out to reveal the site.
  * Skippable on click, skipped on repeat visits (localStorage), skipped
- * when prefers-reduced-motion is set.
+ * when prefers-reduced-motion is set, and skipped on phones
+ * (coarse pointer or small viewport — nobody wants the theater on a
+ * small screen).
  */
 
 const BOOT_KEY = "bercev-has-booted";
@@ -27,6 +29,11 @@ const BOOT_DURATION_MS = 2600;
 function shouldBoot(): boolean {
   if (typeof window === "undefined") return false;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  // Phones skip the theater (research iter 30): a first-visit phone should not
+  // sit through the 2.6s BIOS boot. Coarse-pointer is the primary phone proxy;
+  // the small-viewport check covers narrow windows where the boot is cramped.
+  if (window.matchMedia("(pointer: coarse)").matches) return false;
+  if (window.matchMedia("(max-width: 640px)").matches) return false;
   try {
     return window.localStorage.getItem(BOOT_KEY) !== "1";
   } catch {
