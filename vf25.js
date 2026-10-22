@@ -41,19 +41,19 @@ async function makePage(browser, viewport) {
     await page.waitForTimeout(2500);
     await page.mouse.click(640, 700); // dismiss boot sequence
     await page.waitForTimeout(8000); // intro decode + settle
-    await page.screenshot({ path: '/home/hatch/workspace/deliverables/v25c-hero-desktop.png', timeout: 60000 });
+    await page.screenshot({ path: '/home/hatch/workspace/deliverables/v25d-hero-desktop.png', timeout: 60000 });
     console.log('hero done');
 
     // scroll to About (bust)
     await page.mouse.wheel(0, 900);
     await page.waitForTimeout(3500);
-    await page.screenshot({ path: '/home/hatch/workspace/deliverables/v25c-about.png', timeout: 60000 });
+    await page.screenshot({ path: '/home/hatch/workspace/deliverables/v25d-about.png', timeout: 60000 });
     console.log('about done');
 
     // scroll to Experience (work mode)
     await page.mouse.wheel(0, 2400);
     await page.waitForTimeout(3500);
-    await page.screenshot({ path: '/home/hatch/workspace/deliverables/v25c-experience.png', timeout: 60000 });
+    await page.screenshot({ path: '/home/hatch/workspace/deliverables/v25d-experience.png', timeout: 60000 });
     console.log('experience done');
     await context.close();
   }
@@ -65,7 +65,7 @@ async function makePage(browser, viewport) {
     await page.waitForTimeout(2500);
     await page.mouse.click(195, 700);
     await page.waitForTimeout(8000);
-    await page.screenshot({ path: '/home/hatch/workspace/deliverables/v25c-hero-mobile.png', timeout: 60000 });
+    await page.screenshot({ path: '/home/hatch/workspace/deliverables/v25d-hero-mobile.png', timeout: 60000 });
     console.log('mobile done');
     await context.close();
   }

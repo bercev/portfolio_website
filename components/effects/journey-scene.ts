@@ -1056,10 +1056,12 @@ export class JourneyScene {
     this.stars = this.buildStarfield(quality === "full" ? 4800 : 2400);
     this.scene.add(this.stars);
 
-    this.buildStations(stationCounts, Boolean(props));
-    this.buildChapterGates();
-    this.buildContinuousWorld();
-    this.buildCosmos();
+    // TEMP DEBUG (wave-1 blob hunt, ?jdbg=stations,gates,world,cosmos,backdrop skips)
+    const jdbg = new URLSearchParams(window.location.search).get("jdbg") ?? "";
+    if (!jdbg.includes("stations")) this.buildStations(stationCounts, Boolean(props));
+    if (!jdbg.includes("gates")) this.buildChapterGates();
+    if (!jdbg.includes("world")) this.buildContinuousWorld();
+    if (!jdbg.includes("cosmos")) this.buildCosmos();
     // Emotional color arc: fog starts cool (cyan tech) and warms toward amber
     // (human moments) as the journey progresses.
     this.fogCool = new THREE.Color(fog);
@@ -1150,7 +1152,7 @@ export class JourneyScene {
       nebula.position.set(0, 0, -170);
       nebula.renderOrder = -1;
       nebula.frustumCulled = false;
-      this.camera.add(nebula);
+      if (!jdbg.includes("backdrop")) this.camera.add(nebula);
       this.animatedMaterials.push(nebulaMat);
 
       const grainMat = new THREE.ShaderMaterial({
@@ -1201,7 +1203,7 @@ export class JourneyScene {
       grain.position.set(0, 0, -168);
       grain.renderOrder = -2;
       grain.frustumCulled = false;
-      this.camera.add(grain);
+      if (!jdbg.includes("backdrop")) this.camera.add(grain);
       this.animatedMaterials.push(grainMat);
 
       if (quality === "full") {
