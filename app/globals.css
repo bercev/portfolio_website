@@ -872,6 +872,34 @@ html[data-journey="active"]:not(.dark) .content-frost {
 }
 
 
+/* ---------- Grain / dither overlay: "unslop" print texture ----------
+   A static monochrome film-grain tile over the whole composite (journey
+   scene + bust + BERAT), below the content frost. Static on purpose: an
+   animated grain layer would repaint fullscreen every frame and fight the
+   smoothness work. The overlay blend breaks up smooth WebGL gradients
+   (banding) into a fine dithered print texture, per Bercev's
+   "dither / noise / ascii" reference. */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-content-frost) - 1);
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+html:not(.dark) .grain-overlay {
+  opacity: 0.035;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .grain-overlay {
+    display: none;
+  }
+}
+
 /* ---------- Vitae deep-dive artifact ---------- */
 
 .vitae-artifact {

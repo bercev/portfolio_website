@@ -294,14 +294,44 @@ const GLYPH_FRAG = /* glsl */ `
   varying vec2 vUv;
   varying vec3 vColor;
   varying float vGlyph;
+
+  // Ordered Bayer 4x4 threshold — the dither that breaks dot edges into a
+  // deliberate halftone pattern instead of a soft gradient.
+  float bayer2x2(vec2 q) {
+    return mod(q.x * 2.0 + q.y * 3.0, 4.0);
+  }
+  float bayer4(vec2 p) {
+    vec2 lo = mod(p, 2.0);
+    vec2 hi = mod(floor(p * 0.5), 2.0);
+    return (4.0 * bayer2x2(lo) + bayer2x2(hi) + 0.5) / 16.0;
+  }
+
   void main() {
+    if (vGlyph < 0.5) discard;
+    float density = clamp(vGlyph / 63.0, 0.0, 1.0);
+    // DOT-MATRIX: each glyph cell becomes a single dot whose radius grows
+    // with the cell's shading density (area-proportional), so the figure
+    // reads as a halftone print — the blue bust panel in Bercev's
+    // "dither / noise / ascii" reference — not a soft glow.
+    vec2 cell = vUv - 0.5;
+    float dist = length(cell) * 2.0;
+    float radius = 0.16 + 0.86 * sqrt(density);
+    float dither = bayer4(gl_FragCoord.xy * 0.5);
+    float dot = 1.0 - smoothstep(
+      radius - 0.30,
+      radius + 0.03,
+      dist + (dither - 0.5) * 0.34
+    );
+    if (dot < 0.03) discard;
+    // Keep a whisper of the glyph texture inside the dot so the figure
+    // still reads as ASCII at reading distance.
     float gx = mod(vGlyph, 8.0);
     float gy = floor(vGlyph / 8.0);
-    // CanvasTexture flipY=true: v=1 is the canvas top row.
     vec2 cellUv = vec2((gx + vUv.x) / 8.0, (7.0 - gy + vUv.y) / 8.0);
-    vec4 tex = texture2D(uAtlas, cellUv);
-    if (tex.a < 0.04) discard;
-    gl_FragColor = vec4(vColor * tex.rgb, tex.a * uOpacity);
+    float texA = texture2D(uAtlas, cellUv).a;
+    float a = dot * mix(0.55, 1.0, texA) * uOpacity;
+    vec3 col = vColor * (0.45 + 0.85 * density);
+    gl_FragColor = vec4(col, a);
   }
 `;
 

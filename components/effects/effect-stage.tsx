@@ -75,6 +75,8 @@ export function EffectStage() {
       <BootSequence />
       <EasterEggs />
       <AsciiPerson3D />
+      {/* Monochrome film-grain / dither print texture over the composite. */}
+      <div aria-hidden="true" className="grain-overlay" />
       <div
         aria-hidden="true"
         className="pointer-events-none"
