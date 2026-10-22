@@ -63,6 +63,11 @@ export interface ProjectCaseStudy {
   readonly didntWork?: string;
   /** What I'd do differently next time — forward-looking, not post-mortem. */
   readonly differently?: string;
+  /**
+   * The direction explored and rejected — one path considered and why it
+   * lost. Honest material only; no invented alternatives.
+   */
+  readonly rejected?: string;
   /** Engineering trade-offs behind the decisions. */
   readonly tradeoffs?: string;
 }
@@ -340,6 +345,8 @@ export const portfolio = {
         timeline: "Jan 2026 – Jun 2026",
         didntWork:
           "The first merge implementation diffed whole documents, so concurrent edits still clobbered each other's formatting. Rewriting the merge to diff at the block level is where the 70% drop came from.",
+        rejected:
+          "A hand-built identity system — the team weighed owning auth itself, but it would have eaten the sprints the product needed. The product was version control, not login flows; Clerk bought that time back.",
         differently:
           "Next time I'd extract the block-level merge engine as its own library from day one — the diff logic turned out to be the most interesting part of the system, and it's still buried inside a product repo.",
         tradeoffs:
@@ -371,6 +378,8 @@ export const portfolio = {
         timeline: "Aug 2024 – Sep 2024",
         didntWork:
           "The first version answered straight from the base model and hallucinated community-specific facts. Grounding every answer in the indexed messages — and adding the self-correction pass — killed that.",
+        rejected:
+          "A hosted API model — better cutting-edge quality, but it meant per-query cost and sending the community's own messages to someone else's servers. Local inference kept cost at zero and the data in the box.",
         differently:
           "Next time I'd build the evals first: a fixed set of “answer this from the community’s own history” test questions, run on every change, so regressions in grounding show up in CI instead of in a moderator's DMs.",
         tradeoffs:

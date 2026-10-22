@@ -68,6 +68,17 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
         </div>
       ) : null}
 
+      {/* The direction explored and rejected — one path considered and why
+          it lost. Renders only when the field is set (honest material only). */}
+      {caseStudy.rejected ? (
+        <div className="journey-case-study-section">
+          <p className="journey-case-study-label">Not shipped</p>
+          <p className="journey-body journey-case-study-text">
+            {caseStudy.rejected}
+          </p>
+        </div>
+      ) : null}
+
       <div className="journey-case-study-section">
         <p className="journey-case-study-label">Outcome</p>
         <p className="journey-body journey-case-study-text">{caseStudy.outcome}</p>
