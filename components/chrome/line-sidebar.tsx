@@ -66,9 +66,11 @@ function spreadSlots(slots: readonly number[]): number[] {
 
 type LineSidebarProps = {
   items: PortfolioContent["navigation"];
+  /** Pinned utility link (resume download) below the chapter rail. */
+  resumeHref?: string;
 };
 
-export function LineSidebar({ items }: LineSidebarProps) {
+export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
   const navRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
   const targetsRef = useRef<number[]>([]);
@@ -245,6 +247,16 @@ export function LineSidebar({ items }: LineSidebarProps) {
           </li>
         ))}
       </ul>
+      {resumeHref ? (
+        <a
+          href={resumeHref}
+          download
+          className={`cursor-target ${styles.utility}`}
+          aria-label="Download resume (PDF)"
+        >
+          Resume <span aria-hidden="true">↓</span>
+        </a>
+      ) : null}
     </nav>
   );
 }

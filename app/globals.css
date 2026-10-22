@@ -2768,6 +2768,25 @@ html[data-journey="active"] [data-hero-name-fallback] {
   color: var(--foreground);
 }
 
+/* The hero's single call to action: FROST text link, calm underline, ≤200ms feedback. */
+[data-hero-cta] {
+  display: inline-block;
+  margin: 0.15rem 0 0;
+  font: 500 0.95rem/1.6 var(--font-sans);
+  letter-spacing: -0.01em;
+  color: var(--portfolio-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  text-decoration-color: color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+  transition: color 150ms ease, text-decoration-color 150ms ease;
+}
+
+[data-hero-cta]:hover {
+  color: var(--foreground);
+  text-decoration-color: currentColor;
+}
+
 @media (max-width: 900px) {
   [data-hero-lede],
   [data-hero-signals] {

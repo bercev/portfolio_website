@@ -116,6 +116,29 @@
   outline-offset: 0.35rem;
 }
 
+/* Pinned utility link below the rail (resume download): sentence case and
+   dimmer than the chapter anchors so it reads as utility, not a chapter. */
+.utility {
+  position: absolute;
+  left: 0;
+  bottom: -1.75rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-left: 0.7rem;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.utility:hover,
+.utility:focus-visible {
+  color: var(--foreground);
+}
+
 .item:has(.link:hover) .marker,
 .item:has(.link:focus-visible) .marker,
 .item:has(.link[aria-current="location"]) .marker {

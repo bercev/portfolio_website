@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import ASCIIText from "@/components/effects/react-bits-ascii-text";
 import { useMotionPreference } from "@/components/providers/motion-provider";
+import { MagneticButton } from "@/components/ui/magnetic-button";
 import type { PortfolioContent } from "@/data/content";
 
 type HeroContent = {
@@ -68,6 +69,14 @@ export function Hero({ content }: { content: HeroContent }) {
             </div>
 
             {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
+
+            {/* One calm call to action: subtle magnetic drift + spring return (Aceternity
+                MagneticButton), held still under reduced motion. */}
+            <MagneticButton strength={reduceMotion ? 0 : 0.22} maxDistance={36}>
+              <a href="#projects" className="cursor-target" data-hero-cta>
+                See my work <span aria-hidden="true">↓</span>
+              </a>
+            </MagneticButton>
           </div>
 
           <dl data-hero-signals>
