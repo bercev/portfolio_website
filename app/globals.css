@@ -1105,10 +1105,13 @@ html:not(.dark) .grain-overlay {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  /* Slight defocus so foreground text pops; bg stays alive but calm.
-     Brightness tamed to kill the "white blob" in the hero — the 3D scene
-     was blowing out to pure white at the center. */
-  filter: blur(2px) brightness(0.45);
+  /* Brightness tamed to kill the "white blob" in the hero — the 3D scene
+     was blowing out to pure white at the center. No blur() here anymore:
+     a spatial filter over a fullscreen canvas that repaints every frame
+     was a prime scroll-jank suspect; the frost/dim layers above already
+     soften the scene, and a sharper field lets the grain/dither texture
+     read as print instead of mush. */
+  filter: brightness(0.45);
 }
 
 .journey-vignette,

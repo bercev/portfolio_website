@@ -908,7 +908,7 @@ export class JourneyScene {
       powerPreference: this.phoneLayout ? "low-power" : "high-performance",
     });
     this.renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio, this.phoneLayout ? 1.25 : 1.75),
+      Math.min(window.devicePixelRatio, this.phoneLayout ? 1.25 : 1.5),
     );
     const width = this.phoneLayout ? this.viewSize().w : window.innerWidth;
     const height = this.phoneLayout ? this.viewSize().h : window.innerHeight;
