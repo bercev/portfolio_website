@@ -15,7 +15,7 @@ import { ShaderBackdrop } from "./shader-backdrop";
 import { SpecularControls } from "./specular-controls";
 import { BootSequence } from "./boot-sequence";
 import { EasterEggs } from "./easter-eggs";
-import { AsciiPerson3D } from "./ascii-person-3d";
+import { AsciiPortraitBust } from "./ascii-portrait-bust";
 
 export function EffectStage() {
   const [profile, setProfile] = useState<EffectProfile | null>(null);
@@ -74,7 +74,7 @@ export function EffectStage() {
     <>
       <BootSequence />
       <EasterEggs />
-      <AsciiPerson3D />
+      <AsciiPortraitBust />
       {/* Monochrome film-grain / dither print texture over the composite. */}
       <div aria-hidden="true" className="grain-overlay" />
       <div
