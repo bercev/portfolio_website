@@ -1995,8 +1995,12 @@ export class JourneyScene {
         varying vec3 vNormal;
         varying vec3 vView;
         void main() {
-          float rim = pow(max(0.0, 0.28 - dot(normalize(vNormal), normalize(vView))), 3.2);
-          gl_FragColor = vec4(uColor * rim * 2.2, rim * 0.85);
+          // Limb-only glow: peaks where the shell is edge-on to the view
+          // (dot ~ 0) and vanishes at disc center. The old formula peaked
+          // AT the center, and with depthWrite off nothing occluded it —
+          // every planet rendered as a flat pale disc (the hero "blob").
+          float rim = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 3.0);
+          gl_FragColor = vec4(uColor * rim * 1.15, rim * 0.55);
         }
       `,
     });
@@ -2075,9 +2079,10 @@ export class JourneyScene {
       const tangent = this.curve.getTangentAt(def.t);
       const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
       const planetGroup = this.buildDetailedPlanet(def.r, def.color, def.seed, def.rings);
-      // Offset to the side so you fly PAST, not through.
-      planetGroup.position.copy(p).addScaledVector(side, 7 * (def.seed > 5 ? 1 : -1));
-      planetGroup.position.y += 2;
+      // Offset to the side so you fly PAST, not through — and far enough
+      // off the sightline that a planet never sits behind the wordmark.
+      planetGroup.position.copy(p).addScaledVector(side, 10.5 * (def.seed > 5 ? 1 : -1));
+      planetGroup.position.y += 3;
       // Moons.
       for (let m = 0; m < 2; m++) {
         const moon = new THREE.Mesh(

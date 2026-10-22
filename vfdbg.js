@@ -6,7 +6,7 @@ const http = require('http');
     executablePath: '/opt/meta-chromium/chrome',
     args: ['--no-sandbox', '--disable-gpu', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
   });
-  const variants = ['', 'cosmos', 'world', 'gates', 'stations', 'backdrop'];
+  const variants = ['', 'planets', 'nebulae', 'islands'];
   for (const v of variants) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, colorScheme: 'dark' });
     const page = await context.newPage();
@@ -25,12 +25,12 @@ const http = require('http');
       if (body) req.write(body);
       req.end();
     });
-    const qs = v ? `?jdbg=${v}` : '';
+    const qs = v ? `?cdbg=${v}` : '';
     await page.goto(`http://localhost:3100/${qs}`, { waitUntil: 'networkidle', timeout: 60000 });
     await page.waitForTimeout(2500);
     await page.mouse.click(640, 700);
     await page.waitForTimeout(7000);
-    await page.screenshot({ path: `/tmp/dbg-${v || 'base'}.png`, clip: { x: 440, y: 80, width: 480, height: 420 } });
+    await page.screenshot({ path: `/tmp/cdbg-${v || 'base'}.png`, clip: { x: 440, y: 80, width: 480, height: 420 } });
     console.log('shot', v || 'base');
     await context.close();
   }
