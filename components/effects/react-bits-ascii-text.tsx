@@ -165,8 +165,10 @@ void main() {
   vec3 under = base.rgb * blockAlpha;
   vec3 color = mix(under, abs(tint - under), glyphAlpha);
   float alpha = max(blockAlpha, glyphAlpha) * uReady;
-  // Brightness boost for pop — push glyphs toward pure white.
-  color *= 1.8;
+  // Brightness boost for pop — density-aware: bright letter cores push
+  // toward white-hot while sparse edge glyphs keep their texture, so the
+  // wordmark gains contrast instead of flattening into a solid slab.
+  color *= 1.55 + 0.95 * clamp(gray, 0.0, 1.0);
   color = clamp(hueRotate(color, uHue), 0.0, 1.0) * uReady;
   if (uLight > 0.5) color = vec3(alpha) - color;
   fragColor = vec4(color, alpha);
@@ -222,7 +224,7 @@ const drawText = (text: string, fontFamily: string, fontWeight: number | string,
     ctx.fillText(ch, x, canvas.height / 2);
     x += widths[i] + spacingPx;
   });
-  return canvas;
+  return { canvas, inkWidth: width };
 };
 
 const drawGlyphs = (charset: string, fontFamily: string) => {
@@ -380,6 +382,7 @@ export default function ASCIIText({
     const state = {
       ready: false,
       textAspect: 1,
+      inkAspect: 0,
       glyphCount: 1,
       time: 0,
       tiltX: 0,
@@ -411,12 +414,13 @@ export default function ASCIIText({
       characters: string,
       playIntro: boolean
     ) => {
-      const textCanvas = drawText(value, family, weight, color, settingsRef.current.letterSpacing);
+      const drawn = drawText(value, family, weight, color, settingsRef.current.letterSpacing);
       const glyphCanvas = drawGlyphs(characters, family);
-      if (!textCanvas || !glyphCanvas) return;
-      upload(textTexture, textCanvas, false);
+      if (!drawn || !glyphCanvas) return;
+      upload(textTexture, drawn.canvas, false);
       upload(glyphTexture, glyphCanvas, true);
-      state.textAspect = textCanvas.width / textCanvas.height;
+      state.textAspect = drawn.canvas.width / drawn.canvas.height;
+      state.inkAspect = drawn.inkWidth / drawn.canvas.height;
       state.glyphCount = Array.from(characters).length;
       state.ready = true;
       if (playIntro && settingsRef.current.intro && !state.introPlayed && !reduce) {
@@ -486,7 +490,17 @@ export default function ASCIIText({
       gl.uniform2f(uniforms.uCell, s.cellSize * 0.62 * dpr, s.cellSize * dpr);
       gl.uniform1f(uniforms.uGlyphCount, state.glyphCount);
       gl.uniform1f(uniforms.uTextAspect, state.textAspect);
-      gl.uniform1f(uniforms.uPlaneHeight, 0.5 * s.textScale);
+      // AUTO-FIT: never let the wordmark's ink exceed ~86% of the visible
+      // frustum width, whatever the band's aspect ratio (ultrawide desktop
+      // or narrow phone). Without this the plane is sized from height alone
+      // and the outer letters slide off-screen (the clipped-B bug).
+      let effScale = s.textScale;
+      if (state.inkAspect > 0) {
+        const canvasAspect = width / Math.max(1, height);
+        const fitScale = (2 * 0.86 * canvasAspect) / state.inkAspect;
+        effScale = Math.min(effScale, fitScale);
+      }
+      gl.uniform1f(uniforms.uPlaneHeight, 0.5 * effScale);
       gl.uniform2f(uniforms.uTilt, state.tiltX, state.tiltY);
       gl.uniform1f(uniforms.uTime, state.time);
       gl.uniform1f(uniforms.uWaves, s.waves);

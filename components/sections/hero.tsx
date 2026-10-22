@@ -43,7 +43,7 @@ export function Hero({ content }: { content: HeroContent }) {
             fontWeight={700}
             textColor="#ffffff"
             colors={["#ffffff", "#00e5ff", "#0090ff"]}
-            textScale={1.9}
+            textScale={2.3}
             letterSpacing={0.07}
             blocks={0}
             waves={0}
@@ -53,6 +53,7 @@ export function Hero({ content }: { content: HeroContent }) {
             hueShift={0}
             scramble={0}
             intro
+            idle={false}
             interactive
             theme="dark"
             style={{ pointerEvents: "auto" }}
