@@ -251,7 +251,7 @@ export const portfolio = {
       organization: "Stealth Startup",
       dates: "Apr 2026-Aug 2026",
       summary:
-        "Built a multi-agent system that creates software from multimodal, source-based evidence: structured handoffs, persistent execution state, inspectable artifacts, and a sandboxed build-and-repair loop that only stopped when acceptance checks passed. I owned the contracts between agents so a failed step was visible, replayable, and not a silent stall.",
+        "Built a multi-agent system that creates software from multimodal, source-based evidence: structured handoffs, persistent execution state, inspectable artifacts, and **a sandboxed build-and-repair loop that only stopped when acceptance checks passed**. I owned the contracts between agents so a failed step was visible, replayable, and not a silent stall.",
       technologies: ["Python", "Google ADK", "GCP", "Docker"],
     },
     {
@@ -259,7 +259,7 @@ export const portfolio = {
       organization: "UCSC",
       dates: "Apr 2025-Jun 2026",
       summary:
-        "I supported 100+ upper-division students per quarter through office hours and project guidance, explaining data structures, algorithmic tradeoffs, and debugging strategies while collaborating with faculty and teaching assistants on consistent evaluation. Those sessions were a weekly pressure test for walking through recursion, graphs, and complexity out loud.",
+        "I supported **100+ upper-division students per quarter** through office hours and project guidance, explaining data structures, algorithmic tradeoffs, and debugging strategies while collaborating with faculty and teaching assistants on consistent evaluation. Those sessions were a weekly pressure test for walking through recursion, graphs, and complexity out loud.",
       technologies: ["Data Structures", "Algorithms"],
     },
     {
@@ -267,7 +267,7 @@ export const portfolio = {
       organization: "Algoverse",
       dates: "Jun 2025-Jan 2026",
       summary:
-        "Built and analyzed @GrokSet (1M+ tweets of public Grok conversations), fine-tuned BERTopic on conversation-level embeddings, and ran concurrent collection/debug workflows that cut API and compute cost ~50%. The same pipeline later became the paper, so the research and the engineering sat in the same week.",
+        "Built and analyzed **@GrokSet (1M+ tweets of public Grok conversations)**, fine-tuned BERTopic on conversation-level embeddings, and ran concurrent collection/debug workflows that **cut API and compute cost ~50%**. The same pipeline later became the paper, so the research and the engineering sat in the same week.",
       technologies: ["LLMs", "Python", "Hydra", "Tmux", "Runpod", "SQLite"],
     },
     {
@@ -275,7 +275,7 @@ export const portfolio = {
       organization: "Trustd.ai",
       dates: "Oct 2024-Feb 2025",
       summary:
-        "Shipped admin + REST MongoDB workflows for large user-record sets with Zod validation, then hardened Amplify CI/CD and expanded Playwright/Jest coverage (~60%). That was my first production codebase, and it is why I still reach for tests before I call a feature done.",
+        "Shipped admin + REST MongoDB workflows for large user-record sets with Zod validation, then hardened Amplify CI/CD and **expanded Playwright/Jest coverage (~60%)**. That was my first production codebase, and it is why I still reach for tests before I call a feature done.",
       technologies: ["React", "NextJS", "TypeScript", "MongoDB", "AWS", "Git", "SCRUM"],
     },
   ],

@@ -2045,6 +2045,13 @@ html[data-journey] [data-effect-layer="background"] {
   line-height: 1.7;
 }
 
+/* 30-second scan: key outcomes/metrics in experience summaries get the same
+   bold treatment as the project case-study metrics — full ink, no glows. */
+.journey-xp-summary .journey-xp-insight {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
 .journey-xp-tools {
   margin: 0;
   padding: 0;

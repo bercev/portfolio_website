@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import type { PortfolioContent } from "@/data/content";
 
 import { Station } from "@/components/ui/station";
@@ -7,6 +9,23 @@ type ExperienceProps = {
   readonly content: PortfolioContent["experience"];
   readonly heading: PortfolioContent["navigation"][number]["label"];
 };
+
+/**
+ * Renders inline `**insight**` markers in experience summaries as bolded
+ * key-insights (outcomes/metrics), so the 30-second scan lands. Plain text
+ * between markers renders untouched.
+ */
+function renderSummary(summary: string) {
+  return summary.split(/\*\*(.+?)\*\*/g).map((part, index) =>
+    index % 2 === 1 ? (
+      <strong key={index} className="journey-xp-insight">
+        {part}
+      </strong>
+    ) : (
+      <Fragment key={index}>{part}</Fragment>
+    ),
+  );
+}
 
 export function Experience({ content, heading }: ExperienceProps) {
   return (
@@ -36,7 +55,7 @@ export function Experience({ content, heading }: ExperienceProps) {
               ) : null}
               <h3 className="journey-xp-title">{experience.role}</h3>
               <p className="journey-body journey-xp-summary">
-                {experience.summary}
+                {renderSummary(experience.summary)}
               </p>
             </div>
             <div className="journey-xp-stack">
