@@ -64,7 +64,7 @@ export function Hero({ content }: { content: HeroContent }) {
         <div data-hero-below>
           <div data-hero-lede>
             <div data-hero-meta>
-              <span>{identity.role} based in Santa Cruz, California.</span>
+              <span>Based in Santa Cruz, California.</span>
             </div>
 
             {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
