@@ -51,6 +51,11 @@ export interface ProjectCaseStudy {
   readonly outcome: string;
   /** Standalone metric lines — rendered bold next to the outcome. */
   readonly metrics?: readonly string[];
+  /**
+   * How the outcome was verified — the method behind the metrics, honestly
+   * named. Unmeasured stays unmeasured; never an invented methodology.
+   */
+  readonly evaluation?: string;
   readonly role?: string;
   readonly team?: string;
   readonly timeline?: string;
@@ -328,6 +333,8 @@ export const portfolio = {
           "~70% fewer merge conflicts",
           "99.9% uptime",
         ],
+        evaluation:
+          "Measured in production: the metrics above are the read-out from the shipped build — the merge-conflict drop is the before/after of the block-level merge rewrite against the team's real usage, and the API numbers are the live build's.",
         role: "Full-stack engineer",
         team: "5-person Agile team (SCRUM)",
         timeline: "Jan 2026 – Jun 2026",
@@ -357,6 +364,8 @@ export const portfolio = {
         outcome:
           "A bot the community actually leans on — questions answered from the server's own history instead of a moderator's evenings:",
         metrics: ["10K+ messages indexed", "50+ community members"],
+        evaluation:
+          "Verified through real use: the self-correction grounding pass stopped the hallucinated community facts, and the 50+ member community asks the bot questions against the server's own history. Not measured: retrieval quality — no formal evals or grounding scores; see What I'd do differently for what's missing.",
         role: "Sole developer",
         team: "Solo",
         timeline: "Aug 2024 – Sep 2024",

@@ -80,6 +80,15 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
         ) : null}
       </div>
 
+      {caseStudy.evaluation ? (
+        <div className="journey-case-study-section">
+          <p className="journey-case-study-label">Evaluation</p>
+          <p className="journey-body journey-case-study-text">
+            {caseStudy.evaluation}
+          </p>
+        </div>
+      ) : null}
+
       {caseStudy.role || caseStudy.team || caseStudy.timeline ? (
         <div className="journey-case-study-section">
           <p className="journey-case-study-label">Snapshot</p>
