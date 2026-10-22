@@ -186,6 +186,17 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
           ) : null}
         </div>
       ) : null}
+
+      {/* One calm conversion line at the end of every expanded panel: a
+          reader who just finished the evidence gets a next step. Same
+          treatment as the hero CTA (FROST text, calm underline,
+          ≤200ms hover feedback). */}
+      <div className="journey-case-study-section">
+        <a href="#contact" className="cursor-target" data-case-study-cta>
+          Want the full story? Let&rsquo;s talk{" "}
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
     </div>
   );
 }

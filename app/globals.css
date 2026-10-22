@@ -2838,6 +2838,25 @@ html[data-journey="active"] [data-hero-name-fallback] {
   text-decoration-color: currentColor;
 }
 
+/* Case-study conversion line: same calm treatment as the hero CTA. */
+[data-case-study-cta] {
+  display: inline-block;
+  margin: 0.15rem 0 0;
+  font: 500 0.95rem/1.6 var(--font-sans);
+  letter-spacing: -0.01em;
+  color: var(--portfolio-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  text-decoration-color: color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+  transition: color 150ms ease-out, text-decoration-color 150ms ease-out;
+}
+
+[data-case-study-cta]:hover {
+  color: var(--foreground);
+  text-decoration-color: currentColor;
+}
+
 @media (max-width: 900px) {
   [data-hero-lede],
   [data-hero-signals] {
