@@ -441,6 +441,60 @@ function getSoftDotTexture(): THREE.Texture {
   return softDotTexture;
 }
 
+/**
+ * Halftone cloud texture for the nebula sprites. A radial-gradient sprite
+ * at 14–32 world units reads as a flat gray blob (the "white blob" saga);
+ * rendering the cloud density through a Bayer 4x4 ordered-dither threshold
+ * instead breaks it into a deliberate dot-matrix print texture — the
+ * treatment in Bercev's "dither / noise / ascii" reference.
+ */
+let ditherCloudTexture: THREE.Texture | null = null;
+function getDitherCloudTexture(): THREE.Texture {
+  if (ditherCloudTexture) return ditherCloudTexture;
+  const S = 256;
+  const c = document.createElement("canvas");
+  c.width = c.height = S;
+  const ctx = c.getContext("2d");
+  if (ctx) {
+    const img = ctx.createImageData(S, S);
+    const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+    // Irregular density field: overlapping gaussian puffs, not one disc.
+    const puffs = [
+      { x: 0.5, y: 0.46, r: 0.3, a: 1.0 },
+      { x: 0.33, y: 0.58, r: 0.21, a: 0.7 },
+      { x: 0.67, y: 0.59, r: 0.23, a: 0.75 },
+      { x: 0.52, y: 0.28, r: 0.17, a: 0.55 },
+      { x: 0.4, y: 0.38, r: 0.15, a: 0.5 },
+    ];
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const u = x / S;
+        const v = y / S;
+        let d = 0;
+        for (const p of puffs) {
+          const dx = u - p.x;
+          const dy = v - p.y;
+          d += p.a * Math.exp(-(dx * dx + dy * dy) / (2 * p.r * p.r));
+        }
+        // Low-frequency modulation so the cloud edge is lumpy, not round.
+        d *= 0.82 + 0.18 * Math.sin(u * 9.1 + 1.7) * Math.sin(v * 7.3 + 0.4);
+        d = Math.min(1, d);
+        const threshold = (BAYER[(y % 4) * 4 + (x % 4)]! + 0.5) / 16;
+        // Near-binary dots with a 1px transition — halftone, not gradient.
+        const alpha = Math.max(0, Math.min(1, (d - threshold) * 6 + 0.5));
+        const idx = (y * S + x) * 4;
+        img.data[idx] = 255;
+        img.data[idx + 1] = 255;
+        img.data[idx + 2] = 255;
+        img.data[idx + 3] = Math.round(alpha * 255);
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  ditherCloudTexture = new THREE.CanvasTexture(c);
+  return ditherCloudTexture;
+}
+
 /** Small glowing points that skip the aura-shell treatment (perf). */
 function glowPoints(
   positions: Float32Array,
@@ -1083,6 +1137,11 @@ export class JourneyScene {
             vec3 col = mix(uTintA, uTintB, clamp(wash * 0.7 + caustic * 0.5, 0.0, 1.0));
             float field = mix(wash, caustic, 0.42);
             float alpha = field * uIntensity * mix(1.0, 1.15, uInkMode);
+            // Ordered-dither grain on the wash: breaks smooth fog fields
+            // into a fine print texture instead of a flat gray mass.
+            vec2 bp = floor(gl_FragCoord.xy * 0.5);
+            float dgrain = fract(bp.x * 0.5 + bp.y * bp.y * 0.75);
+            alpha *= 0.78 + 0.44 * dgrain;
             gl_FragColor = vec4(col, alpha);
           }
         `,
@@ -2176,10 +2235,13 @@ export class JourneyScene {
       const side = new THREE.Vector3().crossVectors(tangent, upVec).normalize();
       const neb = new THREE.Sprite(
         new THREE.SpriteMaterial({
-          map: getSoftDotTexture(),
+          map: getDitherCloudTexture(),
           color: col.copy(cyan).lerp(amber, t / PATH_END_T).clone(),
           transparent: true,
-          opacity: 0.14,
+          // Higher than the old soft sprite's 0.14: the halftone dots
+          // cover roughly half the area, so this lands at a similar
+          // overall brightness while reading as print, not blob.
+          opacity: 0.26,
           blending: this.particleBlending,
           depthWrite: false,
         }),
