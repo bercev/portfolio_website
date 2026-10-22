@@ -406,6 +406,34 @@ export default function ASCIIText({
     let last = performance.now();
     let alive = true;
 
+    // The rAF loop exists to serve motion: intro decode, pointer tilt/hover,
+    // click ripples, idle sway, and the wave field. When none of those can
+    // change the next frame, stop requesting rAF — a fullscreen WebGL pass at
+    // 60fps forever is pure GPU/battery burn (and under software GL it pins
+    // the main thread at ~1fps of main-thread time per frame). wake()
+    // re-arms the loop from every input that can change the image.
+    const needsFrames = (targetX: number, targetY: number, hueTarget: number) => {
+      const cfg = settingsRef.current;
+      if (state.intro > 0) return true;
+      if (state.ripples.length > 0) return true;
+      if (state.inside) {
+        // Pointer is over the band: keep frames only until tilt/hover/hue
+        // converge on the pointer; the next pointermove wakes us again.
+        if (Math.abs(state.tiltX - targetX) > 1e-4) return true;
+        if (Math.abs(state.tiltY - targetY) > 1e-4) return true;
+        if (Math.abs(state.hover - 1) > 1e-4) return true;
+        if (Math.abs(state.hue - hueTarget) > 1e-4) return true;
+        return false;
+      }
+      // Pointer away: frames only while values decay back to rest, or while a
+      // time-driven effect is configured (idle sway / wave field, full motion).
+      if (Math.abs(state.tiltX) > 1e-4 || Math.abs(state.tiltY) > 1e-4) return true;
+      if (Math.abs(state.hover) > 1e-4) return true;
+      if (Math.abs(state.hue) > 1e-4) return true;
+      if (!reduce && (cfg.idle || cfg.waves > 0)) return true;
+      return false;
+    };
+
     const build = (
       value: string,
       family: string,
@@ -523,7 +551,11 @@ export default function ASCIIText({
       gl.uniform1f(uniforms.uReady, state.ready ? 1 : 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-      if (state.visible) raf = requestAnimationFrame(frame);
+      if (state.visible && needsFrames(targetX, targetY, hueTarget)) {
+        raf = requestAnimationFrame(frame);
+      } else {
+        raf = 0;
+      }
     };
 
     const wake = () => {
@@ -549,18 +581,24 @@ export default function ASCIIText({
     const onMove = (event: PointerEvent) => {
       locate(event);
       state.inside = true;
+      wake();
     };
     const onLeave = () => {
       state.inside = false;
+      wake();
     };
     const onDown = (event: PointerEvent) => {
       const s = settingsRef.current;
       if (!s.interactive || !s.clickRipple) return;
       locate(event);
       state.ripples.push({ x: state.pointerX, y: state.pointerY, age: 0 });
+      wake();
     };
 
-    const resizeObserver = new ResizeObserver(resize);
+    const resizeObserver = new ResizeObserver(() => {
+      resize();
+      wake();
+    });
     resizeObserver.observe(container);
     const visibility = new IntersectionObserver(entries => {
       state.visible = entries.some(entry => entry.isIntersecting);
