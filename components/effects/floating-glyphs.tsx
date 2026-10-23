@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
+import { useScrollBlur } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -108,6 +109,14 @@ function makeGlyph(w: number, h: number, mobile: boolean): Glyph {
 
 export function FloatingGlyphs() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Progressive scroll blur (v2): the glyph canvas is a background layer,
+  // so it picks up blur with scroll depth (0px top → 5px bottom) while
+  // page content stays crisp. Reduced motion disables the ramp.
+  const blurRef = useScrollBlur<HTMLCanvasElement>(5);
+  const setCanvas = (el: HTMLCanvasElement | null) => {
+    canvasRef.current = el;
+    blurRef.current = el;
+  };
   const colorsRef = useRef<{ fg: Rgb; accent: Rgb } | null>(null);
   const { resolvedTheme } = useTheme();
   const { palette } = usePalette();
@@ -265,7 +274,7 @@ export function FloatingGlyphs() {
 
   return (
     <>
-      <canvas ref={canvasRef} aria-hidden="true" className="floating-glyphs" />
+      <canvas ref={setCanvas} aria-hidden="true" className="floating-glyphs" />
       <div aria-hidden="true" className="floating-glyphs-vignette" />
     </>
   );
