@@ -69,6 +69,9 @@ export function Terminal({
         cursorStyle: "block",
         scrollback: 500,
         convertEol: true,
+        // Accessibility: render terminal text into an offscreen live region so
+        // screen readers can read the canvas (research iter 39, lorienweb).
+        screenReaderMode: true,
         allowProposedApi: true,
       });
       const fit = new FitAddon();
