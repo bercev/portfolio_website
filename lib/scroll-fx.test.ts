@@ -5,6 +5,9 @@ import {
   bustLightPresence,
   bustRimLight,
   bustRimShaped,
+  BUST_WIPE_MAX_DROP,
+  bustWipeDepth,
+  bustWipeDrop,
   chapterCrossingScrollY,
   ditherDissolveLevel,
   fbm2,
@@ -509,5 +512,35 @@ describe("bustRimShaped", () => {
     expect(bustRimShaped(1, 0)).toBe(0);
     expect(bustRimShaped(1, 0.5)).toBeCloseTo(0.5, 6);
     expect(bustRimShaped(1, 2)).toBe(1); // presence clamped
+  });
+});
+
+describe("bustWipeDepth", () => {
+  it("is exactly 0 at rest (wipeThr 0 and 1) — the at-rest render gate", () => {
+    expect(bustWipeDepth(0)).toBe(0);
+    expect(bustWipeDepth(1)).toBe(0);
+  });
+
+  it("peaks mid-window at the cap and is triangular", () => {
+    expect(bustWipeDepth(0.5)).toBe(BUST_WIPE_MAX_DROP);
+    expect(bustWipeDepth(0.25)).toBeCloseTo(BUST_WIPE_MAX_DROP / 2, 10);
+    expect(bustWipeDepth(0.75)).toBeCloseTo(BUST_WIPE_MAX_DROP / 2, 10);
+  });
+
+  it("clamps degenerate inputs", () => {
+    expect(bustWipeDepth(-1)).toBe(0);
+    expect(bustWipeDepth(2)).toBe(0);
+  });
+});
+
+describe("bustWipeDrop", () => {
+  it("never drops at rest — nothing under a 0 depth", () => {
+    expect(bustWipeDrop(0, 0)).toBe(false);
+    expect(bustWipeDrop(0.999, 1)).toBe(false);
+  });
+
+  it("drops points under the front mid-window (hard edge, not a fade)", () => {
+    expect(bustWipeDrop(0.1, 0.5)).toBe(true);
+    expect(bustWipeDrop(0.9, 0.5)).toBe(false);
   });
 });

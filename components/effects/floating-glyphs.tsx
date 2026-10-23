@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { ditherDissolveLevel, fbm2, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
+import { ditherDissolveLevel, fbm2, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, scrollShared, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -838,6 +838,10 @@ export function FloatingGlyphs() {
           const outI = k === 0 ? 0 : Math.min(k - 1, nCh - 1);
           const inI = Math.min(k, nCh - 1);
           wipeThr = wipeSweepThreshold(wipeRawFrac(sy, lo, hi));
+          // Share the live threshold with the portrait bust so the head
+          // tears through the same crossing (run-2 IDEA iter 14) — the
+          // bust reads this in its own draw loop, no extra layout reads.
+          scrollShared.wipeThr = wipeThr;
           wipeOutVocab = VOCAB[outI];
           wipeInVocab = VOCAB[inI];
           wipeKey = k;

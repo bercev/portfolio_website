@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { approachAngle, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, gazeAngles, getScrollProgress, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, fbm2, gazeAngles, getScrollProgress, scrollShared, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -136,11 +136,31 @@ function RotatingBustCanvas(): React.JSX.Element {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = BUST_COLOR;
+      // Chapter-boundary dither tear (run-2 IDEA iter 14 — "the head tears
+      // at the boundary"): the head dissolves through the same hard-edged
+      // fbm front as the glyph field's noise wipe, then re-forms as the
+      // new chapter settles. The depth is triangular on the shared wipe
+      // threshold — exactly 0 at rest (wipeThr 0/1), so the gate is
+      // skipped entirely and the at-rest render is byte-identical to the
+      // pre-tear one. The noise is evaluated in the point's own (u, v) —
+      // anchored to the head, never boiling — and the 0.55 cap keeps the
+      // head readable at the tear's peak (deliberate dither, not a glitch).
+      // Skipped under reduced motion by construction: the bust never
+      // mounts there (scrollShared.wipeThr stays at its rest default 0).
+      const wipeDepth = bustWipeDepth(scrollShared.wipeThr);
       // Two passes — far side (zr < 0) first, then the facing side — a
       // cheap painter's algorithm so turned-away points never paint over
       // the face as the head rotates.
       for (let pass = 0; pass < 2; pass++) {
         for (const pt of points) {
+          // Dither tear: drop points under the front (same contract as
+          // the pure bustWipeDrop, inlined against the precomputed depth).
+          if (
+            wipeDepth > 0 &&
+            fbm2(pt.u * BUST_WIPE_NOISE_K, pt.v * BUST_WIPE_NOISE_K) <
+              wipeDepth
+          )
+            continue;
           // Pitch (nod) first, then yaw — both in the point's own space so
           // the depth relief reads correctly from every angle.
           const v1 = pt.v * cosP - pt.w * sinP;

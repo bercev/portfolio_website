@@ -520,6 +520,48 @@ export function wipeGlyphChar(
 }
 
 /**
+ * Shared live wipe threshold. Written by the glyph-field tick
+ * (floating-glyphs.tsx) on animated ticks, read by the portrait bust's
+ * draw loop — so the head tears through the same chapter crossing as
+ * the field without duplicating the section-top layout reads.
+ * Module-level on purpose: both are singleton background layers.
+ * Defaults to 0 (rest). The bust never mounts under reduced motion,
+ * so no RM branch is needed.
+ */
+export const scrollShared = { wipeThr: 0 };
+
+/**
+ * Bust dither-dissolve at chapter boundaries (run-2 IDEA iter 14 — "the
+ * head tears at the boundary"): the portrait's point relief dissolves
+ * through the same hard-edged fbm grammar as the glyph field's noise
+ * wipe, then re-forms as the new chapter settles — the last background
+ * layer to join the scroll language's chapter grammar.
+ *
+ * Depth is triangular on the sweep threshold: exactly 0 at wipeThr 0/1
+ * (settled chapters — the at-rest render is byte-identical because the
+ * gate is skipped entirely then), rising to BUST_WIPE_MAX_DROP mid-
+ * window. A point drops when its stable per-point noise (fbm2 over its
+ * own (u, v) — anchored to the head, never boiling) falls under the
+ * depth. The cap keeps the head readable at the tear's peak: it never
+ * fully vanishes, so the beat reads as deliberate dither, not a glitch.
+ * Pure functions — unit-tested.
+ */
+
+/** Max fraction of bust points dropped at the tear's peak. */
+export const BUST_WIPE_MAX_DROP = 0.55;
+/** Noise feature scale in the bust's own units (u, v span -1..1). */
+export const BUST_WIPE_NOISE_K = 3;
+
+export function bustWipeDepth(wipeThr01: number): number {
+  const t = Math.min(1, Math.max(0, wipeThr01));
+  return BUST_WIPE_MAX_DROP * (1 - Math.abs(2 * t - 1));
+}
+
+export function bustWipeDrop(noise01: number, wipeThr01: number): boolean {
+  return noise01 < bustWipeDepth(wipeThr01);
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping
