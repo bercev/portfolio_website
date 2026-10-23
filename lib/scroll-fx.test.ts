@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { smoothstep01, velocityStretch } from "./scroll-fx";
+import { objectDefocus, smoothstep01, velocityStretch } from "./scroll-fx";
 
 describe("velocityStretch", () => {
   it("is exactly 0 at rest and below the calm threshold", () => {
@@ -33,5 +33,26 @@ describe("velocityStretch", () => {
       expect(s).toBeGreaterThanOrEqual(prev);
       prev = s;
     }
+  });
+});
+
+describe("objectDefocus", () => {
+  it("is 0 at the window center (crisp on the focal plane)", () => {
+    expect(objectDefocus(1)).toBe(0);
+  });
+
+  it("is maxBlur at the window edges (soft entrance/exit)", () => {
+    expect(objectDefocus(0)).toBe(3);
+    expect(objectDefocus(0, 5)).toBe(5);
+  });
+
+  it("ramps linearly between center and edges", () => {
+    expect(objectDefocus(0.5)).toBeCloseTo(1.5, 10);
+    expect(objectDefocus(0.25)).toBeCloseTo(2.25, 10);
+  });
+
+  it("clamps out-of-range envelopes", () => {
+    expect(objectDefocus(-0.5)).toBe(3);
+    expect(objectDefocus(1.5)).toBe(0);
   });
 });

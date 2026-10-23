@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { getScrollProgress, useScrollBlur, velocityStretch } from "@/lib/scroll-fx";
+import { getScrollProgress, objectDefocus, useScrollBlur, velocityStretch } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -153,6 +153,20 @@ function divePose(p: DivePose, t: number, w: number, h: number) {
     cy: h * (p.y0 + (p.y1 - p.y0) * t),
     s: p.s0 + (p.s1 - p.s0) * t,
   };
+}
+
+/**
+ * Offscreen tile for one 3D object (run-2 iter 3, depth-of-field
+ * compositing): the object renders here at device pixels, then blits
+ * onto the object layer with a per-object defocus blur. `half` is the
+ * logical half-extent of the tile (objects are drawn centered on it);
+ * `region` is the full logical size (the drawImage dest at rest).
+ */
+interface ObjSlot {
+  cv: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  half: number;
+  region: number;
 }
 
 const TORUS_DIVE: DivePose = {
@@ -378,6 +392,15 @@ export function FloatingGlyphs() {
     canvasRef.current = el;
     blurRef.current = el;
   };
+  // The 3D objects live on their OWN layer (run-2 iter 3): the glyph
+  // field melts under the progressive CSS blur, but the objects pass
+  // through a focal plane instead — crisp at their window center, softly
+  // defocused at the window edges (per-object ctx.filter blur on the
+  // composite). This canvas never takes the blurRef filter.
+  const objectCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const setObjectCanvas = (el: HTMLCanvasElement | null) => {
+    objectCanvasRef.current = el;
+  };
   const colorsRef = useRef<{ fg: Rgb; accent: Rgb } | null>(null);
   const { resolvedTheme } = useTheme();
   const { palette } = usePalette();
@@ -395,6 +418,25 @@ export function FloatingGlyphs() {
     if (!canvas || !resolvedTheme) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    // The 3D-object layer is optional chrome: if its context is
+    // unavailable the glyph field still renders and objects are
+    // skipped gracefully (the object block gates on octx).
+    const ocanvas = objectCanvasRef.current;
+    const octx = ocanvas ? ocanvas.getContext("2d") : null;
+    // Per-draw ctx.filter blur is the depth-of-field compositing
+    // mechanism. Detect on the prototype — assigning the property on an
+    // unsupported context would silently create an expando and lie.
+    const filterOK =
+      !!octx &&
+      typeof CanvasRenderingContext2D !== "undefined" &&
+      "filter" in CanvasRenderingContext2D.prototype;
+    if (octx) {
+      try {
+        octx.filter = "none";
+      } catch {
+        /* unsupported — objects render crisp, no crash */
+      }
+    }
 
     const root = document.documentElement;
     const reduced = window.matchMedia(REDUCED_MOTION_QUERY).matches;
@@ -421,6 +463,21 @@ export function FloatingGlyphs() {
     // Reduced-motion never reaches here — draw(0) leaves vel at 0.
     let vel = 0;
     let lastScrollY = 0;
+    // Offscreen tiles for the 3D objects (depth-of-field compositing).
+    // Allocated in resize(); empty when the object layer is unavailable.
+    let objSlots: ObjSlot[] = [];
+    const makeSlot = (halfExtent: number, dpr: number): ObjSlot | null => {
+      const cv = document.createElement("canvas");
+      const px = Math.max(2, Math.ceil(halfExtent * 2 * dpr));
+      cv.width = px;
+      cv.height = px;
+      const c = cv.getContext("2d");
+      if (!c) return null;
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      return { cv, ctx: c, half: halfExtent, region: halfExtent * 2 };
+    };
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -429,6 +486,22 @@ export function FloatingGlyphs() {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (octx && ocanvas) {
+        ocanvas.width = Math.round(w * dpr);
+        ocanvas.height = Math.round(h * dpr);
+        octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // Tiles sized for each object's max dive-grow radius plus margin
+        // (objects are drawn centered at slot.half). The mobile torus
+        // (54px base) is the binding case on narrow viewports.
+        const tMax = Math.max(Math.min(104, w * 0.082), 54) * 1.2;
+        const sMax = 74 * 1.2;
+        const cMax = 52 * 1.2;
+        objSlots = [
+          makeSlot(tMax * 1.45 + 8, dpr),
+          makeSlot(sMax + 8, dpr),
+          makeSlot(cMax * 2 + 8, dpr),
+        ].filter((s): s is ObjSlot => s !== null);
+      }
       const per = mobile ? 17000 : 11500;
       const count = Math.round(Math.min(130, Math.max(40, (w * h) / per)));
       glyphs = Array.from({ length: count }, () => makeGlyph(w, h, mobile));
@@ -495,45 +568,89 @@ export function FloatingGlyphs() {
 
       // Scroll-reactive 3D ASCII objects (v2) — animated frames only, so
       // the reduced-motion still frame stays the plain glyph field.
-      if (dt > 0) {
+      //
+      // Depth-of-field compositing (run-2 iter 3): each object renders
+      // into its offscreen tile, then blits onto the object layer with a
+      // per-object defocus blur — 0px at its window center (the focal
+      // plane), up to 3px toward the window edges — so entrances and
+      // exits read as directed transitions instead of hard alpha pops.
+      // The object layer never takes the field's progressive CSS blur:
+      // v85 proved the shared 2.5-5px melt turned the sphere/cube into
+      // gray smudges at 50/100% depth, and the bright-rim mitigation
+      // (a3122f7) could not survive it — splitting the layer fixes the
+      // cause, not the symptom. The fling warp stretch applies to the
+      // blit (vertical smear + slight squeeze + alpha dip), matching the
+      // per-glyph treatment.
+      if (dt > 0 && octx && objSlots.length === 3) {
         const p = getScrollProgress();
         const accent = colors.accent;
+        const sAlpha = stretch > 0.001 ? 1 - 0.3 * stretch : 1;
+        const sX = stretch > 0.001 ? 1 - 0.15 * stretch : 1;
+        const sY = stretch > 0.001 ? 1 + 2.2 * stretch : 1;
+        octx.clearRect(0, 0, w, h);
+        // Render one object into its tile, then blit it to (cx, cy) with
+        // its focus blur. `envelope` is the window alpha (0..1).
+        const place = (
+          slot: ObjSlot,
+          envelope: number,
+          cx: number,
+          cy: number,
+          render: (c: CanvasRenderingContext2D, alpha: number) => void,
+        ) => {
+          const sctx = slot.ctx;
+          sctx.clearRect(0, 0, slot.region, slot.region);
+          render(sctx, envelope * sAlpha);
+          const focus = filterOK ? objectDefocus(envelope) : 0;
+          octx.save();
+          if (focus > 0.05) octx.filter = `blur(${focus.toFixed(2)}px)`;
+          const dw = slot.region * sX;
+          const dh = slot.region * sY;
+          octx.drawImage(slot.cv, cx - dw / 2, cy - dh / 2, dw, dh);
+          octx.restore();
+        };
         if (mobile) {
           const a = windowAlpha(p, 0.02, 0.55);
           if (a > 0.01) {
+            const slot = objSlots[0];
             const pose = divePose(TORUS_DIVE_MOBILE, windowT(p, 0.02, 0.55), w, h);
-            drawTorus(
-              ctx, pose.cx, pose.cy, 54 * pose.s,
-              timeS * 0.11 + p * 5, timeS * 0.07 + p * 3,
-              accent, 0.4 * a,
+            const r = 54 * pose.s;
+            const A = timeS * 0.11 + p * 5;
+            const B = timeS * 0.07 + p * 3;
+            place(slot, a, pose.cx, pose.cy, (c, alpha) =>
+              drawTorus(c, slot.half, slot.half, r, A, B, accent, 0.4 * alpha),
             );
           }
         } else {
           const tA = windowAlpha(p, 0.02, 0.48);
           if (tA > 0.01) {
+            const slot = objSlots[0];
             const pose = divePose(TORUS_DIVE, windowT(p, 0.02, 0.48), w, h);
-            drawTorus(
-              ctx, pose.cx, pose.cy, Math.min(104, w * 0.082) * pose.s,
-              timeS * 0.11 + p * 5, timeS * 0.07 + p * 3,
-              accent, 0.42 * tA,
+            const r = Math.min(104, w * 0.082) * pose.s;
+            const A = timeS * 0.11 + p * 5;
+            const B = timeS * 0.07 + p * 3;
+            place(slot, tA, pose.cx, pose.cy, (c, alpha) =>
+              drawTorus(c, slot.half, slot.half, r, A, B, accent, 0.42 * alpha),
             );
           }
           const sA = windowAlpha(p, 0.38, 0.78);
           if (sA > 0.01) {
+            const slot = objSlots[1];
             const pose = divePose(SPHERE_DIVE, windowT(p, 0.38, 0.78), w, h);
-            drawSphere(
-              ctx, pose.cx, pose.cy, 74 * pose.s,
-              timeS * 0.15 + p * 7, 0.5,
-              accent, 0.46 * sA,
+            const r = 74 * pose.s;
+            const rotY = timeS * 0.15 + p * 7;
+            place(slot, sA, pose.cx, pose.cy, (c, alpha) =>
+              drawSphere(c, slot.half, slot.half, r, rotY, 0.5, accent, 0.46 * alpha),
             );
           }
           const cA = windowAlpha(p, 0.66, 1.05);
           if (cA > 0.01) {
+            const slot = objSlots[2];
             const pose = divePose(CUBE_DIVE, windowT(p, 0.66, 1.05), w, h);
-            drawCube(
-              ctx, pose.cx, pose.cy, 52 * pose.s,
-              timeS * 0.2 + p * 6, 0.6 + timeS * 0.13 + p * 2,
-              accent, 0.46 * cA,
+            const s = 52 * pose.s;
+            const rotY = timeS * 0.2 + p * 6;
+            const rotX = 0.6 + timeS * 0.13 + p * 2;
+            place(slot, cA, pose.cx, pose.cy, (c, alpha) =>
+              drawCube(c, slot.half, slot.half, s, rotY, rotX, accent, 0.46 * alpha),
             );
           }
         }
@@ -618,6 +735,11 @@ export function FloatingGlyphs() {
   return (
     <>
       <canvas ref={setCanvas} aria-hidden="true" className="floating-glyphs" />
+      <canvas
+        ref={setObjectCanvas}
+        aria-hidden="true"
+        className="floating-glyphs-objects"
+      />
       <div aria-hidden="true" className="floating-glyphs-vignette" />
     </>
   );

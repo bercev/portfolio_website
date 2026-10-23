@@ -107,6 +107,22 @@ export function velocityStretch(vPxPerSec: number): number {
 }
 
 /**
+ * Depth-of-field defocus for the 3D background objects (run-2 iter 3):
+ * each object passes through a focal plane as it crosses its scroll
+ * window — crisp at the window center (envelope ~1), softly defocused
+ * toward the window edges (envelope ~0), so entrances/exits read as
+ * directed transitions instead of hard alpha pops. The glyph field keeps
+ * its own progressive CSS blur; objects live on a separate canvas layer
+ * so the field's melt never smudges them (v85: the sphere/cube read as
+ * gray blobs at 50/100% depth under the shared 2.5-5px blur).
+ * Pure function — unit-tested in scroll-fx.test.ts.
+ */
+export function objectDefocus(envelope01: number, maxBlur = 3): number {
+  const e = Math.min(1, Math.max(0, envelope01));
+  return (1 - e) * maxBlur;
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping

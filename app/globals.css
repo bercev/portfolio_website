@@ -956,10 +956,20 @@ html:not(.dark) .grain-overlay {
   pointer-events: none;
 }
 
-.floating-glyphs-vignette {
+.floating-glyphs-objects {
   position: fixed;
   inset: 0;
   z-index: calc(var(--z-journey-scene) + 1);
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.floating-glyphs-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-journey-scene) + 2);
   pointer-events: none;
   background: radial-gradient(
     ellipse at center,
