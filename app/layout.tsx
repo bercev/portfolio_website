@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 
 import { SkipLink } from "@/components/chrome/skip-link";
+import TabTitleDelight from "@/components/chrome/tab-title-delight";
 
 import { LenisProvider } from "@/components/providers/lenis-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -146,6 +147,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <SkipLink />
+        <TabTitleDelight />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
