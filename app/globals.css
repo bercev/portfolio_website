@@ -913,7 +913,6 @@ html[data-journey="active"]:not(.dark) .content-frost {
   );
 }
 
-
 /* ---------- Grain / dither overlay: "unslop" print texture ----------
    A static monochrome film-grain tile over the whole composite (journey
    scene + bust + BERAT), below the content frost. Static on purpose: an
@@ -977,39 +976,9 @@ html.dark .floating-glyphs-vignette {
   );
 }
 
-.journey-scene {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-journey-scene);
-  display: block;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  /* Brightness tamed to kill the "white blob" in the hero — the 3D scene
-     was blowing out to pure white at the center. No blur() here anymore:
-     a spatial filter over a fullscreen canvas that repaints every frame
-     was a prime scroll-jank suspect; the frost/dim layers above already
-     soften the scene, and a sharper field lets the grain/dither texture
-     read as print instead of mush. */
-  filter: brightness(0.45);
-}
-
 .journey-vignette,
 .journey-rail {
   display: none;
-}
-
-html[data-journey="active"] .journey-vignette {
-  display: block;
-  position: fixed;
-  inset: 0;
-  z-index: calc(var(--z-journey-scene) + 1);
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 55%,
-    rgba(196, 216, 235, 0.4) 100%
-  );
 }
 
 html.dark[data-journey="active"] .journey-vignette {
@@ -1033,16 +1002,6 @@ html[data-journey="active"] .journey-rail {
   background: color-mix(in srgb, var(--foreground) 14%, transparent);
   pointer-events: none;
   overflow: hidden;
-}
-
-.journey-rail-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 100%;
-  background: linear-gradient(to bottom, var(--portfolio-accent), var(--effect-chroma-emerald));
-  transform-origin: top;
-  transform: scaleY(0);
-  border-radius: 0;
 }
 
 /*
@@ -1360,25 +1319,6 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 /* Primary email CTA — the highest-intent recruiter action. */
-.journey-contact-email {
-  margin: 1.75rem 0 0;
-}
-
-.journey-contact-email a {
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 2.6vw, 2rem);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--portfolio-accent);
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 6px;
-  transition: opacity 180ms ease-out;
-}
-
-.journey-contact-email a:hover {
-  opacity: 0.75;
-}
 
 .journey-spec-tags {
   display: flex;
@@ -1434,50 +1374,7 @@ html[data-journey] [data-effect-layer="background"] {
   box-shadow: none;
 }
 
-.journey-panel--hard {
-  background: transparent;
-  border-color: var(--foreground);
-}
-
-.journey-panel--open {
-  border: 0;
-  padding: 0;
-  background: transparent;
-}
-
-.journey-panel--ruled {
-  border: 0;
-  border-block: 1px solid var(--journey-rule);
-  border-radius: 0;
-  padding: 0;
-  background: transparent;
-}
-
 /* Discord flat editorial strip — not twin glass with Vitae. */
-.journey-panel--strip {
-  border: 0;
-  border-block: 1px solid var(--journey-rule);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  padding-block: clamp(16px, 2.2vw, 26px);
-  padding-inline: 0;
-  align-self: start;
-}
-
-.journey-paper-preview {
-  display: block;
-  width: min(36rem, calc(100vw - 2rem));
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--foreground) 22%, var(--border));
-  border-radius: 0;
-  background: var(--card);
-  box-shadow: 6px 8px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
-}
-
-.journey-paper-preview iframe {
-  border-radius: 0;
-}
 
 .journey-copy {
   max-width: 62ch;
@@ -1502,54 +1399,14 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
-.journey-grid {
-  display: grid;
-  gap: 18px;
-}
-
-.journey-grid--two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.journey-grid--origin {
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
-  gap: clamp(28px, 5vw, 64px);
-  align-items: start;
-}
-
 /* Column gap must stay the shell gap or the subgrid drifts off the measure. */
-.journey-grid--ships {
-  grid-template-columns: subgrid;
-  column-gap: var(--shell-gap);
-  row-gap: clamp(28px, 4vw, 56px);
-  align-items: stretch;
-}
-
-.journey-grid--ships > [data-project-featured],
-.journey-grid--ships > [data-project-supporting] {
-  grid-column: span 6;
-}
-
-.journey-grid--ships > [data-project-featured] {
-  grid-column: 1 / span 6;
-}
-
-.journey-grid--ships > [data-project-supporting] {
-  grid-column: 7 / span 6;
-}
 
 @media (max-width: 900px) {
-  .journey-grid--ships > [data-project-featured],
-  .journey-grid--ships > [data-project-supporting] {
-    grid-column: 1 / -1;
-  }
+
 }
 
 @media (max-width: 767px) {
-  .journey-grid--two,
-  .journey-grid--origin {
-    grid-template-columns: 1fr;
-  }
+
 }
 
 /* Ruled ledger: rows inherit the station columns so every edge lines up. */
@@ -1819,23 +1676,6 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
-.journey-project-preview {
-  display: block;
-  width: min(26rem, calc(100vw - 2.5rem));
-  overflow: hidden;
-  border: 1px solid var(--foreground);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: 8px 14px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
-  transform: rotate(1.1deg) translate(4%, 6%);
-}
-
-.journey-project-preview img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 /* Experience: ~1/3 outboard meta + ~2/3 body. */
 .journey-xp-item {
   display: grid;
@@ -1923,15 +1763,6 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-xp-summary .journey-xp-insight {
   font-weight: 700;
   color: var(--foreground);
-}
-
-.journey-xp-tools {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font: 400 0.78rem/1.9 var(--font-sans);
-  letter-spacing: 0.02em;
-  color: var(--muted-foreground);
 }
 
 .tech-pills-marquee {
@@ -2037,21 +1868,11 @@ html:not(.dark) .skill-pill {
   text-wrap: balance;
 }
 
-.journey-project-featured-copy {
-  margin-top: 1.25rem;
-  max-width: 62ch;
-  font-size: 1.12rem;
-}
-
 .journey-project-row {
   display: grid;
   grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
   column-gap: var(--shell-gap);
   align-items: baseline;
-}
-
-.journey-project-row-main {
-  grid-column: 1 / span 5;
 }
 
 .journey-project-row-title {
@@ -2072,12 +1893,6 @@ html:not(.dark) .skill-pill {
   color: var(--muted-foreground);
 }
 
-.journey-project-row-copy {
-  grid-column: 6 / span 5;
-  margin: 0;
-  max-width: 52ch;
-}
-
 .journey-project-row > :last-child {
   grid-column: 11 / span 2;
 }
@@ -2088,9 +1903,7 @@ html:not(.dark) .skill-pill {
   .journey-project-row > :last-child {
     grid-column: 1 / -1;
   }
-  .journey-project-row-copy {
-    margin-top: 1rem;
-  }
+
   .journey-project-row > :last-child {
     margin-top: 1rem;
   }
@@ -2298,15 +2111,6 @@ html:not(.dark) .skill-pill {
   }
 }
 
-.journey-skill-heading {
-  grid-column: 1 / span 3;
-  margin: 0;
-  font: 500 11px/1.9 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
 .skill-marquee-stack {
   grid-column: 1 / -1;
   display: flex;
@@ -2381,34 +2185,8 @@ html:not(.dark) .skill-pill {
   }
 }
 
-.journey-skill-line {
-  grid-column: 4 / -1;
-  margin: 0;
-  color: var(--foreground);
-  font: 400 1rem/1.85 var(--font-sans);
-  letter-spacing: -0.005em;
-  text-wrap: pretty;
-}
-
 @media (max-width: 900px) {
-  .journey-skill-heading,
-  .journey-skill-line {
-    grid-column: 1 / -1;
-  }
-}
 
-.journey-skill {
-  display: inline;
-  color: inherit;
-}
-
-.journey-skill + .journey-skill::before {
-  content: " · ";
-  color: color-mix(in srgb, var(--muted-foreground) 70%, transparent);
-}
-
-.journey-panel--proof {
-  border-color: var(--foreground);
 }
 
 .journey-pub-row--lead {
@@ -2426,55 +2204,7 @@ html:not(.dark) .skill-pill {
   letter-spacing: -0.05em;
 }
 
-.journey-project-title {
-  margin-top: 0.75rem;
-  color: var(--foreground);
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
-  font-weight: 400;
-  line-height: 1.04;
-  letter-spacing: -0.018em;
-}
-
-.journey-project-title a {
-  display: inline;
-  width: auto;
-}
-
-.journey-project-copy {
-  margin-top: 1.15rem;
-  max-width: 58ch;
-}
-
-.journey-project-when {
-  margin: 0;
-  font: 400 11px/1.5 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-  font-variant-numeric: tabular-nums;
-}
-
 /* Skills read as a ruled glossary, so a fourth cluster never orphans a column. */
-.journey-skill-clusters {
-  display: grid;
-  grid-template-columns: subgrid;
-}
-
-.journey-skill-group {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
-  align-items: baseline;
-  row-gap: 0.35rem;
-  padding: clamp(14px, 1.9vw, 22px) 0;
-  border-bottom: 1px solid var(--journey-rule-soft);
-}
-
-.journey-skill-group:last-child {
-  border-bottom: 0;
-}
 
 /* Hero: the 3D particle name IS the display; a styled name is the flat fallback.
    Shared content column lock stays. Glyph band reserves BERAT; meta sits BELOW it. */
@@ -2894,14 +2624,6 @@ html[data-journey="active"] [data-hero-name-fallback] {
   background: rgba(5, 7, 12, 0.72);
   border: 1px solid rgba(125, 211, 252, 0.28);
   border-radius: 8px;
-}
-
-.journey-tech-line {
-  max-width: 58ch;
-  color: var(--muted-foreground);
-  font: 500 0.98rem/1.7 var(--font-sans);
-  letter-spacing: -0.01em;
-  text-wrap: pretty;
 }
 
 @media (prefers-reduced-motion: reduce) {
