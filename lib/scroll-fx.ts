@@ -88,6 +88,25 @@ export function smoothstep01(x: number): number {
 }
 
 /**
+ * Scroll-velocity "warp stretch" mapping (run-2 iter 2): during fast
+ * scrolls the background glyph field elongates along the scroll axis —
+ * a calm data-stream warp at full-motion, exactly zero at rest so the
+ * still render is byte-identical to the pre-warp field.
+ *
+ * Below WARP_V_MIN px/s (slow reading scrolls) there is no stretch;
+ * it eases up to full stretch at WARP_V_MAX (hard flings). Pure
+ * function — unit-tested in scroll-fx.test.ts.
+ */
+const WARP_V_MIN = 350;
+const WARP_V_MAX = 2600;
+
+export function velocityStretch(vPxPerSec: number): number {
+  const t =
+    (Math.max(0, vPxPerSec) - WARP_V_MIN) / (WARP_V_MAX - WARP_V_MIN);
+  return smoothstep01(t);
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping

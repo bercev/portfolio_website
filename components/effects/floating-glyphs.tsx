@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { getScrollProgress, useScrollBlur } from "@/lib/scroll-fx";
+import { getScrollProgress, useScrollBlur, velocityStretch } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -414,6 +414,13 @@ export function FloatingGlyphs() {
     // Wall-clock seconds accumulated across animated draws — drives the
     // 3D objects' idle spin (scroll depth drives the rest of their turn).
     let timeS = 0;
+    // Scroll-velocity warp stretch (run-2 iter 2): smoothed |px/s| of the
+    // page. During fast scrolls the glyph field streaks along the scroll
+    // axis (a warp-field read); at rest vel decays to 0 and stretch is
+    // exactly 0, so the still render is identical to the pre-warp field.
+    // Reduced-motion never reaches here — draw(0) leaves vel at 0.
+    let vel = 0;
+    let lastScrollY = 0;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -432,6 +439,17 @@ export function FloatingGlyphs() {
       if (!colors) return;
       timeS += dt;
       ctx.clearRect(0, 0, w, h);
+      // Warp stretch: sample scroll velocity on animated ticks only,
+      // smoothed with a fast-attack single-pole low-pass so flings
+      // bloom the field and slow reading scrolls stay calm.
+      let stretch = 0;
+      if (dt > 0) {
+        const sy = window.scrollY;
+        const raw = Math.abs(sy - lastScrollY) / Math.max(dt, 1e-3);
+        lastScrollY = sy;
+        vel += (raw - vel) * (1 - Math.pow(0.88, dt * 60));
+        stretch = velocityStretch(vel);
+      }
       // Pointer parallax converges on wall-clock time, not per-draw call,
       // so the feel is identical whether this runs at 12 or 60 fps.
       const ease = 1 - Math.pow(0.96, dt * 60);
@@ -461,8 +479,16 @@ export function FloatingGlyphs() {
         ctx.save();
         ctx.translate(px, py);
         ctx.rotate(g.angle);
+        if (stretch > 0.001) {
+          // Warp stretch: elongate along the scroll axis with a slight
+          // horizontal squeeze — the slit-scan / motion-smear read.
+          ctx.scale(1 - 0.15 * stretch, 1 + 2.2 * stretch);
+        }
         ctx.font = `${LAYER_SIZE[g.layer]}px "JetBrains Mono", ui-monospace, monospace`;
-        ctx.fillStyle = rgba(g.accent ? colors.accent : colors.fg, g.alpha);
+        ctx.fillStyle = rgba(
+          g.accent ? colors.accent : colors.fg,
+          g.alpha * (stretch > 0.001 ? 1 - 0.3 * stretch : 1),
+        );
         ctx.fillText(g.ch, 0, 0);
         ctx.restore();
       }
@@ -561,6 +587,7 @@ export function FloatingGlyphs() {
       }
       if (disposed) return;
       resize();
+      lastScrollY = window.scrollY;
       if (reduced) {
         draw(0); // one deliberate still frame; bust stays absent by design
         return;
