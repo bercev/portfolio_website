@@ -941,6 +941,70 @@ html:not(.dark) .grain-overlay {
   }
 }
 
+/* CRT scanline / phosphor-mask texture (RUN2-IDEA — research iter 6, React Bits
+ * "CRT Warp" https://reactbits.dev/c/backgrounds). The site's PHOSPHOR brand
+ * had phosphor palettes only — zero CRT/scanline/mask texture anywhere. This
+ * is the missing literal texture of the brand's name.
+ *
+ * Implementation rule (per the item): do NOT adopt the WebGL component
+ * (full-page shader = battery burn + rAF-lifecycle risk, per the iter-28
+ * sign) — one whisper-subtle STATIC CSS layer, zero JS, zero motion.
+ * Legibility gate: if it muddies anything, close it rejected.
+ *
+ * Layering: z 70 — above page content (10), chrome rail/FAB (50) and pointer
+ * effects (60), so it reads as the display surface (a real CRT's scanlines
+ * cover everything incl. OSD chrome); below the terminal flyout backdrop
+ * (80) / panel (81) and the skip link (300), so the signature interactive
+ * surfaces stay pristine. pointer-events: none — never eats clicks.
+ * Hidden under prefers-reduced-transparency, like the grain overlay. */
+.crt-texture {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-site-navigation) + 20);
+  pointer-events: none;
+  background-image:
+    /* horizontal scanlines: 1px line on a 3px pitch */
+    repeating-linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.18) 0,
+      rgb(0 0 0 / 0.18) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    /* vertical phosphor aperture-grille stripes: 1px line on a 4px pitch */
+    repeating-linear-gradient(
+      to right,
+      rgb(0 0 0 / 0.07) 0,
+      rgb(0 0 0 / 0.07) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+}
+
+html:not(.dark) .crt-texture {
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.07) 0,
+      rgb(0 0 0 / 0.07) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgb(0 0 0 / 0.03) 0,
+      rgb(0 0 0 / 0.03) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .crt-texture {
+    display: none;
+  }
+}
+
 /* ---------- Immersive 3D Journey ---------- */
 
 /* Floating glyph field — replaced the 3D journey scene as the site

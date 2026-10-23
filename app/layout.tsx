@@ -150,6 +150,9 @@ export default function RootLayout({
         <SkipLink />
         <TabTitleDelight />
         <BelowSurfaceDelights />
+        {/* CRT scanline / phosphor-mask texture (RUN2-IDEA): one static CSS
+            layer, zero JS — mounted with the other invisible chrome. */}
+        <div className="crt-texture" aria-hidden="true" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
