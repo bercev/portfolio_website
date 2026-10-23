@@ -228,6 +228,32 @@ export function resolveChapterIndex(
 }
 
 /**
+ * Chapter-entry ping (run-2 IDEA iter 8): one-shot dither ring
+ * expanding across the glyph field when the active chapter changes.
+ * envelope = 0 at elapsed 0, fast attack to a soft peak, smoothstep
+ * decay back to exactly 0 at duration — so the ping is a transient
+ * boundary beat and rest stays calm. Pure function — unit-tested.
+ */
+export function pingEnvelope(elapsedS: number, durationS = 1.6): number {
+  if (elapsedS < 0 || elapsedS >= durationS || durationS <= 0) return 0;
+  const t = elapsedS / durationS;
+  const attack = smoothstep01(t / 0.15);
+  const decay = 1 - smoothstep01((t - 0.15) / 0.85);
+  return Math.min(attack, decay);
+}
+
+/**
+ * The ring front's radius fraction (0..1) at elapsedS — monotonic,
+ * reaching full radius exactly at duration, so the wavefront sweeps
+ * outward once and never returns. Pure function — unit-tested.
+ */
+export function pingRadius01(elapsedS: number, durationS = 1.6): number {
+  if (elapsedS <= 0 || durationS <= 0) return 0;
+  if (elapsedS >= durationS) return 1;
+  return smoothstep01(elapsedS / durationS);
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping

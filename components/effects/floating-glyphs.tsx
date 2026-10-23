@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { ditherDissolveLevel, getScrollProgress, lightWashFalloff, objectDefocus, resolveChapterIndex, useScrollBlur, velocityStretch, CHAPTER_IDS } from "@/lib/scroll-fx";
+import { ditherDissolveLevel, getScrollProgress, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, useScrollBlur, velocityStretch, CHAPTER_IDS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -53,6 +53,19 @@ const LAYER_PARALLAX = [2, 5, 10] as const;
  * the field sitting still.
  */
 const LAYER_SCROLL = [0.06, 0.16, 0.32] as const;
+
+/**
+ * Chapter-entry ping (run-2 IDEA iter 8): one-shot dither ring beat on
+ * chapter crossings — duration of the wavefront, minimum seconds
+ * between pings (a fast fling fires at most one), the ring's max radius
+ * as a fraction of the viewport's short side, the band width around the
+ * ring front, and the peak alpha lift for a glyph exactly on the front.
+ */
+const PING_DURATION_S = 1.6;
+const PING_COOLDOWN_S = 1.4;
+const PING_RADIUS_FRAC = 0.75;
+const PING_BAND_PX = 44;
+const PING_BOOST_MAX = 0.3;
 
 /**
  * Chapter-reactive glyph vocabulary (run-2 IDEA iter 7): the field
@@ -502,6 +515,22 @@ export function FloatingGlyphs() {
     let curChapter = -1;
     let prevChapter = 0;
     let vocabBlend = 1;
+    /**
+     * Chapter-entry ping (run-2 IDEA iter 8): one-shot dither ring
+     * expanding from the activation line when the chapter changes — the
+     * boundary beat the gradual vocab dissolve lacks. Fires only on a
+     * real crossing (never the initial resolve), at most one per
+     * cooldown, and only on animated ticks — the reduced-motion still
+     * never pings and rest is exactly calm (envelope decays to 0).
+     */
+    let pings: Array<{ t0: number }> = [];
+    let lastPingT = -Infinity;
+    // Per-tick ping geometry (assigned inside the animated dt>0 block;
+    // the reduced-motion still leaves these at 0 with pings empty, so
+    // the ping loop below is dead code there).
+    let pingOX = 0;
+    let pingOY = 0;
+    let pingMaxR = 0;
     // Offscreen tiles for the 3D objects (depth-of-field compositing).
     // Allocated in resize(); empty when the object layer is unavailable.
     let objSlots: ObjSlot[] = [];
@@ -620,9 +649,21 @@ export function FloatingGlyphs() {
           h * 0.45,
         );
         if (next !== curChapter) {
-          prevChapter = curChapter < 0 ? next : curChapter;
+          const initial = curChapter < 0;
+          prevChapter = initial ? next : curChapter;
           curChapter = next;
           vocabBlend = 0;
+          // Chapter-entry ping: only a real crossing fires (never the
+          // initial resolve), and only after the cooldown since the
+          // previous ping — a fling through four chapters pings once.
+          if (!initial && timeS - lastPingT >= PING_COOLDOWN_S) {
+            pings.push({ t0: timeS });
+            lastPingT = timeS;
+            // Observability contract (same pattern as data-vocabChapter):
+            // the chapter that last pinged is inspectable for
+            // tests/debugging without reaching into the closure.
+            canvas.dataset.chapterPing = String(next);
+          }
           // Observability contract (same data-attribute pattern as
           // data-journey/data-ascii): the resolved chapter is inspectable
           // for tests and debugging without reaching into the closure.
@@ -641,6 +682,26 @@ export function FloatingGlyphs() {
               g.ch = v[(Math.random() * v.length) | 0];
             }
           }
+        }
+        // Chapter-entry ping ring: drop expired pings, then per glyph
+        // lift the alpha of glyphs near the expanding front — gated
+        // through the Bayer-4x4 grammar so the ring reads as dithered
+        // dots, never a glow ring.
+        pings = pings.filter((pg) => timeS - pg.t0 < PING_DURATION_S);
+        pingOX = w * 0.5;
+        pingOY = h * 0.45;
+        pingMaxR = Math.min(w, h) * PING_RADIUS_FRAC;
+        // Observability: the live envelope, quantized — lets probes and
+        // screenshots gate on the component's own clock (headless rAF can
+        // run far slower than wall-clock). Written only while a ping is
+        // alive, and only when the quantized value changes.
+        if (pings.length > 0) {
+          const q = String(
+            Math.round(pingEnvelope(timeS - pings[0].t0, PING_DURATION_S) * 20) / 20,
+          );
+          if (canvas.dataset.pingEnv !== q) canvas.dataset.pingEnv = q;
+        } else if (canvas.dataset.pingEnv !== undefined) {
+          delete canvas.dataset.pingEnv;
         }
       }
       ctx.textAlign = "center";
@@ -684,6 +745,27 @@ export function FloatingGlyphs() {
             );
           }
         }
+        // Chapter-entry ping (run-2 IDEA iter 8): glyphs near the
+        // expanding ring front lift through the dither grammar — a
+        // Bayer-4x4 gate at the envelope level, so the front is dots,
+        // not glow. pings is empty (and this loop dead) at rest.
+        let pingBoost = 0;
+        for (const pg of pings) {
+          const e = timeS - pg.t0;
+          const env = pingEnvelope(e, PING_DURATION_S);
+          if (env <= 0) continue;
+          const r = pingRadius01(e, PING_DURATION_S) * pingMaxR;
+          const ddx = px - pingOX;
+          const ddy = py - pingOY;
+          const band = Math.abs(Math.sqrt(ddx * ddx + ddy * ddy) - r);
+          if (band < PING_BAND_PX) {
+            const xi = Math.round(px) & 3;
+            const yi = Math.round(py) & 3;
+            if (BAYER4[yi * 4 + xi] < env * 16) {
+              pingBoost += env * (1 - band / PING_BAND_PX) * PING_BOOST_MAX;
+            }
+          }
+        }
         ctx.save();
         ctx.translate(px, py);
         ctx.rotate(g.angle);
@@ -694,12 +776,58 @@ export function FloatingGlyphs() {
         }
         if (washScale !== 1) ctx.scale(washScale, washScale);
         ctx.font = `${LAYER_SIZE[g.layer]}px "JetBrains Mono", ui-monospace, monospace`;
+        // Boosts share one alpha ceiling: the glyph never exceeds 0.85,
+        // so a ping and the pointer wash composing stays whisper-level.
+        const baseAlpha = g.alpha * (stretch > 0.001 ? 1 - 0.3 * stretch : 1);
+        const boost = Math.min(
+          washBoost + pingBoost,
+          Math.max(0, 0.85 - baseAlpha),
+        );
         ctx.fillStyle = rgba(
           g.accent ? colors.accent : colors.fg,
-          g.alpha * (stretch > 0.001 ? 1 - 0.3 * stretch : 1) + washBoost,
+          baseAlpha + boost,
         );
         ctx.fillText(g.ch, 0, 0);
         ctx.restore();
+      }
+
+      // Chapter-entry ping ring (run-2 IDEA iter 8): the field's ~130
+      // glyphs are too sparse for a glyph-only wavefront to read — most
+      // crossings would brighten zero glyphs — so the beat carries its
+      // own dots: a Bayer-dithered ring stamped on the field in FROST
+      // accent, expanding from the activation line. The per-dot gate
+      // threshold scales with the band-edge falloff, so the ring melts
+      // at its rims with zero extra fillStyle changes; the envelope
+      // decays to exactly 0, keeping rest calm. Animated ticks only —
+      // the reduced-motion still never pings.
+      if (dt > 0 && pings.length > 0) {
+        for (const pg of pings) {
+          const e = timeS - pg.t0;
+          const env = pingEnvelope(e, PING_DURATION_S);
+          if (env <= 0.01) continue;
+          const r = pingRadius01(e, PING_DURATION_S) * pingMaxR;
+          if (r < 2) continue;
+          const level = env * 16;
+          const pitch = 5;
+          ctx.fillStyle = rgba(colors.accent, env * 0.35);
+          const steps = Math.max(24, Math.floor((2 * Math.PI * r) / pitch));
+          for (let s = 0; s < steps; s++) {
+            const a = (s / steps) * Math.PI * 2;
+            const ca = Math.cos(a);
+            const sa = Math.sin(a);
+            for (let rr = r - PING_BAND_PX; rr <= r + PING_BAND_PX; rr += pitch) {
+              if (rr <= 0) continue;
+              const x = pingOX + rr * ca;
+              const y = pingOY + rr * sa;
+              if (x < 0 || y < 0 || x >= w || y >= h) continue;
+              const edge = 1 - Math.abs(rr - r) / PING_BAND_PX;
+              const xi = Math.round(x) & 3;
+              const yi = Math.round(y) & 3;
+              if (BAYER4[yi * 4 + xi] >= level * edge) continue;
+              ctx.fillRect(x, y, 2, 2);
+            }
+          }
+        }
       }
 
       // Scroll-reactive 3D ASCII objects (v2) — animated frames only, so

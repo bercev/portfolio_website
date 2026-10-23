@@ -6,6 +6,8 @@ import {
   gazeAngles,
   lightWashFalloff,
   objectDefocus,
+  pingEnvelope,
+  pingRadius01,
   resolveChapterIndex,
   smoothstep01,
   velocityStretch,
@@ -172,5 +174,45 @@ describe("resolveChapterIndex", () => {
   });
   it("never activates a missing section passed as +Infinity", () => {
     expect(resolveChapterIndex([10, 200, Infinity], 360)).toBe(1);
+  });
+});
+
+describe("pingEnvelope", () => {
+  it("is 0 at 0, exactly 0 at and past duration", () => {
+    expect(pingEnvelope(0)).toBe(0);
+    expect(pingEnvelope(1.6)).toBe(0);
+    expect(pingEnvelope(99)).toBe(0);
+  });
+  it("attacks fast to a peak then decays", () => {
+    const peak = pingEnvelope(0.24); // t=0.15, end of attack
+    expect(peak).toBeGreaterThan(0.9);
+    expect(pingEnvelope(0.8)).toBeLessThan(peak);
+    expect(pingEnvelope(1.4)).toBeLessThan(pingEnvelope(0.8));
+  });
+  it("stays inside 0..1 on a fine sweep", () => {
+    for (let e = 0; e <= 1.6; e += 0.01) {
+      const v = pingEnvelope(e);
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThanOrEqual(1);
+    }
+  });
+  it("rejects degenerate input", () => {
+    expect(pingEnvelope(-1)).toBe(0);
+    expect(pingEnvelope(0.5, 0)).toBe(0);
+    expect(pingEnvelope(0.5, -2)).toBe(0);
+  });
+});
+
+describe("pingRadius01", () => {
+  it("goes 0 -> 1 monotonically over the duration", () => {
+    expect(pingRadius01(0)).toBe(0);
+    expect(pingRadius01(1.6)).toBe(1);
+    expect(pingRadius01(99)).toBe(1);
+    let prev = -1;
+    for (let e = 0; e <= 1.6; e += 0.05) {
+      const v = pingRadius01(e);
+      expect(v).toBeGreaterThanOrEqual(prev);
+      prev = v;
+    }
   });
 });
