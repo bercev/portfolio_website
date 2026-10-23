@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { getScrollProgress, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, gazeAngles, getScrollProgress, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -26,6 +26,11 @@ import { getScrollProgress, smoothstep01, useScrollBlur, useScrollDive } from "@
  * turns. Rotation behavior: a monotonic turn driven by scroll progress —
  * front view at the hero, eased (smoothstep) to ~57° by the contact
  * section — plus a ±3° idle sway so the head feels alive on a still page.
+ * Pointer gaze (run-2 iter 5 — "make my head rotate and stuff"): the head
+ * additionally turns toward the pointer (yaw ±7°, nod ±4°) on a ~1s
+ * low-pass, composed onto the scroll turn — a person-like head turn, never
+ * a whip. Geometry is arithmetic (no layout reads); the bust never mounts
+ * under reduced motion, so there is no RM branch to audit.
  *
  * Same visibility contract as the old figure: only when the background's
  * ASCII mode is active (documentElement[data-ascii="active"]) and on
@@ -62,20 +67,55 @@ function RotatingBustCanvas(): React.JSX.Element {
     let dpr = 1;
     let timeS = 0;
 
+    // Gaze tracking (run-2 IDEA iter 5): the head turns toward the pointer —
+    // a slow, person-like head turn composed onto the scroll turn, so the
+    // portrait feels alive between scroll gestures. Yaw ±7°, pitch ±4°,
+    // ~1s low-pass convergence. All geometry is derived arithmetically (the
+    // box is fixed right-of-center at viewport mid-height plus the dive
+    // sink, so there are no per-tick layout reads.
+    const GAZE_YAW = 0.12; // rad ≈ 7°
+    const GAZE_PITCH = 0.07; // rad ≈ 4°
+    const DIVE_SINK_PX = 64; // must match the useScrollDive sink on the box
+    let gazeYaw = 0;
+    let gazePitch = 0;
+    let lastPX: number | null = null;
+    let lastPY: number | null = null;
+    let gazeHalf = 150; // box half-extent, CSS px
+    let gazeCenterX = 0; // box center, viewport px (centerY is mid-height + dive)
+
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       cssSize = canvas.clientWidth;
       canvas.width = Math.round(cssSize * dpr);
       canvas.height = Math.round(cssSize * dpr);
+      // Gaze geometry mirrors the wrapper layout: fixed, flex-end +
+      // items-center, paddingRight clamp(1.5rem, 5vw, 5rem), box
+      // w-[clamp(200px,22vw,300px)].
+      const vw = window.innerWidth;
+      const boxW = Math.min(300, Math.max(200, 0.22 * vw));
+      gazeHalf = boxW / 2;
+      const rootFont =
+        parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const padRight = Math.min(
+        5 * rootFont,
+        Math.max(1.5 * rootFont, 0.05 * vw),
+      );
+      gazeCenterX = vw - padRight - gazeHalf;
     };
 
     const draw = () => {
       if (!cssSize || points.length === 0) return;
       const p = getScrollProgress();
+      // Scroll turn + idle sway + pointer gaze, composed into one rotation.
       const A =
-        BUST_MAX_TURN * smoothstep01(p) + 0.055 * Math.sin(timeS * 0.3);
+        BUST_MAX_TURN * smoothstep01(p) +
+        0.055 * Math.sin(timeS * 0.3) +
+        gazeYaw;
+      const P = gazePitch;
       const cosA = Math.cos(A);
       const sinA = Math.sin(A);
+      const cosP = Math.cos(P);
+      const sinP = Math.sin(P);
       const half = cssSize / 2;
       const scale = half * 0.94;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -89,8 +129,12 @@ function RotatingBustCanvas(): React.JSX.Element {
       // the face as the head rotates.
       for (let pass = 0; pass < 2; pass++) {
         for (const pt of points) {
-          const xr = pt.u * cosA + pt.w * sinA;
-          const zr = pt.w * cosA - pt.u * sinA;
+          // Pitch (nod) first, then yaw — both in the point's own space so
+          // the depth relief reads correctly from every angle.
+          const v1 = pt.v * cosP - pt.w * sinP;
+          const w1 = pt.v * sinP + pt.w * cosP;
+          const xr = pt.u * cosA + w1 * sinA;
+          const zr = w1 * cosA - pt.u * sinA;
           if ((pass === 0) !== (zr < 0)) continue;
           // Facing factor: points rotated to the far side fade out.
           const facing = Math.min(1, Math.max(0, (zr + 1.05) / 2.1));
@@ -99,7 +143,7 @@ function RotatingBustCanvas(): React.JSX.Element {
             BUST_RAMP.length - 1,
             Math.floor(pt.lum * BUST_RAMP.length),
           );
-          ctx.fillText(BUST_RAMP[idx], half + xr * scale, half + pt.v * scale);
+          ctx.fillText(BUST_RAMP[idx], half + xr * scale, half + v1 * scale);
         }
       }
       ctx.globalAlpha = 1;
@@ -117,6 +161,25 @@ function RotatingBustCanvas(): React.JSX.Element {
       last = now;
       acc += dt;
       timeS += dt;
+      // Gaze: recompute the target from the last pointer position against
+      // the current geometry — the box center tracks the dive sink via
+      // scroll progress, so scrolling with a parked pointer stays correct —
+      // then ease the head toward it (~1s settle, person-like, never a whip).
+      let targetYaw = 0;
+      let targetPitch = 0;
+      if (lastPX !== null && lastPY !== null) {
+        const cy = window.innerHeight / 2 + DIVE_SINK_PX * getScrollProgress();
+        const { yaw, pitch } = gazeAngles(
+          (lastPX - gazeCenterX) / gazeHalf,
+          (lastPY - cy) / gazeHalf,
+          GAZE_YAW,
+          GAZE_PITCH,
+        );
+        targetYaw = yaw;
+        targetPitch = pitch;
+      }
+      gazeYaw = approachAngle(gazeYaw, targetYaw, dt);
+      gazePitch = approachAngle(gazePitch, targetPitch, dt);
       if (acc >= TICK_S) {
         draw();
         acc = 0;
@@ -179,10 +242,30 @@ function RotatingBustCanvas(): React.JSX.Element {
 
     void start();
     window.addEventListener("resize", onResize);
+    // Gaze input: the bust mounts only in animated desktop ASCII mode (it
+    // never renders under reduced motion), so these listeners exist only
+    // there. Pointer-leave / hidden tab → ease back to the scroll pose.
+    const onPointerMove = (e: PointerEvent) => {
+      lastPX = e.clientX;
+      lastPY = e.clientY;
+    };
+    const onPointerGone = () => {
+      lastPX = null;
+      lastPY = null;
+    };
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onPointerGone);
+    document.addEventListener("visibilitychange", onPointerGone);
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("pointermove", onPointerMove);
+      document.documentElement.removeEventListener(
+        "pointerleave",
+        onPointerGone,
+      );
+      document.removeEventListener("visibilitychange", onPointerGone);
     };
   }, []);
 

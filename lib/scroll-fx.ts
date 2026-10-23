@@ -138,6 +138,45 @@ export function ditherDissolveLevel(envelope01: number): number {
 }
 
 /**
+ * Gaze tracking for the ASCII portrait bust (run-2 IDEA iter 5 — user:
+ * "make my head rotate and stuff"). Maps the pointer's position relative
+ * to the bust box into small head-turn angles: yaw (left/right) and pitch
+ * (nod up/down). The bust composes these onto its scroll-driven turn, so
+ * the head turns toward the visitor between scroll gestures.
+ *
+ * dx/dy are the pointer offsets from the box center, normalized to [-1, 1]
+ * against the box half-extents (clamped — a pointer far off-box still caps
+ * at the max turn). maxYaw/maxPitch cap the turn at a few degrees so the
+ * gaze reads as a slow, person-like head turn rather than laser tracking.
+ * Pure function — unit-tested in scroll-fx.test.ts.
+ */
+export function gazeAngles(
+  dx: number,
+  dy: number,
+  maxYaw: number,
+  maxPitch: number,
+): { yaw: number; pitch: number } {
+  const nx = Math.min(1, Math.max(-1, dx));
+  const ny = Math.min(1, Math.max(-1, dy));
+  return { yaw: nx * maxYaw, pitch: ny * maxPitch };
+}
+
+/**
+ * Single-pole low-pass toward a moving target — the "person turning their
+ * head" feel behind the gaze: converges to ~90% in about a second at the
+ * default rate, so a fast pointer flick never whips the bust. dtS is
+ * seconds since the last tick. Pure function — unit-tested.
+ */
+export function approachAngle(
+  current: number,
+  target: number,
+  dtS: number,
+  rate = 2.2,
+): number {
+  return current + (target - current) * (1 - Math.exp(-dtS * rate));
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping

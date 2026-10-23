@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  approachAngle,
   ditherDissolveLevel,
+  gazeAngles,
   objectDefocus,
   smoothstep01,
   velocityStretch,
@@ -83,5 +85,47 @@ describe("ditherDissolveLevel", () => {
   it("clamps out-of-range envelopes", () => {
     expect(ditherDissolveLevel(-0.5)).toBe(0);
     expect(ditherDissolveLevel(1.5)).toBe(15);
+  });
+});
+
+describe("gazeAngles", () => {
+  it("is zero when the pointer sits on the bust center", () => {
+    expect(gazeAngles(0, 0, 0.12, 0.07)).toEqual({ yaw: 0, pitch: 0 });
+  });
+
+  it("scales linearly with the normalized offset", () => {
+    expect(gazeAngles(0.5, -0.25, 0.12, 0.07)).toEqual({
+      yaw: 0.06,
+      pitch: -0.0175,
+    });
+  });
+
+  it("caps at the max turn past the box edges", () => {
+    expect(gazeAngles(3, -5, 0.12, 0.07)).toEqual({ yaw: 0.12, pitch: -0.07 });
+    expect(gazeAngles(-3, 5, 0.12, 0.07)).toEqual({ yaw: -0.12, pitch: 0.07 });
+  });
+});
+
+describe("approachAngle", () => {
+  it("does not move on a zero timestep", () => {
+    expect(approachAngle(0.1, 0.5, 0)).toBe(0.1);
+  });
+
+  it("converges toward the target monotonically", () => {
+    let a = 0;
+    let prev = -Infinity;
+    for (let i = 0; i < 120; i++) {
+      a = approachAngle(a, 0.12, 1 / 15);
+      expect(a).toBeGreaterThanOrEqual(prev);
+      prev = a;
+    }
+    // ~90%+ converged after 8s at the default rate
+    expect(a).toBeGreaterThan(0.11);
+  });
+
+  it("relaxes back toward zero when the pointer leaves", () => {
+    let a = 0.12;
+    for (let i = 0; i < 120; i++) a = approachAngle(a, 0, 1 / 15);
+    expect(a).toBeLessThan(0.001);
   });
 });
