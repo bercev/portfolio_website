@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { getScrollProgress, smoothstep01, useScrollBlur } from "@/lib/scroll-fx";
+import { getScrollProgress, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -204,6 +204,11 @@ export function AsciiPortraitBust(): React.JSX.Element | null {
   // Progressive scroll blur (v2): the bust is a background layer, so it
   // blurs with scroll depth alongside the glyph canvas.
   const blurRef = useScrollBlur<HTMLDivElement>(5, asciiActive && wide);
+  // Scroll dive (run-2 IDEA iter 1): the head sinks and grows slightly as
+  // you scroll past it — the viewer passes the portrait, it doesn't sit
+  // still. Applied to the bust's own box (transform-origin = its center);
+  // compositor-only, quantized, and off under reduced motion like the blur.
+  const diveRef = useScrollDive<HTMLDivElement>(64, 0.08, asciiActive && wide);
   useEffect(() => {
     if (!asciiActive || !wide) return;
     setFadedIn(false);
@@ -283,11 +288,13 @@ export function AsciiPortraitBust(): React.JSX.Element | null {
         }}
       >
         <div
+          ref={diveRef}
           // Dimmed for the simplified background (research iter 51, W3C
           // foreground-obscured pattern + crossfeyer legibility): on the calm
           // glyph field the bust at opacity-40 reads as quiet background
           // texture while the figure still registers; the iter-10 vignette
           // mask + size (about clearance) are untouched by the v2 renderer.
+          // useScrollDive drives this box's transform (scroll sinks + grows).
           className="relative aspect-square w-[clamp(200px,22vw,300px)] opacity-40"
         >
           <RotatingBustCanvas />

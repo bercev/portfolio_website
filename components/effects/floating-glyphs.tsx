@@ -43,6 +43,13 @@ const LAYER_ALPHA: Array<[number, number]> = [
   [0.16, 0.32],
 ];
 const LAYER_PARALLAX = [2, 5, 10] as const;
+/**
+ * Scroll dive: px of background travel per px of document scroll, per
+ * layer. Near layers rush past with scroll depth, far layers lag — so
+ * scrolling reads as the camera pushing through the field rather than
+ * the field sitting still.
+ */
+const LAYER_SCROLL = [0.06, 0.16, 0.32] as const;
 
 interface Glyph {
   ch: string;
@@ -94,8 +101,9 @@ const rand = (min: number, max: number) => min + Math.random() * (max - min);
 /* field, drawn onto this same canvas so the background stays one    */
 /* coherent layer (one cadence, one scroll blur). Each lives in a    */
 /* scroll-progress window — fading in, rotating with scroll depth    */
-/* plus a slow idle spin, fading out — anchored at the viewport's    */
-/* quiet corners so it never parks behind dense text:                */
+/* plus a slow idle spin, GLIDING across its window (scroll dive:    */
+/* drifting toward the viewer and growing ~15%), fading out —        */
+/* anchored at the viewport's quiet corners so it never parks behind */
 /*   torus  — bottom-right, hero → publications (progress .02–.48)    */
 /*   sphere — top-right, experience → projects (progress .38–.78)    */
 /*   cube   — bottom-right, skills → contact (progress .66–end)      */
@@ -116,6 +124,49 @@ function windowAlpha(p: number, a: number, b: number): number {
   };
   return s((p - a + F) / (2 * F)) * (1 - s((p - b + F) / (2 * F)));
 }
+
+/**
+ * Scroll dive for the 3D objects: instead of hovering in place, each
+ * object glides across its scroll window — drifting toward the viewer
+ * and growing ~15% — so scroll moves it through space, not just rotates
+ * it. Pose is (x, y) as viewport fractions + size multiplier, eased
+ * across the window. All anchors stay in the quiet corners so objects
+ * never park behind dense text.
+ */
+function windowT(p: number, a: number, b: number): number {
+  const t = Math.min(1, Math.max(0, (p - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+interface DivePose {
+  x0: number;
+  y0: number; // anchor at window start (viewport fractions)
+  x1: number;
+  y1: number; // anchor at window end
+  s0: number;
+  s1: number; // size multiplier start -> end
+}
+
+function divePose(p: DivePose, t: number, w: number, h: number) {
+  return {
+    cx: w * (p.x0 + (p.x1 - p.x0) * t),
+    cy: h * (p.y0 + (p.y1 - p.y0) * t),
+    s: p.s0 + (p.s1 - p.s0) * t,
+  };
+}
+
+const TORUS_DIVE: DivePose = {
+  x0: 0.875, y0: 0.82, x1: 0.8, y1: 0.58, s0: 1, s1: 1.16,
+};
+const SPHERE_DIVE: DivePose = {
+  x0: 0.9, y0: 0.14, x1: 0.86, y1: 0.38, s0: 1, s1: 1.12,
+};
+const CUBE_DIVE: DivePose = {
+  x0: 0.875, y0: 0.82, x1: 0.8, y1: 0.6, s0: 1, s1: 1.15,
+};
+const TORUS_DIVE_MOBILE: DivePose = {
+  x0: 0.8, y0: 0.8, x1: 0.74, y1: 0.62, s0: 1, s1: 1.1,
+};
 
 /** Classic donut: parametric torus, per-cell z-buffer, luminance ramp. */
 function drawTorus(
@@ -401,7 +452,11 @@ export function FloatingGlyphs() {
         }
         const depth = g.layer + 1;
         const px = g.x + pointerX * LAYER_PARALLAX[g.layer];
-        const rawY = g.y + pointerY * LAYER_PARALLAX[g.layer] - scrollShift * 0.03 * depth;
+        // Scroll dive: per-layer travel so near glyphs rush past.
+        const rawY =
+          g.y +
+          pointerY * LAYER_PARALLAX[g.layer] -
+          scrollShift * LAYER_SCROLL[g.layer];
         const py = ((rawY % (h + 60)) + h + 60) % (h + 60) - 30;
         ctx.save();
         ctx.translate(px, py);
@@ -420,8 +475,9 @@ export function FloatingGlyphs() {
         if (mobile) {
           const a = windowAlpha(p, 0.02, 0.55);
           if (a > 0.01) {
+            const pose = divePose(TORUS_DIVE_MOBILE, windowT(p, 0.02, 0.55), w, h);
             drawTorus(
-              ctx, w * 0.8, h * 0.78, 54,
+              ctx, pose.cx, pose.cy, 54 * pose.s,
               timeS * 0.11 + p * 5, timeS * 0.07 + p * 3,
               accent, 0.4 * a,
             );
@@ -429,24 +485,27 @@ export function FloatingGlyphs() {
         } else {
           const tA = windowAlpha(p, 0.02, 0.48);
           if (tA > 0.01) {
+            const pose = divePose(TORUS_DIVE, windowT(p, 0.02, 0.48), w, h);
             drawTorus(
-              ctx, w * 0.875, h * 0.8, Math.min(104, w * 0.082),
+              ctx, pose.cx, pose.cy, Math.min(104, w * 0.082) * pose.s,
               timeS * 0.11 + p * 5, timeS * 0.07 + p * 3,
               accent, 0.42 * tA,
             );
           }
           const sA = windowAlpha(p, 0.38, 0.78);
           if (sA > 0.01) {
+            const pose = divePose(SPHERE_DIVE, windowT(p, 0.38, 0.78), w, h);
             drawSphere(
-              ctx, w * 0.9, h * 0.17, 74,
+              ctx, pose.cx, pose.cy, 74 * pose.s,
               timeS * 0.15 + p * 7, 0.5,
               accent, 0.46 * sA,
             );
           }
           const cA = windowAlpha(p, 0.66, 1.05);
           if (cA > 0.01) {
+            const pose = divePose(CUBE_DIVE, windowT(p, 0.66, 1.05), w, h);
             drawCube(
-              ctx, w * 0.875, h * 0.8, 52,
+              ctx, pose.cx, pose.cy, 52 * pose.s,
               timeS * 0.2 + p * 6, 0.6 + timeS * 0.13 + p * 2,
               accent, 0.46 * cA,
             );

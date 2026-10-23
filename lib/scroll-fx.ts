@@ -11,6 +11,69 @@ import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
  * as we scroll so its not bad").
  */
 
+/**
+ * useScrollDive — scroll-depth "dive" transform for a fixed BACKGROUND
+ * element: it sinks downward (translateY) and grows slightly (scale) as
+ * scroll depth increases, so scrolling reads as the viewer moving past
+ * the background object rather than the object sitting still.
+ *
+ * Like useScrollBlur, updates are rAF-throttled, quantized to keep the
+ * transform changes to a handful per scroll gesture (the change is
+ * compositor-only — no repaint), and disabled under
+ * prefers-reduced-motion. Only ever attach to background layers.
+ */
+export function useScrollDive<T extends HTMLElement>(
+  sinkPx = 64,
+  grow = 0.08,
+  active = true,
+) {
+  const ref = useRef<T | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !active) return;
+    if (window.matchMedia(REDUCED_MOTION_QUERY).matches) return;
+
+    let raf = 0;
+    let queued = false;
+    let lastY = -1;
+    let lastS = -1;
+
+    const apply = () => {
+      queued = false;
+      const p = getScrollProgress();
+      const y = Math.round(p * sinkPx);
+      const s = Math.round((1 + p * grow) * 1000) / 1000;
+      if (y !== lastY || s !== lastS) {
+        lastY = y;
+        lastS = s;
+        el.style.transform =
+          y === 0 && s === 1
+            ? ""
+            : `translate3d(0, ${y}px, 0) scale(${s.toFixed(3)})`;
+      }
+    };
+    const onScroll = () => {
+      if (!queued) {
+        queued = true;
+        raf = requestAnimationFrame(apply);
+      }
+    };
+
+    apply();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      el.style.transform = "";
+    };
+  }, [sinkPx, grow, active]);
+
+  return ref;
+}
+
 /** Scroll progress through the document: 0 at the top, 1 at the bottom. */
 export function getScrollProgress(): number {
   const max = document.documentElement.scrollHeight - window.innerHeight;
