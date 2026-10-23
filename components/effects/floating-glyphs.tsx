@@ -189,8 +189,11 @@ function drawSphere(
   color: Rgb,
   alphaScale: number,
 ) {
-  const fontSize = Math.max(8, radius * 0.17);
-  const N = Math.round(radius * radius * 0.26);
+  // Sparse on purpose: at mid-page depths the background blur runs
+  // 2.5-4px, so glyphs need ~12px spacing and a large face to keep
+  // reading as a dithered point sphere instead of melting into a blob.
+  const fontSize = Math.max(11, radius * 0.22);
+  const N = Math.round(radius * radius * 0.044);
   const golden = Math.PI * (3 - Math.sqrt(5));
   const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
   const cosX = Math.cos(tiltX), sinX = Math.sin(tiltX);
@@ -266,18 +269,29 @@ function drawCube(
     const lum01 = 0.2 + 0.8 * Math.min(1, L);
     const ch =
       OBJ_RAMP[Math.min(OBJ_RAMP.length - 1, Math.floor(lum01 * OBJ_RAMP.length))];
-    ctx.fillStyle = rgba(color, alphaScale * (0.25 + 0.75 * lum01));
+    // Edge points burn brighter than face interiors — at the deep-scroll
+    // blur levels (3.5-5px) flat face shading melts into a smudge, but a
+    // bright rim keeps the cube's geometry legible.
+    const edgeCh =
+      OBJ_RAMP[
+        Math.min(OBJ_RAMP.length - 1, Math.floor(Math.min(1, lum01 + 0.25) * OBJ_RAMP.length))
+      ];
     for (let a = 0; a <= STEPS; a++) {
       for (let b = 0; b <= STEPS; b++) {
         const s = -0.84 + (a / STEPS) * 1.68;
         const t = -0.84 + (b / STEPS) * 1.68;
+        const edge = a === 0 || b === 0 || a === STEPS || b === STEPS;
+        ctx.fillStyle = rgba(
+          color,
+          alphaScale * (edge ? 0.85 : 0.25 + 0.55 * lum01),
+        );
         const [rx, ry] = rot3(
           f.n[0] + s * f.u[0] + t * f.v[0],
           f.n[1] + s * f.u[1] + t * f.v[1],
           f.n[2] + s * f.u[2] + t * f.v[2],
           cosY, sinY, cosX, sinX,
         );
-        ctx.fillText(ch, cx + rx * size, cy + ry * size);
+        ctx.fillText(edge ? edgeCh : ch, cx + rx * size, cy + ry * size);
       }
     }
   }
@@ -424,17 +438,17 @@ export function FloatingGlyphs() {
           const sA = windowAlpha(p, 0.38, 0.78);
           if (sA > 0.01) {
             drawSphere(
-              ctx, w * 0.9, h * 0.17, 56,
+              ctx, w * 0.9, h * 0.17, 74,
               timeS * 0.15 + p * 7, 0.5,
-              accent, 0.4 * sA,
+              accent, 0.46 * sA,
             );
           }
           const cA = windowAlpha(p, 0.66, 1.05);
           if (cA > 0.01) {
             drawCube(
-              ctx, w * 0.875, h * 0.8, 42,
+              ctx, w * 0.875, h * 0.8, 52,
               timeS * 0.2 + p * 6, 0.6 + timeS * 0.13 + p * 2,
-              accent, 0.4 * cA,
+              accent, 0.46 * cA,
             );
           }
         }
