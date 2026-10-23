@@ -126,6 +126,11 @@
   align-items: baseline;
   gap: 0.4rem;
   margin-left: 0.7rem;
+  /* WCAG 2.5.8 hit-area floor: the link text is 18px tall, so expand the
+     touch target to 24px with padding and neutralize the visual shift with a
+     matching negative margin (digitala11y ::before-expansion equivalent). */
+  padding-block: 3px;
+  margin-block: -3px;
   color: color-mix(in srgb, var(--foreground) 55%, transparent);
   font-family: var(--font-sans);
   font-size: 0.75rem;
