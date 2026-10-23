@@ -94,6 +94,9 @@ export function ContactForm() {
         ./send-message.sh
       </p>
 
+      {/* Visible labels are terminal jargon by design ("$ whoami") — the
+          inputs carry honest aria-labels so assistive tech announces
+          "Your name" / "Your email address" / "Your message". */}
       <label className="journey-contact-form-field">
         <span className="journey-contact-form-label">$ whoami</span>
         <input
@@ -108,6 +111,7 @@ export function ContactForm() {
           autoComplete="name"
           maxLength={80}
           disabled={status === "sending"}
+          aria-label="Your name"
           aria-invalid={invalidField === "name"}
           aria-describedby={invalidField === "name" ? describedBy : undefined}
           className="journey-contact-form-input"
@@ -128,6 +132,7 @@ export function ContactForm() {
           autoComplete="email"
           maxLength={120}
           disabled={status === "sending"}
+          aria-label="Your email address"
           aria-invalid={invalidField === "email"}
           aria-describedby={invalidField === "email" ? describedBy : undefined}
           className="journey-contact-form-input"
@@ -147,6 +152,7 @@ export function ContactForm() {
           rows={5}
           maxLength={2000}
           disabled={status === "sending"}
+          aria-label="Your message"
           aria-invalid={invalidField === "message"}
           aria-describedby={invalidField === "message" ? describedBy : undefined}
           className="journey-contact-form-input journey-contact-form-textarea"
