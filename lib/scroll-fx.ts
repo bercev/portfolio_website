@@ -240,6 +240,77 @@ export function approachAngle(
   return current + (target - current) * (1 - Math.exp(-dtS * rate));
 }
 
+// Whisper cap on the bust's pointer rim light (run-2 IDEA iter 13): the
+// maximum added alpha on the fully-lit side. The bust is an opacity-40
+// background texture, so this lifts it toward — never past — solid.
+// NOTE: alpha alone barely reads — the point cloud saturates from
+// overlapping glyph draws — so the light's real mechanism is the ramp
+// shift below (character density encodes brightness in ASCII relief).
+export const BUST_RIM_MAX = 0.32;
+// Maximum added source-luminance for the glyph-ramp shift: the lit side
+// draws denser characters (up to ~4 ramp steps of 14), which reads as
+// light even where overlapping draws have saturated the alpha.
+export const BUST_RIM_LUM = 0.3;
+// Relief-normal z bias: the point relief reads as a surface facing the
+// viewer, so the pseudo-normal leans toward +z.
+export const BUST_RIM_DEPTH = 0.55;
+// Light-direction z bias: the light comes slightly from the front, so the
+// relief's front faces always catch a little of it.
+export const BUST_RIM_FRONT = 0.45;
+
+/**
+ * Pointer rim light on the portrait bust (run-2 IDEA iter 13 — "one light,
+ * whole scene"): the pointer light that washes the glyph field (iter 6)
+ * also lights the bust's point relief. lightU/lightV is the pointer
+ * position in the bust's own units (-1..1 ≈ box half-extents, matching the
+ * point coordinates); pu/pv are the rotated point's coordinates in the
+ * same space. Returns 0..1 — the dot of the point's pseudo-normal with the
+ * light direction, clamped. The caller shapes it (smoothstep) and caps it
+ * (BUST_RIM_MAX) and multiplies by the eased light presence, so at rest
+ * (no pointer) the render is provably identical to the unlit one.
+ * Pure function — unit-tested.
+ */
+export function bustRimLight(
+  lightU: number,
+  lightV: number,
+  pu: number,
+  pv: number,
+): number {
+  const nLen = Math.hypot(pu, pv, BUST_RIM_DEPTH);
+  const lLen = Math.hypot(lightU, lightV, BUST_RIM_FRONT);
+  if (nLen === 0 || lLen === 0) return 0;
+  const dot =
+    (pu * lightU + pv * lightV + BUST_RIM_DEPTH * BUST_RIM_FRONT) /
+    (nLen * lLen);
+  return Math.min(1, Math.max(0, dot));
+}
+
+/**
+ * Presence of the pointer light over the bust: 1 at the bust center,
+ * easing to 0 at three half-extents out — the light is local, so a
+ * pointer across the screen doesn't spill onto the portrait. Eased in
+ * the component with approachAngle (same ~1s low-pass as the gaze) and
+ * relaxed to exactly 0 on pointerleave / hidden tab, mirroring the
+ * light-wash contract. Pure function — unit-tested.
+ */
+export function bustLightPresence(distPx: number, halfPx: number): number {
+  if (halfPx <= 0) return 0;
+  return Math.min(1, Math.max(0, 1 - Math.max(0, distPx) / (3 * halfPx)));
+}
+
+/**
+ * Shapes the raw rim dot into the final 0..1 lift multiplier: only the
+ * clearly-lit side (dot > 0.2) lifts, ramping to full at dot 0.75, scaled
+ * by the eased light presence. At presence 0 this is exactly 0, which is
+ * what keeps the at-rest render byte-identical to the unlit one.
+ * Pure function — unit-tested.
+ */
+export function bustRimShaped(rim01: number, presence01: number): number {
+  return (
+    smoothstep01((rim01 - 0.2) / 0.55) * Math.min(1, Math.max(0, presence01))
+  );
+}
+
 /**
  * Chapter-reactive background vocabulary (run-2 IDEA iter 7): the glyph
  * field speaks each chapter's language — code glyphs over experience,

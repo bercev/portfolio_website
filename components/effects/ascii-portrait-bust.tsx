@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { approachAngle, gazeAngles, getScrollProgress, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, gazeAngles, getScrollProgress, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -83,6 +83,18 @@ function RotatingBustCanvas(): React.JSX.Element {
     let gazeHalf = 150; // box half-extent, CSS px
     let gazeCenterX = 0; // box center, viewport px (centerY is mid-height + dive)
 
+    // Pointer rim light (run-2 IDEA iter 13 — "one light, whole scene"):
+    // the pointer light that washes the glyph field also lights the
+    // bust's point relief. Presence eases toward the distance-falloff
+    // target with the same ~1s low-pass as the gaze and relaxes to
+    // exactly 0 when the pointer leaves (lastPX nulls on
+    // pointerleave/visibilitychange), so the at-rest render is provably
+    // identical to the unlit one (the lift term is skipped entirely at
+    // presence 0).
+    let lightU = 0; // pointer offset in the bust's own units (rim-light dir)
+    let lightV = 0;
+    let lightPresence = 0; // eased 0..1 — exactly 0 at rest
+
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       cssSize = canvas.clientWidth;
@@ -138,10 +150,26 @@ function RotatingBustCanvas(): React.JSX.Element {
           if ((pass === 0) !== (zr < 0)) continue;
           // Facing factor: points rotated to the far side fade out.
           const facing = Math.min(1, Math.max(0, (zr + 1.05) / 2.1));
-          ctx.globalAlpha = 0.9 * (0.18 + 0.82 * facing);
+          // Pointer rim light: points whose relief normal faces the pointer
+          // catch the light. The alpha lift alone barely reads — the point
+          // cloud saturates from overlapping glyph draws — so the real
+          // mechanism is the ramp shift: the lit side draws DENSER
+          // characters (character density encodes brightness in ASCII
+          // relief). Shaped so only the clearly-lit side lifts, capped so
+          // it never reads as a hot spot. Skipped entirely at presence 0,
+          // so the at-rest render is byte-identical to the unlit one.
+          let alpha = 0.9 * (0.18 + 0.82 * facing);
+          let lum = pt.lum;
+          if (lightPresence > 0) {
+            const rim = bustRimLight(lightU, lightV, xr, v1);
+            const shaped = bustRimShaped(rim, lightPresence);
+            alpha = Math.min(1, alpha * (1 + BUST_RIM_MAX * shaped));
+            lum = Math.min(1, lum + BUST_RIM_LUM * shaped);
+          }
+          ctx.globalAlpha = alpha;
           const idx = Math.min(
             BUST_RAMP.length - 1,
-            Math.floor(pt.lum * BUST_RAMP.length),
+            Math.floor(lum * BUST_RAMP.length),
           );
           ctx.fillText(BUST_RAMP[idx], half + xr * scale, half + v1 * scale);
         }
@@ -165,10 +193,12 @@ function RotatingBustCanvas(): React.JSX.Element {
       // the current geometry — the box center tracks the dive sink via
       // scroll progress, so scrolling with a parked pointer stays correct —
       // then ease the head toward it (~1s settle, person-like, never a whip).
+      // The same center also drives the rim-light direction and presence.
+      const cy = window.innerHeight / 2 + DIVE_SINK_PX * getScrollProgress();
       let targetYaw = 0;
       let targetPitch = 0;
+      let lightTarget = 0;
       if (lastPX !== null && lastPY !== null) {
-        const cy = window.innerHeight / 2 + DIVE_SINK_PX * getScrollProgress();
         const { yaw, pitch } = gazeAngles(
           (lastPX - gazeCenterX) / gazeHalf,
           (lastPY - cy) / gazeHalf,
@@ -177,9 +207,20 @@ function RotatingBustCanvas(): React.JSX.Element {
         );
         targetYaw = yaw;
         targetPitch = pitch;
+        // Rim light: pointer offset in the bust's own units (-1..1 ≈ box
+        // half-extents), matching the point coordinates the rim term
+        // evaluates against. Presence fades with distance — the light is
+        // local, so a pointer across the screen doesn't spill onto the
+        // portrait.
+        const dx = lastPX - gazeCenterX;
+        const dy = lastPY - cy;
+        lightTarget = bustLightPresence(Math.hypot(dx, dy), gazeHalf);
+        lightU = dx / (gazeHalf * 0.94);
+        lightV = dy / (gazeHalf * 0.94);
       }
       gazeYaw = approachAngle(gazeYaw, targetYaw, dt);
       gazePitch = approachAngle(gazePitch, targetPitch, dt);
+      lightPresence = approachAngle(lightPresence, lightTarget, dt);
       if (acc >= TICK_S) {
         draw();
         acc = 0;

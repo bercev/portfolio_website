@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   approachAngle,
+  bustLightPresence,
+  bustRimLight,
+  bustRimShaped,
   chapterCrossingScrollY,
   ditherDissolveLevel,
   fbm2,
@@ -434,5 +437,77 @@ describe("wipeGlyphChar", () => {
       picks.add(wipeGlyphChar(VOCAB, gi, 3, false));
     }
     expect(picks.size).toBeGreaterThan(1);
+  });
+});
+
+describe("bustRimLight", () => {
+  it("is 1 at the bust center when the pointer is over the center", () => {
+    expect(bustRimLight(0, 0, 0, 0)).toBe(1);
+  });
+
+  it("lights the pointer side and darkens the far side", () => {
+    const lit = bustRimLight(1, 0, 0.9, 0);
+    const dark = bustRimLight(1, 0, -0.9, 0);
+    expect(lit).toBeGreaterThan(0.9);
+    expect(dark).toBe(0);
+  });
+
+  it("is symmetric for the vertical axis", () => {
+    expect(bustRimLight(0, -1, 0, -0.9)).toBeCloseTo(
+      bustRimLight(0, 1, 0, 0.9),
+      6,
+    );
+  });
+
+  it("stays within 0..1 for extreme inputs", () => {
+    for (const [lu, lv, pu, pv] of [
+      [3, -2, 1, 1],
+      [-3, 2, -1, -1],
+      [0.001, 0.001, 0.001, 0.001],
+    ]) {
+      const r = bustRimLight(lu, lv, pu, pv);
+      expect(r).toBeGreaterThanOrEqual(0);
+      expect(r).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+describe("bustLightPresence", () => {
+  it("is 1 at the bust center and 0 at three half-extents", () => {
+    expect(bustLightPresence(0, 150)).toBe(1);
+    expect(bustLightPresence(450, 150)).toBe(0);
+    expect(bustLightPresence(900, 150)).toBe(0);
+  });
+
+  it("ramps linearly in between", () => {
+    expect(bustLightPresence(225, 150)).toBeCloseTo(0.5, 6);
+  });
+
+  it("guards degenerate inputs", () => {
+    expect(bustLightPresence(10, 0)).toBe(0);
+    expect(bustLightPresence(-5, 150)).toBe(1);
+  });
+});
+
+describe("bustRimShaped", () => {
+  it("is 1 for a fully-lit point at full presence", () => {
+    expect(bustRimShaped(1, 1)).toBe(1);
+  });
+
+  it("gates below the 0.2 rim threshold (only the clearly-lit side lifts)", () => {
+    expect(bustRimShaped(0.19, 1)).toBe(0);
+    expect(bustRimShaped(0, 1)).toBe(0);
+  });
+
+  it("ramps smoothly between the gate and full", () => {
+    const mid = bustRimShaped(0.475, 1);
+    expect(mid).toBeGreaterThan(0);
+    expect(mid).toBeLessThan(1);
+  });
+
+  it("scales with the eased presence and is exactly 0 at rest", () => {
+    expect(bustRimShaped(1, 0)).toBe(0);
+    expect(bustRimShaped(1, 0.5)).toBeCloseTo(0.5, 6);
+    expect(bustRimShaped(1, 2)).toBe(1); // presence clamped
   });
 });
