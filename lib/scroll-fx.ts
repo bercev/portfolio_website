@@ -303,6 +303,152 @@ export function pingRadius01(elapsedS: number, durationS = 1.6): number {
 }
 
 /**
+ * Deterministic 32-bit integer hash → [0, 1). The entropy source for
+ * the procedural noise below (and for stable per-glyph picks) —
+ * Math.imul keeps the arithmetic in 32-bit integer space, so the
+ * sequence is identical on every engine. Pure function — unit-tested.
+ */
+export function hash2(ix: number, iy: number): number {
+  let h = Math.imul(ix | 0, 374761393) + Math.imul(iy | 0, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/**
+ * Value noise in [0, 1): hash-lattice values with smoothstep
+ * interpolation — cheap, deterministic, tileable enough for a ~130-glyph
+ * field. Pure function — unit-tested.
+ */
+export function valueNoise2(x: number, y: number): number {
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const xf = x - xi;
+  const yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf);
+  const v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi);
+  const b = hash2(xi + 1, yi);
+  const c = hash2(xi, yi + 1);
+  const d = hash2(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+
+/**
+ * Fractal Brownian motion in [0, 1): `octaves` layers of value noise at
+ * doubling frequency and halving amplitude — the organic, torn-edge
+ * field behind the chapter-crossing wipe (the Mora Romero era-change
+ * grammar). Pure function — unit-tested.
+ */
+export function fbm2(x: number, y: number, octaves = 2): number {
+  let v = 0;
+  let amp = 0.5;
+  let norm = 0;
+  let fx = x;
+  let fy = y;
+  for (let i = 0; i < octaves; i++) {
+    v += amp * valueNoise2(fx, fy);
+    norm += amp;
+    amp *= 0.5;
+    fx *= 2.03;
+    fy *= 2.03;
+  }
+  return norm > 0 ? v / norm : 0;
+}
+
+/**
+ * Chapter-crossing noise wipe (run-2 IDEA iter 12 — Codrops, Juan Mora
+ * Romero '26: "For the era change I used a dissolve with a hard edge.
+ * Each pixel gets a noise value, and as the timeline moves forward a
+ * threshold goes up, and the pixels under it switch to the new poster").
+ *
+ * The wipe is the CONTINUOUS, scroll-timeline-driven counterpart to the
+ * one-shot chapter-entry ping: as the visitor scrolls between chapter
+ * crossings, the glyph field's vocabulary tears from the outgoing
+ * chapter's dialect to the incoming chapter's through an organic
+ * hard-edged front. A pure function of scrollY over the whole page — no
+ * per-crossing zones, so there is no handoff pop and scrolling back
+ * reverses it exactly; at rest anywhere it is a static, deliberate
+ * texture, and the reduced-motion still never runs it. Mora's timeline
+ * maps to our scroll position; his fbm(uv) maps to fbm2 over glyph
+ * screen positions plus a downward sweep bias so the front reads as a
+ * tear rather than a statistical turnover.
+ */
+
+/** Feature size of the wipe's noise field, in CSS px. */
+export const WIPE_NOISE_PX = 220;
+/** Weights of the organic noise vs the directional sweep bias (sum to 1). */
+export const WIPE_FBM_WEIGHT = 0.74;
+export const WIPE_SWEEP_BIAS = 0.26;
+/**
+ * The wipe event occupies the middle of each inter-crossing interval —
+ * the field holds each chapter's pure dialect while settled and tears
+ * across in one deliberate event per crossing, eased at both ends.
+ */
+export const WIPE_WIN_A = 0.3;
+export const WIPE_WIN_B = 0.7;
+
+/**
+ * The scrollY at which chapter `next` takes over from `prev`: the same
+ * 45%-activation-line rule resolveChapterIndex uses — the scrollY where
+ * the next section's document-relative top sits exactly on the line.
+ * Pure function — unit-tested.
+ */
+export function chapterCrossingScrollY(
+  docTopNextPx: number,
+  viewportHPx: number,
+): number {
+  return docTopNextPx - viewportHPx * 0.45;
+}
+
+/**
+ * Raw 0..1 progress across one inter-crossing interval [loPx, hiPx].
+ * -Infinity lo (before the first crossing) pins 0, +Infinity hi (past
+ * the last) pins 1 — the wipe is a total function of scrollY.
+ * Pure function — unit-tested.
+ */
+export function wipeRawFrac(
+  scrollYPx: number,
+  loPx: number,
+  hiPx: number,
+): number {
+  if (!Number.isFinite(loPx)) return 0;
+  if (!Number.isFinite(hiPx)) return 1;
+  if (hiPx <= loPx) return scrollYPx >= hiPx ? 1 : 0;
+  return Math.min(1, Math.max(0, (scrollYPx - loPx) / (hiPx - loPx)));
+}
+
+/**
+ * The wipe threshold: the raw interval progress concentrated into the
+ * window [WIPE_WIN_A, WIPE_WIN_B] with smoothstepped ends — 0 while the
+ * field holds the outgoing dialect, 1 once it holds the incoming
+ * dialect. Pure function — unit-tested.
+ */
+export function wipeSweepThreshold(raw01: number): number {
+  return smoothstep01((raw01 - WIPE_WIN_A) / (WIPE_WIN_B - WIPE_WIN_A));
+}
+
+/**
+ * Deterministic character pick for the wipe: stable per (glyph,
+ * crossing, side) — the same glyph on the same side of the same
+ * crossing always shows the same character, so the wipe never boils or
+ * shimmers as the front moves; no per-glyph state, no stale state after
+ * jumps. Pure function — unit-tested.
+ */
+export function wipeGlyphChar(
+  vocab: ReadonlyArray<string>,
+  glyphIndex: number,
+  crossingKey: number,
+  incoming: boolean,
+): string {
+  const h = hash2(
+    glyphIndex * 2 + (incoming ? 1 : 0),
+    crossingKey,
+  );
+  return vocab[Math.floor(h * vocab.length)];
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping

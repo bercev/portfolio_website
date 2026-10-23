@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   approachAngle,
+  chapterCrossingScrollY,
   ditherDissolveLevel,
+  fbm2,
   gazeAngles,
+  hash2,
   inspectFocusEnvelope,
   lightWashFalloff,
   MARQ_BOOST_MAX,
@@ -17,7 +20,11 @@ import {
   pingRadius01,
   resolveChapterIndex,
   smoothstep01,
+  valueNoise2,
   velocityStretch,
+  wipeGlyphChar,
+  wipeRawFrac,
+  wipeSweepThreshold,
 } from "./scroll-fx";
 
 describe("velocityStretch", () => {
@@ -296,5 +303,136 @@ describe("marqueeSkewDeg", () => {
     expect(marqueeSkewDeg(-MARQ_V_MAX)).toBe(-MARQ_SKEW_MAX);
     expect(marqueeSkewDeg(9000)).toBe(MARQ_SKEW_MAX);
     expect(marqueeSkewDeg(-9000)).toBe(-MARQ_SKEW_MAX);
+  });
+});
+
+describe("hash2", () => {
+  it("is deterministic and in [0, 1)", () => {
+    expect(hash2(3, 7)).toBe(hash2(3, 7));
+    expect(hash2(0, 0)).toBeGreaterThanOrEqual(0);
+    expect(hash2(0, 0)).toBeLessThan(1);
+  });
+
+  it("varies across inputs", () => {
+    const vals = new Set([hash2(0, 0), hash2(1, 0), hash2(0, 1), hash2(5, 9), hash2(-3, 4)]);
+    expect(vals.size).toBe(5);
+  });
+});
+
+describe("valueNoise2", () => {
+  it("is deterministic and in [0, 1)", () => {
+    expect(valueNoise2(1.7, -3.2)).toBe(valueNoise2(1.7, -3.2));
+    for (const [x, y] of [[0, 0], [10.5, -4.25], [100, 100], [-7.7, 3.3]] as const) {
+      const v = valueNoise2(x, y);
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+  });
+
+  it("interpolates smoothly between lattice points", () => {
+    const a = valueNoise2(2.0, 2.0);
+    const b = valueNoise2(2.5, 2.0);
+    const c = valueNoise2(3.0, 2.0);
+    // smoothstep interpolation: the midpoint sits strictly between its neighbors' range
+    expect(Math.min(a, c) - 1e-9).toBeLessThanOrEqual(b);
+    expect(b).toBeLessThanOrEqual(Math.max(a, c) + 1e-9);
+  });
+});
+
+describe("fbm2", () => {
+  it("is deterministic and in [0, 1)", () => {
+    expect(fbm2(4.2, 9.9)).toBe(fbm2(4.2, 9.9));
+    const v = fbm2(4.2, 9.9);
+    expect(v).toBeGreaterThanOrEqual(0);
+    expect(v).toBeLessThan(1);
+  });
+
+  it("with one octave equals value noise exactly", () => {
+    expect(fbm2(4.2, 9.9, 1)).toBe(valueNoise2(4.2, 9.9));
+  });
+
+  it("with zero octaves returns 0 (no division by zero)", () => {
+    expect(fbm2(4.2, 9.9, 0)).toBe(0);
+  });
+});
+
+describe("chapterCrossingScrollY", () => {
+  it("puts the crossing where the next section's top hits the 45% line", () => {
+    expect(chapterCrossingScrollY(2000, 800)).toBe(2000 - 800 * 0.45);
+    expect(chapterCrossingScrollY(360, 800)).toBe(0);
+  });
+});
+
+describe("wipeRawFrac", () => {
+  it("is 0 before the first crossing and 1 past the last", () => {
+    expect(wipeRawFrac(100, Number.NEGATIVE_INFINITY, 1000)).toBe(0);
+    expect(wipeRawFrac(5000, 1000, Number.POSITIVE_INFINITY)).toBe(1);
+  });
+
+  it("is linear across the interval and clamps", () => {
+    expect(wipeRawFrac(1000, 1000, 2000)).toBe(0);
+    expect(wipeRawFrac(1500, 1000, 2000)).toBeCloseTo(0.5, 10);
+    expect(wipeRawFrac(2000, 1000, 2000)).toBe(1);
+    expect(wipeRawFrac(500, 1000, 2000)).toBe(0);
+    expect(wipeRawFrac(2500, 1000, 2000)).toBe(1);
+  });
+
+  it("handles a degenerate interval without NaN", () => {
+    expect(wipeRawFrac(1000, 1000, 1000)).toBe(1);
+    expect(wipeRawFrac(999, 1000, 1000)).toBe(0);
+  });
+});
+
+describe("wipeSweepThreshold", () => {
+  it("holds the outgoing dialect before the window and the incoming dialect after", () => {
+    expect(wipeSweepThreshold(0)).toBe(0);
+    expect(wipeSweepThreshold(0.29)).toBe(0);
+    expect(wipeSweepThreshold(0.71)).toBe(1);
+    expect(wipeSweepThreshold(1)).toBe(1);
+  });
+
+  it("sweeps through the middle of the interval, eased at both ends", () => {
+    expect(wipeSweepThreshold(0.5)).toBeCloseTo(0.5, 10);
+    const early = wipeSweepThreshold(0.35);
+    const late = wipeSweepThreshold(0.65);
+    expect(early).toBeGreaterThan(0);
+    expect(early).toBeLessThan(0.5);
+    expect(late).toBeGreaterThan(0.5);
+    expect(late).toBeLessThan(1);
+  });
+
+  it("is monotonic", () => {
+    let prev = -1;
+    for (const r of [0, 0.2, 0.3, 0.5, 0.7, 0.8, 1]) {
+      const t = wipeSweepThreshold(r);
+      expect(t).toBeGreaterThanOrEqual(prev);
+      prev = t;
+    }
+  });
+});
+
+describe("wipeGlyphChar", () => {
+  const VOCAB = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+  it("always picks a member of the vocabulary", () => {
+    for (let gi = 0; gi < 40; gi++) {
+      for (const incoming of [true, false]) {
+        expect(VOCAB).toContain(wipeGlyphChar(VOCAB, gi, 3, incoming));
+      }
+    }
+  });
+
+  it("is stable per (glyph, crossing, side) — the wipe never boils", () => {
+    expect(wipeGlyphChar(VOCAB, 7, 3, true)).toBe(wipeGlyphChar(VOCAB, 7, 3, true));
+    expect(wipeGlyphChar(VOCAB, 7, 3, false)).toBe(wipeGlyphChar(VOCAB, 7, 3, false));
+  });
+
+  it("varies across glyphs and sides (not a constant pick)", () => {
+    const picks = new Set<string>();
+    for (let gi = 0; gi < 12; gi++) {
+      picks.add(wipeGlyphChar(VOCAB, gi, 3, true));
+      picks.add(wipeGlyphChar(VOCAB, gi, 3, false));
+    }
+    expect(picks.size).toBeGreaterThan(1);
   });
 });

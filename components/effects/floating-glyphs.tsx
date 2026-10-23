@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { ditherDissolveLevel, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, useScrollBlur, velocityStretch, CHAPTER_IDS } from "@/lib/scroll-fx";
+import { ditherDissolveLevel, fbm2, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -17,7 +17,10 @@ import { ditherDissolveLevel, getScrollProgress, inspectFocusEnvelope, lightWash
  * pointer/scroll parallax. The field's character set follows the active
  * chapter (math over publications, code over experience — dissolved
  * per-glyph across crossings), so each section has a quiet texture
- * identity while rest stays calm. Colors are probed from the live theme tokens
+ * identity while rest stays calm. Around chapter crossings a noise wipe sweeps
+ * the field's dialect continuously with scroll position — an organic
+ * hard-edged front (fbm noise + a downward sweep bias), a pure function of
+ * scrollY so scrolling back reverses it exactly. Colors are probed from the live theme tokens
  * (foreground for the dim majority, --accent-neon for the accents) so it
  * follows palettes and light/dark without a rebuild.
  *
@@ -655,8 +658,26 @@ export function FloatingGlyphs() {
     // chapter's set.
     const chapterEls = CHAPTER_IDS.map((id) => document.getElementById(id));
     let curChapter = -1;
-    let prevChapter = 0;
-    let vocabBlend = 1;
+    /**
+     * Chapter-crossing noise wipe (run-2 IDEA iter 12): the continuous,
+     * scroll-timeline-driven counterpart to the one-shot ping — the
+     * field's vocabulary tears from one chapter's dialect to the next as
+     * the visitor scrolls between crossings, through an organic
+     * hard-edged front (fbm noise + a downward sweep bias, Mora
+     * Romero's era-change grammar). A pure function of scrollY over the
+     * whole page — the wipe event occupies the middle of each
+     * inter-crossing interval, the field holding each chapter's pure
+     * dialect while settled — so there are no zone handoffs, no
+     * discrete pops, and scrolling back reverses the tear exactly. At
+     * rest anywhere it is a static, deliberate texture. The wipe owns
+     * every glyph's character on animated ticks via deterministic picks
+     * (stable per glyph/crossing/side — nothing boils); the
+     * reduced-motion still (dt=0) keeps the base GLYPHS field.
+     */
+    let wipeThr = 0;
+    let wipeOutVocab: ReadonlyArray<string> = GLYPHS;
+    let wipeInVocab: ReadonlyArray<string> = GLYPHS;
+    let wipeKey = 0;
     /**
      * Chapter-entry ping (run-2 IDEA iter 8): one-shot dither ring
      * expanding from the activation line when the chapter changes — the
@@ -777,24 +798,58 @@ export function FloatingGlyphs() {
       const scrollShift = window.scrollY;
       // Chapter-reactive vocabulary (animated ticks only): resolve the
       // active chapter from the sections' viewport-relative tops against
-      // a 45% activation line (the rail's rule), then dissolve the field's
-      // characters toward the new chapter's vocabulary — a per-glyph
-      // stochastic re-roll, never a global pop, so chapter crossings read
-      // as the field changing dialect. The blend lands exactly on the new
-      // vocabulary, keeping rest calm; the reduced-motion still (dt=0)
-      // never runs this and keeps the base GLYPHS field.
+      // a 45% activation line (the rail's rule). The chapter-crossing
+      // noise wipe (declared above) owns every glyph's character on
+      // these ticks — a scroll-driven tear between dialects, never a
+      // global pop. The reduced-motion still (dt=0) never runs this and
+      // keeps the base GLYPHS field.
       if (dt > 0) {
+        const sy = window.scrollY;
+        // Document-relative section tops, computed once per tick — the
+        // viewport-relative tops (for resolveChapterIndex) derive from
+        // these, so the crossing math and the activation rule can never
+        // disagree about where a chapter begins.
+        const docTops = chapterEls.map((el) =>
+          el ? el.getBoundingClientRect().top + sy : Number.POSITIVE_INFINITY,
+        );
         const next = resolveChapterIndex(
-          chapterEls.map((el) =>
-            el ? el.getBoundingClientRect().top : Number.POSITIVE_INFINITY,
+          docTops.map((t) =>
+            Number.isFinite(t) ? t - sy : Number.POSITIVE_INFINITY,
           ),
           h * 0.45,
         );
+        // The wipe interval: k crossings sit at or above the scroll
+        // position; the field tears from chapter k-1's dialect to chapter
+        // k's across the interval between the surrounding crossings.
+        {
+          const nCh = docTops.length;
+          let k = 0;
+          const cys: number[] = [];
+          for (let i = 1; i < nCh; i++) {
+            const cy = Number.isFinite(docTops[i])
+              ? chapterCrossingScrollY(docTops[i], h)
+              : Number.POSITIVE_INFINITY;
+            cys.push(cy);
+            if (sy >= cy) k++;
+          }
+          const lo = k === 0 ? Number.NEGATIVE_INFINITY : cys[k - 1];
+          const hi =
+            k >= cys.length ? Number.POSITIVE_INFINITY : cys[k];
+          const outI = k === 0 ? 0 : Math.min(k - 1, nCh - 1);
+          const inI = Math.min(k, nCh - 1);
+          wipeThr = wipeSweepThreshold(wipeRawFrac(sy, lo, hi));
+          wipeOutVocab = VOCAB[outI];
+          wipeInVocab = VOCAB[inI];
+          wipeKey = k;
+          // Observability (same quantized pattern as data-ping-env):
+          // the sweep threshold, so probes gate on the component's own
+          // clock instead of wall-clock time.
+          const q = String(Math.round(wipeThr * 20) / 20);
+          if (canvas.dataset.wipeFrac !== q) canvas.dataset.wipeFrac = q;
+        }
         if (next !== curChapter) {
           const initial = curChapter < 0;
-          prevChapter = initial ? next : curChapter;
           curChapter = next;
-          vocabBlend = 0;
           // Chapter-entry ping: only a real crossing fires (never the
           // initial resolve), and only after the cooldown since the
           // previous ping — a fling through four chapters pings once.
@@ -810,20 +865,6 @@ export function FloatingGlyphs() {
           // data-journey/data-ascii): the resolved chapter is inspectable
           // for tests and debugging without reaching into the closure.
           canvas.dataset.vocabChapter = String(next);
-        }
-        if (vocabBlend < 1) {
-          vocabBlend = Math.min(1, vocabBlend + dt / 0.9);
-          const prevVocab = VOCAB[prevChapter];
-          const nextVocab = VOCAB[curChapter];
-          for (const g of glyphs) {
-            // Mean re-roll in ~5 ticks at the 30fps cadence — the whole
-            // field's dialect turns over well inside the 0.9s blend.
-            if (Math.random() < dt * 6) {
-              const v =
-                Math.random() < vocabBlend ? nextVocab : prevVocab;
-              g.ch = v[(Math.random() * v.length) | 0];
-            }
-          }
         }
         // Chapter-entry ping ring: drop expired pings, then per glyph
         // lift the alpha of glyphs near the expanding front — gated
@@ -848,7 +889,8 @@ export function FloatingGlyphs() {
       }
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      for (const g of glyphs) {
+      for (let gi = 0; gi < glyphs.length; gi++) {
+        const g = glyphs[gi];
         if (dt > 0) {
           g.x += g.vx * dt;
           g.y += g.vy * dt;
@@ -866,6 +908,26 @@ export function FloatingGlyphs() {
           pointerY * LAYER_PARALLAX[g.layer] -
           scrollShift * LAYER_SCROLL[g.layer];
         const py = ((rawY % (h + 60)) + h + 60) % (h + 60) - 30;
+        // Chapter-crossing noise wipe: every glyph's character comes from
+        // the outgoing or incoming vocabulary by the wipe field — fbm
+        // noise plus a downward sweep bias, hard-edged (Mora Romero's
+        // era-change grammar). The pick is deterministic per
+        // (glyph, interval, side), so the front moves without any
+        // character boiling as it passes, and jumps self-heal on the
+        // next tick. Animated ticks only — the reduced-motion still is
+        // untouched.
+        if (dt > 0) {
+          const nz =
+            WIPE_FBM_WEIGHT * fbm2(px / WIPE_NOISE_PX, py / WIPE_NOISE_PX) +
+            WIPE_SWEEP_BIAS * (py / Math.max(h, 1));
+          const incoming = nz < wipeThr;
+          g.ch = wipeGlyphChar(
+            incoming ? wipeInVocab : wipeOutVocab,
+            gi,
+            wipeKey,
+            incoming,
+          );
+        }
         // Pointer light-wash: glyphs near the smoothed pointer position
         // brighten and grow slightly — computed on the final screen
         // position (parallax + scroll dive included). wash=0 (pointer
