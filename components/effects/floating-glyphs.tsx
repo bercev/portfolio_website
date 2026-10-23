@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { ditherDissolveLevel, getScrollProgress, lightWashFalloff, objectDefocus, useScrollBlur, velocityStretch } from "@/lib/scroll-fx";
+import { ditherDissolveLevel, getScrollProgress, lightWashFalloff, objectDefocus, resolveChapterIndex, useScrollBlur, velocityStretch, CHAPTER_IDS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -14,7 +14,10 @@ import { ditherDissolveLevel, getScrollProgress, lightWashFalloff, objectDefocus
  *
  * A single calm Canvas2D layer: ASCII + geometric glyphs in three depth
  * layers drift slowly, each spinning on its own axis, with a whisper of
- * pointer/scroll parallax. Colors are probed from the live theme tokens
+ * pointer/scroll parallax. The field's character set follows the active
+ * chapter (math over publications, code over experience — dissolved
+ * per-glyph across crossings), so each section has a quiet texture
+ * identity while rest stays calm. Colors are probed from the live theme tokens
  * (foreground for the dim majority, --accent-neon for the accents) so it
  * follows palettes and light/dark without a rebuild.
  *
@@ -50,6 +53,23 @@ const LAYER_PARALLAX = [2, 5, 10] as const;
  * the field sitting still.
  */
 const LAYER_SCROLL = [0.06, 0.16, 0.32] as const;
+
+/**
+ * Chapter-reactive glyph vocabulary (run-2 IDEA iter 7): the field
+ * speaks each chapter's language — math over publications, code over
+ * experience — dissolved per-glyph across chapter crossings (the
+ * dither-dissolve grammar from iter 4, applied to characters). Home
+ * keeps the base identity mix. All sets stay monospace-safe.
+ */
+const VOCAB: ReadonlyArray<ReadonlyArray<string>> = [
+  GLYPHS, // home — the identity mix
+  ["○", "◇", "·", ":", ";", "+", "~", "°", "^", "-", "_", ",", ".", "'", '"', "(", ")", "?", "!", "/"], // about — prose texture
+  ["∑", "∆", "∂", "∫", "√", "∞", "λ", "µ", "π", "≈", "≠", "±", "×", "÷", "∝", "∈", "∀", "∃", "°", "·", "+", "-", "=", "/"], // publications — math
+  ["{", "}", "[", "]", "<", ">", "/", "=", ";", ":", "!", "?", "$", "%", "#", "&", "*", "_", "-", "+", "|", "."], // experience — code
+  ["#", "$", "%", "@", "&", "*", "+", "=", ">", "<", "_", "/", "|", "-", "!", ":", "0", "1", "X", "S"], // projects — shipping
+  ["○", "◇", "△", "□", "×", "+", "*", "#", "°", "·", ":", ";", "=", "<", ">", "/", "|", "-", "_", "0", "1"], // skills — geometric
+  ["@", "#", "~", "_", "&", "%", "$", "*", "+", "=", ":", ";", "?", "!", "/", "-", ".", "0", "1", "X"], // contact — reach-out
+];
 
 interface Glyph {
   ch: string;
@@ -471,6 +491,17 @@ export function FloatingGlyphs() {
     // render and the reduced-motion still is untouched.
     let lightAmt = 0;
     let pointerPresent = false;
+    // Chapter-reactive vocabulary (run-2 IDEA iter 7): section elements
+    // are resolved per animated tick via getBoundingClientRect (robust to
+    // transformed ancestors — the same rule the line-sidebar rail uses).
+    // curChapter starts at -1 so the first tick lands on the real chapter
+    // without presuming the visitor loaded at the top; vocabBlend 0→1
+    // over ~0.9s dissolves the field's characters toward the new
+    // chapter's set.
+    const chapterEls = CHAPTER_IDS.map((id) => document.getElementById(id));
+    let curChapter = -1;
+    let prevChapter = 0;
+    let vocabBlend = 1;
     // Offscreen tiles for the 3D objects (depth-of-field compositing).
     // Allocated in resize(); empty when the object layer is unavailable.
     let objSlots: ObjSlot[] = [];
@@ -573,6 +604,45 @@ export function FloatingGlyphs() {
       const lightLY = (pointerY * 0.5 + 0.5) * h;
       const washRadius = Math.min(Math.max(Math.min(w, h) * 0.3, 200), 380);
       const scrollShift = window.scrollY;
+      // Chapter-reactive vocabulary (animated ticks only): resolve the
+      // active chapter from the sections' viewport-relative tops against
+      // a 45% activation line (the rail's rule), then dissolve the field's
+      // characters toward the new chapter's vocabulary — a per-glyph
+      // stochastic re-roll, never a global pop, so chapter crossings read
+      // as the field changing dialect. The blend lands exactly on the new
+      // vocabulary, keeping rest calm; the reduced-motion still (dt=0)
+      // never runs this and keeps the base GLYPHS field.
+      if (dt > 0) {
+        const next = resolveChapterIndex(
+          chapterEls.map((el) =>
+            el ? el.getBoundingClientRect().top : Number.POSITIVE_INFINITY,
+          ),
+          h * 0.45,
+        );
+        if (next !== curChapter) {
+          prevChapter = curChapter < 0 ? next : curChapter;
+          curChapter = next;
+          vocabBlend = 0;
+          // Observability contract (same data-attribute pattern as
+          // data-journey/data-ascii): the resolved chapter is inspectable
+          // for tests and debugging without reaching into the closure.
+          canvas.dataset.vocabChapter = String(next);
+        }
+        if (vocabBlend < 1) {
+          vocabBlend = Math.min(1, vocabBlend + dt / 0.9);
+          const prevVocab = VOCAB[prevChapter];
+          const nextVocab = VOCAB[curChapter];
+          for (const g of glyphs) {
+            // Mean re-roll in ~5 ticks at the 30fps cadence — the whole
+            // field's dialect turns over well inside the 0.9s blend.
+            if (Math.random() < dt * 6) {
+              const v =
+                Math.random() < vocabBlend ? nextVocab : prevVocab;
+              g.ch = v[(Math.random() * v.length) | 0];
+            }
+          }
+        }
+      }
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       for (const g of glyphs) {

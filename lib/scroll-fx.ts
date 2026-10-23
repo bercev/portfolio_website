@@ -192,6 +192,42 @@ export function approachAngle(
 }
 
 /**
+ * Chapter-reactive background vocabulary (run-2 IDEA iter 7): the glyph
+ * field speaks each chapter's language — code glyphs over experience,
+ * math over publications — while the settled calm-at-rest contract holds
+ * (vocabulary changes only dissolve during scroll, blend lands exactly
+ * on the new vocabulary). The ids mirror the document order and the
+ * line-sidebar rail's items.
+ */
+export const CHAPTER_IDS = [
+  "home",
+  "about",
+  "publications",
+  "experience",
+  "projects",
+  "skills",
+  "contact",
+] as const;
+
+/**
+ * Resolve the active chapter from viewport-relative section tops: the
+ * last chapter whose top is at or above the activation line — the same
+ * rule the line-sidebar rail uses. Tops for missing sections should be
+ * passed as +Infinity so they never activate. Pure function —
+ * unit-tested.
+ */
+export function resolveChapterIndex(
+  topsPx: readonly number[],
+  activationLinePx: number,
+): number {
+  let idx = 0;
+  for (let i = 0; i < topsPx.length; i++) {
+    if (topsPx[i] <= activationLinePx) idx = i;
+  }
+  return idx;
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping

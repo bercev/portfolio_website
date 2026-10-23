@@ -6,6 +6,7 @@ import {
   gazeAngles,
   lightWashFalloff,
   objectDefocus,
+  resolveChapterIndex,
   smoothstep01,
   velocityStretch,
 } from "./scroll-fx";
@@ -155,5 +156,21 @@ describe("lightWashFalloff", () => {
     expect(lightWashFalloff(0, 0)).toBe(0);
     expect(lightWashFalloff(100, 0)).toBe(0);
     expect(lightWashFalloff(-50, 280)).toBe(1);
+  });
+});
+
+describe("resolveChapterIndex", () => {
+  it("picks the last chapter whose top is at or above the activation line", () => {
+    expect(resolveChapterIndex([10, 200, 900], 360)).toBe(1);
+    expect(resolveChapterIndex([10, 360, 900], 360)).toBe(1);
+  });
+  it("stays at 0 when every section is below the line", () => {
+    expect(resolveChapterIndex([500, 1200], 360)).toBe(0);
+  });
+  it("reaches the last chapter at the document bottom", () => {
+    expect(resolveChapterIndex([-4000, -3000, -900], 360)).toBe(2);
+  });
+  it("never activates a missing section passed as +Infinity", () => {
+    expect(resolveChapterIndex([10, 200, Infinity], 360)).toBe(1);
   });
 });
