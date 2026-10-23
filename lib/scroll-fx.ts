@@ -107,6 +107,39 @@ export function velocityStretch(vPxPerSec: number): number {
 }
 
 /**
+ * Scroll-velocity skills-marquee mappings (run-2 iter 11, research iter 6 —
+ * React Bits "Scroll Velocity" pattern). The skills marquee was the site's
+ * only type in constant motion that scroll never touched; velocity now
+ * injects energy — speed scales up to ~3.2x on hard flings, plus a subtle
+ * skewX lean into the scroll direction.
+ *
+ * The calm-at-rest contract is exact, not asymptotic: below MARQ_V_MIN the
+ * boost is literally 0 and the skew is literally 0, so at rest each row
+ * runs at its constant base rate — the still render is identical to the
+ * old CSS marquee (same 42s/50s base loop durations). No direction
+ * reversal: both rows keep their forward/reverse counterpoint at every
+ * speed; scroll only ever adds energy, never flips the reading direction.
+ * Pure functions — unit-tested in scroll-fx.test.ts.
+ */
+export const MARQ_V_MIN = 120; // px/s — reading-speed deadband: no boost, no skew below this
+export const MARQ_V_MAX = 1600; // px/s — full boost + full skew on hard flings
+export const MARQ_BOOST_MAX = 2.2; // added to the 1x base: 3.2x top speed
+export const MARQ_SKEW_MAX = 8; // degrees of lean at MARQ_V_MAX
+
+/** Speed multiplier add-on from |scroll velocity| — exactly 0 below the deadband. */
+export function marqueeBoost(vPxPerSec: number): number {
+  const t = (Math.abs(vPxPerSec) - MARQ_V_MIN) / (MARQ_V_MAX - MARQ_V_MIN);
+  return MARQ_BOOST_MAX * smoothstep01(t);
+}
+
+/** Signed skewX lean in degrees — exactly 0 below the deadband, capped at ±MARQ_SKEW_MAX. */
+export function marqueeSkewDeg(vPxPerSec: number): number {
+  if (Math.abs(vPxPerSec) < MARQ_V_MIN) return 0;
+  const t = Math.min(1, Math.abs(vPxPerSec) / MARQ_V_MAX);
+  return Math.sign(vPxPerSec) * MARQ_SKEW_MAX * t;
+}
+
+/**
  * Depth-of-field defocus for the 3D background objects (run-2 iter 3):
  * each object passes through a focal plane as it crosses its scroll
  * window — crisp at the window center (envelope ~1), softly defocused

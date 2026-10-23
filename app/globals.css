@@ -771,68 +771,6 @@ textarea {
   }
 }
 
-@keyframes skills-marquee {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(calc(-50% - 0.5rem), 0, 0);
-  }
-}
-
-[data-skills-marquee="enhanced"] [data-skills-row] {
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 8%,
-    #000 92%,
-    transparent
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 8%,
-    #000 92%,
-    transparent
-  );
-}
-
-[data-skills-marquee="enhanced"] [data-skills-track] {
-  width: max-content;
-  flex-wrap: nowrap;
-  animation: skills-marquee 36s linear infinite;
-  will-change: transform;
-}
-
-[data-skills-marquee="enhanced"]
-  [data-skills-row][data-direction="reverse"]
-  [data-skills-track] {
-  animation-direction: reverse;
-}
-
-[data-skills-marquee="enhanced"] [data-skills-copy] {
-  width: auto;
-  flex: none;
-  flex-wrap: nowrap;
-}
-
-[data-skills-marquee="enhanced"] [data-skills-copy] > div {
-  width: auto;
-  flex-wrap: nowrap;
-}
-
-[data-skills-marquee="enhanced"] [data-skills-copy][aria-hidden="true"] {
-  display: flex;
-}
-
-[data-skills-marquee="enhanced"] [data-skills-row]:hover [data-skills-track],
-[data-skills-marquee="enhanced"]
-  [data-skills-row]:focus-within
-  [data-skills-track] {
-  animation-play-state: paused;
-}
 
 html.target-cursor-hide-default,
 html.target-cursor-hide-default * {
@@ -2211,7 +2149,9 @@ html:not(.dark) .skill-pill {
   margin: 0;
   padding: 0.2rem 0;
   list-style: none;
-  animation: skill-marquee 42s linear infinite;
+  /* JS-driven (motion): x advances in useAnimationFrame, skewX leans with
+     scroll velocity. will-change keeps the compositor on the transform. */
+  will-change: transform;
 }
 
 .skill-marquee--static {
@@ -2226,16 +2166,6 @@ html:not(.dark) .skill-pill {
 
 .skill-marquee--static [aria-hidden="true"] {
   display: none;
-}
-
-.skill-marquee[data-direction="reverse"] .skill-marquee-track {
-  animation-direction: reverse;
-  animation-duration: 50s;
-}
-
-.skill-marquee:hover .skill-marquee-track,
-.skill-marquee:focus-within .skill-marquee-track {
-  animation-play-state: paused;
 }
 
 .skill-pill {
@@ -2729,11 +2659,6 @@ html[data-journey="active"] [data-hero-name-fallback] {
     display: none !important;
   }
 
-  [data-skills-track] {
-    animation: none !important;
-    transform: none !important;
-    will-change: auto;
-  }
 }
 
 /* Dedicated /plain site: CSS-only backdrop, freeze motion without WebGL. */

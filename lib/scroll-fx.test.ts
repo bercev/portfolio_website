@@ -6,6 +6,12 @@ import {
   gazeAngles,
   inspectFocusEnvelope,
   lightWashFalloff,
+  MARQ_BOOST_MAX,
+  MARQ_SKEW_MAX,
+  MARQ_V_MAX,
+  MARQ_V_MIN,
+  marqueeBoost,
+  marqueeSkewDeg,
   objectDefocus,
   pingEnvelope,
   pingRadius01,
@@ -250,5 +256,45 @@ describe("inspectFocusEnvelope", () => {
         expect(v).toBeLessThanOrEqual(1);
       }
     }
+  });
+});
+
+describe("marqueeBoost", () => {
+  it("is exactly 0 at rest and below the reading-speed deadband", () => {
+    expect(marqueeBoost(0)).toBe(0);
+    expect(marqueeBoost(MARQ_V_MIN - 1)).toBe(0);
+    expect(marqueeBoost(-(MARQ_V_MIN - 1))).toBe(0);
+  });
+
+  it("ramps to MARQ_BOOST_MAX at hard-fling speeds and saturates", () => {
+    expect(marqueeBoost(MARQ_V_MAX)).toBe(MARQ_BOOST_MAX);
+    expect(marqueeBoost(9000)).toBe(MARQ_BOOST_MAX);
+    const mid = marqueeBoost((MARQ_V_MIN + MARQ_V_MAX) / 2);
+    expect(mid).toBeGreaterThan(0);
+    expect(mid).toBeLessThan(MARQ_BOOST_MAX);
+  });
+
+  it("is monotonic in |v|", () => {
+    let prev = -1;
+    for (const v of [0, 60, 119, 120, 300, 800, 1599, 1600, 4000]) {
+      const b = marqueeBoost(v);
+      expect(b).toBeGreaterThanOrEqual(prev);
+      prev = b;
+    }
+  });
+});
+
+describe("marqueeSkewDeg", () => {
+  it("is exactly 0 at rest and inside the deadband", () => {
+    expect(marqueeSkewDeg(0)).toBe(0);
+    expect(marqueeSkewDeg(MARQ_V_MIN - 1)).toBe(0);
+    expect(marqueeSkewDeg(-(MARQ_V_MIN - 1))).toBe(0);
+  });
+
+  it("leans into the scroll direction and caps at ±MARQ_SKEW_MAX", () => {
+    expect(marqueeSkewDeg(MARQ_V_MAX)).toBe(MARQ_SKEW_MAX);
+    expect(marqueeSkewDeg(-MARQ_V_MAX)).toBe(-MARQ_SKEW_MAX);
+    expect(marqueeSkewDeg(9000)).toBe(MARQ_SKEW_MAX);
+    expect(marqueeSkewDeg(-9000)).toBe(-MARQ_SKEW_MAX);
   });
 });
