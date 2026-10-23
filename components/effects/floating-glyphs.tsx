@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { ditherDissolveLevel, getScrollProgress, objectDefocus, useScrollBlur, velocityStretch } from "@/lib/scroll-fx";
+import { ditherDissolveLevel, getScrollProgress, lightWashFalloff, objectDefocus, useScrollBlur, velocityStretch } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -463,6 +463,14 @@ export function FloatingGlyphs() {
     // Reduced-motion never reaches here — draw(0) leaves vel at 0.
     let vel = 0;
     let lastScrollY = 0;
+    // Pointer light-wash (run-2 iter 6): a FROST light source follows
+    // the pointer and illuminates the glyphs around it — the pointer's
+    // half of the background's reactivity (scroll owns the other half).
+    // lightAmt eases to 0 when the pointer leaves the window or the tab
+    // hides, so the at-rest field is byte-identical to the pre-wash
+    // render and the reduced-motion still is untouched.
+    let lightAmt = 0;
+    let pointerPresent = false;
     // Offscreen tiles for the 3D objects (depth-of-field compositing).
     // Allocated in resize(); empty when the object layer is unavailable.
     let objSlots: ObjSlot[] = [];
@@ -555,6 +563,15 @@ export function FloatingGlyphs() {
       const ease = 1 - Math.pow(0.96, dt * 60);
       pointerX += (targetX - pointerX) * ease;
       pointerY += (targetY - pointerY) * ease;
+      // Pointer light-wash: the lit amount eases in while the pointer is
+      // over the window and relaxes back to exactly 0 when it leaves, so
+      // a pointer that never arrives leaves the frame identical. Only on
+      // animated ticks — the reduced-motion still (dt=0) never washes.
+      if (dt > 0) lightAmt += ((pointerPresent ? 1 : 0) - lightAmt) * ease;
+      const wash = lightAmt > 0.001 ? lightAmt : 0;
+      const lightLX = (pointerX * 0.5 + 0.5) * w;
+      const lightLY = (pointerY * 0.5 + 0.5) * h;
+      const washRadius = Math.min(Math.max(Math.min(w, h) * 0.3, 200), 380);
       const scrollShift = window.scrollY;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -576,6 +593,27 @@ export function FloatingGlyphs() {
           pointerY * LAYER_PARALLAX[g.layer] -
           scrollShift * LAYER_SCROLL[g.layer];
         const py = ((rawY % (h + 60)) + h + 60) % (h + 60) - 30;
+        // Pointer light-wash: glyphs near the smoothed pointer position
+        // brighten and grow slightly — computed on the final screen
+        // position (parallax + scroll dive included). wash=0 (pointer
+        // absent, or reduced-motion dt=0) leaves the glyph identical.
+        let washScale = 1;
+        let washBoost = 0;
+        if (wash > 0) {
+          const dx = px - lightLX;
+          const dy = py - lightLY;
+          const fall = lightWashFalloff(
+            Math.sqrt(dx * dx + dy * dy),
+            washRadius,
+          );
+          if (fall > 0.001) {
+            washScale = 1 + 0.22 * fall * wash;
+            washBoost = Math.max(
+              0,
+              Math.min(0.3 * fall * wash, 0.85 - g.alpha),
+            );
+          }
+        }
         ctx.save();
         ctx.translate(px, py);
         ctx.rotate(g.angle);
@@ -584,10 +622,11 @@ export function FloatingGlyphs() {
           // horizontal squeeze — the slit-scan / motion-smear read.
           ctx.scale(1 - 0.15 * stretch, 1 + 2.2 * stretch);
         }
+        if (washScale !== 1) ctx.scale(washScale, washScale);
         ctx.font = `${LAYER_SIZE[g.layer]}px "JetBrains Mono", ui-monospace, monospace`;
         ctx.fillStyle = rgba(
           g.accent ? colors.accent : colors.fg,
-          g.alpha * (stretch > 0.001 ? 1 - 0.3 * stretch : 1),
+          g.alpha * (stretch > 0.001 ? 1 - 0.3 * stretch : 1) + washBoost,
         );
         ctx.fillText(g.ch, 0, 0);
         ctx.restore();
@@ -733,8 +772,18 @@ export function FloatingGlyphs() {
     };
 
     const onPointer = (e: PointerEvent) => {
+      pointerPresent = true;
       targetX = (e.clientX / Math.max(w, 1) - 0.5) * 2;
       targetY = (e.clientY / Math.max(h, 1) - 0.5) * 2;
+    };
+    // When the pointer is no longer over the page the light-wash relaxes
+    // back to exactly 0 (same "no pointer, no wash" contract as the gaze
+    // relaxation in the portrait bust).
+    const onPointerGone = () => {
+      pointerPresent = false;
+    };
+    const onVisibility = () => {
+      if (document.hidden) pointerPresent = false;
     };
 
     let resizeTimer = 0;
@@ -761,6 +810,9 @@ export function FloatingGlyphs() {
       }
       root.setAttribute("data-ascii", "active");
       window.addEventListener("pointermove", onPointer, { passive: true });
+      document.addEventListener("pointerleave", onPointerGone);
+      window.addEventListener("blur", onPointerGone);
+      document.addEventListener("visibilitychange", onVisibility);
       last = performance.now();
       raf = requestAnimationFrame(loop);
     };
@@ -773,6 +825,9 @@ export function FloatingGlyphs() {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointer);
+      document.removeEventListener("pointerleave", onPointerGone);
+      window.removeEventListener("blur", onPointerGone);
+      document.removeEventListener("visibilitychange", onVisibility);
       if (root.getAttribute("data-ascii") === "active") {
         root.removeAttribute("data-ascii");
       }

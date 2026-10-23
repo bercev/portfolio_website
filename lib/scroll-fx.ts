@@ -162,6 +162,21 @@ export function gazeAngles(
 }
 
 /**
+ * Pointer light-wash falloff (run-2 IDEA iter 6 — user: "be more bold
+ * and creative"): a light source follows the pointer and illuminates the
+ * glyph field around it — the pointer's half of the background's
+ * reactivity (scroll owns the other half). The falloff is 1 at the light
+ * center, easing to 0 at `radiusPx` (smoothstep on the normalized
+ * distance), so the lit region melts into the field instead of popping
+ * at a hard edge. Pure function — unit-tested.
+ */
+export function lightWashFalloff(distPx: number, radiusPx: number): number {
+  if (radiusPx <= 0) return 0;
+  const t = 1 - Math.min(1, Math.max(0, distPx) / radiusPx);
+  return smoothstep01(t);
+}
+
+/**
  * Single-pole low-pass toward a moving target — the "person turning their
  * head" feel behind the gaze: converges to ~90% in about a second at the
  * default rate, so a fast pointer flick never whips the bust. dtS is

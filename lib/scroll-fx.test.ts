@@ -4,6 +4,7 @@ import {
   approachAngle,
   ditherDissolveLevel,
   gazeAngles,
+  lightWashFalloff,
   objectDefocus,
   smoothstep01,
   velocityStretch,
@@ -127,5 +128,32 @@ describe("approachAngle", () => {
     let a = 0.12;
     for (let i = 0; i < 120; i++) a = approachAngle(a, 0, 1 / 15);
     expect(a).toBeLessThan(0.001);
+  });
+});
+
+describe("lightWashFalloff", () => {
+  it("is 1 at the light center and 0 at/beyond the radius", () => {
+    expect(lightWashFalloff(0, 280)).toBe(1);
+    expect(lightWashFalloff(280, 280)).toBe(0);
+    expect(lightWashFalloff(500, 280)).toBe(0);
+  });
+
+  it("decays monotonically with distance", () => {
+    let prev = 2;
+    for (const d of [0, 40, 80, 120, 160, 200, 240, 280]) {
+      const f = lightWashFalloff(d, 280);
+      expect(f).toBeLessThanOrEqual(prev);
+      prev = f;
+    }
+  });
+
+  it("is the smoothstep midpoint at half radius", () => {
+    expect(lightWashFalloff(140, 280)).toBeCloseTo(smoothstep01(0.5), 5);
+  });
+
+  it("handles degenerate and negative input", () => {
+    expect(lightWashFalloff(0, 0)).toBe(0);
+    expect(lightWashFalloff(100, 0)).toBe(0);
+    expect(lightWashFalloff(-50, 280)).toBe(1);
   });
 });
