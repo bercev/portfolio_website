@@ -158,8 +158,11 @@ export function FloatingGlyphs() {
       const colors = colorsRef.current;
       if (!colors) return;
       ctx.clearRect(0, 0, w, h);
-      pointerX += (targetX - pointerX) * 0.04;
-      pointerY += (targetY - pointerY) * 0.04;
+      // Pointer parallax converges on wall-clock time, not per-draw call,
+      // so the feel is identical whether this runs at 12 or 60 fps.
+      const ease = 1 - Math.pow(0.96, dt * 60);
+      pointerX += (targetX - pointerX) * ease;
+      pointerY += (targetY - pointerY) * ease;
       const scrollShift = window.scrollY;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -187,12 +190,27 @@ export function FloatingGlyphs() {
       }
     };
 
+    // Cadence throttle (iter-53): the glyph field moves 2-9 px/s with
+    // <=0.12 rad/s spin — imperceptible frame-to-frame, so full-rate
+    // redraws are pure GPU/battery burn on a page that sits open (the
+    // iter-28 BERAT needsFrames() precedent; Magic UI Glyph Matrix's 90ms
+    // tick is the same precedent). rAF still drives the cadence (no wake
+    // plumbing needed), but draw only fires on an ~83ms tick: ~5x less
+    // frame work. Physics advance on the accumulated dt, so visible
+    // motion is identical; pointer/scroll parallax keep updating on the
+    // tick. The reduced-motion single-frame path (dt=0) is untouched.
+    const TICK_S = 1 / 12;
     let last = performance.now();
+    let acc = 0;
     const loop = (now: number) => {
       if (disposed) return;
-      const dt = Math.min((now - last) / 1000, 0.05);
+      const frameDt = Math.min((now - last) / 1000, 0.05);
       last = now;
-      draw(dt);
+      acc += frameDt;
+      if (acc >= TICK_S) {
+        draw(acc);
+        acc = 0;
+      }
       raf = requestAnimationFrame(loop);
     };
 
