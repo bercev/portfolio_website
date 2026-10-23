@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { ditherDissolveLevel, getScrollProgress, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, useScrollBlur, velocityStretch, CHAPTER_IDS } from "@/lib/scroll-fx";
+import { ditherDissolveLevel, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, useScrollBlur, velocityStretch, CHAPTER_IDS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -395,6 +395,138 @@ function drawCube(
   }
 }
 
+const WIRE_CH = "+";
+const WIRE_FONT_PX = 12;
+const WIRE_ALPHA = 0.32;
+
+/**
+ * Blueprint wireframe of the torus (run-2 IDEA iter 9): 8 meridians +
+ * 12 parallels plotted as sparse "+" marks with the same projection as
+ * the solid torus. No z-buffer — the see-through construction read is
+ * the point (the "reveal the mechanism" grammar from the Codrops
+ * scroll-world research: sketch underneath, painted surface on top).
+ */
+function drawTorusWire(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  A: number,
+  B: number,
+  color: Rgb,
+  alphaScale: number,
+) {
+  if (alphaScale <= 0.004) return;
+  const sinA = Math.sin(A), cosA = Math.cos(A);
+  const sinB = Math.sin(B), cosB = Math.cos(B);
+  const R1 = 1, R2 = 0.44, K2 = 5;
+  ctx.font = `${WIRE_FONT_PX}px ${OBJ_FONT}`;
+  ctx.fillStyle = rgba(color, alphaScale);
+  const plot = (i: number, j: number) => {
+    const sinJ = Math.sin(j), cosJ = Math.cos(j);
+    const sinI = Math.sin(i), cosI = Math.cos(i);
+    const circX = R1 + R2 * cosJ;
+    const circY = R2 * sinJ;
+    const x = circX * (cosB * cosI + sinA * sinB * sinI) - circY * cosA * sinB;
+    const y = circX * (sinB * cosI - sinA * cosB * sinI) + circY * cosA * cosB;
+    const z = K2 + cosA * circX * sinI + circY * sinA;
+    const ooz = 1 / z;
+    ctx.fillText(WIRE_CH, cx + x * ooz * radius * 3.4, cy + y * ooz * radius * 3.4);
+  };
+  for (let m = 0; m < 8; m++) {
+    const j = (m / 8) * Math.PI * 2;
+    for (let i = 0; i < Math.PI * 2; i += 0.09) plot(i, j);
+  }
+  for (let n = 0; n < 12; n++) {
+    const i = (n / 12) * Math.PI * 2;
+    for (let j = 0; j < Math.PI * 2; j += 0.16) plot(i, j);
+  }
+}
+
+/** Blueprint wireframe of the sphere: latitude/longitude grid, front hemisphere. */
+function drawSphereWire(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  rotY: number,
+  tiltX: number,
+  color: Rgb,
+  alphaScale: number,
+) {
+  if (alphaScale <= 0.004) return;
+  const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+  const cosX = Math.cos(tiltX), sinX = Math.sin(tiltX);
+  ctx.font = `${WIRE_FONT_PX}px ${OBJ_FONT}`;
+  ctx.fillStyle = rgba(color, alphaScale);
+  const plot = (th: number, ph: number) => {
+    const x0 = Math.sin(ph) * Math.cos(th);
+    const y0 = Math.cos(ph);
+    const z0 = Math.sin(ph) * Math.sin(th);
+    const x1 = x0 * cosY + z0 * sinY;
+    const z1 = z0 * cosY - x0 * sinY;
+    const y2 = y0 * cosX - z1 * sinX;
+    const z2 = y0 * sinX + z1 * cosX;
+    if (z2 <= 0.02) return; // back hemisphere, like the solid
+    ctx.fillText(WIRE_CH, cx + x1 * radius, cy + y2 * radius);
+  };
+  for (let l = 1; l <= 5; l++) {
+    const ph = (l / 6) * Math.PI;
+    for (let th = 0; th < Math.PI * 2; th += 0.12) plot(th, ph);
+  }
+  for (let m = 0; m < 8; m++) {
+    const th = (m / 8) * Math.PI * 2;
+    for (let ph = 0.15; ph < Math.PI - 0.1; ph += 0.12) plot(th, ph);
+  }
+}
+
+const CUBE_WIRE_EDGES: Array<[[number, number, number], [number, number, number]]> =
+  (() => {
+    const v: Array<[number, number, number]> = [];
+    for (const x of [-0.84, 0.84])
+      for (const y of [-0.84, 0.84]) for (const z of [-0.84, 0.84]) v.push([x, y, z]);
+    const edges: Array<[[number, number, number], [number, number, number]]> = [];
+    for (let a = 0; a < 8; a++)
+      for (let b = a + 1; b < 8; b++) {
+        const diff =
+          (v[a][0] !== v[b][0] ? 1 : 0) +
+          (v[a][1] !== v[b][1] ? 1 : 0) +
+          (v[a][2] !== v[b][2] ? 1 : 0);
+        if (diff === 1) edges.push([v[a], v[b]]);
+      }
+    return edges;
+  })();
+
+/** Blueprint wireframe of the cube: its 12 edges as "+" runs. */
+function drawCubeWire(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  rotY: number,
+  rotX: number,
+  color: Rgb,
+  alphaScale: number,
+) {
+  if (alphaScale <= 0.004) return;
+  const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+  const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+  ctx.font = `${WIRE_FONT_PX}px ${OBJ_FONT}`;
+  ctx.fillStyle = rgba(color, alphaScale);
+  for (const [a, b] of CUBE_WIRE_EDGES) {
+    for (let s = 0; s <= 8; s++) {
+      const t = s / 8;
+      const [rx, ry] = rot3(
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t,
+        cosY, sinY, cosX, sinX,
+      );
+      ctx.fillText(WIRE_CH, cx + rx * size, cy + ry * size);
+    }
+  }
+}
+
 function makeGlyph(w: number, h: number, mobile: boolean): Glyph {
   const roll = Math.random();
   const layer = (roll < 0.45 ? 0 : roll < 0.8 ? 1 : 2) as 0 | 1 | 2;
@@ -504,6 +636,16 @@ export function FloatingGlyphs() {
     // render and the reduced-motion still is untouched.
     let lightAmt = 0;
     let pointerPresent = false;
+    // Pointer inspection (run-2 IDEA iter 9): per-object smoothed
+    // "the visitor is looking at this object" amounts. The pointer's
+    // half of the background's reactivity, completing the scroll-owned
+    // half — proximity pulls the object into focus (focus pull) and fades
+    // in its wireframe construction drawing (blueprint overlay), the
+    // sketch-underneath grammar from the scroll-world research. Eases to
+    // exactly 0 when the pointer leaves, so a pointer that never arrives
+    // leaves the render identical; animated ticks only (dt>0), so the
+    // reduced-motion still is untouched.
+    let insp = [0, 0, 0];
     // Chapter-reactive vocabulary (run-2 IDEA iter 7): section elements
     // are resolved per animated tick via getBoundingClientRect (robust to
     // transformed ancestors — the same rule the line-sidebar rail uses).
@@ -861,19 +1003,36 @@ export function FloatingGlyphs() {
         const sY = stretch > 0.001 ? 1 + 2.2 * stretch : 1;
         octx.clearRect(0, 0, w, h);
         // Render one object into its tile, then blit it to (cx, cy) with
-        // its focus blur. `envelope` is the window alpha (0..1).
+        // its focus blur. `envelope` is the window alpha (0..1);
+        // `inspIdx` selects the object's smoothed inspection amount and
+        // `inspectR` its pointer-engage radius (CSS px). Proximity drives
+        // two things, both relaxing to exactly the pre-inspection render
+        // when the pointer is away: (1) the wireframe construction
+        // drawing fades in over the solid (whisper blueprint, drawn into
+        // the tile before the dither mask so it dissolves with the
+        // object), (2) the scroll-DOF envelope is pulled toward full
+        // focus, and the blit grows slightly — the object comes forward
+        // to be inspected.
         const place = (
           slot: ObjSlot,
           envelope: number,
           cx: number,
           cy: number,
+          inspIdx: number,
+          inspectR: number,
           render: (c: CanvasRenderingContext2D, alpha: number) => void,
+          renderWire: (c: CanvasRenderingContext2D, alpha: number) => void,
         ) => {
+          const dist = Math.hypot(cx - lightLX, cy - lightLY);
+          const target = pointerPresent ? lightWashFalloff(dist, inspectR) : 0;
+          insp[inspIdx] += (target - insp[inspIdx]) * ease;
+          const iv = insp[inspIdx] > 0.001 ? insp[inspIdx] : 0;
           const sctx = slot.ctx;
           sctx.clearRect(0, 0, slot.region, slot.region);
           // The envelope drives the dither sweep below, not alpha —
           // `sAlpha` (the fling warp dip) still dims the render.
           render(sctx, sAlpha);
+          renderWire(sctx, iv * sAlpha);
           const level = ditherDissolveLevel(envelope);
           if (level < 15) {
             const tile = getDitherTiles()[level];
@@ -887,11 +1046,12 @@ export function FloatingGlyphs() {
               sctx.restore();
             }
           }
-          const focus = filterOK ? objectDefocus(envelope) : 0;
+          const focus = filterOK ? objectDefocus(inspectFocusEnvelope(envelope, iv)) : 0;
+          const grow = 1 + 0.06 * iv;
           octx.save();
           if (focus > 0.05) octx.filter = `blur(${focus.toFixed(2)}px)`;
-          const dw = slot.region * sX;
-          const dh = slot.region * sY;
+          const dw = slot.region * sX * grow;
+          const dh = slot.region * sY * grow;
           octx.drawImage(slot.cv, cx - dw / 2, cy - dh / 2, dw, dh);
           octx.restore();
         };
@@ -903,8 +1063,11 @@ export function FloatingGlyphs() {
             const r = 54 * pose.s;
             const A = timeS * 0.11 + p * 5;
             const B = timeS * 0.07 + p * 3;
-            place(slot, a, pose.cx, pose.cy, (c, alpha) =>
-              drawTorus(c, slot.half, slot.half, r, A, B, accent, 0.4 * alpha),
+            place(slot, a, pose.cx, pose.cy, 0, r * 1.5,
+              (c, alpha) =>
+                drawTorus(c, slot.half, slot.half, r, A, B, accent, 0.4 * alpha),
+              (c, alpha) =>
+                drawTorusWire(c, slot.half, slot.half, r, A, B, accent, WIRE_ALPHA * alpha),
             );
           }
         } else {
@@ -915,8 +1078,11 @@ export function FloatingGlyphs() {
             const r = Math.min(104, w * 0.082) * pose.s;
             const A = timeS * 0.11 + p * 5;
             const B = timeS * 0.07 + p * 3;
-            place(slot, tA, pose.cx, pose.cy, (c, alpha) =>
-              drawTorus(c, slot.half, slot.half, r, A, B, accent, 0.42 * alpha),
+            place(slot, tA, pose.cx, pose.cy, 0, r * 1.5,
+              (c, alpha) =>
+                drawTorus(c, slot.half, slot.half, r, A, B, accent, 0.42 * alpha),
+              (c, alpha) =>
+                drawTorusWire(c, slot.half, slot.half, r, A, B, accent, WIRE_ALPHA * alpha),
             );
           }
           const sA = windowAlpha(p, 0.38, 0.78);
@@ -925,8 +1091,11 @@ export function FloatingGlyphs() {
             const pose = divePose(SPHERE_DIVE, windowT(p, 0.38, 0.78), w, h);
             const r = 74 * pose.s;
             const rotY = timeS * 0.15 + p * 7;
-            place(slot, sA, pose.cx, pose.cy, (c, alpha) =>
-              drawSphere(c, slot.half, slot.half, r, rotY, 0.5, accent, 0.46 * alpha),
+            place(slot, sA, pose.cx, pose.cy, 1, r * 1.6,
+              (c, alpha) =>
+                drawSphere(c, slot.half, slot.half, r, rotY, 0.5, accent, 0.46 * alpha),
+              (c, alpha) =>
+                drawSphereWire(c, slot.half, slot.half, r, rotY, 0.5, accent, WIRE_ALPHA * alpha),
             );
           }
           const cA = windowAlpha(p, 0.66, 1.05);
@@ -936,8 +1105,11 @@ export function FloatingGlyphs() {
             const s = 52 * pose.s;
             const rotY = timeS * 0.2 + p * 6;
             const rotX = 0.6 + timeS * 0.13 + p * 2;
-            place(slot, cA, pose.cx, pose.cy, (c, alpha) =>
-              drawCube(c, slot.half, slot.half, s, rotY, rotX, accent, 0.46 * alpha),
+            place(slot, cA, pose.cx, pose.cy, 2, s * 1.8,
+              (c, alpha) =>
+                drawCube(c, slot.half, slot.half, s, rotY, rotX, accent, 0.46 * alpha),
+              (c, alpha) =>
+                drawCubeWire(c, slot.half, slot.half, s, rotY, rotX, accent, WIRE_ALPHA * alpha),
             );
           }
         }

@@ -123,6 +123,22 @@ export function objectDefocus(envelope01: number, maxBlur = 3): number {
 }
 
 /**
+ * Pointer inspection focus (run-2 IDEA iter 9 — user: "be more bold and
+ * creative"): the scroll-window envelope interpolates toward full focus
+ * as the pointer's inspection amount rises. Proximity PULLS the object
+ * crisp — it never adds blur — so at inspect=0 the scroll-DOF grammar is
+ * untouched (contract: the rest render is byte-identical) and at
+ * inspect=1 the object renders at 0px defocus wherever it sits in its
+ * window. Composes with objectDefocus: pass the result there.
+ * Pure function — unit-tested in scroll-fx.test.ts.
+ */
+export function inspectFocusEnvelope(envelope01: number, inspect01: number): number {
+  const e = Math.min(1, Math.max(0, envelope01));
+  const iv = Math.min(1, Math.max(0, inspect01));
+  return Math.min(1, e + iv * (1 - e));
+}
+
+/**
  * Ordered-dither dissolve level for the 3D background objects (run-2
  * iter 4): instead of a plain alpha crossfade, an object's scroll-window
  * envelope sweeps a Bayer-4x4 threshold pattern (16 levels, 0..15), so

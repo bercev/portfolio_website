@@ -4,6 +4,7 @@ import {
   approachAngle,
   ditherDissolveLevel,
   gazeAngles,
+  inspectFocusEnvelope,
   lightWashFalloff,
   objectDefocus,
   pingEnvelope,
@@ -213,6 +214,41 @@ describe("pingRadius01", () => {
       const v = pingRadius01(e);
       expect(v).toBeGreaterThanOrEqual(prev);
       prev = v;
+    }
+  });
+});
+
+describe("inspectFocusEnvelope", () => {
+  it("leaves the envelope untouched at inspect=0", () => {
+    expect(inspectFocusEnvelope(0, 0)).toBe(0);
+    expect(inspectFocusEnvelope(0.5, 0)).toBe(0.5);
+    expect(inspectFocusEnvelope(1, 0)).toBe(1);
+  });
+
+  it("pulls to full focus at inspect=1", () => {
+    expect(inspectFocusEnvelope(0, 1)).toBe(1);
+    expect(inspectFocusEnvelope(0.5, 1)).toBe(1);
+    expect(inspectFocusEnvelope(1, 1)).toBe(1);
+  });
+
+  it("interpolates between envelope and full focus", () => {
+    expect(inspectFocusEnvelope(0.5, 0.5)).toBeCloseTo(0.75, 10);
+    expect(inspectFocusEnvelope(0, 0.25)).toBeCloseTo(0.25, 10);
+  });
+
+  it("clamps out-of-range inputs", () => {
+    expect(inspectFocusEnvelope(-2, 0.5)).toBeGreaterThanOrEqual(0);
+    expect(inspectFocusEnvelope(0.5, 99)).toBe(1);
+    expect(inspectFocusEnvelope(2, 2)).toBe(1);
+  });
+
+  it("never exceeds 1 — inspect only pulls toward focus, never past it", () => {
+    for (let e = 0; e <= 1; e += 0.1) {
+      for (let iv = 0; iv <= 1; iv += 0.1) {
+        const v = inspectFocusEnvelope(e, iv);
+        expect(v).toBeGreaterThanOrEqual(e);
+        expect(v).toBeLessThanOrEqual(1);
+      }
     }
   });
 });
