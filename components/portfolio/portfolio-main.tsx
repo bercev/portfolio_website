@@ -9,7 +9,7 @@ import { portfolio } from "@/data/content";
 
 export function PortfolioMain() {
   return (
-    <main className="relative z-[var(--z-page-content)]">
+    <main id="main-content" tabIndex={-1} className="relative z-[var(--z-page-content)]">
       <Hero
         content={{
           identity: portfolio.identity,

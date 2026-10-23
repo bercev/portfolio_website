@@ -104,7 +104,7 @@ export default async function PublicationPage({
   };
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-16">
+    <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-3xl px-6 py-16">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

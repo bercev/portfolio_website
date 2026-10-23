@@ -3,6 +3,8 @@ import { Agentation } from "agentation";
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 
+import { SkipLink } from "@/components/chrome/skip-link";
+
 import { LenisProvider } from "@/components/providers/lenis-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
@@ -143,6 +145,7 @@ export default function RootLayout({
       className={`${grotesk.variable} ${jetbrainsMono.variable}`}
     >
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
+        <SkipLink />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

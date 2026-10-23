@@ -542,6 +542,37 @@ textarea {
   box-shadow: 0 0 0 5px var(--portfolio-accent);
 }
 
+/* Skip-to-content link (WCAG 2.4.1 Bypass Blocks, iter 40).
+ * Off-viewport until keyboard focus; the global :focus-visible ring
+ * (2px + FROST halo) renders the ring on reveal. Zero at-rest change. */
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 300;
+  padding: 0.5rem 1rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-jetbrains-mono);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-decoration: none;
+  border: 1px solid var(--portfolio-accent);
+  border-radius: 2px;
+  transform: translateY(-300%);
+  transition: transform 150ms ease-out;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
+}
+
 [data-effect-layer] {
   position: fixed;
   inset: 0;
