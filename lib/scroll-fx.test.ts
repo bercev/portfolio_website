@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { objectDefocus, smoothstep01, velocityStretch } from "./scroll-fx";
+import {
+  ditherDissolveLevel,
+  objectDefocus,
+  smoothstep01,
+  velocityStretch,
+} from "./scroll-fx";
 
 describe("velocityStretch", () => {
   it("is exactly 0 at rest and below the calm threshold", () => {
@@ -54,5 +59,29 @@ describe("objectDefocus", () => {
   it("clamps out-of-range envelopes", () => {
     expect(objectDefocus(-0.5)).toBe(3);
     expect(objectDefocus(1.5)).toBe(0);
+  });
+});
+
+describe("ditherDissolveLevel", () => {
+  it("maps the closed window to level 0 and the settled window to 15", () => {
+    expect(ditherDissolveLevel(0)).toBe(0);
+    expect(ditherDissolveLevel(1)).toBe(15);
+  });
+
+  it("sweeps the 16 Bayer levels monotonically", () => {
+    let prev = -1;
+    for (let i = 0; i <= 20; i++) {
+      const lvl = ditherDissolveLevel(i / 20);
+      expect(lvl).toBeGreaterThanOrEqual(prev);
+      expect(lvl).toBeLessThanOrEqual(15);
+      prev = lvl;
+    }
+    // mid-window dissolve passes roughly half the pattern
+    expect(ditherDissolveLevel(0.5)).toBe(8);
+  });
+
+  it("clamps out-of-range envelopes", () => {
+    expect(ditherDissolveLevel(-0.5)).toBe(0);
+    expect(ditherDissolveLevel(1.5)).toBe(15);
   });
 });

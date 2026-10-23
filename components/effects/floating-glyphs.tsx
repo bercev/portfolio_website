@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { getScrollProgress, objectDefocus, useScrollBlur, velocityStretch } from "@/lib/scroll-fx";
+import { ditherDissolveLevel, getScrollProgress, objectDefocus, useScrollBlur, velocityStretch } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -100,10 +100,10 @@ const rand = (min: number, max: number) => min + Math.random() * (max - min);
 /* Three objects in the same ASCII/dither language as the glyph      */
 /* field, drawn onto this same canvas so the background stays one    */
 /* coherent layer (one cadence, one scroll blur). Each lives in a    */
-/* scroll-progress window — fading in, rotating with scroll depth    */
-/* plus a slow idle spin, GLIDING across its window (scroll dive:    */
-/* drifting toward the viewer and growing ~15%), fading out —        */
-/* anchored at the viewport's quiet corners so it never parks behind */
+/* scroll-progress window — dissolving in through ordered dither,   */
+/* rotating with scroll depth plus a slow idle spin, GLIDING across */
+/* its window (scroll dive: drifting toward the viewer and growing  */
+/* ~15%), dissolving out — anchored at the viewport's quiet corners */
 /*   torus  — bottom-right, hero → publications (progress .02–.48)    */
 /*   sphere — top-right, experience → projects (progress .38–.78)    */
 /*   cube   — bottom-right, skills → contact (progress .66–end)      */
@@ -479,6 +479,33 @@ export function FloatingGlyphs() {
       return { cv, ctx: c, half: halfExtent, region: halfExtent * 2 };
     };
 
+    // Ordered-dither dissolve tiles (run-2 iter 4): the classic Bayer-4x4
+    // threshold matrix as sixteen 4x4 device-pixel tiles — tile L passes
+    // exactly the pixels whose threshold < L, so sweeping L 0..15 with an
+    // object's window envelope dissolves it through the brand's dither
+    // grammar instead of a plain alpha crossfade. Built lazily (DOM).
+    const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+    let ditherTiles: HTMLCanvasElement[] | null = null;
+    const getDitherTiles = () => {
+      if (ditherTiles) return ditherTiles;
+      ditherTiles = Array.from({ length: 16 }, (_, level) => {
+        const cv = document.createElement("canvas");
+        cv.width = 4;
+        cv.height = 4;
+        const c = cv.getContext("2d");
+        if (c) {
+          c.fillStyle = "#fff";
+          for (let y = 0; y < 4; y++) {
+            for (let x = 0; x < 4; x++) {
+              if (BAYER4[y * 4 + x] < level) c.fillRect(x, y, 1, 1);
+            }
+          }
+        }
+        return cv;
+      });
+      return ditherTiles;
+    };
+
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       w = window.innerWidth;
@@ -581,6 +608,14 @@ export function FloatingGlyphs() {
       // cause, not the symptom. The fling warp stretch applies to the
       // blit (vertical smear + slight squeeze + alpha dip), matching the
       // per-glyph treatment.
+      //
+      // Dither dissolve (run-2 iter 4): the window envelope no longer
+      // fades alpha — it sweeps a Bayer-4x4 threshold pattern applied
+      // `destination-in` on the tile, so objects dissolve in and out
+      // through ordered dither (crisp dots, the brand's texture grammar)
+      // instead of a uniform ghost fade. Applied in device space so each
+      // pattern cell is one device pixel; skipped at level 15, where the
+      // settled window renders identically to the pre-dissolve object.
       if (dt > 0 && octx && objSlots.length === 3) {
         const p = getScrollProgress();
         const accent = colors.accent;
@@ -599,7 +634,22 @@ export function FloatingGlyphs() {
         ) => {
           const sctx = slot.ctx;
           sctx.clearRect(0, 0, slot.region, slot.region);
-          render(sctx, envelope * sAlpha);
+          // The envelope drives the dither sweep below, not alpha —
+          // `sAlpha` (the fling warp dip) still dims the render.
+          render(sctx, sAlpha);
+          const level = ditherDissolveLevel(envelope);
+          if (level < 15) {
+            const tile = getDitherTiles()[level];
+            const pat = sctx.createPattern(tile, "repeat");
+            if (pat) {
+              sctx.save();
+              sctx.setTransform(1, 0, 0, 1, 0, 0);
+              sctx.globalCompositeOperation = "destination-in";
+              sctx.fillStyle = pat;
+              sctx.fillRect(0, 0, slot.cv.width, slot.cv.height);
+              sctx.restore();
+            }
+          }
           const focus = filterOK ? objectDefocus(envelope) : 0;
           octx.save();
           if (focus > 0.05) octx.filter = `blur(${focus.toFixed(2)}px)`;

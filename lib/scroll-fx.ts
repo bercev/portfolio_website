@@ -123,6 +123,21 @@ export function objectDefocus(envelope01: number, maxBlur = 3): number {
 }
 
 /**
+ * Ordered-dither dissolve level for the 3D background objects (run-2
+ * iter 4): instead of a plain alpha crossfade, an object's scroll-window
+ * envelope sweeps a Bayer-4x4 threshold pattern (16 levels, 0..15), so
+ * entrances/exits dissolve through the brand's dither grammar — the
+ * "craft lives between states" half the iter-3 idea named. Level 0 =
+ * nothing passes, level 15 = everything passes (the settled window
+ * renders identically to the pre-dissolve object).
+ * Pure function — unit-tested in scroll-fx.test.ts.
+ */
+export function ditherDissolveLevel(envelope01: number): number {
+  const e = Math.min(1, Math.max(0, envelope01));
+  return Math.round(e * 15);
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping
