@@ -91,16 +91,40 @@ export function AsciiPortraitBust(): React.JSX.Element | null {
           "radial-gradient(ellipse 64% 64% at 50% 46%, black 52%, transparent 98%)",
       }}
     >
-      <AsciiArtStatic
-        src="/images/portrait-bust.jpg"
-        resolution={72}
-        charset="standard"
-        color="#7dd3fc"
-        backgroundColor="transparent"
-        fontFamily="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
-        objectFit="cover"
-        className="aspect-square w-[clamp(200px,22vw,300px)] opacity-70"
-      />
+      <div
+        style={{
+          // Melt the content-facing (left) edge of the bust into the
+          // background. The bust's left edge sits behind right-side copy —
+          // publications venue/[cite], skills marquee pills, experience pill
+          // tags, projects sidecar — and the wrapper's viewport-relative
+          // radial vignette only softens the bust's outer edges, not the
+          // edge facing the text. A linear left-fade clears the overlap
+          // zone while the figure's core stays readable (research iter 51:
+          // W3C "do not overlay words on busy backgrounds").
+          maskImage: "linear-gradient(to right, transparent 0%, black 34%)",
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent 0%, black 34%)",
+        }}
+      >
+        <AsciiArtStatic
+          src="/images/portrait-bust.jpg"
+          resolution={72}
+          charset="standard"
+          color="#7dd3fc"
+          backgroundColor="transparent"
+          fontFamily="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
+          objectFit="cover"
+          // Dimmed for the simplified background (research iter 51, W3C
+          // foreground-obscured pattern + crossfeyer legibility): on the calm
+          // glyph field the bust at opacity-70 read as a dense mass competing
+          // with foreground copy — worst at the publications [cite] link +
+          // venue line and the skills marquee pills, which sit on its densest
+          // ASCII core in the bust's own FROST. At opacity-40 it reads as
+          // quiet background texture while the figure still registers; the
+          // iter-10 vignette mask + size (about clearance) are untouched.
+          className="aspect-square w-[clamp(200px,22vw,300px)] opacity-40"
+        />
+      </div>
     </div>
   );
 }
