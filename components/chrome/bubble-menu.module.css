@@ -35,9 +35,9 @@
   cursor: pointer;
   pointer-events: auto;
   transition:
-    color 180ms ease,
-    background-color 180ms ease,
-    transform 180ms ease;
+    color 180ms cubic-bezier(.16, 1, .3, 1),
+    background-color 180ms cubic-bezier(.16, 1, .3, 1),
+    transform 180ms cubic-bezier(.16, 1, .3, 1);
 }
 
 .trigger:hover {
@@ -162,9 +162,9 @@
   pointer-events: auto;
   transform-origin: center;
   transition:
-    color 180ms ease,
-    background-color 180ms ease,
-    scale 180ms ease;
+    color 180ms cubic-bezier(.16, 1, .3, 1),
+    background-color 180ms cubic-bezier(.16, 1, .3, 1),
+    scale 180ms cubic-bezier(.16, 1, .3, 1);
   will-change: transform;
 }
 

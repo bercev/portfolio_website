@@ -156,7 +156,7 @@ export function TerminalFlyout() {
             initial="hide"
             animate={open ? "show" : "hide"}
             variants={backdropVariants}
-            transition={{ duration: reducedMotion ? 0 : 0.25 }}
+            transition={{ duration: reducedMotion ? 0 : 0.25, ease: EASE }}
             onClick={doClose}
           />
           <motion.aside

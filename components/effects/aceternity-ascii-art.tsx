@@ -476,7 +476,7 @@ export const AsciiArt: React.FC<AsciiArtProps> = ({
         className={cn("relative overflow-hidden", className)}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: animationDuration }}
+        transition={{ duration: animationDuration, ease: [0.16, 1, 0.3, 1] }}
       >
         {canvasElement}
       </motion.div>
