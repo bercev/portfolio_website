@@ -5,6 +5,7 @@ import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 
 import { SkipLink } from "@/components/chrome/skip-link";
 import TabTitleDelight from "@/components/chrome/tab-title-delight";
+import BelowSurfaceDelights from "@/components/chrome/below-surface-delights";
 
 import { LenisProvider } from "@/components/providers/lenis-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -148,6 +149,7 @@ export default function RootLayout({
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <SkipLink />
         <TabTitleDelight />
+        <BelowSurfaceDelights />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
