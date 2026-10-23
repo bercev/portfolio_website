@@ -122,13 +122,6 @@ export function resolveSparkBurst({
   };
 }
 
-export function isVitaeSparkTarget(target: EventTarget | null) {
-  return (
-    target instanceof Element &&
-    Boolean(target.closest("[data-vitae-artifact]"))
-  );
-}
-
 export function ClickSpark({
   sparkColor,
   sparkSize = CLICK_SPARK_DEFAULTS.sparkSize,
@@ -206,11 +199,7 @@ export function ClickSpark({
 
     const handlePointerDown = (event: PointerEvent) => {
       const startTime = performance.now();
-      const burst = resolveSparkBurst({
-        sparkCount,
-        sparkRadius,
-        richer: isVitaeSparkTarget(event.target),
-      });
+      const burst = resolveSparkBurst({ sparkCount, sparkRadius });
 
       for (let index = 0; index < burst.sparkCount; index += 1) {
         sparks.push({
