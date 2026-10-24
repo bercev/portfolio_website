@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
-import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, constellationEnvelope, constellationSegment, CONSTELLATION_ALPHA_MAX, CONSTELLATION_COOLDOWN_MS, dominantObject, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, constellationEnvelope, constellationSegment, CONSTELLATION_ALPHA_MAX, CONSTELLATION_COOLDOWN_MS, dominantObject, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, shouldFireKeyRipple, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -70,6 +70,20 @@ const PING_COOLDOWN_S = 1.4;
 const PING_RADIUS_FRAC = 0.75;
 const PING_BAND_PX = 44;
 const PING_BOOST_MAX = 0.3;
+
+/**
+ * Terminal keystroke ripple (run-2 IDEA iter 26, built iter 41): the
+ * filed design verbatim — one ripple per 250ms at most (throttle lives
+ * in the listener via shouldFireKeyRipple), a 1.0s ring expanding from
+ * the pointer's last field position, max radius 22% of the short side,
+ * alpha capped at 0.25 (quieter than the chapter ping's 0.35). Dots
+ * only — no glyph lift: the iter-8 lesson (a sparse field can't carry
+ * a glyph-only wavefront) applies doubly to a whisper beat.
+ */
+const KEY_RIPPLE_DURATION_S = 1.0;
+const KEY_RIPPLE_RADIUS_FRAC = 0.22;
+const KEY_RIPPLE_ALPHA_MAX = 0.25;
+const KEY_RIPPLE_INTERVAL_MS = 250;
 
 /**
  * Chapter-reactive glyph vocabulary (run-2 IDEA iter 7): the field
@@ -724,6 +738,17 @@ export function FloatingGlyphs() {
      */
     let pings: Array<{ t0: number }> = [];
     let lastPingT = -Infinity;
+    /**
+     * Terminal keystroke ripple (run-2 IDEA iter 26, built iter 41):
+     * one-shot dither rings fired by typing in the terminal flyout —
+     * the scene's first action-gated beat on a live path. Each ripple
+     * stores its own origin (the pointer's last field position at fire
+     * time; center when the pointer never arrived) and its timeS
+     * timestamp, so the envelope runs on the tick's own clock, not
+     * wall-clock — the same headless-rAF honesty as data-ping-env.
+     */
+    let keyRipples: Array<{ t0: number; ox: number; oy: number }> = [];
+    let lastKeyRippleMs = -Infinity;
     // Per-tick ping geometry (assigned inside the animated dt>0 block;
     // the reduced-motion still leaves these at 0 with pings empty, so
     // the ping loop below is dead code there).
@@ -1292,6 +1317,55 @@ export function FloatingGlyphs() {
         }
       }
 
+      // Terminal keystroke ripple (run-2 IDEA iter 26, built iter 41):
+      // typing in the terminal flyout fires a whisper-quiet dithered
+      // ring from the pointer's last field position — the scene's
+      // first action-gated beat on a live path. Dots only (no glyph
+      // lift, no chroma split): a quiet beat that decays to exactly 0
+      // and draws nothing at rest, so the settled frame is byte-
+      // identical to the pre-ripple field. Animated ticks only — the
+      // reduced-motion still never ripples (the listener doesn't exist
+      // there). Observability mirrors data-ping-env: quantized live
+      // envelope, deleted when no ripple is alive.
+      if (dt > 0) {
+        keyRipples = keyRipples.filter(
+          (rp) => timeS - rp.t0 < KEY_RIPPLE_DURATION_S,
+        );
+        if (keyRipples.length > 0) {
+          const q = String(
+            Math.round(
+              pingEnvelope(
+                timeS - keyRipples[0].t0,
+                KEY_RIPPLE_DURATION_S,
+              ) * 20,
+            ) / 20,
+          );
+          if (canvas.dataset.keyRipple !== q) canvas.dataset.keyRipple = q;
+          const maxR = Math.min(w, h) * KEY_RIPPLE_RADIUS_FRAC;
+          for (const rp of keyRipples) {
+            const e = timeS - rp.t0;
+            const env = pingEnvelope(e, KEY_RIPPLE_DURATION_S);
+            if (env <= 0.01) continue;
+            const r = pingRadius01(e, KEY_RIPPLE_DURATION_S) * maxR;
+            if (r < 2) continue;
+            const pitch = 5;
+            ctx.fillStyle = rgba(colors.accent, env * KEY_RIPPLE_ALPHA_MAX);
+            const steps = Math.max(24, Math.floor((2 * Math.PI * r) / pitch));
+            for (let s = 0; s < steps; s++) {
+              const a = (s / steps) * Math.PI * 2;
+              const x = rp.ox + r * Math.cos(a);
+              const y = rp.oy + r * Math.sin(a);
+              if (x < 0 || y < 0 || x >= w || y >= h) continue;
+              if (blueNoiseThreshold(Math.round(x), Math.round(y)) >= env * 255)
+                continue;
+              ctx.fillRect(x, y, 2, 2);
+            }
+          }
+        } else if (canvas.dataset.keyRipple !== undefined) {
+          delete canvas.dataset.keyRipple;
+        }
+      }
+
       // Fling dither storm (run-2 IDEA iter 32, built iter 35): on a
       // hard fling the field briefly densifies with blue-noise dots —
       // the same isotropic grain as the ping ring's dots, stamped on a
@@ -1610,6 +1684,27 @@ export function FloatingGlyphs() {
       targetX = (e.clientX / Math.max(w, 1) - 0.5) * 2;
       targetY = (e.clientY / Math.max(h, 1) - 0.5) * 2;
     };
+    /**
+     * Terminal keystroke ripple (run-2 IDEA iter 26, built iter 41):
+     * the terminal dispatches a `terminal-keystroke` window event per
+     * typing keystroke (Terminal.tsx filters to printable/enter/
+     * backspace); this listener throttles it to one ripple per 250ms
+     * and stamps the ring at the pointer's last field position —
+     * center when the pointer never arrived. Registered only on the
+     * animated path, so the reduced-motion still never ripples and
+     * the array can't grow while no tick prunes it.
+     */
+    const onTerminalKeystroke = () => {
+      const nowMs = performance.now();
+      if (!shouldFireKeyRipple(lastKeyRippleMs, nowMs, KEY_RIPPLE_INTERVAL_MS))
+        return;
+      lastKeyRippleMs = nowMs;
+      keyRipples.push({
+        t0: timeS,
+        ox: (pointerX * 0.5 + 0.5) * w,
+        oy: (pointerY * 0.5 + 0.5) * h,
+      });
+    };
     // When the pointer is no longer over the page the light-wash relaxes
     // back to exactly 0 (same "no pointer, no wash" contract as the gaze
     // relaxation in the portrait bust).
@@ -1664,6 +1759,7 @@ export function FloatingGlyphs() {
       snapRelease = subscribeScrollSnapshot();
       root.setAttribute("data-ascii", "active");
       window.addEventListener("pointermove", onPointer, { passive: true });
+      window.addEventListener("terminal-keystroke", onTerminalKeystroke);
       document.addEventListener("pointerleave", onPointerGone);
       window.addEventListener("blur", onPointerGone);
       document.addEventListener("visibilitychange", onVisibility);
@@ -1680,6 +1776,7 @@ export function FloatingGlyphs() {
       snapRelease?.();
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointer);
+      window.removeEventListener("terminal-keystroke", onTerminalKeystroke);
       document.removeEventListener("pointerleave", onPointerGone);
       window.removeEventListener("blur", onPointerGone);
       document.removeEventListener("visibilitychange", onVisibility);

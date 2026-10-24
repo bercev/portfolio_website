@@ -94,6 +94,15 @@ export function Terminal({
       term.onData((data) => {
         // Single input path: parse control sequences, type printable runs.
         // (Handling everything here avoids double-typing from onKey + onData.)
+        // Keystroke ripple (run-2 IDEA iter 26, built iter 41): typing
+        // keystrokes — printable runs, Enter, backspace — notify the
+        // glyph field, which throttles them to one ripple per 250ms.
+        // Arrow-key sequences and control codes are excluded, so
+        // history navigation doesn't ripple. Paste fires once per
+        // onData chunk and is throttled at the field.
+        if (/[ -~\r\x7f]/.test(data)) {
+          window.dispatchEvent(new CustomEvent("terminal-keystroke"));
+        }
         let i = 0;
         while (i < data.length) {
           const ch = data[i];

@@ -58,6 +58,7 @@ import {
   objectWindowPos,
   pingEnvelope,
   pingRadius01,
+  shouldFireKeyRipple,
   resolveChapterIndex,
   shapeGlyphForTangent,
   smoothstep01,
@@ -507,6 +508,28 @@ describe("pingRadius01", () => {
       expect(v).toBeGreaterThanOrEqual(prev);
       prev = v;
     }
+  });
+});
+
+describe("shouldFireKeyRipple", () => {
+  it("fires on the first keystroke (never-fired -Infinity sentinel)", () => {
+    expect(shouldFireKeyRipple(-Infinity, 1000)).toBe(true);
+  });
+  it("blocks keystrokes inside the interval", () => {
+    expect(shouldFireKeyRipple(1000, 1100)).toBe(false);
+    expect(shouldFireKeyRipple(1000, 1249)).toBe(false);
+  });
+  it("fires exactly at and after the interval", () => {
+    expect(shouldFireKeyRipple(1000, 1250)).toBe(true);
+    expect(shouldFireKeyRipple(1000, 5000)).toBe(true);
+  });
+  it("honors a custom interval", () => {
+    expect(shouldFireKeyRipple(1000, 1049, 100)).toBe(false);
+    expect(shouldFireKeyRipple(1000, 1100, 100)).toBe(true);
+  });
+  it("never fires on a degenerate nowMs, allows on a degenerate lastFireMs", () => {
+    expect(shouldFireKeyRipple(1000, NaN)).toBe(false);
+    expect(shouldFireKeyRipple(NaN, 1000)).toBe(true);
   });
 });
 

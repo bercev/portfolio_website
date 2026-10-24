@@ -595,6 +595,25 @@ export function pingRadius01(elapsedS: number, durationS = 1.6): number {
   return smoothstep01(elapsedS / durationS);
 }
 
+/**
+ * Terminal keystroke ripple (run-2 IDEA iter 26, built iter 41):
+ * throttle gate for the field's action-gated beat — at most one ripple
+ * per interval no matter how fast the visitor types or pastes. A
+ * non-finite lastFireMs is the "never fired" sentinel (the bust's
+ * -Infinity lastMoveT lesson: sentinels are valid inputs, not degenerate
+ * ones), so it always allows the first ripple; a non-finite nowMs is
+ * degenerate and never fires. Pure function — unit-tested.
+ */
+export function shouldFireKeyRipple(
+  lastFireMs: number,
+  nowMs: number,
+  intervalMs = 250,
+): boolean {
+  if (!Number.isFinite(nowMs)) return false;
+  if (!Number.isFinite(lastFireMs)) return true;
+  return nowMs - lastFireMs >= Math.max(0, intervalMs);
+}
+
 // Portrait attention glance (run-2 IDEA iter 16): on chapter activation
 // with an idle pointer, the bust glances toward the new chapter's
 // headline — an additive yaw offset with an exponential decay, so the
