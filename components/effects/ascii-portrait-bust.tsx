@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { approachAngle, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, fbm2, gazeAngles, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_COOLDOWN_MS, GLANCE_DIR, GLANCE_IDLE_MS, objectGlanceDir, OBJECT_WINDOWS, objectWindowCrossed, objectWindowPos, scrollShared, scrollSnapshot, smoothstep01, subscribeScrollSnapshot, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, contactFaceRamp, fbm2, gazeAngles, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_COOLDOWN_MS, GLANCE_DIR, GLANCE_IDLE_MS, objectGlanceDir, OBJECT_WINDOWS, objectWindowCrossed, objectWindowPos, scrollShared, scrollSnapshot, smoothstep01, subscribeScrollSnapshot, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -174,8 +174,26 @@ function RotatingBustCanvas(): React.JSX.Element {
       // Scroll turn + idle sway + pointer gaze + attention glance,
       // composed into one rotation. The glance is exactly 0 at rest, so
       // the settled render is byte-identical to the pre-glance one.
+      // "The head meets your eyes at contact" (run-2 IDEA iter 23): over
+      // the contact window an additive offset eases the scroll turn back
+      // toward front-facing — the head that turned away the whole way
+      // down turns back to face the reader at "Let's connect." The
+      // amplitude is derived from the scroll turn itself (not tuned): at
+      // the bottom the composed scroll turn is exactly 0, and outside
+      // the contact window the offset is exactly 0 (chapters 0–5 render
+      // byte-identical to the pre-change tree).
+      const contactFace =
+        -BUST_MAX_TURN *
+        smoothstep01(p) *
+        contactFaceRamp(
+          scrollSnapshot.y,
+          scrollSnapshot.tops,
+          scrollSnapshot.vh,
+          scrollSnapshot.maxY,
+        );
       const A =
         BUST_MAX_TURN * smoothstep01(p) +
+        contactFace +
         0.055 * Math.sin(timeS * 0.3) +
         gazeYaw +
         glanceYaw;
@@ -335,6 +353,22 @@ function RotatingBustCanvas(): React.JSX.Element {
       const gpq = String(Math.round(glancePitch * 1000));
       if (canvas.dataset.glancePitch !== gpq)
         canvas.dataset.glancePitch = gpq;
+      // Contact-face observability (same quantized pattern): the live
+      // additive turn-back offset in milliradians, recomputed here from
+      // the shared snapshot (same inputs draw() uses). Exactly "0"
+      // outside the contact window.
+      const liveContactFace =
+        -BUST_MAX_TURN *
+        smoothstep01(scrollSnapshot.progress) *
+        contactFaceRamp(
+          scrollSnapshot.y,
+          scrollSnapshot.tops,
+          scrollSnapshot.vh,
+          scrollSnapshot.maxY,
+        );
+      const cfq = String(Math.round(liveContactFace * 1000));
+      if (canvas.dataset.contactFace !== cfq)
+        canvas.dataset.contactFace = cfq;
       if (acc >= TICK_S) {
         // Chapter activation: the shared snapshot publisher (run-2
         // iter 20) resolves the chapter once per frame for every

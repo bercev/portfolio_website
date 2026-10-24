@@ -403,6 +403,34 @@ export function glanceYawOffset(
 }
 
 /**
+ * "The head meets your eyes at contact" (run-2 IDEA iter 22, built
+ * iter 23): over the contact chapter's scroll window — from the 45%
+ * activation line that makes contact the active chapter (the same line
+ * the background systems share via the scroll snapshot) to the bottom
+ * of the page — a 0→1 ramp the bust multiplies against its own scroll
+ * turn to ease the head back toward front-facing. The amplitude is
+ * DERIVED from the scroll turn itself, never tuned: the bust composes
+ * `-BUST_MAX_TURN * smoothstep01(p) * ramp`, so at the bottom the
+ * scroll turn cancels exactly (the head faces the reader at
+ * "Let's connect.") and outside the window the offset is exactly 0 —
+ * chapters 0–5 render byte-identical to the pre-change tree. Pure
+ * function — unit-tested.
+ */
+export function contactFaceRamp(
+  scrollYPx: number,
+  topsPx: readonly number[],
+  viewportHPx: number,
+  maxScrollPx: number,
+): number {
+  const contactTop = topsPx[CHAPTER_IDS.length - 1]; // "contact"
+  if (!Number.isFinite(contactTop) || viewportHPx <= 0 || maxScrollPx <= 0)
+    return 0;
+  const start = contactTop - viewportHPx * 0.45; // the 45% activation line
+  if (maxScrollPx - start <= 0) return 0; // degenerate: no window exists
+  return smoothstep01((scrollYPx - start) / (maxScrollPx - start));
+}
+
+/**
  * Object attention (run-2 IDEA iter 19, built iter 21): the 3D objects'
  * scroll windows, in the same [a, b] pairs the glyph field composites
  * them on (floating-glyphs' TORUS_DIVE / SPHERE_DIVE / CUBE_DIVE — the
@@ -728,6 +756,8 @@ export type ScrollSnapshot = {
   tops: number[];
   /** window.innerHeight at publish time, px. */
   vh: number;
+  /** Max scroll offset (docHeight - vh) at publish time, px. */
+  maxY: number;
 };
 
 /**
@@ -744,6 +774,7 @@ export const scrollSnapshot: ScrollSnapshot = {
   chapterIndex: 0,
   tops: [],
   vh: 0,
+  maxY: 0,
 };
 
 /**
@@ -785,6 +816,7 @@ export function computeScrollSnapshot(
     chapterIndex,
     tops: [...sectionTopsPx],
     vh: viewportHPx,
+    maxY: max,
   };
 }
 
@@ -823,6 +855,7 @@ function publishSnapshot(seed: boolean): void {
   scrollSnapshot.chapterIndex = next.chapterIndex;
   scrollSnapshot.tops = next.tops;
   scrollSnapshot.vh = next.vh;
+  scrollSnapshot.maxY = next.maxY;
 }
 
 function publishLoop(): void {

@@ -23,6 +23,7 @@ import {
   bustWipeDrop,
   chapterCrossingScrollY,
   computeScrollSnapshot,
+  contactFaceRamp,
   ditherDissolveLevel,
   fbm2,
   gazeAngles,
@@ -283,6 +284,47 @@ describe("glanceYawOffset", () => {
     expect(Math.abs(glanceYawOffset(1200, GLANCE_AMP_RAD))).toBeLessThan(
       0.01,
     );
+  });
+});
+
+describe("contactFaceRamp", () => {
+  // contact is the last chapter (index 6 of 7); tops are document-relative.
+  const vh = 800;
+  const maxY = 6000;
+  const tops = [0, 900, 1800, 2700, 3600, 4500, 5400];
+  const start = 5400 - vh * 0.45; // the 45% activation line = 5040
+
+  it("is exactly 0 before the contact window (chapters 0–5 untouched)", () => {
+    expect(contactFaceRamp(0, tops, vh, maxY)).toBe(0);
+    expect(contactFaceRamp(start - 1, tops, vh, maxY)).toBe(0);
+    expect(contactFaceRamp(start, tops, vh, maxY)).toBe(0);
+  });
+
+  it("ramps 0 -> 1 monotonically across the contact window", () => {
+    const mid = contactFaceRamp((start + maxY) / 2, tops, vh, maxY);
+    expect(mid).toBeGreaterThan(0);
+    expect(mid).toBeLessThan(1);
+    expect(
+      contactFaceRamp(start + (maxY - start) * 0.75, tops, vh, maxY),
+    ).toBeGreaterThan(mid);
+    expect(contactFaceRamp(maxY, tops, vh, maxY)).toBe(1);
+    expect(contactFaceRamp(maxY + 500, tops, vh, maxY)).toBe(1);
+  });
+
+  it("cancels the scroll turn exactly at the bottom by construction", () => {
+    // the bust composes -BUST_MAX_TURN * smoothstep01(p) * ramp;
+    // smoothstep01(1) = 1 and ramp(maxY) = 1, so the composed turn is 0.
+    expect(smoothstep01(1)).toBe(1);
+    expect(contactFaceRamp(maxY, tops, vh, maxY)).toBe(1);
+  });
+
+  it("is 0 for degenerate input", () => {
+    const missing = [...tops.slice(0, 6), Number.POSITIVE_INFINITY];
+    expect(contactFaceRamp(5900, missing, vh, maxY)).toBe(0); // no contact section
+    expect(contactFaceRamp(5900, tops, vh, 0)).toBe(0); // no scroll room
+    expect(contactFaceRamp(5900, tops, 0, maxY)).toBe(0); // no viewport
+    // window would be empty (activation line at/below the bottom)
+    expect(contactFaceRamp(5900, tops, vh, 5000)).toBe(0);
   });
 });
 
@@ -689,6 +731,13 @@ describe("computeScrollSnapshot", () => {
   const tops = [0, 1000, 2000, 3000, 4000, 5000, 6000];
   const vh = 800;
   const docH = 6800; // max scroll = 6000
+
+  it("publishes maxY (docHeight - vh) for window-space ramps", () => {
+    expect(computeScrollSnapshot(0, docH, vh, tops, 0, 0, 0).maxY).toBe(6000);
+    expect(computeScrollSnapshot(3000, docH, vh, tops, 0, 0, 0).maxY).toBe(
+      6000,
+    );
+  });
 
   it("reports progress 0 at the top, 1 at the bottom, clamped past the end", () => {
     expect(computeScrollSnapshot(0, docH, vh, tops, 0, 0, 0).progress).toBe(0);
