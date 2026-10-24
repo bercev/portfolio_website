@@ -948,6 +948,25 @@ describe("computeScrollSnapshot", () => {
     expect(seed.progress).toBeCloseTo(2500 / 6000, 5);
   });
 
+  it("tab-return reseed zeroes velocity exactly (pause/resume contract)", () => {
+    // The seed above preserves prevVel, so the visibility-resume path
+    // must zero prevVel and track prevY to the current scroll position
+    // FIRST — that combination yields exactly 0, never a decayed fling.
+    const resumed = computeScrollSnapshot(2500, docH, vh, tops, 0, 2500, 0);
+    expect(resumed.velocity).toBe(0);
+    expect(resumed.y).toBe(2500);
+  });
+
+  it("a clamped resume frame alone does NOT clear a mid-fling velocity", () => {
+    // The pre-fix hazard the reseed exists for: tab return resumed
+    // with dt clamped to 0.1s over the stale fling velocity, so one
+    // frame leaves 0.88^6 (~46%) alive — enough to trip warp / chroma /
+    // storm with zero user input.
+    const resumed = computeScrollSnapshot(2500, docH, vh, tops, 0.1, 2500, 2000);
+    expect(resumed.velocity).toBeCloseTo(2000 * Math.pow(0.88, 6), 5);
+    expect(resumed.velocity).toBeGreaterThan(0);
+  });
+
   it("resolves chapters with the shared 45%-activation-line rule", () => {
     // activation line = 800 * 0.45 = 360.
     expect(computeScrollSnapshot(0, docH, vh, tops, 0, 0, 0).chapterIndex).toBe(

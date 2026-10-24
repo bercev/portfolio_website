@@ -1617,7 +1617,24 @@ export function FloatingGlyphs() {
       pointerPresent = false;
     };
     const onVisibility = () => {
-      if (document.hidden) pointerPresent = false;
+      if (document.hidden) {
+        pointerPresent = false;
+        // Pause the work, not only the pixels (run-2 iter 40 —
+        // tab-hidden pause): cancel the tick so no frame is scheduled
+        // while hidden. The browser would pause rAF anyway; cancelling
+        // makes the resume deterministic (below) instead of
+        // gap-dependent.
+        cancelAnimationFrame(raf);
+        return;
+      }
+      // Resume correctly: drop any stale accumulated tick time so the
+      // first visible tick cannot advance physics by a hidden-tab gap,
+      // then run exactly one loop (cancel first — idempotent against
+      // a stray pending frame).
+      cancelAnimationFrame(raf);
+      last = performance.now();
+      acc = 0;
+      raf = requestAnimationFrame(loop);
     };
 
     let resizeTimer = 0;

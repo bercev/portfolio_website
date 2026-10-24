@@ -1172,8 +1172,33 @@ function publishSnapshot(seed: boolean): void {
 }
 
 function publishLoop(): void {
-  if (snapSubscribers === 0) return;
+  if (snapSubscribers === 0 || document.hidden) return;
   publishSnapshot(false);
+  snapRaf = requestAnimationFrame(publishLoop);
+}
+
+/**
+ * Tab-hidden pause + resume correctness (run-2 iter 40 — research
+ * iter 27 item, "pause the work, not only the pixels"). Browsers pause
+ * rAF on hidden tabs, but that only pauses the pixels: the publisher's
+ * pending frame resumes with a delta clamped to 0.1s over a stale
+ * mid-fling velocity (~46% survives one clamped frame: 0.88^6), so warp
+ * stretch / chroma-split / storm could misfire on tab return with zero
+ * user input. Pause the work instead: cancel the loop on hidden, and on
+ * visible reseed with velocity forced to 0. A bare dt=0 seed preserves
+ * prevVel (see the seed test), so the reseed must zero snapPrevVel and
+ * track snapPrevY to the current scroll position first — that
+ * combination yields exactly 0. The glyph-field tick
+ * (floating-glyphs) takes the same pause/resume pair. Reduced-motion
+ * paths never subscribe, untouched.
+ */
+function onSnapshotVisibility(): void {
+  if (snapSubscribers === 0) return;
+  cancelAnimationFrame(snapRaf);
+  if (document.hidden) return; // paused: no scheduled work while hidden
+  snapPrevY = window.scrollY;
+  snapPrevVel = 0;
+  publishSnapshot(true); // dt=0 seed over zeroed state -> velocity exactly 0
   snapRaf = requestAnimationFrame(publishLoop);
 }
 
@@ -1188,6 +1213,7 @@ export function subscribeScrollSnapshot(): () => void {
   snapSubscribers += 1;
   if (snapSubscribers === 1) {
     publishSnapshot(true);
+    document.addEventListener("visibilitychange", onSnapshotVisibility);
     snapRaf = requestAnimationFrame(publishLoop);
   }
   let released = false;
@@ -1195,7 +1221,10 @@ export function subscribeScrollSnapshot(): () => void {
     if (released) return;
     released = true;
     snapSubscribers = Math.max(0, snapSubscribers - 1);
-    if (snapSubscribers === 0) cancelAnimationFrame(snapRaf);
+    if (snapSubscribers === 0) {
+      cancelAnimationFrame(snapRaf);
+      document.removeEventListener("visibilitychange", onSnapshotVisibility);
+    }
   };
 }
 
