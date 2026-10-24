@@ -68,13 +68,18 @@ export function TerminalFlyout() {
   }, []);
 
   // Global Esc fallback (panel-level handler covers the focused case).
+  // Capture phase: xterm's helper-textarea handler stops propagation, so a
+  // bubble listener (and the panel's React onKeyDown) never sees Escape
+  // while the terminal holds focus — the pre-existing defect where Escape
+  // left the flyout open with typed-but-unsubmitted input. Capture on
+  // window fires before the textarea handler, so it cannot be swallowed.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") doClose();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [open, doClose]);
 
   // Lock body scroll while the dialog is open.
