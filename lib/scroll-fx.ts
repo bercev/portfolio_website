@@ -163,6 +163,81 @@ export function flingStormLevel(vPxPerSec: number, blurPx: number): number {
 }
 
 /**
+ * Chapter spotlight (run-2 IDEA, research iter 36 — Hon Tran's
+ * spotlight-driven atmosphere: "WebGL used for atmosphere instead of
+ * spectacle"). The background had EVENTS (ping, fling, glance, storm)
+ * but no persistent per-chapter ATMOSPHERE: a whisper-alpha FROST
+ * radial glow that sits over the reading column as a lighting STATE.
+ * On chapter-index change it crossfades toward its target (~600ms
+ * ease); at rest it is static, so it never joins the event stack.
+ *
+ * DELIBERATE DEVIATION from the filed build note ("taper its alpha
+ * with blur like the fling-storm gate"): the storm tapers to exactly
+ * 0 at the 5px blur cap because a one-shot surge must never fight
+ * the blur into mush — but the spotlight is a STATE, and tapering it
+ * to 0 would delete the atmosphere exactly in the deep chapters
+ * where it lives. So the taper only halves it (1 at 0px blur, 0.5 at
+ * the 5px cap): the canvas's own CSS blur already diffuses the glow
+ * further, and the additive whisper alpha under the glyphs cannot
+ * re-create the v85 gray-smudge (opaque gray mass, not a 0.06-alpha
+ * light). Pure functions — unit-tested in scroll-fx.test.ts.
+ */
+export const SPOTLIGHT_ALPHA_MAX = 0.12; // whisper cap from the filed item
+export const SPOTLIGHT_EASE_RATE = 5; // /s — ~95% toward target in 600ms
+export const SPOTLIGHT_SNAP = 0.001; // snap-to-target band (exact rest)
+
+/** Target glow alpha for a chapter: 0 inside the contact window (conversion quiet), the cap elsewhere. */
+export function spotlightTargetAlpha(chapterIndex: number): number {
+  if (!Number.isFinite(chapterIndex)) return 0;
+  if (chapterIndex < 0 || chapterIndex > CHAPTER_IDS.length - 1) return 0;
+  return chapterIndex === CHAPTER_IDS.length - 1
+    ? 0
+    : SPOTLIGHT_ALPHA_MAX;
+}
+
+/** Blur taper: 1 at 0px blur, 0.5 at the useScrollBlur cap — the state survives depth, halved. */
+export function spotlightBlurTaper(blurPx: number): number {
+  if (!Number.isFinite(blurPx)) return 0;
+  return 1 - 0.5 * Math.min(1, Math.max(0, blurPx / STORM_BLUR_MAX));
+}
+
+/**
+ * Content-column center x for a viewport width, from the station
+ * grid in app/globals.css — no per-tick layout reads. Desktop: the
+ * shell is min(w, 1200px), centered, with clamp(16px, 5vw, 64px)
+ * inline padding, 12 columns, clamp(14px, 1.7vw, 28px) gaps, and the
+ * reading column spans 7 of 12. Mobile (≤900px): the column spans
+ * the full shell, so its center is the viewport center. The jump at
+ * the 900px breakpoint is the CSS's own (the media query re-spans
+ * the column there), not an artifact of this formula.
+ */
+export function spotlightCenterX(viewportW: number): number {
+  if (!Number.isFinite(viewportW) || viewportW <= 0) return 0;
+  if (viewportW <= 900) return viewportW / 2;
+  const pad = Math.min(64, Math.max(16, viewportW * 0.05));
+  const shell = Math.min(viewportW, 1200);
+  const offset = (viewportW - shell) / 2;
+  const gap = Math.min(28, Math.max(14, viewportW * 0.017));
+  const inner = shell - 2 * pad;
+  const col = (inner - 11 * gap) / 12;
+  const mainW = 7 * col + 6 * gap;
+  return offset + pad + mainW / 2;
+}
+
+/** Exponential ease toward the target; dt<=0 holds; snaps exactly onto the target inside SPOTLIGHT_SNAP. */
+export function spotlightAlphaStep(
+  current: number,
+  target: number,
+  dtS: number,
+): number {
+  if (!Number.isFinite(current) || !Number.isFinite(target)) return 0;
+  if (!(dtS > 0)) return current;
+  const next =
+    current + (target - current) * (1 - Math.exp(-SPOTLIGHT_EASE_RATE * dtS));
+  return Math.abs(target - next) < SPOTLIGHT_SNAP ? target : next;
+}
+
+/**
  * Scroll-velocity skills-marquee mappings (run-2 iter 11, research iter 6 —
  * React Bits "Scroll Velocity" pattern). The skills marquee was the site's
  * only type in constant motion that scroll never touched; velocity now

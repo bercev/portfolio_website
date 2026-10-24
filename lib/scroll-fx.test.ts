@@ -66,6 +66,11 @@ import {
   chromaOffsetPx,
   CHROMA_PX_MAX,
   flingStormLevel,
+  spotlightAlphaStep,
+  spotlightBlurTaper,
+  spotlightCenterX,
+  spotlightTargetAlpha,
+  SPOTLIGHT_ALPHA_MAX,
   wipeGlyphChar,
   wipeRawFrac,
   wipeSweepThreshold,
@@ -173,6 +178,52 @@ describe("flingStormLevel", () => {
     expect(flingStormLevel(NaN, 0)).toBe(0);
     expect(flingStormLevel(1500, NaN)).toBe(0);
     expect(flingStormLevel(Infinity, 0)).toBe(0);
+  });
+});
+
+describe("chapter spotlight", () => {
+  it("targets the cap outside contact, exactly 0 inside it", () => {
+    expect(spotlightTargetAlpha(0)).toBe(SPOTLIGHT_ALPHA_MAX);
+    expect(spotlightTargetAlpha(5)).toBe(SPOTLIGHT_ALPHA_MAX);
+    expect(spotlightTargetAlpha(6)).toBe(0);
+  });
+
+  it("returns 0 for out-of-range and degenerate chapter indices", () => {
+    expect(spotlightTargetAlpha(-1)).toBe(0);
+    expect(spotlightTargetAlpha(7)).toBe(0);
+    expect(spotlightTargetAlpha(NaN)).toBe(0);
+  });
+
+  it("halves (never zeroes) the glow at full blur — the state survives depth", () => {
+    expect(spotlightBlurTaper(0)).toBe(1);
+    expect(spotlightBlurTaper(5)).toBe(0.5);
+    expect(spotlightBlurTaper(2.5)).toBe(0.75);
+    expect(spotlightBlurTaper(9)).toBe(0.5);
+    expect(spotlightBlurTaper(NaN)).toBe(0);
+  });
+
+  it("centers on the viewport on mobile, on the 7/12 reading column on desktop", () => {
+    expect(spotlightCenterX(390)).toBe(195);
+    expect(spotlightCenterX(900)).toBe(450);
+    // 1280: shell 1200, offset 40, pad 64, gap 21.76 → center ≈ 412.1
+    expect(spotlightCenterX(1280)).toBeCloseTo(412.13, 1);
+    // Wider viewports keep the 1200px shell centered (gap grows with vw, so not exactly w/2)
+    expect(spotlightCenterX(1600)).toBeCloseTo(571, 0);
+    expect(spotlightCenterX(0)).toBe(0);
+    expect(spotlightCenterX(NaN)).toBe(0);
+  });
+
+  it("eases ~95% toward the target in 600ms and snaps exactly on settle", () => {
+    expect(spotlightAlphaStep(0, 0.12, 0.6)).toBeCloseTo(0.114, 3);
+    expect(spotlightAlphaStep(0.1195, 0.12, 0.6)).toBe(0.12);
+    expect(spotlightAlphaStep(0.12, 0, 0.6)).toBeCloseTo(0.006, 3);
+    expect(spotlightAlphaStep(0.0005, 0, 0.6)).toBe(0);
+  });
+
+  it("holds on dt<=0 and returns 0 for degenerate inputs", () => {
+    expect(spotlightAlphaStep(0.05, 0.12, 0)).toBe(0.05);
+    expect(spotlightAlphaStep(NaN, 0.12, 0.1)).toBe(0);
+    expect(spotlightAlphaStep(0.05, NaN, 0.1)).toBe(0);
   });
 });
 

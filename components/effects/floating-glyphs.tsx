@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
-import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -730,6 +730,15 @@ export function FloatingGlyphs() {
     let pingOX = 0;
     let pingOY = 0;
     let pingMaxR = 0;
+    // Chapter spotlight (run-2 IDEA, research iter 36 — Hon Tran's
+    // spotlight atmosphere): the background's first persistent
+    // LIGHTING STATE, not another event beat. A whisper-alpha FROST
+    // radial glow over the reading column, eased toward its target
+    // on chapter change (~600ms, the spotlightAlphaStep rate) and
+    // static at rest; exactly 0 inside the contact window
+    // (conversion quiet). Animated ticks only — the reduced-motion
+    // still never spotlights, so the RM poster is untouched.
+    let spotAlpha = 0;
     // Offscreen tiles for the 3D objects (depth-of-field compositing).
     // Allocated in resize(); empty when the object layer is unavailable.
     let objSlots: ObjSlot[] = [];
@@ -1004,6 +1013,38 @@ export function FloatingGlyphs() {
           if (canvas.dataset.pingEnv !== q) canvas.dataset.pingEnv = q;
         } else if (canvas.dataset.pingEnv !== undefined) {
           delete canvas.dataset.pingEnv;
+        }
+      }
+      // Chapter spotlight (run-2 iter 37): ease toward the chapter's
+      // target glow (0 inside contact, the cap elsewhere), halved by
+      // the blur taper at depth, and paint it UNDER the glyphs so
+      // the field's characters stay crisp on top. Centered on the
+      // reading column (the grid formula, not viewport center) at
+      // the activation line's height, where headlines sit when a
+      // chapter becomes active. Additive only; skipped entirely
+      // below 0.005, so the settled contact frame is byte-identical
+      // to the pre-spotlight field. Animated ticks only — the
+      // reduced-motion still never spotlights.
+      if (dt > 0) {
+        const blurPx = Math.round(scrollSnapshot.progress * 5 * 2) / 2;
+        const target =
+          spotlightTargetAlpha(curChapter) * spotlightBlurTaper(blurPx);
+        spotAlpha = spotlightAlphaStep(spotAlpha, target, dt);
+        const sq = String(Math.round(spotAlpha * 100) / 100);
+        if (canvas.dataset.spotlight !== sq) canvas.dataset.spotlight = sq;
+        if (spotAlpha >= 0.005) {
+          const cx = spotlightCenterX(w);
+          const cy = h * 0.45;
+          const r = Math.max(w, h) * 0.55;
+          const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          const { r: ar, g: ag, b: ab } = colors.accent;
+          grad.addColorStop(0, `rgba(${ar}, ${ag}, ${ab}, ${spotAlpha})`);
+          grad.addColorStop(1, `rgba(${ar}, ${ag}, ${ab}, 0)`);
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, w, h);
+          ctx.restore();
         }
       }
       ctx.textAlign = "center";
