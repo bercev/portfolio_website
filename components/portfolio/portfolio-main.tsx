@@ -1,3 +1,4 @@
+import { JourneyEpilogue } from "@/components/chrome/journey-epilogue";
 import { About } from "@/components/sections/about";
 import { ContactFooter } from "@/components/sections/contact-footer";
 import { Experience } from "@/components/sections/experience";
@@ -37,6 +38,7 @@ export function PortfolioMain() {
         heading={portfolio.navigation[5].label}
       />
       <ContactFooter content={portfolio.contact} />
+      <JourneyEpilogue />
     </main>
   );
 }

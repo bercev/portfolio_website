@@ -1346,6 +1346,39 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--portfolio-accent);
 }
 
+/* Journey epilogue (run-2 iter 49): the loop-back beat below the contact
+   station. Static text + a plain anchor — no new chrome language, FROST
+   accent only, identical under reduced motion. */
+.journey-epilogue {
+  padding: 3rem 1.25rem 4rem;
+  border-top: 1px solid var(--journey-rule-soft);
+  text-align: center;
+}
+
+.journey-epilogue-mark {
+  margin: 0 0 0.75rem;
+  font: 700 0.95rem/1.4 var(--font-mono);
+  letter-spacing: var(--label-tracking);
+  color: var(--portfolio-accent);
+}
+
+.journey-epilogue-line {
+  margin: 0 0 1rem;
+  font: 400 0.95rem/1.6 var(--font-sans);
+  color: var(--muted-foreground);
+}
+
+.journey-epilogue-top {
+  font: 500 0.95rem/1.4 var(--font-sans);
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.journey-epilogue-top:hover {
+  color: var(--portfolio-accent);
+}
+
 /* Primary email CTA — the highest-intent recruiter action. */
 
 .journey-spec-tags {
