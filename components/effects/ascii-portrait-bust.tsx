@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { approachAngle, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, CHAPTER_IDS, fbm2, gazeAngles, getScrollProgress, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_DIR, GLANCE_IDLE_MS, resolveChapterIndex, scrollShared, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, CHAPTER_IDS, fbm2, gazeAngles, getScrollProgress, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_DIR, GLANCE_IDLE_MS, resolveChapterIndex, scrollShared, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -66,6 +66,9 @@ function RotatingBustCanvas(): React.JSX.Element {
     let cssSize = 0;
     let dpr = 1;
     let timeS = 0;
+    // Previous composed rotation A (rad) — drives the phosphor-ghost
+    // turn-velocity gate. null until the first draw (=> velocity 0).
+    let prevA: number | null = null;
 
     // Gaze tracking (run-2 IDEA iter 5): the head turns toward the pointer —
     // a slow, person-like head turn composed onto the scroll turn, so the
@@ -136,7 +139,7 @@ function RotatingBustCanvas(): React.JSX.Element {
       gazeCenterX = vw - padRight - gazeHalf;
     };
 
-    const draw = () => {
+    const draw = (dtTickS = 0) => {
       if (!cssSize || points.length === 0) return;
       const p = getScrollProgress();
       // Scroll turn + idle sway + pointer gaze + attention glance,
@@ -155,7 +158,27 @@ function RotatingBustCanvas(): React.JSX.Element {
       const half = cssSize / 2;
       const scale = half * 0.94;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssSize, cssSize);
+      // Phosphor-persistence rotation ghosts (run-2 IDEA iter 17): gate
+      // the per-tick fade on turn velocity — mid-rotation frames leave
+      // decaying dithered ghosts, like a real CRT. At/below the deadband
+      // (which the perpetual idle sway never exceeds) this is the exact
+      // pre-change clearRect — the at-rest render is bit-identical by
+      // construction. Otherwise a destination-out fill multiplies every
+      // pixel's alpha by (1 - erase): the standard persistence recipe.
+      const turnVel =
+        prevA === null || dtTickS <= 0 ? 0 : Math.abs(A - prevA) / dtTickS;
+      prevA = A;
+      const erase = bustGhostErase(turnVel);
+      if (erase <= 0) {
+        ctx.clearRect(0, 0, cssSize, cssSize);
+      } else {
+        ctx.save();
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = `rgba(0,0,0,${erase})`;
+        ctx.fillRect(0, 0, cssSize, cssSize);
+        ctx.restore();
+      }
       ctx.font = `${Math.max(4, (cssSize / BUST_GRID) * 2.3)}px "JetBrains Mono", ui-monospace, monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -295,7 +318,7 @@ function RotatingBustCanvas(): React.JSX.Element {
           if (!initial && now - lastMoveT >= GLANCE_IDLE_MS)
             glanceStart = now;
         }
-        draw();
+        draw(acc);
         acc = 0;
       }
       raf = requestAnimationFrame(loop);

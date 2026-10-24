@@ -585,6 +585,39 @@ export function bustWipeDrop(noise01: number, wipeThr01: number): boolean {
 }
 
 /**
+ * Phosphor-persistence rotation ghosts (run-2 IDEA iter 17 — "make my
+ * head rotate and stuff"): the head's scroll rotation reads, but its
+ * motion arc is invisible — on a real CRT, bright moving content leaves
+ * decaying phosphor trails. The bust canvas's per-tick fade is gated on
+ * turn velocity: instead of a full clearRect, a destination-out fill at
+ * the returned erase alpha multiplies every pixel's alpha by
+ * (1 - erase), so mid-rotation frames leave decaying dithered ghosts.
+ *
+ * The deadband is the load-bearing constant: the idle sway never rests
+ * (0.055 rad amplitude at 0.3 rad/s => max 0.0165 rad/s), so the erase is
+ * exactly 0 at/below 0.03 rad/s (~2x the sway peak) and the caller takes
+ * the literal clearRect path — the at-rest render is bit-identical to
+ * the pre-ghost one by construction, not by tuning. Above the deadband
+ * the erase ramps linearly to BUST_GHOST_ERASE_CAP. The gain/cap are a
+ * conservative first pass: brisk flings (~0.3-0.5 rad/s) leave a faint
+ * ~4-frame decay, slow scrolls a whisper, the ~1.2s glance a whisper —
+ * the trail's aesthetics need real-hardware eyes (no parameter-circling
+ * under swiftshader). Pure function — unit-tested.
+ */
+export const BUST_GHOST_DEADBAND = 0.03; // rad/s — above the idle-sway peak
+export const BUST_GHOST_GAIN = 0.55; // erase per (rad/s) above the deadband
+export const BUST_GHOST_ERASE_CAP = 0.7; // never erase more than this/tick
+
+export function bustGhostErase(turnVelRadS: number): number {
+  if (!Number.isFinite(turnVelRadS) || turnVelRadS <= BUST_GHOST_DEADBAND)
+    return 0;
+  return Math.min(
+    BUST_GHOST_ERASE_CAP,
+    BUST_GHOST_GAIN * (turnVelRadS - BUST_GHOST_DEADBAND),
+  );
+}
+
+/**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
  * As scroll depth increases the element gains blur, 0px at the top ramping

@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   approachAngle,
+  bustGhostErase,
+  BUST_GHOST_DEADBAND,
+  BUST_GHOST_ERASE_CAP,
+  BUST_GHOST_GAIN,
   bustLightPresence,
   bustRimLight,
   bustRimShaped,
@@ -588,6 +592,36 @@ describe("bustWipeDrop", () => {
   it("drops points under the front mid-window (hard edge, not a fade)", () => {
     expect(bustWipeDrop(0.1, 0.5)).toBe(true);
     expect(bustWipeDrop(0.9, 0.5)).toBe(false);
+  });
+});
+
+describe("bustGhostErase", () => {
+  it("is exactly 0 at/below the deadband — the at-rest clearRect contract", () => {
+    expect(bustGhostErase(0)).toBe(0);
+    expect(bustGhostErase(BUST_GHOST_DEADBAND)).toBe(0);
+    expect(bustGhostErase(BUST_GHOST_DEADBAND - 1e-4)).toBe(0);
+  });
+
+  it("never trails the perpetual idle sway (0.055 rad @ 0.3 rad/s = 0.0165 rad/s peak)", () => {
+    expect(bustGhostErase(0.055 * 0.3)).toBe(0);
+  });
+
+  it("ramps linearly above the deadband and is monotonic", () => {
+    const a = bustGhostErase(BUST_GHOST_DEADBAND + 0.1);
+    const b = bustGhostErase(BUST_GHOST_DEADBAND + 0.2);
+    expect(a).toBeCloseTo(BUST_GHOST_GAIN * 0.1, 10);
+    expect(b).toBeGreaterThan(a);
+    expect(b).toBeCloseTo(BUST_GHOST_GAIN * 0.2, 10);
+  });
+
+  it("caps the erase — no full-wipe frames on violent flings", () => {
+    expect(bustGhostErase(10)).toBe(BUST_GHOST_ERASE_CAP);
+  });
+
+  it("treats degenerate inputs as rest", () => {
+    expect(bustGhostErase(-1)).toBe(0);
+    expect(bustGhostErase(Number.NaN)).toBe(0);
+    expect(bustGhostErase(Number.POSITIVE_INFINITY)).toBe(0);
   });
 });
 
