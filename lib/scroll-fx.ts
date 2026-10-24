@@ -224,6 +224,73 @@ export function spotlightCenterX(viewportW: number): number {
   return offset + pad + mainW / 2;
 }
 
+/**
+ * Object handoff constellation (run-2 IDEA iter 38 — the filed
+ * "object constellation" item, rescued as a transient EVENT). The filed
+ * item failed its own critique as a persistent web: lines sitting in
+ * every settled frame would cross copy and duplicate the glance/answer
+ * dialogue. This form answers every objection by construction: it
+ * fires ONLY when the dominant object changes (one object handing off
+ * to the next), draws a single dotted segment between the two objects'
+ * mid-window anchors, then decays to exactly 0 — calm at rest, zero
+ * ambient cost. Legibility is structural, not tuned: all three anchors
+ * sit at x≈0.84–0.88 (the quiet right rail where the objects live),
+ * so the segment never crosses the reading column; the dots are 3px
+ * additive FROST, not a mass, so the scroll blur diffuses them rather
+ * than smudging them (no blur taper — tapering would kill the second
+ * handoff, which sits at ~3.6px blur). Desktop only: mobile draws
+ * just the torus, so there is nothing to hand off to. Reduced-motion
+ * untouched: the field's animated ticks own it. Pure functions —
+ * unit-tested in scroll-fx.test.ts.
+ */
+export const CONSTELLATION_ALPHA_MAX = 0.2; // dotted-line peak alpha
+export const CONSTELLATION_TAU_S = 0.5; // decay tau — visible ~1s, gone by cutoff
+export const CONSTELLATION_CUTOFF_S = 1.8; // exactly 0 at/past this
+export const CONSTELLATION_COOLDOWN_MS = 2000; // mirrors the glance cooldown: one beat per 2s
+export const CONSTELLATION_ALPHA_GATE = 0.01; // same gate the field's place() uses to draw an object
+
+/** Index of the loudest object window, or -1 when none is drawn. Strict > keeps ties on the earlier object. */
+export function dominantObject(alphas: readonly number[]): number {
+  let best = -1;
+  let bestVal = CONSTELLATION_ALPHA_GATE;
+  for (let i = 0; i < alphas.length; i++) {
+    const a = alphas[i];
+    if (Number.isFinite(a) && a > bestVal) {
+      best = i;
+      bestVal = a;
+    }
+  }
+  return best;
+}
+
+/** One-shot handoff envelope: 1 at t=0, exponential decay, exactly 0 at/past the cutoff. */
+export function constellationEnvelope(dtS: number): number {
+  if (!Number.isFinite(dtS) || dtS < 0) return 0;
+  if (dtS >= CONSTELLATION_CUTOFF_S) return 0;
+  return Math.exp(-dtS / CONSTELLATION_TAU_S);
+}
+
+/** Viewport-fraction segment between two objects' mid-window anchors, or null for degenerate pairs. */
+export function constellationSegment(
+  from: number,
+  to: number,
+): { x0: number; y0: number; x1: number; y1: number } | null {
+  if (
+    !Number.isInteger(from) ||
+    !Number.isInteger(to) ||
+    from < 0 ||
+    to < 0 ||
+    from >= OBJECT_WINDOWS.length ||
+    to >= OBJECT_WINDOWS.length ||
+    from === to
+  ) {
+    return null;
+  }
+  const a = OBJECT_WINDOWS[from];
+  const b = OBJECT_WINDOWS[to];
+  return { x0: a.mx, y0: a.my, x1: b.mx, y1: b.my };
+}
+
 /** Exponential ease toward the target; dt<=0 holds; snaps exactly onto the target inside SPOTLIGHT_SNAP. */
 export function spotlightAlphaStep(
   current: number,

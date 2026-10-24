@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
-import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, constellationEnvelope, constellationSegment, CONSTELLATION_ALPHA_MAX, CONSTELLATION_COOLDOWN_MS, dominantObject, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -739,6 +739,16 @@ export function FloatingGlyphs() {
     // (conversion quiet). Animated ticks only — the reduced-motion
     // still never spotlights, so the RM poster is untouched.
     let spotAlpha = 0;
+    // Object handoff constellation (run-2 IDEA iter 38): transient
+    // dotted segment between successive dominant objects. -1 dominant
+    // means "no object drawn" (the top of the page, before the torus
+    // fades in); a change from a real dominant to another, past the
+    // glance cooldown, starts one handoff — never on first sight.
+    let constellationDominant = -1;
+    let constellationFrom = -1;
+    let constellationTo = -1;
+    let constellationT0 = 0;
+    let constellationLastMs = 0;
     // Offscreen tiles for the 3D objects (depth-of-field compositing).
     // Allocated in resize(); empty when the object layer is unavailable.
     let objSlots: ObjSlot[] = [];
@@ -1045,6 +1055,68 @@ export function FloatingGlyphs() {
           ctx.fillStyle = grad;
           ctx.fillRect(0, 0, w, h);
           ctx.restore();
+        }
+      }
+      // Object handoff constellation (run-2 IDEA iter 38): on a
+      // dominant-object change, one dotted FROST segment joins the
+      // outgoing and incoming objects' mid-window anchors, then decays
+      // to exactly 0 — a handoff beat, never a persistent web. Drawn
+      // UNDER the glyphs on the main canvas (the object tiles live on
+      // the overlay canvas above, so the segment visibly dives behind
+      // them). Desktop only; animated ticks only, so the RM still and
+      // the mobile single-torus page never constellate. Observability
+      // mirrors data-spotlight: quantized envelope, "0.00" at rest.
+      if (dt > 0 && !mobile) {
+        const p = scrollSnapshot.progress;
+        const dom = dominantObject([
+          windowAlpha(p, OBJECT_WINDOWS[0].a, OBJECT_WINDOWS[0].b),
+          windowAlpha(p, OBJECT_WINDOWS[1].a, OBJECT_WINDOWS[1].b),
+          windowAlpha(p, OBJECT_WINDOWS[2].a, OBJECT_WINDOWS[2].b),
+        ]);
+        if (dom >= 0) {
+          if (
+            constellationDominant >= 0 &&
+            dom !== constellationDominant &&
+            now - constellationLastMs >= CONSTELLATION_COOLDOWN_MS
+          ) {
+            constellationFrom = constellationDominant;
+            constellationTo = dom;
+            constellationT0 = now;
+            constellationLastMs = now;
+          }
+          constellationDominant = dom;
+        } else {
+          constellationDominant = -1;
+        }
+        let cEnv = 0;
+        if (constellationFrom >= 0) {
+          cEnv = constellationEnvelope((now - constellationT0) / 1000);
+          if (cEnv <= 0) {
+            constellationFrom = -1;
+            constellationTo = -1;
+          }
+        }
+        const cq = cEnv.toFixed(2);
+        if (canvas.dataset.constellation !== cq)
+          canvas.dataset.constellation = cq;
+        if (cEnv > 0.01 && constellationTo >= 0) {
+          const seg = constellationSegment(constellationFrom, constellationTo);
+          if (seg) {
+            const x0 = seg.x0 * w;
+            const y0 = seg.y0 * h;
+            const dx = seg.x1 * w - x0;
+            const dy = seg.y1 * h - y0;
+            const len = Math.hypot(dx, dy);
+            const { r: cr, g: cg, b: cb } = colors.accent;
+            ctx.save();
+            ctx.globalCompositeOperation = "lighter";
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${(cEnv * CONSTELLATION_ALPHA_MAX).toFixed(3)})`;
+            for (let d = 0; d <= len; d += 16) {
+              const t = len > 0 ? d / len : 0;
+              ctx.fillRect(x0 + dx * t - 1.5, y0 + dy * t - 1.5, 3, 3);
+            }
+            ctx.restore();
+          }
         }
       }
       ctx.textAlign = "center";

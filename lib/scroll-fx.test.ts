@@ -65,6 +65,12 @@ import {
   velocityStretch,
   chromaOffsetPx,
   CHROMA_PX_MAX,
+  constellationEnvelope,
+  CONSTELLATION_ALPHA_MAX,
+  CONSTELLATION_CUTOFF_S,
+  CONSTELLATION_TAU_S,
+  constellationSegment,
+  dominantObject,
   flingStormLevel,
   spotlightAlphaStep,
   spotlightBlurTaper,
@@ -1226,5 +1232,60 @@ describe("answerWireEnvelope", () => {
 
   it("finishes well before the spin settles (call-and-response, not one smear)", () => {
     expect(ANSWER_WIRE_CUTOFF_S).toBeLessThan(ANSWER_SPIN_CUTOFF_S);
+  });
+});
+
+describe("dominantObject", () => {
+  it("is -1 when nothing is drawn", () => {
+    expect(dominantObject([])).toBe(-1);
+    expect(dominantObject([0, 0, 0])).toBe(-1);
+    expect(dominantObject([0.01, 0.01, 0.01])).toBe(-1); // at the gate, not above it
+    expect(dominantObject([NaN, NaN])).toBe(-1);
+  });
+
+  it("returns the loudest window and keeps ties on the earlier object", () => {
+    expect(dominantObject([0.3, 0.9, 0.5])).toBe(1);
+    expect(dominantObject([0.9, 0.9, 0.2])).toBe(0);
+    expect(dominantObject([0.011])).toBe(0);
+  });
+});
+
+describe("constellationEnvelope", () => {
+  it("starts at 1 and decays exponentially", () => {
+    expect(constellationEnvelope(0)).toBe(1);
+    expect(constellationEnvelope(CONSTELLATION_TAU_S)).toBeCloseTo(1 / Math.E, 10);
+  });
+
+  it("is exactly 0 at/past the cutoff and for degenerate input", () => {
+    expect(constellationEnvelope(CONSTELLATION_CUTOFF_S)).toBe(0);
+    expect(constellationEnvelope(CONSTELLATION_CUTOFF_S + 10)).toBe(0);
+    expect(constellationEnvelope(-1)).toBe(0);
+    expect(constellationEnvelope(NaN)).toBe(0);
+    expect(constellationEnvelope(Infinity)).toBe(0);
+  });
+});
+
+describe("constellationSegment", () => {
+  it("joins the two objects' mid-window anchors", () => {
+    const seg = constellationSegment(0, 1);
+    expect(seg).toEqual({
+      x0: OBJECT_WINDOWS[0].mx,
+      y0: OBJECT_WINDOWS[0].my,
+      x1: OBJECT_WINDOWS[1].mx,
+      y1: OBJECT_WINDOWS[1].my,
+    });
+    expect(seg!.x0).toBeGreaterThan(0.8); // right rail, never the reading column
+    expect(seg!.x1).toBeGreaterThan(0.8);
+  });
+
+  it("is null for degenerate pairs", () => {
+    expect(constellationSegment(1, 1)).toBeNull();
+    expect(constellationSegment(-1, 1)).toBeNull();
+    expect(constellationSegment(0, 3)).toBeNull();
+    expect(constellationSegment(NaN, 1)).toBeNull();
+  });
+
+  it("is a whisper, not a beam", () => {
+    expect(CONSTELLATION_ALPHA_MAX).toBeLessThanOrEqual(0.25);
   });
 });
