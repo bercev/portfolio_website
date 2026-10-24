@@ -163,6 +163,37 @@ export function flingStormLevel(vPxPerSec: number, blurPx: number): number {
 }
 
 /**
+ * Rail tracing beam (run-2 IDEA iter 42, built iter 43): a FROST beam
+ * that travels the line-sidebar rail with scroll, stretching with
+ * scroll speed — Aceternity's Tracing Beam, adapted to the rail the
+ * site already owns. The beam is a gradient segment CENTERED on the
+ * traveler (the scroll-progress arrow), so it extends the existing
+ * marker instead of duplicating it: at rest it is a short static
+ * segment (the base length), on a fling it stretches symmetrically
+ * toward the cap. It shares the chroma/storm deadband (300px/s) and
+ * full-stretch velocity (2200px/s), so reading scrolls never stretch
+ * it and it fires exactly where the other fling effects fire. The
+ * snapshot velocity is already low-passed by the publisher, so under
+ * Lenis easing the length eases rather than jittering — the length
+ * is a pure function of that smoothed value, with no per-tick layout
+ * reads. Under reduced motion the beam element is hidden by a CSS
+ * media query (it always renders, so SSR and the client agree — a
+ * JS-conditional render caused a hydration mismatch), so RM frames
+ * are unchanged. Returns a fraction of the rail height. Pure
+ * function — unit-tested in scroll-fx.test.ts.
+ */
+export const RAIL_BEAM_BASE = 0.06; // rail-height fraction at rest
+export const RAIL_BEAM_MAX = 0.22; // rail-height fraction on a hard fling
+
+export function railBeamLength(vPxPerSec: number): number {
+  if (!Number.isFinite(vPxPerSec)) return RAIL_BEAM_BASE;
+  const t = smoothstep01(
+    (Math.abs(vPxPerSec) - STORM_V_MIN) / (STORM_V_MAX - STORM_V_MIN),
+  );
+  return RAIL_BEAM_BASE + (RAIL_BEAM_MAX - RAIL_BEAM_BASE) * t;
+}
+
+/**
  * Chapter spotlight (run-2 IDEA, research iter 36 — Hon Tran's
  * spotlight-driven atmosphere: "WebGL used for atmosphere instead of
  * spectacle"). The background had EVENTS (ping, fling, glance, storm)

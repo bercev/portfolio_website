@@ -13,6 +13,8 @@ import type { PortfolioContent } from "@/data/content";
 import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import {
   CHAPTER_IDS,
+  RAIL_BEAM_BASE,
+  railBeamLength,
   resolveChapterIndex,
   scrollSnapshot,
   subscribeScrollSnapshot,
@@ -87,6 +89,14 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
   const runFrameRef = useRef<(now: number) => void>(() => undefined);
   const activeIndexRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Rail-beam continuation loop (run-2 iter 43 fix): the beam length
+  // is written on scroll events, but the snapshot velocity decays on
+  // the publisher's own rAF loop with no further scroll event — after
+  // an instant jump the beam would stick stretched until the next
+  // scroll. So a scroll event starts this loop, which keeps rewriting
+  // the length from the live snapshot until it lands exactly on the
+  // base length, then stops (no permanent rAF at rest).
+  const beamFrameRef = useRef<number | null>(null);
   // Scroll state source (run-2 iter 20): the shared snapshot publisher
   // in full-motion — one scroll sample per frame for the rail, the
   // field, the bust and the marquee. Under prefers-reduced-motion the
@@ -126,6 +136,21 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
     lastFrameRef.current = performance.now();
     frameRef.current = requestAnimationFrame(runFrame);
   }, [runFrame]);
+
+  const startBeamLoop = useCallback(() => {
+    if (beamFrameRef.current !== null) return;
+    const tick = () => {
+      const len = reduceMotion
+        ? RAIL_BEAM_BASE
+        : railBeamLength(scrollSnapshot.velocity);
+      navRef.current?.style.setProperty("--beam-len", String(len));
+      // railBeamLength returns exactly the base below the deadband,
+      // so this terminates: no loop runs at rest.
+      beamFrameRef.current =
+        len === RAIL_BEAM_BASE ? null : requestAnimationFrame(tick);
+    };
+    beamFrameRef.current = requestAnimationFrame(tick);
+  }, [reduceMotion]);
 
   const handlePointerMove = (event: PointerEvent<HTMLUListElement>) => {
     itemRefs.current.forEach((item, index) => {
@@ -210,6 +235,10 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
             })()
           : scrollSnapshot.progress;
         navRef.current?.style.setProperty("--progress", String(progress));
+        // Rail tracing beam (run-2 iter 43): start the continuation
+        // loop, which writes the length from the live snapshot until
+        // it settles exactly on the base length.
+        startBeamLoop();
         const slots = measureSectionSlots(items.map((item) => item.id));
         itemRefs.current.forEach((item, index) => {
           item?.style.setProperty("--slot", String(slots[index] ?? 0));
@@ -229,8 +258,12 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
       window.removeEventListener("resize", scheduleUpdate);
       window.removeEventListener("hashchange", scheduleUpdate);
       if (updateFrame !== null) cancelAnimationFrame(updateFrame);
+      if (beamFrameRef.current !== null) {
+        cancelAnimationFrame(beamFrameRef.current);
+        beamFrameRef.current = null;
+      }
     };
-  }, [items, updateActiveSection, reduceMotion]);
+  }, [items, updateActiveSection, reduceMotion, startBeamLoop]);
 
   useEffect(() => {
     runFrameRef.current = runFrame;
@@ -249,10 +282,15 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
       style={
         {
           "--progress": 0,
+          "--beam-len": RAIL_BEAM_BASE,
         } as CSSProperties
       }
     >
       <span aria-hidden="true" className={styles.traveler} />
+      {/* Always rendered: conditioning this on reduceMotion would make
+        the client render differ from SSR (hydration mismatch under
+        RM). It is hidden under reduced motion by CSS instead. */}
+      <span aria-hidden="true" className={styles.beam} />
       <ul
         className={styles.list}
         onPointerMove={handlePointerMove}

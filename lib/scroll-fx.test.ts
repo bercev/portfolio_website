@@ -73,6 +73,9 @@ import {
   constellationSegment,
   dominantObject,
   flingStormLevel,
+  railBeamLength,
+  RAIL_BEAM_BASE,
+  RAIL_BEAM_MAX,
   spotlightAlphaStep,
   spotlightBlurTaper,
   spotlightCenterX,
@@ -185,6 +188,35 @@ describe("flingStormLevel", () => {
     expect(flingStormLevel(NaN, 0)).toBe(0);
     expect(flingStormLevel(1500, NaN)).toBe(0);
     expect(flingStormLevel(Infinity, 0)).toBe(0);
+  });
+});
+
+describe("railBeamLength", () => {
+  it("is exactly the base length at rest and below the deadband", () => {
+    expect(railBeamLength(0)).toBe(RAIL_BEAM_BASE);
+    expect(railBeamLength(299)).toBe(RAIL_BEAM_BASE);
+    expect(railBeamLength(-299)).toBe(RAIL_BEAM_BASE);
+  });
+
+  it("uses |velocity|: negative flings stretch identically", () => {
+    expect(railBeamLength(-1500)).toBe(railBeamLength(1500));
+  });
+
+  it("caps at the max on and above a hard fling", () => {
+    expect(railBeamLength(2200)).toBe(RAIL_BEAM_MAX);
+    expect(railBeamLength(9000)).toBe(RAIL_BEAM_MAX);
+  });
+
+  it("eases through the midpoint (smoothstep, not linear)", () => {
+    expect(railBeamLength(1250)).toBeCloseTo(
+      RAIL_BEAM_BASE + (RAIL_BEAM_MAX - RAIL_BEAM_BASE) * 0.5,
+      10,
+    );
+  });
+
+  it("falls back to the base length for degenerate input", () => {
+    expect(railBeamLength(NaN)).toBe(RAIL_BEAM_BASE);
+    expect(railBeamLength(Infinity)).toBe(RAIL_BEAM_BASE);
   });
 });
 

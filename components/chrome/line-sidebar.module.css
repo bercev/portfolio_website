@@ -51,6 +51,35 @@
   );
 }
 
+/* Rail tracing beam (run-2 iter 43): a gradient segment centered on the
+   traveler that stretches with scroll speed. --beam-len is set on the
+   nav (inline, from the snapshot velocity) and read here with a
+   fallback — never declared on this element itself, or the element's
+   own declaration would shadow the inherited nav value. Same 3px
+   width as the rail line; the gradient fades at both ends so the beam
+   reads as a glow brightening over the progress fill above the
+   traveler and a leading streak over the dotted track below it. */
+.beam {
+  position: absolute;
+  left: 0;
+  top: calc(0.35rem + (100% - 0.7rem) * var(--progress));
+  z-index: 1;
+  width: 3px;
+  height: calc((100% - 0.7rem) * var(--beam-len, 0.06));
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--line-sidebar-accent) 30%,
+    var(--line-sidebar-accent) 70%,
+    transparent
+  );
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--line-sidebar-accent) 70%, transparent)
+  );
+  transform: translateY(-50%);
+}
+
 .list {
   position: relative;
   height: 100%;
@@ -169,5 +198,11 @@
   .marker,
   .link {
     transition: none;
+  }
+
+  /* Hydration-safe RM behavior: the beam element always renders (see
+     line-sidebar.tsx), but it is never visible under reduced motion. */
+  .beam {
+    display: none;
   }
 }
