@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { boundaryShapeGlyph, ditherDissolveLevel, fbm2, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, scrollShared, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
+import { boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, scrollShared, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -711,6 +711,9 @@ export function FloatingGlyphs() {
     // Offscreen tiles for the 3D objects (depth-of-field compositing).
     // Allocated in resize(); empty when the object layer is unavailable.
     let objSlots: ObjSlot[] = [];
+    // Device-pixel ratio captured at resize for the object tiles' tear
+    // grid (the tile canvases are allocated in device px).
+    let tileDpr = 1;
     const makeSlot = (halfExtent: number, dpr: number): ObjSlot | null => {
       const cv = document.createElement("canvas");
       const px = Math.max(2, Math.ceil(halfExtent * 2 * dpr));
@@ -753,6 +756,7 @@ export function FloatingGlyphs() {
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      tileDpr = dpr;
       w = window.innerWidth;
       h = window.innerHeight;
       canvas.width = Math.round(w * dpr);
@@ -1125,6 +1129,46 @@ export function FloatingGlyphs() {
               sctx.fillRect(0, 0, slot.cv.width, slot.cv.height);
               sctx.restore();
             }
+          }
+          // Chapter-boundary dither tear (run-2 IDEA iter 17, built
+          // iter 18 — "the wipe tears the objects too"): the last scroll
+          // layer joins the chapter grammar — the same triangular wipe
+          // gate and fbm hard edge as the bust tear (iter 14), applied to
+          // the object's tile as a destination-out punch at 4-device-px
+          // cells (matches the brand's dither-dot scale). Skipped entirely
+          // at wipeThr 0/1, so the settled render is byte-identical to the
+          // pre-tear object; deliberate dither tear mid-crossing, noise
+          // anchored to the tile so it never boils. Reduced-motion
+          // untouched: this whole block only runs on animated ticks.
+          const wipeThr = scrollShared.wipeThr;
+          if (wipeThr > 0 && wipeThr < 1) {
+            const cell = 4;
+            const tw = slot.cv.width;
+            const th = slot.cv.height;
+            sctx.save();
+            sctx.setTransform(1, 0, 0, 1, 0, 0);
+            sctx.globalCompositeOperation = "destination-out";
+            sctx.fillStyle = "#000";
+            for (let ty = 0; ty < th; ty += cell) {
+              for (let tx = 0; tx < tw; tx += cell) {
+                // bustWipeDrop is the unit-tested pure contract:
+                // triangular depth on wipeThr, 0.55 cap keeps the object
+                // readable at the tear's peak (deliberate dither, not a
+                // glitch). Noise feature size matches the field's wipe.
+                if (
+                  bustWipeDrop(
+                    fbm2(
+                      tx / tileDpr / WIPE_NOISE_PX,
+                      ty / tileDpr / WIPE_NOISE_PX,
+                    ),
+                    wipeThr,
+                  )
+                ) {
+                  sctx.fillRect(tx, ty, cell, cell);
+                }
+              }
+            }
+            sctx.restore();
           }
           const focus = filterOK ? objectDefocus(inspectFocusEnvelope(envelope, iv)) : 0;
           const grow = 1 + 0.06 * iv;
