@@ -128,13 +128,24 @@ function RotatingBustCanvas(): React.JSX.Element {
     // idle-pointer gate keeps the glance from fighting the pointer gaze,
     // and the shared cooldown keeps a fling that crosses a chapter line
     // and an object line in the same second to one beat, not two.
-    const fireGlance = (now: number, dirX: number, dirY: number) => {
+    const fireGlance = (now: number, dirX: number, dirY: number, objIndex = -1) => {
       if (now - lastMoveT < GLANCE_IDLE_MS) return;
       if (now - lastGlanceFire < GLANCE_COOLDOWN_MS) return;
       glanceStart = now;
       glanceDirX = dirX;
       glanceDirY = dirY;
       lastGlanceFire = now;
+      // Object dialogue (run-2 IDEA iter 21, built iter 22): an OBJECT
+      // glance publishes the answer signal — the glyph field reads
+      // scrollShared on its own tick and the glanced-at tile spins up +
+      // flashes its wireframe. Chapter glances have no object to answer,
+      // so they publish nothing; the field owns expiry (nulls the signal
+      // once the envelopes decay to exactly 0). `now` is the rAF
+      // timestamp — same time origin as the field's tick, so the field's
+      // dt math is valid across the two loops.
+      if (objIndex >= 0) {
+        scrollShared.objectAnswer = { obj: objIndex, t0: now };
+      }
     };
 
     const resize = () => {
@@ -368,7 +379,7 @@ function RotatingBustCanvas(): React.JSX.Element {
                 gazeCenterX / vw,
                 (vh / 2 + DIVE_SINK_PX * pNow) / vh,
               );
-              fireGlance(now, d.x, d.y);
+              fireGlance(now, d.x, d.y, i);
               break; // one glance per tick — the cooldown orders the rest
             }
           }

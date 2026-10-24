@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  answerSpinEnvelope,
+  ANSWER_SPIN_CUTOFF_S,
+  ANSWER_SPIN_RATE,
+  ANSWER_SPIN_TAU_S,
+  answerWireEnvelope,
+  ANSWER_WIRE_CUTOFF_S,
+  ANSWER_WIRE_RISE_S,
+  ANSWER_WIRE_TAU_S,
   approachAngle,
   bustGhostErase,
   BUST_GHOST_DEADBAND,
@@ -842,5 +850,62 @@ describe("objectGlanceDir", () => {
 
   it("returns exactly {0,0} for the degenerate on-center case", () => {
     expect(objectGlanceDir(0.5, 0.5, 0.5, 0.5)).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe("answerSpinEnvelope", () => {
+  it("is 1 at t=0 (the answer starts at full spin)", () => {
+    expect(answerSpinEnvelope(0)).toBe(1);
+  });
+
+  it("decays monotonically toward the cutoff", () => {
+    let prev = answerSpinEnvelope(0);
+    for (let t = 0.1; t < ANSWER_SPIN_CUTOFF_S; t += 0.1) {
+      const v = answerSpinEnvelope(t);
+      expect(v).toBeLessThanOrEqual(prev);
+      prev = v;
+    }
+  });
+
+  it("is exactly 0 at/past the cutoff (the at-rest contract)", () => {
+    expect(answerSpinEnvelope(ANSWER_SPIN_CUTOFF_S)).toBe(0);
+    expect(answerSpinEnvelope(ANSWER_SPIN_CUTOFF_S + 10)).toBe(0);
+  });
+
+  it("returns 0 for degenerate input", () => {
+    expect(answerSpinEnvelope(-1)).toBe(0);
+    expect(answerSpinEnvelope(NaN)).toBe(0);
+    expect(answerSpinEnvelope(Infinity)).toBe(0);
+  });
+
+  it("integrates to a visible flick-spin, not a blur", () => {
+    // ∫0^∞ rate·e^(-t/tau) dt = rate·tau; the cutoff at 4τ trims <2%.
+    const gain = ANSWER_SPIN_RATE * ANSWER_SPIN_TAU_S;
+    expect(gain).toBeGreaterThan(1); // >1 rad ≈ 57°: clearly visible
+    expect(gain).toBeLessThan(1.5); // <1.5 rad: a flick, not a blur
+  });
+});
+
+describe("answerWireEnvelope", () => {
+  it("starts at 0, rises fast, then decays (a flash, not a step)", () => {
+    expect(answerWireEnvelope(0)).toBe(0);
+    const peak = answerWireEnvelope(ANSWER_WIRE_RISE_S);
+    expect(peak).toBeGreaterThan(0.5);
+    expect(answerWireEnvelope(ANSWER_WIRE_TAU_S * 3)).toBeLessThan(peak * 0.1);
+  });
+
+  it("is exactly 0 at/past the cutoff", () => {
+    expect(answerWireEnvelope(ANSWER_WIRE_CUTOFF_S)).toBe(0);
+    expect(answerWireEnvelope(ANSWER_WIRE_CUTOFF_S + 10)).toBe(0);
+  });
+
+  it("returns 0 for degenerate input", () => {
+    expect(answerWireEnvelope(-1)).toBe(0);
+    expect(answerWireEnvelope(NaN)).toBe(0);
+    expect(answerWireEnvelope(Infinity)).toBe(0);
+  });
+
+  it("finishes well before the spin settles (call-and-response, not one smear)", () => {
+    expect(ANSWER_WIRE_CUTOFF_S).toBeLessThan(ANSWER_SPIN_CUTOFF_S);
   });
 });

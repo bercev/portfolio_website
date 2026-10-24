@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -418,6 +418,10 @@ function drawCube(
 const WIRE_CH = "+";
 const WIRE_FONT_PX = 12;
 const WIRE_ALPHA = 0.32;
+// The object dialogue's wire flash reaches ANSWER_WIRE_ALPHA absolute —
+// the wire renderers multiply their alpha param by WIRE_ALPHA, so the
+// flash is passed through this gain to land at the absolute level.
+const ANSWER_WIRE_GAIN = ANSWER_WIRE_ALPHA / WIRE_ALPHA;
 
 /**
  * Blueprint wireframe of the torus (run-2 IDEA iter 9): 8 meridians +
@@ -670,6 +674,15 @@ export function FloatingGlyphs() {
     // leaves the render identical; animated ticks only (dt>0), so the
     // reduced-motion still is untouched.
     let insp = [0, 0, 0];
+    // Object dialogue (run-2 IDEA iter 21, built iter 22): per-object
+    // integrated spin phase from answered glances + the live wire-flash
+    // envelope. The phase accumulates only while the one-shot spin
+    // envelope is alive — after the cutoff the extra rate is exactly 0,
+    // so the object rests at a new (stable) orientation; the wire flash
+    // decays to exactly 0. Index order = OBJECT_WINDOWS (torus, sphere,
+    // cube); the mobile torus reuses slot/index 0.
+    const ansPhase = [0, 0, 0];
+    const ansWire = [0, 0, 0];
     // Chapter-reactive vocabulary (run-2 IDEA iter 7): the active chapter
     // and the section tops come from the shared snapshot publisher
     // (run-2 iter 20) — the same 45%-line resolution the bust's glance
@@ -791,7 +804,7 @@ export function FloatingGlyphs() {
       glyphs = Array.from({ length: count }, () => makeGlyph(w, h, mobile));
     };
 
-    const draw = (dt: number) => {
+    const draw = (dt: number, now = 0) => {
       const colors = colorsRef.current;
       if (!colors) return;
       timeS += dt;
@@ -1086,6 +1099,45 @@ export function FloatingGlyphs() {
         const sX = stretch > 0.001 ? 1 - 0.15 * stretch : 1;
         const sY = stretch > 0.001 ? 1 + 2.2 * stretch : 1;
         octx.clearRect(0, 0, w, h);
+        // Object dialogue (run-2 IDEA iter 21, built iter 22): the bust
+        // publishes { obj, t0 } into scrollShared when an OBJECT glance
+        // fires — the answering tile spins up (integrated into its
+        // rotation phase) and flashes its wireframe. Chapter glances
+        // publish nothing, so the flash stays exactly 0 for them. The
+        // field owns expiry: once both envelopes read 0 the signal is
+        // nulled, so a stale answer can never stick.
+        let ansObj = -1;
+        let ansSpin = 0;
+        if (scrollShared.objectAnswer) {
+          const ans = scrollShared.objectAnswer;
+          if (ans.obj < 0 || ans.obj >= 3) {
+            scrollShared.objectAnswer = null; // degenerate — the bust only writes 0..2
+          } else {
+            const dtS = (now - ans.t0) / 1000;
+            ansSpin = answerSpinEnvelope(dtS);
+            const wire = answerWireEnvelope(dtS);
+            if (ansSpin <= 0 && wire <= 0) {
+              scrollShared.objectAnswer = null;
+            } else {
+              ansObj = ans.obj;
+              ansPhase[ansObj] += ansSpin * ANSWER_SPIN_RATE * dt;
+              ansWire[ansObj] = wire;
+            }
+          }
+        }
+        for (let i = 0; i < 3; i++) {
+          if (i !== ansObj) ansWire[i] = 0;
+        }
+        // Observability for probes (mirrors data-ping-env on the field
+        // canvas): the peak live answer envelope, quantized — "0.00" at
+        // rest. `now` shares the rAF origin with the bust's t0, so probes
+        // gate on the component's own clock, not wall-clock.
+        if (ocanvas) {
+          const q =
+            ansObj >= 0 ? Math.max(ansSpin, ansWire[ansObj]).toFixed(2) : "0.00";
+          if (ocanvas.dataset.objectAnswer !== q)
+            ocanvas.dataset.objectAnswer = q;
+        }
         // Render one object into its tile, then blit it to (cx, cy) with
         // its focus blur. `envelope` is the window alpha (0..1);
         // `inspIdx` selects the object's smoothed inspection amount and
@@ -1116,7 +1168,13 @@ export function FloatingGlyphs() {
           // The envelope drives the dither sweep below, not alpha —
           // `sAlpha` (the fling warp dip) still dims the render.
           render(sctx, sAlpha);
-          renderWire(sctx, iv * sAlpha);
+          // Object dialogue: the answering tile's wireframe flashes at up
+          // to ANSWER_WIRE_ALPHA absolute (via ANSWER_WIRE_GAIN), drawn
+          // into the tile before the dither mask so it dissolves with
+          // the object — the same layering as the inspection blueprint.
+          // inspIdx doubles as the object index (0/1/2 = torus/sphere/
+          // cube, mobile torus reuses 0).
+          renderWire(sctx, (iv + ansWire[inspIdx] * ANSWER_WIRE_GAIN) * sAlpha);
           const level = ditherDissolveLevel(envelope);
           if (level < 15) {
             const tile = getDitherTiles()[level];
@@ -1185,7 +1243,7 @@ export function FloatingGlyphs() {
             const slot = objSlots[0];
             const pose = divePose(TORUS_DIVE_MOBILE, windowT(p, 0.02, 0.55), w, h);
             const r = 54 * pose.s;
-            const A = timeS * 0.11 + p * 5;
+            const A = timeS * 0.11 + p * 5 + ansPhase[0];
             const B = timeS * 0.07 + p * 3;
             place(slot, a, pose.cx, pose.cy, 0, r * 1.5,
               (c, alpha) =>
@@ -1200,7 +1258,7 @@ export function FloatingGlyphs() {
             const slot = objSlots[0];
             const pose = divePose(TORUS_DIVE, windowT(p, OBJECT_WINDOWS[0].a, OBJECT_WINDOWS[0].b), w, h);
             const r = Math.min(104, w * 0.082) * pose.s;
-            const A = timeS * 0.11 + p * 5;
+            const A = timeS * 0.11 + p * 5 + ansPhase[0];
             const B = timeS * 0.07 + p * 3;
             place(slot, tA, pose.cx, pose.cy, 0, r * 1.5,
               (c, alpha) =>
@@ -1214,7 +1272,7 @@ export function FloatingGlyphs() {
             const slot = objSlots[1];
             const pose = divePose(SPHERE_DIVE, windowT(p, OBJECT_WINDOWS[1].a, OBJECT_WINDOWS[1].b), w, h);
             const r = 74 * pose.s;
-            const rotY = timeS * 0.15 + p * 7;
+            const rotY = timeS * 0.15 + p * 7 + ansPhase[1];
             place(slot, sA, pose.cx, pose.cy, 1, r * 1.6,
               (c, alpha) =>
                 drawSphere(c, slot.half, slot.half, r, rotY, 0.5, accent, 0.46 * alpha),
@@ -1227,7 +1285,7 @@ export function FloatingGlyphs() {
             const slot = objSlots[2];
             const pose = divePose(CUBE_DIVE, windowT(p, OBJECT_WINDOWS[2].a, OBJECT_WINDOWS[2].b), w, h);
             const s = 52 * pose.s;
-            const rotY = timeS * 0.2 + p * 6;
+            const rotY = timeS * 0.2 + p * 6 + ansPhase[2];
             const rotX = 0.6 + timeS * 0.13 + p * 2;
             place(slot, cA, pose.cx, pose.cy, 2, s * 1.8,
               (c, alpha) =>
@@ -1259,7 +1317,7 @@ export function FloatingGlyphs() {
       last = now;
       acc += frameDt;
       if (acc >= TICK_S) {
-        draw(acc);
+        draw(acc, now);
         acc = 0;
       }
       raf = requestAnimationFrame(loop);

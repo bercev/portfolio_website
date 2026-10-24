@@ -476,6 +476,57 @@ export function objectGlanceDir(
  */
 export const GLANCE_COOLDOWN_MS = 2000;
 
+/* ------------------------------------------------------------------ */
+/* Object dialogue (run-2 IDEA iter 21, filed — built iter 22): the    */
+/* glanced-at object answers the head's glance — a one-shot spin-up   */
+/* of its rotation plus a brief wireframe flash on its tile. The bust  */
+/* publishes the answer into scrollShared when an OBJECT glance fires  */
+/* (chapter glances have no object to answer); the glyph field reads   */
+/* it on its own tick and applies the envelopes to the matching tile.  */
+/* The glance's idle gate + shared cooldown are inherited — an answer  */
+/* can only ever follow a real fired glance, at most one per 2s.       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Peak extra angular velocity of the answering object, rad/s — over the
+ * ~0.5s tau the object gains ~1.1 rad (~63°): a visible flick-spin that
+ * settles, not a blur. Integrated into the tile's rotation phase, so
+ * after the cutoff the rate returns to base exactly and the object
+ * rests at a new (stable) orientation.
+ */
+export const ANSWER_SPIN_RATE = 2.2;
+
+/**
+ * One-shot spin envelope: 1 at t=0, exponential decay with a ~0.5s tau,
+ * exactly 0 at/past the cutoff — the at-rest contract mirrors the
+ * glance's (GLANCE_TAU_MS/GLANCE_CUTOFF_MS). Pure function —
+ * unit-tested.
+ */
+export const ANSWER_SPIN_TAU_S = 0.5;
+export const ANSWER_SPIN_CUTOFF_S = 2.0;
+export function answerSpinEnvelope(dtS: number): number {
+  if (!Number.isFinite(dtS) || dtS < 0) return 0;
+  if (dtS >= ANSWER_SPIN_CUTOFF_S) return 0;
+  return Math.exp(-dtS / ANSWER_SPIN_TAU_S);
+}
+
+/**
+ * One-shot wireframe flash envelope: ~80ms rise, ~0.35s decay, exactly 0
+ * at/past the cutoff — the flash is over well before the spin settles,
+ * so the two beats read as call-and-response, not one smear. Pure
+ * function — unit-tested.
+ */
+export const ANSWER_WIRE_RISE_S = 0.08;
+export const ANSWER_WIRE_TAU_S = 0.35;
+export const ANSWER_WIRE_CUTOFF_S = 1.4;
+/** Absolute wire alpha at the flash peak (inspection whisper is 0.32). */
+export const ANSWER_WIRE_ALPHA = 0.55;
+export function answerWireEnvelope(dtS: number): number {
+  if (!Number.isFinite(dtS) || dtS < 0) return 0;
+  if (dtS >= ANSWER_WIRE_CUTOFF_S) return 0;
+  return smoothstep01(dtS / ANSWER_WIRE_RISE_S) * Math.exp(-dtS / ANSWER_WIRE_TAU_S);
+}
+
 /**
  * Deterministic 32-bit integer hash → [0, 1). The entropy source for
  * the procedural noise below (and for stable per-glyph picks) —
@@ -630,8 +681,17 @@ export function wipeGlyphChar(
  * Module-level on purpose: both are singleton background layers.
  * Defaults to 0 (rest). The bust never mounts under reduced motion,
  * so no RM branch is needed.
+ *
+ * objectAnswer is the reverse channel (run-2 IDEA iter 22 — the object
+ * dialogue): written by the bust when an OBJECT glance fires
+ * ({ obj: index into OBJECT_WINDOWS, t0: rAF timestamp }), read by the
+ * glyph field on its own tick. The field owns expiry — it nulls the
+ * signal once both envelopes read exactly 0. Defaults to null (rest).
  */
-export const scrollShared = { wipeThr: 0 };
+export const scrollShared = {
+  wipeThr: 0,
+  objectAnswer: null as { obj: number; t0: number } | null,
+};
 
 /* ------------------------------------------------------------------ */
 /* Single scroll snapshot publisher (run-2 iter 20 — the iter-19       */
