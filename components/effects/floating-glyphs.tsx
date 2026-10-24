@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
-import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, constellationEnvelope, constellationSegment, CONSTELLATION_ALPHA_MAX, CONSTELLATION_COOLDOWN_MS, dominantObject, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectGhostErase, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, shouldFireKeyRipple, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, constellationEnvelope, constellationSegment, CONSTELLATION_ALPHA_MAX, CONSTELLATION_COOLDOWN_MS, dominantObject, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectGhostErase, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, shouldFireKeyRipple, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, transmitBurstOrigin, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -84,6 +84,20 @@ const KEY_RIPPLE_DURATION_S = 1.0;
 const KEY_RIPPLE_RADIUS_FRAC = 0.22;
 const KEY_RIPPLE_ALPHA_MAX = 0.25;
 const KEY_RIPPLE_INTERVAL_MS = 250;
+
+/**
+ * Transmit burst (run-2 IDEA iter 24, built iter 50): the contact
+ * form's successful submit fires a one-shot dithered shockwave from
+ * the form's position — the site's conversion-climax beat, and the
+ * only action-gated beat on a submit path (the keystroke ripple
+ * owns typing). Same grammar as the chapter ping (1.8s wavefront,
+ * 0.75 short-side radius, 0.35 peak alpha, dots only, no glyph lift,
+ * no chroma split), centered on the form instead of the viewport
+ * middle. One shot, decays to exactly 0, draws nothing at rest.
+ */
+const TRANSMIT_BURST_DURATION_S = 1.8;
+const TRANSMIT_BURST_RADIUS_FRAC = 0.75;
+const TRANSMIT_BURST_ALPHA_MAX = 0.35;
 
 /**
  * Chapter-reactive glyph vocabulary (run-2 IDEA iter 7): the field
@@ -754,6 +768,19 @@ export function FloatingGlyphs() {
      */
     let keyRipples: Array<{ t0: number; ox: number; oy: number }> = [];
     let lastKeyRippleMs = -Infinity;
+    /**
+     * Transmit burst (run-2 IDEA iter 24, built iter 50): one-shot
+     * dither rings fired by a successful contact-form submit — the
+     * form dispatches a `contact-transmit` window event on
+     * setStatus("sent"). Each burst stores its own origin (the
+     * form's rect center at fire time; viewport center fallback)
+     * and its timeS timestamp, so the envelope runs on the tick's
+     * own clock — the same headless-rAF honesty as data-ping-env.
+     * At most one per page load in practice: success replaces the
+     * form with the receipt panel, so no second submit can fire
+     * without a reload.
+     */
+    let transmitBursts: Array<{ t0: number; ox: number; oy: number }> = [];
     // Per-tick ping geometry (assigned inside the animated dt>0 block;
     // the reduced-motion still leaves these at 0 with pings empty, so
     // the ping loop below is dead code there).
@@ -1371,6 +1398,57 @@ export function FloatingGlyphs() {
         }
       }
 
+      // Transmit burst (run-2 IDEA iter 24, built iter 50): a
+      // successful contact-form submit fires a one-shot dithered
+      // shockwave from the form's position — the ping ring's
+      // dot-stamping machinery with its own origin, radius and
+      // duration. Dots only (no glyph lift, no chroma split):
+      // a quiet beat that decays to exactly 0 and draws nothing
+      // at rest, so the settled frame is byte-identical to the
+      // pre-burst field. Animated ticks only — the reduced-motion
+      // still never bursts (the listener doesn't exist there).
+      // Observability mirrors data-ping-env: quantized live
+      // envelope, deleted when no burst is alive.
+      if (dt > 0) {
+        transmitBursts = transmitBursts.filter(
+          (b) => timeS - b.t0 < TRANSMIT_BURST_DURATION_S,
+        );
+        if (transmitBursts.length > 0) {
+          const q = String(
+            Math.round(
+              pingEnvelope(
+                timeS - transmitBursts[0].t0,
+                TRANSMIT_BURST_DURATION_S,
+              ) * 20,
+            ) / 20,
+          );
+          if (canvas.dataset.transmitBurst !== q)
+            canvas.dataset.transmitBurst = q;
+          const maxR = Math.min(w, h) * TRANSMIT_BURST_RADIUS_FRAC;
+          for (const b of transmitBursts) {
+            const e = timeS - b.t0;
+            const env = pingEnvelope(e, TRANSMIT_BURST_DURATION_S);
+            if (env <= 0.01) continue;
+            const r = pingRadius01(e, TRANSMIT_BURST_DURATION_S) * maxR;
+            if (r < 2) continue;
+            const pitch = 5;
+            ctx.fillStyle = rgba(colors.accent, env * TRANSMIT_BURST_ALPHA_MAX);
+            const steps = Math.max(24, Math.floor((2 * Math.PI * r) / pitch));
+            for (let s = 0; s < steps; s++) {
+              const a = (s / steps) * Math.PI * 2;
+              const x = b.ox + r * Math.cos(a);
+              const y = b.oy + r * Math.sin(a);
+              if (x < 0 || y < 0 || x >= w || y >= h) continue;
+              if (blueNoiseThreshold(Math.round(x), Math.round(y)) >= env * 255)
+                continue;
+              ctx.fillRect(x, y, 2, 2);
+            }
+          }
+        } else if (canvas.dataset.transmitBurst !== undefined) {
+          delete canvas.dataset.transmitBurst;
+        }
+      }
+
       // Fling dither storm (run-2 IDEA iter 32, built iter 35): on a
       // hard fling the field briefly densifies with blue-noise dots —
       // the same isotropic grain as the ping ring's dots, stamped on a
@@ -1752,6 +1830,34 @@ export function FloatingGlyphs() {
         oy: (pointerY * 0.5 + 0.5) * h,
       });
     };
+    /**
+     * Transmit burst (run-2 IDEA iter 24, built iter 50): the
+     * contact form dispatches `contact-transmit` on a successful
+     * submit. The origin resolves at fire time from the form's
+     * rect — the receipt panel keeps the same
+     * `.journey-contact-form` class, so the query works whether
+     * React has swapped the form for the receipt yet or not.
+     * Registered only on the animated path, so the reduced-motion
+     * still never bursts and the array can't grow while no tick
+     * prunes it.
+     */
+    const onContactTransmit = () => {
+      const el = document.querySelector(".journey-contact-form");
+      const rect = el ? el.getBoundingClientRect() : null;
+      const { ox, oy } = transmitBurstOrigin(
+        rect
+          ? {
+              left: rect.left,
+              top: rect.top,
+              width: rect.width,
+              height: rect.height,
+            }
+          : null,
+        w,
+        h,
+      );
+      transmitBursts.push({ t0: timeS, ox, oy });
+    };
     // When the pointer is no longer over the page the light-wash relaxes
     // back to exactly 0 (same "no pointer, no wash" contract as the gaze
     // relaxation in the portrait bust).
@@ -1807,6 +1913,7 @@ export function FloatingGlyphs() {
       root.setAttribute("data-ascii", "active");
       window.addEventListener("pointermove", onPointer, { passive: true });
       window.addEventListener("terminal-keystroke", onTerminalKeystroke);
+      window.addEventListener("contact-transmit", onContactTransmit);
       document.addEventListener("pointerleave", onPointerGone);
       window.addEventListener("blur", onPointerGone);
       document.addEventListener("visibilitychange", onVisibility);
@@ -1824,6 +1931,7 @@ export function FloatingGlyphs() {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("terminal-keystroke", onTerminalKeystroke);
+      window.removeEventListener("contact-transmit", onContactTransmit);
       document.removeEventListener("pointerleave", onPointerGone);
       window.removeEventListener("blur", onPointerGone);
       document.removeEventListener("visibilitychange", onVisibility);

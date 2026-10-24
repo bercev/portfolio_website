@@ -645,6 +645,39 @@ export function shouldFireKeyRipple(
   return nowMs - lastFireMs >= Math.max(0, intervalMs);
 }
 
+/**
+ * Transmit burst origin (run-2 IDEA iter 24, built iter 50): the
+ * contact form's successful submit fires a one-shot dithered
+ * shockwave from the form's position. The origin is the form
+ * element's rect center in client coordinates — the field canvas
+ * covers the viewport 1:1 in CSS pixels (resize() sets w/h from
+ * window.innerWidth/innerHeight), so client coords map directly
+ * onto draw coords. A missing or degenerate rect falls back to
+ * viewport center, so the burst can never fire off-canvas.
+ * Pure function — unit-tested.
+ */
+export function transmitBurstOrigin(
+  rect: { left: number; top: number; width: number; height: number } | null,
+  viewportW: number,
+  viewportH: number,
+): { ox: number; oy: number } {
+  if (
+    rect === null ||
+    !Number.isFinite(rect.left) ||
+    !Number.isFinite(rect.top) ||
+    !Number.isFinite(rect.width) ||
+    !Number.isFinite(rect.height) ||
+    rect.width <= 0 ||
+    rect.height <= 0
+  ) {
+    return { ox: viewportW / 2, oy: viewportH / 2 };
+  }
+  return {
+    ox: rect.left + rect.width / 2,
+    oy: rect.top + rect.height / 2,
+  };
+}
+
 // Portrait attention glance (run-2 IDEA iter 16): on chapter activation
 // with an idle pointer, the bust glances toward the new chapter's
 // headline — an additive yaw offset with an exponential decay, so the

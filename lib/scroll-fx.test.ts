@@ -63,6 +63,7 @@ import {
   pingEnvelope,
   pingRadius01,
   shouldFireKeyRipple,
+  transmitBurstOrigin,
   resolveChapterIndex,
   shapeGlyphForTangent,
   smoothstep01,
@@ -566,6 +567,25 @@ describe("shouldFireKeyRipple", () => {
   it("never fires on a degenerate nowMs, allows on a degenerate lastFireMs", () => {
     expect(shouldFireKeyRipple(1000, NaN)).toBe(false);
     expect(shouldFireKeyRipple(NaN, 1000)).toBe(true);
+  });
+});
+
+describe("transmitBurstOrigin", () => {
+  it("centers on the form rect", () => {
+    expect(
+      transmitBurstOrigin({ left: 100, top: 200, width: 400, height: 300 }, 1280, 800),
+    ).toEqual({ ox: 300, oy: 350 });
+  });
+  it("falls back to viewport center on a missing rect", () => {
+    expect(transmitBurstOrigin(null, 1280, 800)).toEqual({ ox: 640, oy: 400 });
+  });
+  it("falls back to viewport center on a degenerate rect", () => {
+    expect(
+      transmitBurstOrigin({ left: 0, top: 0, width: 0, height: 300 }, 1280, 800),
+    ).toEqual({ ox: 640, oy: 400 });
+    expect(
+      transmitBurstOrigin({ left: NaN, top: 0, width: 100, height: 100 }, 1280, 800),
+    ).toEqual({ ox: 640, oy: 400 });
   });
 });
 

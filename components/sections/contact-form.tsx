@@ -59,6 +59,14 @@ export function ContactForm() {
         throw new Error(data?.error ?? `request failed (${res.status})`);
       }
       setStatus("sent");
+      // Transmit burst (run-2 IDEA iter 24, built iter 50): a
+      // successful submit fires a one-shot dithered shockwave on
+      // the glyph field from the form's position — the terminal's
+      // keystroke-event pattern, applied to the conversion climax.
+      // Fires only on success, never on error or validation
+      // failure; the field listener resolves the origin at fire
+      // time (the receipt panel keeps this form's class).
+      window.dispatchEvent(new CustomEvent("contact-transmit"));
     } catch (err) {
       setStatus("error");
       setError(
