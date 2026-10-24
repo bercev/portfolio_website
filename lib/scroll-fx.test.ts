@@ -10,6 +10,15 @@ import {
   ANSWER_WIRE_RISE_S,
   ANSWER_WIRE_TAU_S,
   approachAngle,
+  attentionStep,
+  attentionTargetYaw,
+  ATTENTION_FRAC,
+  ATTENTION_IDLE_MS,
+  ATTENTION_REST,
+  ATTENTION_SETTLE_TICKS,
+  ATTENTION_STARE_MS,
+  ATTENTION_VEL_DEADBAND,
+  type AttentionState,
   bustGhostErase,
   BUST_GHOST_DEADBAND,
   BUST_GHOST_ERASE_CAP,
@@ -960,6 +969,114 @@ describe("answerSpinEnvelope", () => {
     const gain = ANSWER_SPIN_RATE * ANSWER_SPIN_TAU_S;
     expect(gain).toBeGreaterThan(1); // >1 rad ≈ 57°: clearly visible
     expect(gain).toBeLessThan(1.5); // <1.5 rad: a flick, not a blur
+  });
+});
+
+describe("attentionStep / attentionTargetYaw", () => {
+  const NOW = 100_000;
+  const IDLE_LAST_MOVE = NOW - 10_000; // pointer idle far past the gate
+  const step = (
+    prev: AttentionState,
+    vel: number,
+    nowMs = NOW,
+    lastMoveMs = IDLE_LAST_MOVE,
+  ) => attentionStep(prev, vel, nowMs, lastMoveMs);
+  const engage = (): AttentionState => {
+    let s: AttentionState = ATTENTION_REST;
+    for (let i = 0; i < ATTENTION_SETTLE_TICKS; i++) s = step(s, 0);
+    return s;
+  };
+
+  it("stays disengaged while scrolling", () => {
+    const s = step(ATTENTION_REST, 500);
+    expect(s.engagedAt).toBe(Number.NEGATIVE_INFINITY);
+    expect(s.settledTicks).toBe(0);
+  });
+
+  it("engages after ATTENTION_SETTLE_TICKS settled idle ticks", () => {
+    let s: AttentionState = ATTENTION_REST;
+    for (let i = 0; i < ATTENTION_SETTLE_TICKS - 1; i++) s = step(s, 0);
+    expect(s.engagedAt).toBe(Number.NEGATIVE_INFINITY);
+    s = step(s, 0);
+    expect(s.engagedAt).toBe(NOW);
+  });
+
+  it("does not engage while the pointer is active", () => {
+    let s: AttentionState = ATTENTION_REST;
+    for (let i = 0; i < ATTENTION_SETTLE_TICKS; i++)
+      s = step(s, 0, NOW, NOW - ATTENTION_IDLE_MS + 1);
+    expect(s.engagedAt).toBe(Number.NEGATIVE_INFINITY);
+  });
+
+  it("engages at exactly the idle boundary", () => {
+    let s: AttentionState = ATTENTION_REST;
+    for (let i = 0; i < ATTENTION_SETTLE_TICKS; i++)
+      s = step(s, 0, NOW, NOW - ATTENTION_IDLE_MS);
+    expect(s.engagedAt).toBe(NOW);
+  });
+
+  it("treats sub-deadband velocity as settled, deadband as movement", () => {
+    let s: AttentionState = ATTENTION_REST;
+    for (let i = 0; i < ATTENTION_SETTLE_TICKS; i++)
+      s = step(s, ATTENTION_VEL_DEADBAND - 0.001);
+    expect(s.engagedAt).toBe(NOW);
+    const released = step(s, ATTENTION_VEL_DEADBAND);
+    expect(released.engagedAt).toBe(Number.NEGATIVE_INFINITY);
+    expect(released.settledTicks).toBe(0);
+  });
+
+  it("releases on scroll movement", () => {
+    const s = step(engage(), 500);
+    expect(s.engagedAt).toBe(Number.NEGATIVE_INFINITY);
+    expect(s.settledTicks).toBe(0);
+  });
+
+  it("releases on pointer activity", () => {
+    const s = step(engage(), 0, NOW + 1000, NOW + 1000);
+    expect(s.engagedAt).toBe(Number.NEGATIVE_INFINITY);
+    expect(s.settledTicks).toBe(0);
+  });
+
+  it("anti-stare releases at ATTENTION_STARE_MS and requires a fresh settle", () => {
+    const engaged = engage();
+    const released = step(engaged, 0, NOW + ATTENTION_STARE_MS);
+    expect(released.engagedAt).toBe(Number.NEGATIVE_INFINITY);
+    expect(released.settledTicks).toBe(0);
+    // One settled tick after release is not enough to re-engage.
+    const once = step(released, 0, NOW + ATTENTION_STARE_MS + 100);
+    expect(once.engagedAt).toBe(Number.NEGATIVE_INFINITY);
+    expect(once.settledTicks).toBe(1);
+  });
+
+  it("treats lastMoveMs = -Infinity as idle (the never-moved sentinel), not degenerate", () => {
+    // Regression: the first guard rejected -Infinity outright, so the
+    // bust — whose lastMoveT starts at -Infinity exactly like the
+    // glance's — could never engage in-situ.
+    let s: AttentionState = ATTENTION_REST;
+    for (let i = 0; i < ATTENTION_SETTLE_TICKS; i++)
+      s = attentionStep(s, 0, NOW, Number.NEGATIVE_INFINITY);
+    expect(s.engagedAt).toBe(NOW);
+    expect(attentionTargetYaw(s)).toBeLessThan(0);
+  });
+
+  it("degenerate input fails disengaged", () => {
+    expect(step(ATTENTION_REST, NaN).engagedAt).toBe(
+      Number.NEGATIVE_INFINITY,
+    );
+    expect(
+      attentionStep(engage(), 0, NaN, IDLE_LAST_MOVE).engagedAt,
+    ).toBe(Number.NEGATIVE_INFINITY);
+    expect(
+      attentionStep(engage(), 0, NOW, NaN).engagedAt,
+    ).toBe(Number.NEGATIVE_INFINITY);
+  });
+
+  it("target yaw is a derived fraction of the glance amplitude, 0 when disengaged", () => {
+    expect(attentionTargetYaw(ATTENTION_REST)).toBe(0);
+    const target = attentionTargetYaw(engage());
+    expect(target).toBeCloseTo(ATTENTION_FRAC * GLANCE_AMP_RAD * GLANCE_DIR, 12);
+    expect(target).toBeLessThan(0); // toward the content column (GLANCE_DIR = -1)
+    expect(Math.abs(target)).toBeLessThan(GLANCE_AMP_RAD); // a whisper of the glance
   });
 });
 

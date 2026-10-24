@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { approachAngle, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, contactFaceRamp, fbm2, gazeAngles, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_COOLDOWN_MS, GLANCE_DIR, GLANCE_IDLE_MS, objectGlanceDir, OBJECT_WINDOWS, objectWindowCrossed, objectWindowPos, scrollShared, scrollSnapshot, smoothstep01, subscribeScrollSnapshot, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, attentionStep, attentionTargetYaw, ATTENTION_REST, type AttentionState, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, contactFaceRamp, fbm2, gazeAngles, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_COOLDOWN_MS, GLANCE_DIR, GLANCE_IDLE_MS, objectGlanceDir, OBJECT_WINDOWS, objectWindowCrossed, objectWindowPos, scrollShared, scrollSnapshot, smoothstep01, subscribeScrollSnapshot, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -124,6 +124,19 @@ function RotatingBustCanvas(): React.JSX.Element {
     let lastGlanceFire = Number.NEGATIVE_INFINITY; // cooldown across both sources
     let prevObjT: number[] | null = null; // per-object window positions, last tick
 
+    // Sustained attention (run-2 IDEA iter 28): between scroll gestures —
+    // while the visitor is actually READING a chapter (scroll settled,
+    // pointer idle) — the head holds a gentle sustained yaw toward the
+    // chapter headline. The state machine lives in lib/scroll-fx.ts
+    // (attentionStep, unit-tested); here the loop eases attentionYaw
+    // toward the pure target with the gaze's approachAngle (settle, not
+    // snap) and snaps it to exactly 0 on release, so disengaged is
+    // provably byte-identical to the pre-attention render. Composed onto
+    // the same rotation A as the glance — same direction, smaller
+    // amplitude — so a glance hands off to the hold without a pop.
+    let attentionState: AttentionState = ATTENTION_REST;
+    let attentionYaw = 0; // current additive offset, rad — exactly 0 at rest
+
     // One fire path for both glance sources (chapter + object): the
     // idle-pointer gate keeps the glance from fighting the pointer gaze,
     // and the shared cooldown keeps a fling that crosses a chapter line
@@ -171,9 +184,10 @@ function RotatingBustCanvas(): React.JSX.Element {
     const draw = (dtTickS = 0) => {
       if (!cssSize || points.length === 0) return;
       const p = scrollSnapshot.progress;
-      // Scroll turn + idle sway + pointer gaze + attention glance,
-      // composed into one rotation. The glance is exactly 0 at rest, so
-      // the settled render is byte-identical to the pre-glance one.
+      // Scroll turn + idle sway + pointer gaze + attention glance +
+      // sustained attention, composed into one rotation. The glance and
+      // the attention offset are exactly 0 at rest, so the settled
+      // render is byte-identical to the pre-attention one.
       // "The head meets your eyes at contact" (run-2 IDEA iter 23): over
       // the contact window an additive offset eases the scroll turn back
       // toward front-facing — the head that turned away the whole way
@@ -196,7 +210,8 @@ function RotatingBustCanvas(): React.JSX.Element {
         contactFace +
         0.055 * Math.sin(timeS * 0.3) +
         gazeYaw +
-        glanceYaw;
+        glanceYaw +
+        attentionYaw;
       const P = gazePitch + glancePitch;
       const cosA = Math.cos(A);
       const sinA = Math.sin(A);
@@ -419,6 +434,31 @@ function RotatingBustCanvas(): React.JSX.Element {
           }
           prevObjT = objT;
         }
+        // Sustained attention (run-2 IDEA iter 28): the pure state
+        // machine steps on the shared snapshot's low-passed velocity
+        // (scroll movement releases), the loop's timestamp, and the last
+        // pointermove (pointer activity releases; pointer-leave counts
+        // as idle — the same gate the glance uses). Engage eases in
+        // (settle, not snap); release snaps to exactly 0 on the same
+        // tick, so a scroll or pointer gesture drops the hold instantly.
+        attentionState = attentionStep(
+          attentionState,
+          scrollSnapshot.velocity,
+          now,
+          lastMoveT,
+        );
+        const attentionTarget = attentionTargetYaw(attentionState);
+        if (attentionTarget === 0) {
+          attentionYaw = 0;
+        } else {
+          attentionYaw = approachAngle(attentionYaw, attentionTarget, acc);
+        }
+        // Observability (same quantized pattern as data-glance): the
+        // live attention yaw in milliradians. Exactly "0" when
+        // disengaged.
+        const atq = String(Math.round(attentionYaw * 1000));
+        if (canvas.dataset.attention !== atq)
+          canvas.dataset.attention = atq;
         draw(acc);
         acc = 0;
       }

@@ -577,6 +577,103 @@ export function answerWireEnvelope(dtS: number): number {
   return smoothstep01(dtS / ANSWER_WIRE_RISE_S) * Math.exp(-dtS / ANSWER_WIRE_TAU_S);
 }
 
+/* ------------------------------------------------------------------ */
+/* Sustained attention (run-2 IDEA iter 27, filed — built iter 28):    */
+/* the glance (iter 16) and object-glance (iter 21) are one-shot       */
+/* impulses (~1.2s decay); between scroll gestures — while the visitor */
+/* is actually READING a chapter (scroll settled, pointer idle) — the  */
+/* head holds a gentle sustained yaw toward the chapter headline. A    */
+/* derived fraction of the glance's amplitude (settle, not snap — the  */
+/* loop eases it in with the same approachAngle the pointer gaze      */
+/* uses), released to exactly 0 on any scroll movement or pointer     */
+/* activity, with an anti-stare auto-release so it never holds past   */
+/* ~30s. At-rest contract: disengaged ⟺ exactly 0, so settled renders */
+/* are byte-identical to the pre-attention tree. Pure state machine — */
+/* unit-tested.                                                        */
+/* ------------------------------------------------------------------ */
+
+/** Fraction of GLANCE_AMP_RAD the sustained gaze holds — a whisper, not a turn. */
+export const ATTENTION_FRAC = 0.4;
+/** Idle-pointer gate, reused from the glance: an active pointer owns the head's attention. */
+export const ATTENTION_IDLE_MS = GLANCE_IDLE_MS;
+/** |velocity| below this (px/s, the publisher's low-passed snapshot value) reads as settled. */
+export const ATTENTION_VEL_DEADBAND = 8;
+/** Consecutive settled bust ticks (~15fps) before the gaze engages — ~0.8s. */
+export const ATTENTION_SETTLE_TICKS = 12;
+/** Anti-stare: never hold the gaze past this; release and require a fresh settle. */
+export const ATTENTION_STARE_MS = 30_000;
+
+export type AttentionState = {
+  /** Consecutive ticks with |velocity| < ATTENTION_VEL_DEADBAND. */
+  settledTicks: number;
+  /** rAF timestamp (ms) the gaze engaged; -Infinity = disengaged. */
+  engagedAt: number;
+};
+
+export const ATTENTION_REST: AttentionState = {
+  settledTicks: 0,
+  engagedAt: Number.NEGATIVE_INFINITY,
+};
+
+/**
+ * One tick of the sustained-attention state machine. Inputs are the
+ * shared snapshot's low-passed velocity, the loop's rAF timestamp, and
+ * the last pointermove timestamp (-Infinity = never moved/idle — the
+ * bust also sets this on pointerleave, so a departed pointer counts as
+ * idle, exactly like the glance's gate). Every release condition
+ * (scroll movement, pointer activity, anti-stare) fails DISENGAGED, so
+ * the caller's amplitude is exactly 0 on the same tick. Degenerate
+ * input fails disengaged — but -Infinity lastMoveMs is VALID (the idle
+ * sentinel), only NaN / non-finite timestamps are degenerate. Pure
+ * function — unit-tested.
+ */
+export function attentionStep(
+  prev: AttentionState,
+  velocityPxS: number,
+  nowMs: number,
+  lastMoveMs: number,
+): AttentionState {
+  if (
+    Number.isNaN(velocityPxS) ||
+    Number.isNaN(nowMs) ||
+    Number.isNaN(lastMoveMs) ||
+    !Number.isFinite(nowMs)
+  ) {
+    return ATTENTION_REST;
+  }
+  const engaged = prev.engagedAt !== Number.NEGATIVE_INFINITY;
+  // Any scroll movement releases — and resets the settle count, so a
+  // momentum tail re-settles through the deadband before re-engaging.
+  if (Math.abs(velocityPxS) >= ATTENTION_VEL_DEADBAND) {
+    return ATTENTION_REST;
+  }
+  // An active pointer owns the head's attention (the glance's idle gate).
+  if (nowMs - lastMoveMs < ATTENTION_IDLE_MS) {
+    return ATTENTION_REST;
+  }
+  // Anti-stare: release and require a fresh settle — the visible beat
+  // that keeps the gaze from becoming a stare.
+  if (engaged && nowMs - prev.engagedAt >= ATTENTION_STARE_MS) {
+    return ATTENTION_REST;
+  }
+  const settledTicks = prev.settledTicks + 1;
+  if (!engaged && settledTicks >= ATTENTION_SETTLE_TICKS) {
+    return { settledTicks, engagedAt: nowMs };
+  }
+  return { settledTicks, engagedAt: prev.engagedAt };
+}
+
+/**
+ * Live attention yaw target, rad — derived from the glance's own
+ * amplitude and direction (never tuned): a fraction of the 6° glance
+ * toward the content column. Exactly 0 when disengaged.
+ */
+export function attentionTargetYaw(state: AttentionState): number {
+  return state.engagedAt === Number.NEGATIVE_INFINITY
+    ? 0
+    : ATTENTION_FRAC * GLANCE_AMP_RAD * GLANCE_DIR;
+}
+
 /**
  * Deterministic 32-bit integer hash → [0, 1). The entropy source for
  * the procedural noise below (and for stable per-glyph picks) —
