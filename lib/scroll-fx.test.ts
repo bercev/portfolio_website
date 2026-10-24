@@ -65,6 +65,7 @@ import {
   velocityStretch,
   chromaOffsetPx,
   CHROMA_PX_MAX,
+  flingStormLevel,
   wipeGlyphChar,
   wipeRawFrac,
   wipeSweepThreshold,
@@ -142,6 +143,36 @@ describe("chromaOffsetPx", () => {
     expect(chromaOffsetPx(NaN)).toBe(0);
     expect(chromaOffsetPx(Infinity)).toBe(0);
     expect(chromaOffsetPx(-Infinity)).toBe(0);
+  });
+});
+
+describe("flingStormLevel", () => {
+  it("is exactly 0 at rest and below the deadband", () => {
+    expect(flingStormLevel(0, 0)).toBe(0);
+    expect(flingStormLevel(299, 0)).toBe(0);
+    expect(flingStormLevel(-299, 0)).toBe(0);
+  });
+
+  it("uses |velocity|: negative flings storm identically", () => {
+    expect(flingStormLevel(-1500, 0)).toBe(flingStormLevel(1500, 0));
+  });
+
+  it("is exactly 0 at full blur even on a hard fling (no mush)", () => {
+    expect(flingStormLevel(9000, 5)).toBe(0);
+    expect(flingStormLevel(9000, 7)).toBe(0);
+  });
+
+  it("scales linearly with sharpness at fixed velocity", () => {
+    const full = flingStormLevel(2200, 0);
+    expect(full).toBe(1);
+    expect(flingStormLevel(2200, 2.5)).toBeCloseTo(0.5, 10);
+    expect(flingStormLevel(2200, 1)).toBeCloseTo(0.8, 10);
+  });
+
+  it("returns 0 for degenerate input (NaN/±Infinity)", () => {
+    expect(flingStormLevel(NaN, 0)).toBe(0);
+    expect(flingStormLevel(1500, NaN)).toBe(0);
+    expect(flingStormLevel(Infinity, 0)).toBe(0);
   });
 });
 

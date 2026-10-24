@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
-import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -874,8 +874,20 @@ export function FloatingGlyphs() {
       // the same velocity during flings.
       let stretch = 0;
       let chroma = 0;
+      let storm = 0;
       if (dt > 0) {
         stretch = velocityStretch(Math.abs(scrollSnapshot.velocity));
+        // Fling dither storm (run-2 IDEA iter 32, built iter 35): the
+        // level gates on the same shared velocity and on the field's
+        // own quantized scroll blur (the useScrollBlur formula, 0.5px
+        // steps) — deep-page flings read storm 0 by construction, so
+        // the surge can never fight the blur into mush. Observability
+        // mirrors data-chroma: "0" at rest, live level on flings.
+        const blurPx =
+          Math.round(scrollSnapshot.progress * 5 * 2) / 2;
+        storm = flingStormLevel(scrollSnapshot.velocity, blurPx);
+        const sq = String(Math.round(storm * 20) / 20);
+        if (canvas.dataset.storm !== sq) canvas.dataset.storm = sq;
         // Chromatic split (run-2 iter 29): the same shared velocity —
         // background ASCII objects + the ping ring separate into RGB
         // channel ghosts on hard flings. Exactly 0 at rest; every split
@@ -1164,6 +1176,27 @@ export function FloatingGlyphs() {
             }
           }
           if (split > 0) ctx.globalCompositeOperation = "source-over";
+        }
+      }
+
+      // Fling dither storm (run-2 IDEA iter 32, built iter 35): on a
+      // hard fling the field briefly densifies with blue-noise dots —
+      // the same isotropic grain as the ping ring's dots, stamped on a
+      // fixed 8px grid so the pass fraction is exactly the storm level.
+      // Additive-only (alpha-capped at 0.3, 2px dots) and gated to
+      // storm > 0.01, so at rest this block draws nothing and the
+      // settled frame is byte-identical to the pre-storm field. The
+      // blur gate in flingStormLevel already zeroes it deep in the
+      // page; animated ticks only — the reduced-motion still never
+      // storms.
+      if (dt > 0 && storm > 0.01) {
+        const pitch = 8;
+        ctx.fillStyle = rgba(colors.accent, storm * 0.3);
+        for (let yy = 0; yy < h; yy += pitch) {
+          for (let xx = 0; xx < w; xx += pitch) {
+            if (blueNoiseThreshold(xx, yy) >= storm * 255) continue;
+            ctx.fillRect(xx, yy, 2, 2);
+          }
         }
       }
 

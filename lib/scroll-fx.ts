@@ -135,6 +135,34 @@ export function chromaOffsetPx(vPxPerSec: number): number {
 }
 
 /**
+ * Fling dither storm (run-2 IDEA iter 32, built iter 35): on a hard
+ * scroll fling the glyph field briefly densifies with blue-noise dots
+ * — the filed idea's own objection answered by construction. The filed
+ * rationale warned the surge would fight the progressive scroll blur
+ * into mush at exactly the moment both fire, so the level is the
+ * velocity factor TIMES a sharpness factor: 1 at 0px blur (hero) fading
+ * linearly to exactly 0 at STORM_BLUR_MAX (the useScrollBlur cap), so
+ * deep in the page — where the field is already a 5px melt — the storm
+ * cannot fire at all. Same deadband as the chroma split (300px/s), so
+ * reading scrolls never densify and the storm fires only where the
+ * chroma split already fires. Additive-only dots, so when the level
+ * returns to exactly 0 the frame is byte-identical to the pre-fling
+ * field. Pure function — unit-tested in scroll-fx.test.ts.
+ */
+export const STORM_V_MIN = CHROMA_V_MIN; // px/s — shared deadband
+export const STORM_V_MAX = CHROMA_V_MAX; // px/s — full storm on hard flings
+export const STORM_BLUR_MAX = 5; // px — the useScrollBlur cap
+
+export function flingStormLevel(vPxPerSec: number, blurPx: number): number {
+  if (!Number.isFinite(vPxPerSec) || !Number.isFinite(blurPx)) return 0;
+  const vel = smoothstep01(
+    (Math.abs(vPxPerSec) - STORM_V_MIN) / (STORM_V_MAX - STORM_V_MIN),
+  );
+  const sharp = 1 - Math.min(1, Math.max(0, blurPx / STORM_BLUR_MAX));
+  return vel * sharp;
+}
+
+/**
  * Scroll-velocity skills-marquee mappings (run-2 iter 11, research iter 6 —
  * React Bits "Scroll Velocity" pattern). The skills marquee was the site's
  * only type in constant motion that scroll never touched; velocity now
