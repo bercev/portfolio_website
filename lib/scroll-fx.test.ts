@@ -42,6 +42,7 @@ import {
   marqueeBoost,
   marqueeSkewDeg,
   objectDefocus,
+  objectPrecession,
   objectGlanceDir,
   OBJECT_WINDOWS,
   objectWindowCrossed,
@@ -110,6 +111,33 @@ describe("objectDefocus", () => {
   it("clamps out-of-range envelopes", () => {
     expect(objectDefocus(-0.5)).toBe(3);
     expect(objectDefocus(1.5)).toBe(0);
+  });
+});
+
+describe("objectPrecession", () => {
+  it("is 0 at the window edges (no fight with the dissolve envelope)", () => {
+    expect(objectPrecession(0)).toBe(0);
+    expect(objectPrecession(1)).toBeCloseTo(0, 10);
+  });
+
+  it("peaks at the window center", () => {
+    expect(objectPrecession(0.5)).toBeCloseTo(0.35, 10);
+  });
+
+  it("rises monotonically from edge to center and is symmetric", () => {
+    expect(objectPrecession(0.25)).toBeGreaterThan(objectPrecession(0.1));
+    expect(objectPrecession(0.25)).toBeLessThan(objectPrecession(0.5));
+    expect(objectPrecession(0.25)).toBeCloseTo(objectPrecession(0.75), 10);
+  });
+
+  it("clamps out-of-range window progress", () => {
+    expect(objectPrecession(-0.5)).toBe(0);
+    expect(objectPrecession(1.5)).toBeCloseTo(0, 10);
+  });
+
+  it("returns 0 for degenerate input", () => {
+    expect(objectPrecession(NaN)).toBe(0);
+    expect(objectPrecession(Infinity)).toBe(0);
   });
 });
 

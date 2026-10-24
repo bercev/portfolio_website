@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
-import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -1287,15 +1287,30 @@ export function FloatingGlyphs() {
           const sA = windowAlpha(p, OBJECT_WINDOWS[1].a, OBJECT_WINDOWS[1].b);
           if (sA > 0.01) {
             const slot = objSlots[1];
-            const pose = divePose(SPHERE_DIVE, windowT(p, OBJECT_WINDOWS[1].a, OBJECT_WINDOWS[1].b), w, h);
+            const sWt = windowT(p, OBJECT_WINDOWS[1].a, OBJECT_WINDOWS[1].b);
+            const pose = divePose(SPHERE_DIVE, sWt, w, h);
             const r = 74 * pose.s;
             const rotY = timeS * 0.15 + p * 7 + ansPhase[1];
+            // Polar precession (run-2 IDEA iter 25): the sphere's axis tips
+            // as a pure function of its own window progress — 0 at the
+            // dissolve edges, peak mid-window, exactly reversible.
+            const tiltX = 0.5 + objectPrecession(sWt);
+            // Observability for probes (mirrors data-object-answer): the
+            // live polar tilt, quantized — absent when the sphere isn't
+            // drawn, so a present value always reflects this tick.
+            if (ocanvas) {
+              const tq = tiltX.toFixed(3);
+              if (ocanvas.dataset.sphereTilt !== tq)
+                ocanvas.dataset.sphereTilt = tq;
+            }
             place(slot, sA, pose.cx, pose.cy, 1, r * 1.6,
               (c, alpha) =>
-                drawSphere(c, slot.half, slot.half, r, rotY, 0.5, accent, 0.46 * alpha),
+                drawSphere(c, slot.half, slot.half, r, rotY, tiltX, accent, 0.46 * alpha),
               (c, alpha) =>
-                drawSphereWire(c, slot.half, slot.half, r, rotY, 0.5, accent, WIRE_ALPHA * alpha),
+                drawSphereWire(c, slot.half, slot.half, r, rotY, tiltX, accent, WIRE_ALPHA * alpha),
             );
+          } else if (ocanvas && "sphereTilt" in ocanvas.dataset) {
+            delete ocanvas.dataset.sphereTilt;
           }
           const cA = windowAlpha(p, OBJECT_WINDOWS[2].a, OBJECT_WINDOWS[2].b);
           if (cA > 0.01) {

@@ -176,6 +176,28 @@ export function inspectFocusEnvelope(envelope01: number, inspect01: number): num
 }
 
 /**
+ * Polar precession for the dithered sphere (run-2 IDEA iter 25 — user:
+ * "more rotating 3d ascii ... as we scroll"). The sphere was the only
+ * background body with a frozen pole (tiltX was a constant 0.5): it spun
+ * on one axis while the torus (B) and the cube (rotX) both tip with
+ * scroll. This tips the sphere's polar axis as a pure function of its
+ * own window progress — 0 at the dissolve edges (no fight with the
+ * blue-noise envelope), peak mid-window, and scrolling back reverses the
+ * tip exactly. The world-space light stays fixed, so shading stays
+ * coherent while the dot lattice tips under it: the sphere reads as
+ * tumbling, not just spinning. Amplitude is small by construction
+ * (±20°); no feel-tuning under swiftshader — his hardware eyes are the
+ * final gate.
+ * Pure function — unit-tested in scroll-fx.test.ts.
+ */
+export const PRECESS_AMP = 0.35; // ±20° around the 0.5 base tilt
+export function objectPrecession(windowT01: number): number {
+  if (!Number.isFinite(windowT01)) return 0;
+  const t = Math.min(1, Math.max(0, windowT01));
+  return PRECESS_AMP * Math.sin(Math.PI * t);
+}
+
+/**
  * Ordered-dither dissolve level for the 3D background objects (run-2
  * iter 4): instead of a plain alpha crossfade, an object's scroll-window
  * envelope sweeps a Bayer-4x4 threshold pattern (16 levels, 0..15), so
