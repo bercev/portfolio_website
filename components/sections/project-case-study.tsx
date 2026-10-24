@@ -13,6 +13,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useId, useState } from "react";
 
+import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
 import { TechPills } from "@/components/ui/tech-pills";
 import type { Project } from "@/data/content";
@@ -20,11 +21,20 @@ import type { Project } from "@/data/content";
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
 
 const projectPreviews: Partial<
-  Record<Project["title"], { readonly src: string; readonly alt: string }>
+  Record<
+    Project["title"],
+    {
+      readonly src: string;
+      readonly alt: string;
+      /** Raster proofs get the Aceternity Chromatic Image treatment. */
+      readonly chromatic?: boolean;
+    }
+  >
 > = {
   Vitae: {
     src: "/assets/projects/vitae.png",
     alt: "Vitae landing page: resume version control with Get Started and Why Vitae.",
+    chromatic: true,
   },
   // The chatbot has no screenshot-able product surface (it lives inside
   // Discord), so its preview is the existing hand-made illustration of the
@@ -250,15 +260,25 @@ export function CaseStudyRow({
             ) : null}
           </span>
           {preview ? (
-            <span className="journey-project-rest-preview">
-              {/* eslint-disable-next-line @next/next/no-img-element -- local static preview crop */}
-              <img
+            preview.chromatic ? (
+              <ChromaticImage
                 src={preview.src}
                 alt={preview.alt}
                 width={800}
                 height={560}
+                className="journey-project-rest-preview"
               />
-            </span>
+            ) : (
+              <span className="journey-project-rest-preview">
+                {/* eslint-disable-next-line @next/next/no-img-element -- local static preview crop */}
+                <img
+                  src={preview.src}
+                  alt={preview.alt}
+                  width={800}
+                  height={560}
+                />
+              </span>
+            )
           ) : null}
         </span>
       </button>
