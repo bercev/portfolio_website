@@ -63,6 +63,8 @@ import {
   smoothstep01,
   valueNoise2,
   velocityStretch,
+  chromaOffsetPx,
+  CHROMA_PX_MAX,
   wipeGlyphChar,
   wipeRawFrac,
   wipeSweepThreshold,
@@ -99,6 +101,47 @@ describe("velocityStretch", () => {
       expect(s).toBeGreaterThanOrEqual(prev);
       prev = s;
     }
+  });
+});
+
+describe("chromaOffsetPx", () => {
+  it("is exactly 0 at rest and below the deadband (at-rest contract)", () => {
+    expect(chromaOffsetPx(0)).toBe(0);
+    expect(chromaOffsetPx(150)).toBe(0);
+    expect(chromaOffsetPx(299)).toBe(0);
+  });
+
+  it("uses |velocity|: negative flings split identically", () => {
+    expect(chromaOffsetPx(-1500)).toBe(chromaOffsetPx(1500));
+    expect(chromaOffsetPx(-299)).toBe(0);
+  });
+
+  it("ramps smoothly between deadband and saturation", () => {
+    const mid = chromaOffsetPx(1250);
+    expect(mid).toBeGreaterThan(0);
+    expect(mid).toBeLessThan(CHROMA_PX_MAX);
+    // smoothstep01 is symmetric: midpoint of the ramp is ~0.5 of the cap
+    expect(mid).toBeCloseTo(CHROMA_PX_MAX * smoothstep01(0.5), 5);
+  });
+
+  it("saturates at CHROMA_PX_MAX for hard flings", () => {
+    expect(chromaOffsetPx(2200)).toBe(CHROMA_PX_MAX);
+    expect(chromaOffsetPx(9000)).toBe(CHROMA_PX_MAX);
+  });
+
+  it("is monotonic over the realistic speed range", () => {
+    let prev = -1;
+    for (const v of [0, 100, 299, 300, 500, 1250, 2000, 2199, 2200, 8000]) {
+      const s = chromaOffsetPx(v);
+      expect(s).toBeGreaterThanOrEqual(prev);
+      prev = s;
+    }
+  });
+
+  it("returns 0 for degenerate input (NaN/±Infinity)", () => {
+    expect(chromaOffsetPx(NaN)).toBe(0);
+    expect(chromaOffsetPx(Infinity)).toBe(0);
+    expect(chromaOffsetPx(-Infinity)).toBe(0);
   });
 });
 

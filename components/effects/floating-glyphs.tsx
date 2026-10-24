@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
-import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -758,6 +758,38 @@ export function FloatingGlyphs() {
     // exactly the pixels whose threshold < L*16 (the baked histogram is
     // perfectly flat, so the sweep is uniform). Dissolves now read as
     // organic isotropic grain instead of a grid. Built lazily (DOM).
+    // Scratch canvas for the chromatic split's channel tinting
+    // (run-2 iter 29): one canvas reused across objects and frames,
+    // sized to the largest tile in resize().
+    let chromaScratch: HTMLCanvasElement | null = null;
+    let chromaSctx: CanvasRenderingContext2D | null = null;
+    // True channel isolation of a finished tile: copy, multiply with the
+    // channel color (kills the other two channels), then destination-in
+    // with the original tile to restore its alpha (the multiply fill
+    // would otherwise paint the transparent surround solid).
+    const chromaTint = (
+      slot: ObjSlot,
+      color: string,
+    ): HTMLCanvasElement | null => {
+      if (!chromaScratch || !chromaSctx) return null;
+      const tw = slot.cv.width;
+      const th = slot.cv.height;
+      if (chromaScratch.width < tw || chromaScratch.height < th) {
+        chromaScratch.width = tw;
+        chromaScratch.height = th;
+      }
+      chromaSctx.setTransform(1, 0, 0, 1, 0, 0);
+      chromaSctx.globalCompositeOperation = "source-over";
+      chromaSctx.clearRect(0, 0, tw, th);
+      chromaSctx.drawImage(slot.cv, 0, 0);
+      chromaSctx.globalCompositeOperation = "multiply";
+      chromaSctx.fillStyle = color;
+      chromaSctx.fillRect(0, 0, tw, th);
+      chromaSctx.globalCompositeOperation = "destination-in";
+      chromaSctx.drawImage(slot.cv, 0, 0);
+      chromaSctx.globalCompositeOperation = "source-over";
+      return chromaScratch;
+    };
     let ditherTiles: HTMLCanvasElement[] | null = null;
     const getDitherTiles = () => {
       if (ditherTiles) return ditherTiles;
@@ -807,6 +839,24 @@ export function FloatingGlyphs() {
           makeSlot(sMax + 8, dpr),
           makeSlot(cMax * 2 + 8, dpr),
         ].filter((s): s is ObjSlot => s !== null);
+        // Chromatic split scratch (run-2 iter 29): size once to the
+        // largest tile; chromaTint resizes lazily if a tile ever
+        // exceeds it.
+        if (!chromaScratch) {
+          chromaScratch = document.createElement("canvas");
+          chromaSctx = chromaScratch.getContext("2d");
+        }
+        const maxTile = objSlots.reduce(
+          (m, s) => Math.max(m, s.cv.width, s.cv.height),
+          2,
+        );
+        if (
+          chromaScratch.width !== maxTile ||
+          chromaScratch.height !== maxTile
+        ) {
+          chromaScratch.width = maxTile;
+          chromaScratch.height = maxTile;
+        }
       }
       const per = mobile ? 17000 : 11500;
       const count = Math.round(Math.min(130, Math.max(40, (w * h) / per)));
@@ -823,8 +873,21 @@ export function FloatingGlyphs() {
       // every consumer, so the field's warp and the marquee's boost read
       // the same velocity during flings.
       let stretch = 0;
+      let chroma = 0;
       if (dt > 0) {
         stretch = velocityStretch(Math.abs(scrollSnapshot.velocity));
+        // Chromatic split (run-2 iter 29): the same shared velocity —
+        // background ASCII objects + the ping ring separate into RGB
+        // channel ghosts on hard flings. Exactly 0 at rest; every split
+        // draw site gates on it, so settled renders are byte-identical.
+        chroma = chromaOffsetPx(scrollSnapshot.velocity);
+        // Observability (same quantized pattern as data-ping-env): the
+        // live split in CSS px — "0" at rest, lets probes gate on the
+        // component's own clock.
+        const cq = String(Math.round(chroma * 2) / 2);
+        if (canvas.dataset.chroma !== cq) canvas.dataset.chroma = cq;
+        if (ocanvas && ocanvas.dataset.chroma !== cq)
+          ocanvas.dataset.chroma = cq;
       }
       // Pointer parallax converges on wall-clock time, not per-draw call,
       // so the feel is identical whether this runs at 12 or 60 fps.
@@ -1061,6 +1124,14 @@ export function FloatingGlyphs() {
           if (r < 2) continue;
           const pitch = 5;
           ctx.fillStyle = rgba(colors.accent, env * 0.35);
+          // Chromatic split (run-2 iter 29): during hard flings the
+          // ring's dots separate into R/G/B passes along the
+          // scroll-perpendicular axis ('lighter' additive, true channel
+          // colors — the authentic CRT-aberration read: bright core,
+          // RGB fringes). Skipped entirely below the deadband, so the
+          // rest frame renders the single accent pass above.
+          const split = chroma > 0.5 ? chroma / 2 : 0;
+          if (split > 0) ctx.globalCompositeOperation = "lighter";
           const steps = Math.max(24, Math.floor((2 * Math.PI * r) / pitch));
           for (let s = 0; s < steps; s++) {
             const a = (s / steps) * Math.PI * 2;
@@ -1080,9 +1151,19 @@ export function FloatingGlyphs() {
                 env * 255 * edge
               )
                 continue;
-              ctx.fillRect(x, y, 2, 2);
+              if (split > 0) {
+                ctx.fillStyle = rgba({ r: 255, g: 0, b: 0 }, env * 0.35);
+                ctx.fillRect(x - split, y, 2, 2);
+                ctx.fillStyle = rgba({ r: 0, g: 255, b: 0 }, env * 0.35);
+                ctx.fillRect(x, y, 2, 2);
+                ctx.fillStyle = rgba({ r: 0, g: 0, b: 255 }, env * 0.35);
+                ctx.fillRect(x + split, y, 2, 2);
+              } else {
+                ctx.fillRect(x, y, 2, 2);
+              }
             }
           }
+          if (split > 0) ctx.globalCompositeOperation = "source-over";
         }
       }
 
@@ -1251,7 +1332,30 @@ export function FloatingGlyphs() {
           if (focus > 0.05) octx.filter = `blur(${focus.toFixed(2)}px)`;
           const dw = slot.region * sX * grow;
           const dh = slot.region * sY * grow;
-          octx.drawImage(slot.cv, cx - dw / 2, cy - dh / 2, dw, dh);
+          // Chromatic split (run-2 iter 29): on hard flings the tile's
+          // own channels separate along the scroll-perpendicular axis —
+          // true RGB passes via multiply-tinted copies, 'lighter'
+          // compositing (bright core, colored fringes: the
+          // CRT-aberration read). Skipped entirely below the deadband:
+          // at rest this is the single drawImage below, byte-identical
+          // to the pre-split object.
+          if (chroma > 0.5) {
+            const s = chroma / 2;
+            const tw = slot.cv.width;
+            const th = slot.cv.height;
+            octx.globalCompositeOperation = "lighter";
+            const rC = chromaTint(slot, "#ff0000");
+            if (rC)
+              octx.drawImage(rC, 0, 0, tw, th, cx - dw / 2 - s, cy - dh / 2, dw, dh);
+            const gC = chromaTint(slot, "#00ff00");
+            if (gC)
+              octx.drawImage(gC, 0, 0, tw, th, cx - dw / 2, cy - dh / 2, dw, dh);
+            const bC = chromaTint(slot, "#0000ff");
+            if (bC)
+              octx.drawImage(bC, 0, 0, tw, th, cx - dw / 2 + s, cy - dh / 2, dw, dh);
+          } else {
+            octx.drawImage(slot.cv, cx - dw / 2, cy - dh / 2, dw, dh);
+          }
           octx.restore();
         };
         if (mobile) {

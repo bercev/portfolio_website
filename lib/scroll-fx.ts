@@ -111,6 +111,30 @@ export function velocityStretch(vPxPerSec: number): number {
 }
 
 /**
+ * Scroll-velocity chromatic channel split (run-2 iter 29, research iter 18
+ * — Codrops Juan Mora Romero 2026: RGB channel-split offset driven by
+ * scroll velocity). On hard flings the background ASCII 3D objects and the
+ * chapter-entry ping ring separate into R/G/B channel ghosts offset along
+ * the scroll-perpendicular axis — the site's fling state had warp-stretch
+ * + marquee skew but no color-fringe texture; this is the missing partner.
+ * Exactly 0 below CHROMA_V_MIN (reading scrolls), eases to CHROMA_PX_MAX
+ * at CHROMA_V_MAX. The at-rest contract is exact: the component skips the
+ * 3-pass blit entirely below 0.5px and draws the single normal pass, so
+ * settled renders are byte-identical by construction. Background only —
+ * never the wordmark (BERAT chroma was deliberately reduced for
+ * readability). Pure function — unit-tested in scroll-fx.test.ts.
+ */
+export const CHROMA_V_MIN = 300; // px/s — deadband: no split on reading scrolls
+export const CHROMA_V_MAX = 2200; // px/s — full split on hard flings
+export const CHROMA_PX_MAX = 6; // CSS px max spread (±3px per channel pass)
+
+export function chromaOffsetPx(vPxPerSec: number): number {
+  if (!Number.isFinite(vPxPerSec)) return 0;
+  const t = (Math.abs(vPxPerSec) - CHROMA_V_MIN) / (CHROMA_V_MAX - CHROMA_V_MIN);
+  return CHROMA_PX_MAX * smoothstep01(t);
+}
+
+/**
  * Scroll-velocity skills-marquee mappings (run-2 iter 11, research iter 6 —
  * React Bits "Scroll Velocity" pattern). The skills marquee was the site's
  * only type in constant motion that scroll never touched; velocity now
