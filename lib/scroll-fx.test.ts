@@ -7,6 +7,7 @@ import {
   bustRimShaped,
   BUST_WIPE_MAX_DROP,
   bustWipeDepth,
+  boundaryShapeGlyph,
   bustWipeDrop,
   chapterCrossingScrollY,
   ditherDissolveLevel,
@@ -25,6 +26,7 @@ import {
   pingEnvelope,
   pingRadius01,
   resolveChapterIndex,
+  shapeGlyphForTangent,
   smoothstep01,
   valueNoise2,
   velocityStretch,
@@ -542,5 +544,52 @@ describe("bustWipeDrop", () => {
   it("drops points under the front mid-window (hard edge, not a fade)", () => {
     expect(bustWipeDrop(0.1, 0.5)).toBe(true);
     expect(bustWipeDrop(0.9, 0.5)).toBe(false);
+  });
+});
+
+describe("shapeGlyphForTangent", () => {
+  it("maps the four cardinal/diagonal tangents (screen space, y down)", () => {
+    expect(shapeGlyphForTangent(1, 0)).toBe("-");
+    expect(shapeGlyphForTangent(0, 1)).toBe("|");
+    expect(shapeGlyphForTangent(1, 1)).toBe("\\");
+    expect(shapeGlyphForTangent(1, -1)).toBe("/");
+  });
+
+  it("is unoriented — a line has no arrow", () => {
+    expect(shapeGlyphForTangent(-1, 0)).toBe("-");
+    expect(shapeGlyphForTangent(0, -1)).toBe("|");
+    expect(shapeGlyphForTangent(-1, -1)).toBe("\\");
+    expect(shapeGlyphForTangent(-1, 1)).toBe("/");
+  });
+
+  it("quantizes near-misses to the nearest direction", () => {
+    expect(shapeGlyphForTangent(2, 0.1)).toBe("-");
+    expect(shapeGlyphForTangent(0.1, 2)).toBe("|");
+  });
+});
+
+describe("boundaryShapeGlyph", () => {
+  // 5x5 grid, 3x3 filled block centered at (1..3, 1..3).
+  const cols = 5, rows = 5;
+  const occ = new Uint8Array(cols * rows);
+  for (let r = 1; r <= 3; r++) for (let c = 1; c <= 3; c++) occ[r * cols + c] = 1;
+
+  it("returns null for interior cells", () => {
+    expect(boundaryShapeGlyph(occ, cols, rows, 2, 2)).toBeNull();
+  });
+
+  it("follows the edge: top edge is horizontal, left edge vertical", () => {
+    expect(boundaryShapeGlyph(occ, cols, rows, 2, 1)).toBe("-");
+    expect(boundaryShapeGlyph(occ, cols, rows, 1, 2)).toBe("|");
+  });
+
+  it("resolves corners to the diagonal", () => {
+    expect(boundaryShapeGlyph(occ, cols, rows, 1, 1)).toBe("/");
+    expect(boundaryShapeGlyph(occ, cols, rows, 3, 3)).toBe("/");
+  });
+
+  it("treats out-of-grid as filled — the tile edge never triggers", () => {
+    const tiny = new Uint8Array([1]);
+    expect(boundaryShapeGlyph(tiny, 1, 1, 0, 0)).toBeNull();
   });
 });

@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { ditherDissolveLevel, fbm2, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, scrollShared, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
+import { boundaryShapeGlyph, ditherDissolveLevel, fbm2, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, scrollShared, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -264,11 +264,22 @@ function drawTorus(
     }
   }
   ctx.font = `${fontSize}px ${OBJ_FONT}`;
+  // Shape-aware print (run-2 iter 15, Codrops Lunardi): boundary cells
+  // get edge-following glyphs instead of the luminance ramp — the
+  // character follows the ring's curve instead of dissolving into
+  // horizontal tone streaks. Alpha stays tone-driven (lighting reads).
+  const occ = new Uint8Array(cols * rows);
+  for (const key of cells.keys()) occ[key] = 1;
   for (const [key, cell] of cells) {
     const col = key % cols;
     const row = Math.floor(key / cols);
     const lum01 = Math.min(1, cell.lum / 1.15);
+    // Density-aware (the cube-rim lesson): the directional set only
+    // spans thin/mid ink, so it applies where the ramp would print
+    // thin/mid chars (lum01 < 0.6 → `.,-~:;=`). Brighter boundary cells
+    // keep their dense ramp glyphs — specular accents, not tone-noise.
     const ch =
+      (lum01 < 0.6 ? boundaryShapeGlyph(occ, cols, rows, col, row) : null) ??
       OBJ_RAMP[Math.min(OBJ_RAMP.length - 1, Math.floor(lum01 * OBJ_RAMP.length))];
     ctx.fillStyle = rgba(color, alphaScale * (0.12 + 0.88 * lum01));
     ctx.fillText(
@@ -372,7 +383,10 @@ function drawCube(
       OBJ_RAMP[Math.min(OBJ_RAMP.length - 1, Math.floor(lum01 * OBJ_RAMP.length))];
     // Edge points burn brighter than face interiors — at the deep-scroll
     // blur levels (3.5-5px) flat face shading melts into a smudge, but a
-    // bright rim keeps the cube's geometry legible.
+    // bright rim keeps the cube's geometry legible. (Run-2 iter 15:
+    // a direction-following thin-glyph rim was tried here and reverted —
+    // it traded the rim's dense `#`/`@` ink for thin strokes and the cube
+    // went faint. The rim's job is brightness, not direction.)
     const edgeCh =
       OBJ_RAMP[
         Math.min(OBJ_RAMP.length - 1, Math.floor(Math.min(1, lum01 + 0.25) * OBJ_RAMP.length))

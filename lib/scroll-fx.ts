@@ -619,3 +619,59 @@ export function useScrollBlur<T extends HTMLElement>(
 
   return ref;
 }
+
+/* ------------------------------------------------------------------ */
+/* Shape-aware ASCII print (run-2 iter 15, Codrops Lunardi Sep 2026    */
+/* "Beyond the Luminance Ramp"). A luminance ramp sorts tone by        */
+/* brightness but knows nothing about where brightness sits inside    */
+/* the cell, so diagonal edges dissolve into tone-noise (the v87      */
+/* torus crop: ring arcs printed as horizontal dash streaks). Where    */
+/* a cell sits on the object's silhouette boundary, pick the glyph    */
+/* by the edge's screen-space tangent instead of its brightness —     */
+/* the character follows the edge. Interiors keep the ramp (tone).    */
+/* Reduced-motion untouched: objects never draw there.                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Edge-following glyph for a screen-space tangent (y down). The
+ * tangent is unoriented (a line has no arrow), so the angle folds
+ * into [0, π) and quantizes to the 4 directional glyphs.
+ */
+export function shapeGlyphForTangent(tx: number, ty: number): string {
+  let a = Math.atan2(ty, tx) % Math.PI;
+  if (a < 0) a += Math.PI;
+  const bin = Math.round(a / (Math.PI / 4)) % 4;
+  // 0 → "-" (horizontal), π/4 → "\" (down-right), π/2 → "|",
+  // 3π/4 → "/" (up-right = down-left, same unoriented line).
+  return ["-", "\\", "|", "/"][bin];
+}
+
+/**
+ * Silhouette-boundary glyph for a cell occupancy grid: a filled cell
+ * with at least one empty 4-neighbor sits on the object's edge. The
+ * outward normal is the sum of the empty-neighbor directions; the
+ * edge tangent is perpendicular to it (screen space, y down).
+ * Returns the edge-following glyph, or null for interior cells.
+ * Out-of-grid counts as FILLED — the objects never reach the tile
+ * edge, so only true sampling gaps trigger.
+ */
+export function boundaryShapeGlyph(
+  occ: Uint8Array,
+  cols: number,
+  rows: number,
+  col: number,
+  row: number,
+): string | null {
+  const filled = (c: number, r: number): boolean => {
+    if (c < 0 || r < 0 || c >= cols || r >= rows) return true;
+    return occ[r * cols + c] !== 0;
+  };
+  let nx = 0;
+  let ny = 0;
+  if (!filled(col + 1, row)) nx += 1;
+  if (!filled(col - 1, row)) nx -= 1;
+  if (!filled(col, row + 1)) ny += 1;
+  if (!filled(col, row - 1)) ny -= 1;
+  if (nx === 0 && ny === 0) return null;
+  return shapeGlyphForTangent(-ny, nx);
+}
