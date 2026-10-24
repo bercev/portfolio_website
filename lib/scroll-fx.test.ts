@@ -33,6 +33,10 @@ import {
   marqueeBoost,
   marqueeSkewDeg,
   objectDefocus,
+  objectGlanceDir,
+  OBJECT_WINDOWS,
+  objectWindowCrossed,
+  objectWindowPos,
   pingEnvelope,
   pingRadius01,
   resolveChapterIndex,
@@ -751,5 +755,92 @@ describe("computeScrollSnapshot", () => {
     expect(snap.tops).toEqual(tops);
     expect(snap.tops).not.toBe(tops);
     expect(snap.vh).toBe(vh);
+  });
+});
+
+describe("objectWindowPos", () => {
+  const w = OBJECT_WINDOWS[0]; // torus: a 0.02, b 0.48
+
+  it("is 0 below the window and 1 above it, clamped", () => {
+    expect(objectWindowPos(0, w)).toBe(0);
+    expect(objectWindowPos(0.01, w)).toBe(0);
+    expect(objectWindowPos(0.6, w)).toBe(1);
+    expect(objectWindowPos(2, w)).toBe(1);
+  });
+
+  it("is exactly 0.5 at the window midpoint (smoothstep(0.5) = 0.5)", () => {
+    expect(objectWindowPos((w.a + w.b) / 2, w)).toBeCloseTo(0.5, 10);
+  });
+
+  it("is monotonic across the window", () => {
+    let prev = -1;
+    for (let i = 0; i <= 20; i++) {
+      const t = objectWindowPos(w.a + ((w.b - w.a) * i) / 20, w);
+      expect(t).toBeGreaterThanOrEqual(prev);
+      prev = t;
+    }
+  });
+
+  it("agrees with the field's windowT on all three windows", () => {
+    // Duplicated here (not imported) so the bust and the field can never
+    // silently disagree on where an object is in its window.
+    const windowT = (p: number, a: number, b: number) => {
+      const t = Math.min(1, Math.max(0, (p - a) / (b - a)));
+      return t * t * (3 - 2 * t);
+    };
+    for (const win of OBJECT_WINDOWS) {
+      for (const p of [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
+        expect(objectWindowPos(p, win)).toBeCloseTo(
+          windowT(p, win.a, win.b),
+          10,
+        );
+      }
+    }
+  });
+});
+
+describe("objectWindowCrossed", () => {
+  it("fires on a rising crossing of the 50% line", () => {
+    expect(objectWindowCrossed(0.49, 0.51)).toBe(true);
+  });
+
+  it("fires on a falling crossing of the 50% line", () => {
+    expect(objectWindowCrossed(0.51, 0.49)).toBe(true);
+  });
+
+  it("does not fire when both samples sit on the same side", () => {
+    expect(objectWindowCrossed(0.1, 0.2)).toBe(false);
+    expect(objectWindowCrossed(0.9, 0.8)).toBe(false);
+  });
+
+  it("does not fire when a sample sits exactly on the line", () => {
+    expect(objectWindowCrossed(0.5, 0.6)).toBe(false);
+    expect(objectWindowCrossed(0.4, 0.5)).toBe(false);
+    expect(objectWindowCrossed(0.5, 0.5)).toBe(false);
+  });
+});
+
+describe("objectGlanceDir", () => {
+  it("returns a unit vector toward the object", () => {
+    const d = objectGlanceDir(0.8375, 0.7, 0.84, 0.5); // torus below the bust
+    expect(Math.hypot(d.x, d.y)).toBeCloseTo(1, 10);
+    expect(d.y).toBeGreaterThan(0); // below = nod down (positive pitch)
+    expect(d.x).toBeLessThan(0); // marginally left of the bust
+  });
+
+  it("points up-right for the sphere", () => {
+    const d = objectGlanceDir(0.88, 0.26, 0.84, 0.5);
+    expect(d.x).toBeGreaterThan(0);
+    expect(d.y).toBeLessThan(0);
+  });
+
+  it("is axis-aligned directly below", () => {
+    const d = objectGlanceDir(0.5, 0.8, 0.5, 0.5);
+    expect(d.x).toBeCloseTo(0, 10);
+    expect(d.y).toBeCloseTo(1, 10);
+  });
+
+  it("returns exactly {0,0} for the degenerate on-center case", () => {
+    expect(objectGlanceDir(0.5, 0.5, 0.5, 0.5)).toEqual({ x: 0, y: 0 });
   });
 });

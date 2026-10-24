@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
+import { boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -205,6 +205,9 @@ interface ObjSlot {
   region: number;
 }
 
+// The [a, b] scroll windows for these poses are the single source of
+// truth in lib/scroll-fx.ts OBJECT_WINDOWS (the bust's object-attention
+// glance reads the same windows) — the composites below reference them.
 const TORUS_DIVE: DivePose = {
   x0: 0.875, y0: 0.82, x1: 0.8, y1: 0.58, s0: 1, s1: 1.16,
 };
@@ -1192,10 +1195,10 @@ export function FloatingGlyphs() {
             );
           }
         } else {
-          const tA = windowAlpha(p, 0.02, 0.48);
+          const tA = windowAlpha(p, OBJECT_WINDOWS[0].a, OBJECT_WINDOWS[0].b);
           if (tA > 0.01) {
             const slot = objSlots[0];
-            const pose = divePose(TORUS_DIVE, windowT(p, 0.02, 0.48), w, h);
+            const pose = divePose(TORUS_DIVE, windowT(p, OBJECT_WINDOWS[0].a, OBJECT_WINDOWS[0].b), w, h);
             const r = Math.min(104, w * 0.082) * pose.s;
             const A = timeS * 0.11 + p * 5;
             const B = timeS * 0.07 + p * 3;
@@ -1206,10 +1209,10 @@ export function FloatingGlyphs() {
                 drawTorusWire(c, slot.half, slot.half, r, A, B, accent, WIRE_ALPHA * alpha),
             );
           }
-          const sA = windowAlpha(p, 0.38, 0.78);
+          const sA = windowAlpha(p, OBJECT_WINDOWS[1].a, OBJECT_WINDOWS[1].b);
           if (sA > 0.01) {
             const slot = objSlots[1];
-            const pose = divePose(SPHERE_DIVE, windowT(p, 0.38, 0.78), w, h);
+            const pose = divePose(SPHERE_DIVE, windowT(p, OBJECT_WINDOWS[1].a, OBJECT_WINDOWS[1].b), w, h);
             const r = 74 * pose.s;
             const rotY = timeS * 0.15 + p * 7;
             place(slot, sA, pose.cx, pose.cy, 1, r * 1.6,
@@ -1219,10 +1222,10 @@ export function FloatingGlyphs() {
                 drawSphereWire(c, slot.half, slot.half, r, rotY, 0.5, accent, WIRE_ALPHA * alpha),
             );
           }
-          const cA = windowAlpha(p, 0.66, 1.05);
+          const cA = windowAlpha(p, OBJECT_WINDOWS[2].a, OBJECT_WINDOWS[2].b);
           if (cA > 0.01) {
             const slot = objSlots[2];
-            const pose = divePose(CUBE_DIVE, windowT(p, 0.66, 1.05), w, h);
+            const pose = divePose(CUBE_DIVE, windowT(p, OBJECT_WINDOWS[2].a, OBJECT_WINDOWS[2].b), w, h);
             const s = 52 * pose.s;
             const rotY = timeS * 0.2 + p * 6;
             const rotX = 0.6 + timeS * 0.13 + p * 2;

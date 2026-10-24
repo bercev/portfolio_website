@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { approachAngle, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, fbm2, gazeAngles, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_DIR, GLANCE_IDLE_MS, scrollShared, scrollSnapshot, smoothstep01, subscribeScrollSnapshot, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, fbm2, gazeAngles, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_COOLDOWN_MS, GLANCE_DIR, GLANCE_IDLE_MS, objectGlanceDir, OBJECT_WINDOWS, objectWindowCrossed, objectWindowPos, scrollShared, scrollSnapshot, smoothstep01, subscribeScrollSnapshot, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -118,6 +118,24 @@ function RotatingBustCanvas(): React.JSX.Element {
     let glanceStart = Number.NEGATIVE_INFINITY; // wall-clock of the last fire
     let lastMoveT = Number.NEGATIVE_INFINITY; // last pointermove; -Inf = idle
     let glanceYaw = 0; // current additive offset, rad — exactly 0 at rest
+    let glancePitch = 0; // object glances nod too (torus/cube sit below the bust)
+    let glanceDirX = GLANCE_DIR; // unit-ish direction of the current glance
+    let glanceDirY = 0;
+    let lastGlanceFire = Number.NEGATIVE_INFINITY; // cooldown across both sources
+    let prevObjT: number[] | null = null; // per-object window positions, last tick
+
+    // One fire path for both glance sources (chapter + object): the
+    // idle-pointer gate keeps the glance from fighting the pointer gaze,
+    // and the shared cooldown keeps a fling that crosses a chapter line
+    // and an object line in the same second to one beat, not two.
+    const fireGlance = (now: number, dirX: number, dirY: number) => {
+      if (now - lastMoveT < GLANCE_IDLE_MS) return;
+      if (now - lastGlanceFire < GLANCE_COOLDOWN_MS) return;
+      glanceStart = now;
+      glanceDirX = dirX;
+      glanceDirY = dirY;
+      lastGlanceFire = now;
+    };
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -150,7 +168,7 @@ function RotatingBustCanvas(): React.JSX.Element {
         0.055 * Math.sin(timeS * 0.3) +
         gazeYaw +
         glanceYaw;
-      const P = gazePitch;
+      const P = gazePitch + glancePitch;
       const cosA = Math.cos(A);
       const sinA = Math.sin(A);
       const cosP = Math.cos(P);
@@ -288,19 +306,24 @@ function RotatingBustCanvas(): React.JSX.Element {
       gazeYaw = approachAngle(gazeYaw, targetYaw, dt);
       gazePitch = approachAngle(gazePitch, targetPitch, dt);
       lightPresence = approachAngle(lightPresence, lightTarget, dt);
-      // Attention glance: additive yaw offset from the last chapter
-      // crossing — decays to exactly 0 beyond GLANCE_CUTOFF_MS, so the
-      // at-rest render is the identical code path as settled.
-      glanceYaw = glanceYawOffset(
-        now - glanceStart,
-        GLANCE_AMP_RAD * GLANCE_DIR,
-      );
+      // Attention glance: one-shot offset from the last chapter OR
+      // object crossing — decays to exactly 0 beyond GLANCE_CUTOFF_MS,
+      // so the at-rest render is the identical code path as settled.
+      // The 6° amplitude points along the fired direction: pure yaw for
+      // chapter glances (content column, left), true azimuth (yaw + nod)
+      // for object glances.
+      const glanceMag = glanceYawOffset(now - glanceStart, GLANCE_AMP_RAD);
+      glanceYaw = glanceMag * glanceDirX;
+      glancePitch = glanceMag * glanceDirY;
       // Observability contract (same quantized pattern as the field's
-      // data-ping-env): the live glance yaw in milliradians, so probes
-      // gate on the component's own clock instead of wall-clock time.
-      // Exactly "0" at rest.
+      // data-ping-env): the live glance yaw/pitch in milliradians, so
+      // probes gate on the component's own clock instead of wall-clock
+      // time. Exactly "0" at rest.
       const gq = String(Math.round(glanceYaw * 1000));
       if (canvas.dataset.glance !== gq) canvas.dataset.glance = gq;
+      const gpq = String(Math.round(glancePitch * 1000));
+      if (canvas.dataset.glancePitch !== gpq)
+        canvas.dataset.glancePitch = gpq;
       if (acc >= TICK_S) {
         // Chapter activation: the shared snapshot publisher (run-2
         // iter 20) resolves the chapter once per frame for every
@@ -316,8 +339,40 @@ function RotatingBustCanvas(): React.JSX.Element {
         if (next !== curChapter) {
           const initial = curChapter < 0;
           curChapter = next;
-          if (!initial && now - lastMoveT >= GLANCE_IDLE_MS)
-            glanceStart = now;
+          if (!initial) fireGlance(now, GLANCE_DIR, 0);
+        }
+        // Object attention (run-2 IDEA iter 19, built iter 21): when a 3D
+        // object crosses its scroll-window's 50% line with an idle
+        // pointer, the head glances toward the object's screen azimuth —
+        // the same one-shot grammar as the chapter glance, sharing its
+        // idle gate, cooldown, and decay contract. Positions resolve from
+        // the shared snapshot (objectWindowPos is the field's windowT in
+        // the lib), so no layout reads and no per-tick chapter-style
+        // resolve. The initial resolve never fires.
+        const pNow = scrollSnapshot.progress;
+        const objT = OBJECT_WINDOWS.map((w) => objectWindowPos(pNow, w));
+        if (prevObjT === null) {
+          prevObjT = objT;
+        } else {
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          for (let i = 0; i < OBJECT_WINDOWS.length; i++) {
+            if (objectWindowCrossed(prevObjT[i], objT[i])) {
+              const w = OBJECT_WINDOWS[i];
+              // Bust center in viewport fractions: gazeCenterX is cached
+              // at resize; the vertical center tracks the dive sink, the
+              // same cy the pointer gaze uses.
+              const d = objectGlanceDir(
+                w.mx,
+                w.my,
+                gazeCenterX / vw,
+                (vh / 2 + DIVE_SINK_PX * pNow) / vh,
+              );
+              fireGlance(now, d.x, d.y);
+              break; // one glance per tick — the cooldown orders the rest
+            }
+          }
+          prevObjT = objT;
         }
         draw(acc);
         acc = 0;

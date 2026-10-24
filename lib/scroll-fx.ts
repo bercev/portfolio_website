@@ -403,6 +403,80 @@ export function glanceYawOffset(
 }
 
 /**
+ * Object attention (run-2 IDEA iter 19, built iter 21): the 3D objects'
+ * scroll windows, in the same [a, b] pairs the glyph field composites
+ * them on (floating-glyphs' TORUS_DIVE / SPHERE_DIVE / CUBE_DIVE — the
+ * [a, b] here must stay byte-identical to those call sites), plus each
+ * window's mid-window anchor as viewport fractions (the DivePose x/y
+ * midpoints), so the bust can detect the 50%-line crossing AND the
+ * object's screen azimuth from the shared scroll snapshot alone — zero
+ * extra layout reads. Bust mounts at >=900px only, so these are the
+ * desktop windows (the mobile torus has no bust to glance at it).
+ */
+export interface ObjectWindow {
+  id: "torus" | "sphere" | "cube";
+  a: number;
+  b: number;
+  mx: number; // mid-window anchor x, viewport fraction
+  my: number; // mid-window anchor y, viewport fraction
+}
+export const OBJECT_WINDOWS: ObjectWindow[] = [
+  { id: "torus", a: 0.02, b: 0.48, mx: (0.875 + 0.8) / 2, my: (0.82 + 0.58) / 2 },
+  { id: "sphere", a: 0.38, b: 0.78, mx: (0.9 + 0.86) / 2, my: (0.14 + 0.38) / 2 },
+  { id: "cube", a: 0.66, b: 1.05, mx: (0.875 + 0.8) / 2, my: (0.82 + 0.6) / 2 },
+];
+
+/**
+ * Position within an object window as 0..1 — the same smoothstep the
+ * field's windowT applies, so the bust's crossing detection agrees with
+ * the field's envelope frame-for-frame. Pure function — unit-tested.
+ */
+export function objectWindowPos(p: number, w: ObjectWindow): number {
+  const t = Math.min(1, Math.max(0, (p - w.a) / (w.b - w.a)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * True iff the 50% activation line lies strictly between the two
+ * samples — fires in both scroll directions, symmetric like the chapter
+ * glance. Strict inequality: sitting exactly on the line is not a
+ * crossing. Pure function — unit-tested.
+ */
+export function objectWindowCrossed(prevT: number, curT: number): boolean {
+  return (prevT - 0.5) * (curT - 0.5) < 0;
+}
+
+/**
+ * Unit vector (viewport-fraction space, y down) from the bust's screen
+ * center toward the object's mid-window anchor — the glance's azimuth.
+ * The bust reads x≈0.84 of the viewport, so the torus/cube resolve to a
+ * downward nod and the sphere to an up-right glance. Degenerate
+ * (object exactly on the bust center — can't happen with the shipped
+ * anchors, but the pure contract needs one) → {x: 0, y: 0}: no glance
+ * direction, and the caller's amplitude math then yields exactly 0.
+ * Pure function — unit-tested.
+ */
+export function objectGlanceDir(
+  mx: number,
+  my: number,
+  bx: number,
+  by: number,
+): { x: number; y: number } {
+  const dx = mx - bx;
+  const dy = my - by;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-9) return { x: 0, y: 0 };
+  return { x: dx / len, y: dy / len };
+}
+
+/**
+ * Minimum interval between ANY two glances (chapter or object) — a
+ * fling that crosses a chapter line and an object line in the same
+ * second fires one beat, not two. Shared across both glance sources.
+ */
+export const GLANCE_COOLDOWN_MS = 2000;
+
+/**
  * Deterministic 32-bit integer hash → [0, 1). The entropy source for
  * the procedural noise below (and for stable per-glyph picks) —
  * Math.imul keeps the arithmetic in 32-bit integer space, so the
