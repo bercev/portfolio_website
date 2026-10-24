@@ -1,5 +1,6 @@
 import { BubbleMenu } from "@/components/chrome/bubble-menu";
 import { LineSidebar } from "@/components/chrome/line-sidebar";
+import { MobileChapterRibbon } from "@/components/chrome/mobile-chapter-ribbon";
 import { portfolio } from "@/data/content";
 
 /**
@@ -16,6 +17,7 @@ export function PortfolioChrome() {
     <>
       <BubbleMenu links={portfolio.contact.links} />
       <LineSidebar items={portfolio.navigation} resumeHref={resumeLink?.href} />
+      <MobileChapterRibbon items={portfolio.navigation} />
     </>
   );
 }
