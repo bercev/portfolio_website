@@ -23,6 +23,10 @@ import {
   BUST_GHOST_DEADBAND,
   BUST_GHOST_ERASE_CAP,
   BUST_GHOST_GAIN,
+  objectGhostErase,
+  OBJECT_GHOST_DEADBAND,
+  OBJECT_GHOST_ERASE_CAP,
+  OBJECT_GHOST_GAIN,
   bustLightPresence,
   bustRimLight,
   bustRimShaped,
@@ -900,6 +904,44 @@ describe("bustGhostErase", () => {
     expect(bustGhostErase(-1)).toBe(0);
     expect(bustGhostErase(Number.NaN)).toBe(0);
     expect(bustGhostErase(Number.POSITIVE_INFINITY)).toBe(0);
+  });
+});
+
+describe("objectGhostErase", () => {
+  it("is exactly 0 at/below the deadband — the at-rest clearRect contract", () => {
+    expect(objectGhostErase(0)).toBe(0);
+    expect(objectGhostErase(OBJECT_GHOST_DEADBAND)).toBe(0);
+    expect(objectGhostErase(OBJECT_GHOST_DEADBAND - 1e-4)).toBe(0);
+  });
+
+  it("never trails the base time-only rotation (fastest base rate 0.2 rad/s)", () => {
+    expect(objectGhostErase(0.11)).toBe(0);
+    expect(objectGhostErase(0.15)).toBe(0);
+    expect(objectGhostErase(0.2)).toBe(0);
+  });
+
+  it("ramps linearly above the deadband and is monotonic", () => {
+    const a = objectGhostErase(OBJECT_GHOST_DEADBAND + 0.5);
+    const b = objectGhostErase(OBJECT_GHOST_DEADBAND + 1.0);
+    expect(a).toBeCloseTo(OBJECT_GHOST_GAIN * 0.5, 10);
+    expect(b).toBeGreaterThan(a);
+    expect(b).toBeCloseTo(OBJECT_GHOST_GAIN * 1.0, 10);
+  });
+
+  it("gives a ~4-frame decay at a typical fling velocity, not a wipe", () => {
+    // 2.6 rad/s fling -> erase ~0.44, so each moving tick retains ~0.56
+    expect(objectGhostErase(2.6)).toBeCloseTo(0.44, 10);
+    expect(objectGhostErase(2.6)).toBeLessThan(OBJECT_GHOST_ERASE_CAP);
+  });
+
+  it("caps the erase — no full-wipe frames on violent flings", () => {
+    expect(objectGhostErase(10)).toBe(OBJECT_GHOST_ERASE_CAP);
+  });
+
+  it("treats degenerate inputs as rest", () => {
+    expect(objectGhostErase(-1)).toBe(0);
+    expect(objectGhostErase(Number.NaN)).toBe(0);
+    expect(objectGhostErase(Number.POSITIVE_INFINITY)).toBe(0);
   });
 });
 

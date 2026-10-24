@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
-import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, constellationEnvelope, constellationSegment, CONSTELLATION_ALPHA_MAX, CONSTELLATION_COOLDOWN_MS, dominantObject, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, shouldFireKeyRipple, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
+import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, chromaOffsetPx, constellationEnvelope, constellationSegment, CONSTELLATION_ALPHA_MAX, CONSTELLATION_COOLDOWN_MS, dominantObject, ditherDissolveLevel, fbm2, flingStormLevel, inspectFocusEnvelope, lightWashFalloff, objectDefocus, objectGhostErase, objectPrecession, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, shouldFireKeyRipple, spotlightAlphaStep, spotlightBlurTaper, spotlightCenterX, spotlightTargetAlpha, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -698,6 +698,11 @@ export function FloatingGlyphs() {
     // cube); the mobile torus reuses slot/index 0.
     const ansPhase = [0, 0, 0];
     const ansWire = [0, 0, 0];
+    // Object rotation trails (run-2 IDEA iter 30, built iter 44):
+    // previous primary angle per object (torus A, sphere rotY, cube
+    // rotY; mobile torus reuses index 0) — the per-tick angular
+    // velocity that gates the tile's phosphor fade in place().
+    const prevObjAngle: (number | null)[] = [null, null, null];
     // Chapter-reactive vocabulary (run-2 IDEA iter 7): the active chapter
     // and the section tops come from the shared snapshot publisher
     // (run-2 iter 20) — the same 45%-line resolution the bust's glance
@@ -1456,6 +1461,10 @@ export function FloatingGlyphs() {
           if (ocanvas.dataset.objectAnswer !== q)
             ocanvas.dataset.objectAnswer = q;
         }
+        // Peak tile phosphor erase this tick (observability, mirrors
+        // data-object-answer) — reset every tick by block scope, so at
+        // rest it reads exactly "0.00".
+        let ghostMax = 0;
         // Render one object into its tile, then blit it to (cx, cy) with
         // its focus blur. `envelope` is the window alpha (0..1);
         // `inspIdx` selects the object's smoothed inspection amount and
@@ -1476,13 +1485,39 @@ export function FloatingGlyphs() {
           inspectR: number,
           render: (c: CanvasRenderingContext2D, alpha: number) => void,
           renderWire: (c: CanvasRenderingContext2D, alpha: number) => void,
+          angleRad: number,
         ) => {
           const dist = Math.hypot(cx - lightLX, cy - lightLY);
           const target = pointerPresent ? lightWashFalloff(dist, inspectR) : 0;
           insp[inspIdx] += (target - insp[inspIdx]) * ease;
           const iv = insp[inspIdx] > 0.001 ? insp[inspIdx] : 0;
           const sctx = slot.ctx;
-          sctx.clearRect(0, 0, slot.region, slot.region);
+          // Object rotation trails (run-2 IDEA iter 30, built iter 44):
+          // the head's phosphor recipe ported to the tile — gate the
+          // per-tick fade on the primary angle's velocity. At/below the
+          // deadband (which time-only base rotation never exceeds) this
+          // is the exact pre-change clearRect, so the at-rest render is
+          // bit-identical by construction; above it a destination-out
+          // fill multiplies every pixel's alpha by (1 - erase), so the
+          // previous frame's glyphs decay as ghosts behind the new pose.
+          // inspIdx doubles as the object index (0/1/2, mobile torus
+          // reuses 0), matching the ansWire convention below.
+          const prev = prevObjAngle[inspIdx];
+          const angVel =
+            prev === null || dt <= 0 ? 0 : Math.abs(angleRad - prev) / dt;
+          prevObjAngle[inspIdx] = angleRad;
+          const erase = objectGhostErase(angVel);
+          if (erase > 0) ghostMax = Math.max(ghostMax, erase);
+          if (erase <= 0) {
+            sctx.clearRect(0, 0, slot.region, slot.region);
+          } else {
+            sctx.save();
+            sctx.globalCompositeOperation = "destination-out";
+            sctx.globalAlpha = 1;
+            sctx.fillStyle = `rgba(0,0,0,${erase})`;
+            sctx.fillRect(0, 0, slot.region, slot.region);
+            sctx.restore();
+          }
           // The envelope drives the dither sweep below, not alpha —
           // `sAlpha` (the fling warp dip) still dims the render.
           render(sctx, sAlpha);
@@ -1591,6 +1626,7 @@ export function FloatingGlyphs() {
                 drawTorus(c, slot.half, slot.half, r, A, B, accent, 0.4 * alpha),
               (c, alpha) =>
                 drawTorusWire(c, slot.half, slot.half, r, A, B, accent, WIRE_ALPHA * alpha),
+              A,
             );
           }
         } else {
@@ -1606,6 +1642,7 @@ export function FloatingGlyphs() {
                 drawTorus(c, slot.half, slot.half, r, A, B, accent, 0.42 * alpha),
               (c, alpha) =>
                 drawTorusWire(c, slot.half, slot.half, r, A, B, accent, WIRE_ALPHA * alpha),
+              A,
             );
           }
           const sA = windowAlpha(p, OBJECT_WINDOWS[1].a, OBJECT_WINDOWS[1].b);
@@ -1632,6 +1669,7 @@ export function FloatingGlyphs() {
                 drawSphere(c, slot.half, slot.half, r, rotY, tiltX, accent, 0.46 * alpha),
               (c, alpha) =>
                 drawSphereWire(c, slot.half, slot.half, r, rotY, tiltX, accent, WIRE_ALPHA * alpha),
+              rotY,
             );
           } else if (ocanvas && "sphereTilt" in ocanvas.dataset) {
             delete ocanvas.dataset.sphereTilt;
@@ -1648,8 +1686,17 @@ export function FloatingGlyphs() {
                 drawCube(c, slot.half, slot.half, s, rotY, rotX, accent, 0.46 * alpha),
               (c, alpha) =>
                 drawCubeWire(c, slot.half, slot.half, s, rotY, rotX, accent, WIRE_ALPHA * alpha),
+              rotY,
             );
           }
+        }
+        // Observability for probes (mirrors data-object-answer): the
+        // peak tile phosphor erase this tick, quantized — "0.00" at
+        // rest, since ghostMax resets every tick by block scope.
+        if (ocanvas) {
+          const gq = ghostMax.toFixed(2);
+          if (ocanvas.dataset.objectGhost !== gq)
+            ocanvas.dataset.objectGhost = gq;
         }
       }
     };

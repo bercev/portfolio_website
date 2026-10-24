@@ -1342,6 +1342,39 @@ export function bustGhostErase(turnVelRadS: number): number {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Object rotation trails (run-2 IDEA iter 30, filed — built iter 44): */
+/* the head owns phosphor trails (bustGhostErase above) but the       */
+/* objects — bright moving content on the same CRT — leave none.     */
+/* The same velocity-gated destination-out fade, ported to the        */
+/* object tiles: the deadband sits at 2x the fastest BASE rotation    */
+/* rate (cube rotY 0.2 rad/s; torus 0.11, sphere 0.15), so time-only   */
+/* rotation at rest erases exactly 0 and the caller takes the literal */
+/* clearRect path — the at-rest render is bit-identical by           */
+/* construction, not by tuning. Above the deadband the erase ramps    */
+/* linearly to the same cap, so the answer spin-up (up to +2.2       */
+/* rad/s) leaves a decaying phosphor echo and hard flings (scroll    */
+/* terms p*5/p*7/p*6 times dp/dt) smear the objects briefly. The     */
+/* gain is lower than the head's because object velocities run ~10x   */
+/* higher — at a typical 2.6 rad/s fling the erase is ~0.44, a       */
+/* ~4-frame decay matching the head's conservative first pass. The   */
+/* trail cannot accumulate: every moving tick fades the old frame    */
+/* and the first below-deadband tick clears it outright. Pure        */
+/* function — unit-tested.                                            */
+/* ------------------------------------------------------------------ */
+export const OBJECT_GHOST_DEADBAND = 0.4; // rad/s — 2x the fastest base rate
+export const OBJECT_GHOST_GAIN = 0.2; // erase per (rad/s) above the deadband
+export const OBJECT_GHOST_ERASE_CAP = 0.7; // never erase more than this/tick
+
+export function objectGhostErase(angVelRadS: number): number {
+  if (!Number.isFinite(angVelRadS) || angVelRadS <= OBJECT_GHOST_DEADBAND)
+    return 0;
+  return Math.min(
+    OBJECT_GHOST_ERASE_CAP,
+    OBJECT_GHOST_GAIN * (angVelRadS - OBJECT_GHOST_DEADBAND),
+  );
+}
+
 /**
  * useScrollBlur — progressive scroll blur for a fixed BACKGROUND element.
  *
