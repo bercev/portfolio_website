@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
+import { BLUE_NOISE_128, blueNoiseThreshold } from "@/lib/blue-noise";
 import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_ALPHA, boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS, OBJECT_WINDOWS } from "@/lib/scroll-fx";
 
 /**
@@ -748,27 +749,35 @@ export function FloatingGlyphs() {
       return { cv, ctx: c, half: halfExtent, region: halfExtent * 2 };
     };
 
-    // Ordered-dither dissolve tiles (run-2 iter 4): the classic Bayer-4x4
-    // threshold matrix as sixteen 4x4 device-pixel tiles — tile L passes
-    // exactly the pixels whose threshold < L, so sweeping L 0..15 with an
-    // object's window envelope dissolves it through the brand's dither
-    // grammar instead of a plain alpha crossfade. Built lazily (DOM).
-    const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+    // Ordered-dither dissolve tiles (run-2 iter 4, upgraded iter 24):
+    // the classic Bayer-4x4 threshold matrix repeats every 4px, which
+    // reads as visible cross-hatch gridding at mid-dissolve (Heckel).
+    // Replaced with a baked 128x128 blue-noise threshold tile
+    // (lib/blue-noise.ts — Mitchell best-candidate on a torus, so it
+    // repeats seamlessly): sixteen device-pixel tiles, tile L passing
+    // exactly the pixels whose threshold < L*16 (the baked histogram is
+    // perfectly flat, so the sweep is uniform). Dissolves now read as
+    // organic isotropic grain instead of a grid. Built lazily (DOM).
     let ditherTiles: HTMLCanvasElement[] | null = null;
     const getDitherTiles = () => {
       if (ditherTiles) return ditherTiles;
       ditherTiles = Array.from({ length: 16 }, (_, level) => {
         const cv = document.createElement("canvas");
-        cv.width = 4;
-        cv.height = 4;
+        cv.width = 128;
+        cv.height = 128;
         const c = cv.getContext("2d");
         if (c) {
-          c.fillStyle = "#fff";
-          for (let y = 0; y < 4; y++) {
-            for (let x = 0; x < 4; x++) {
-              if (BAYER4[y * 4 + x] < level) c.fillRect(x, y, 1, 1);
+          const img = c.createImageData(128, 128);
+          const cut = level * 16;
+          for (let i = 0; i < 128 * 128; i++) {
+            if (BLUE_NOISE_128[i] < cut) {
+              img.data[i * 4] = 255;
+              img.data[i * 4 + 1] = 255;
+              img.data[i * 4 + 2] = 255;
+              img.data[i * 4 + 3] = 255;
             }
           }
+          c.putImageData(img, 0, 0);
         }
         return cv;
       });
@@ -998,9 +1007,13 @@ export function FloatingGlyphs() {
           const ddy = py - pingOY;
           const band = Math.abs(Math.sqrt(ddx * ddx + ddy * ddy) - r);
           if (band < PING_BAND_PX) {
-            const xi = Math.round(px) & 3;
-            const yi = Math.round(py) & 3;
-            if (BAYER4[yi * 4 + xi] < env * 16) {
+            // Blue-noise gate (run-2 iter 24): the 4x4 Bayer gate stamped
+            // a visible cross-hatch on the wavefront; the 128px tile keeps
+            // the same pass fraction (env of the 0..255 range).
+            if (
+              blueNoiseThreshold(Math.round(px), Math.round(py)) <
+              env * 255
+            ) {
               pingBoost += env * (1 - band / PING_BAND_PX) * PING_BOOST_MAX;
             }
           }
@@ -1046,7 +1059,6 @@ export function FloatingGlyphs() {
           if (env <= 0.01) continue;
           const r = pingRadius01(e, PING_DURATION_S) * pingMaxR;
           if (r < 2) continue;
-          const level = env * 16;
           const pitch = 5;
           ctx.fillStyle = rgba(colors.accent, env * 0.35);
           const steps = Math.max(24, Math.floor((2 * Math.PI * r) / pitch));
@@ -1060,9 +1072,14 @@ export function FloatingGlyphs() {
               const y = pingOY + rr * sa;
               if (x < 0 || y < 0 || x >= w || y >= h) continue;
               const edge = 1 - Math.abs(rr - r) / PING_BAND_PX;
-              const xi = Math.round(x) & 3;
-              const yi = Math.round(y) & 3;
-              if (BAYER4[yi * 4 + xi] >= level * edge) continue;
+              // Blue-noise dot gate (run-2 iter 24): same pass fraction as
+              // the old Bayer gate (env*edge of the dots), now isotropic
+              // grain instead of a 4px cross-hatch.
+              if (
+                blueNoiseThreshold(Math.round(x), Math.round(y)) >=
+                env * 255 * edge
+              )
+                continue;
               ctx.fillRect(x, y, 2, 2);
             }
           }
