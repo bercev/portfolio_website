@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { edgeDirection, projectedEdgeGlyph, sobelGradient } from "@/lib/bust-edge";
 import { approachAngle, attentionStep, attentionTargetYaw, ATTENTION_REST, type AttentionState, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, contactFaceRamp, fbm2, gazeAngles, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_COOLDOWN_MS, GLANCE_DIR, GLANCE_IDLE_MS, objectGlanceDir, OBJECT_WINDOWS, objectWindowCrossed, objectWindowPos, scrollShared, scrollSnapshot, smoothstep01, subscribeScrollSnapshot, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
@@ -49,6 +50,14 @@ interface BustPoint {
   v: number; // -1..1 down
   w: number; // relief depth from luminance
   lum: number; // 0..1
+  // Edge-aware glyph (run-2 iter 32, lib/bust-edge): unit edge
+  // direction in source space, or null when the point is not on a
+  // strong edge (then the luminance ramp draws it as before). The
+  // direction is precomputed once at sample time and re-projected
+  // through the frame's yaw/pitch at draw time, so a turned contour
+  // leans into the diagonal it actually projects to.
+  edgeEu: number | null;
+  edgeEv: number | null;
 }
 
 function RotatingBustCanvas(): React.JSX.Element {
@@ -296,11 +305,22 @@ function RotatingBustCanvas(): React.JSX.Element {
             lum = Math.min(1, lum + BUST_RIM_LUM * shaped);
           }
           ctx.globalAlpha = alpha;
-          const idx = Math.min(
-            BUST_RAMP.length - 1,
-            Math.floor(lum * BUST_RAMP.length),
-          );
-          ctx.fillText(BUST_RAMP[idx], half + xr * scale, half + v1 * scale);
+          // Edge-aware glyph (run-2 iter 32): a strong-edge point
+          // traces its projected contour instead of the ramp glyph —
+          // one character either way, so density is unchanged. The
+          // rim-light lum shift above still applies to alpha; the edge
+          // glyph itself is structural, not brightness, so it is not
+          // shifted by the ramp.
+          const glyph =
+            pt.edgeEu !== null && pt.edgeEv !== null
+              ? projectedEdgeGlyph(pt.edgeEu, pt.edgeEv, cosA, cosP)
+              : BUST_RAMP[
+                  Math.min(
+                    BUST_RAMP.length - 1,
+                    Math.floor(lum * BUST_RAMP.length),
+                  )
+                ];
+          ctx.fillText(glyph, half + xr * scale, half + v1 * scale);
         }
       }
       ctx.globalAlpha = 1;
@@ -499,16 +519,31 @@ function RotatingBustCanvas(): React.JSX.Element {
       if (!octx) return;
       octx.drawImage(img, 0, 0, BUST_GRID, BUST_GRID);
       const data = octx.getImageData(0, 0, BUST_GRID, BUST_GRID).data;
+      // Full luminance grid first: Sobel needs neighbours, so the
+      // edge directions are computed from the grid, not per-point
+      // on the fly. Only the red channel is sampled (the source is
+      // monochrome-crushed; the pre-existing renderer did the same).
+      const lumGrid: number[] = new Array(BUST_GRID * BUST_GRID);
+      for (let y = 0; y < BUST_GRID; y++) {
+        for (let x = 0; x < BUST_GRID; x++) {
+          lumGrid[y * BUST_GRID + x] =
+            data[(y * BUST_GRID + x) * 4] / 255;
+        }
+      }
       const pts: BustPoint[] = [];
       for (let y = 0; y < BUST_GRID; y++) {
         for (let x = 0; x < BUST_GRID; x++) {
-          const lum = data[(y * BUST_GRID + x) * 4] / 255;
+          const lum = lumGrid[y * BUST_GRID + x];
           if (lum < 0.05) continue;
+          const { gx, gy } = sobelGradient(lumGrid, BUST_GRID, BUST_GRID, x, y);
+          const dir = edgeDirection(gx, gy);
           pts.push({
             u: (x / (BUST_GRID - 1)) * 2 - 1,
             v: (y / (BUST_GRID - 1)) * 2 - 1,
             w: (lum - 0.45) * 0.85,
             lum,
+            edgeEu: dir === null ? null : dir.eu,
+            edgeEv: dir === null ? null : dir.ev,
           });
         }
       }
