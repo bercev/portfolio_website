@@ -889,9 +889,21 @@ html:not(.dark) .grain-overlay {
  * sign) — one whisper-subtle STATIC CSS layer, zero JS, zero motion.
  * Legibility gate: if it muddies anything, close it rejected.
  *
+ * Evolved 2026-10-23 (run-2 iter 26): the plain black grille stripes became
+ * authentic aperture-grille RGB subcells — 1px R/G/B stripes on a 3px triad
+ * (Trinitron-style continuous grille, no stagger), via Maxime Heckel's
+ * phosphor-mask recipe
+ * (https://blog.maximeheckel.com/posts/the-art-of-dithering-and-retro-shading-web/).
+ * Still whisper-subtle and calm at rest (zero motion, zero JS): the subcell
+ * alpha (2% dark / 1% light) is calibrated to the retired black-stripe
+ * grille's effective strength (7% black at 25% coverage ≈ 1.75%/px), so the
+ * on/off diff stays at the original whisper level. The legibility gate from
+ * the original item re-applies — zoomed text crops at 1280 + 390 and
+ * a CRT-on/off diff must show crisp text, zero moiré, zero muddying.
+ *
  * Layering: z 70 — above page content (10), chrome rail/FAB (50) and pointer
- * effects (60), so it reads as the display surface (a real CRT's scanlines
- * cover everything incl. OSD chrome); below the terminal flyout backdrop
+ * effects (60), so it reads as the display surface (a real CRT's phosphor mask
+ * covers everything incl. OSD chrome); below the terminal flyout backdrop
  * (80) / panel (81) and the skip link (300), so the signature interactive
  * surfaces stay pristine. pointer-events: none — never eats clicks.
  * Hidden under prefers-reduced-transparency, like the grain overlay. */
@@ -909,13 +921,15 @@ html:not(.dark) .grain-overlay {
       transparent 1px,
       transparent 3px
     ),
-    /* vertical phosphor aperture-grille stripes: 1px line on a 4px pitch */
+    /* aperture-grille RGB subcells: 1px R/G/B stripes, 3px triad */
     repeating-linear-gradient(
       to right,
-      rgb(0 0 0 / 0.07) 0,
-      rgb(0 0 0 / 0.07) 1px,
-      transparent 1px,
-      transparent 4px
+      rgb(255 70 70 / 0.02) 0,
+      rgb(255 70 70 / 0.02) 1px,
+      rgb(70 255 140 / 0.02) 1px,
+      rgb(70 255 140 / 0.02) 2px,
+      rgb(90 140 255 / 0.02) 2px,
+      rgb(90 140 255 / 0.02) 3px
     );
 }
 
@@ -930,10 +944,12 @@ html:not(.dark) .crt-texture {
     ),
     repeating-linear-gradient(
       to right,
-      rgb(0 0 0 / 0.03) 0,
-      rgb(0 0 0 / 0.03) 1px,
-      transparent 1px,
-      transparent 4px
+      rgb(255 70 70 / 0.01) 0,
+      rgb(255 70 70 / 0.01) 1px,
+      rgb(70 255 140 / 0.01) 1px,
+      rgb(70 255 140 / 0.01) 2px,
+      rgb(90 140 255 / 0.01) 2px,
+      rgb(90 140 255 / 0.01) 3px
     );
 }
 
