@@ -1,19 +1,18 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   motion,
   useAnimationFrame,
   useInView,
   useMotionValue,
-  useScroll,
   useSpring,
   useTransform,
-  useVelocity,
   type MotionValue,
 } from "motion/react";
 
 import { marqueeBoost, marqueeSkewDeg } from "@/lib/scroll-fx";
+import { scrollSnapshot, subscribeScrollSnapshot } from "@/lib/scroll-fx";
 import { useHydratedReducedMotion } from "@/lib/use-hydrated-reduced-motion";
 
 type SkillGroup = {
@@ -37,14 +36,14 @@ function wrapLoop(pct: number): number {
 function SkillRow({
   groups,
   direction,
-  scrollY,
+  scrollVel,
   inView,
   reduceMotion,
   label,
 }: {
   readonly groups: readonly SkillGroup[];
   readonly direction: "forward" | "reverse";
-  readonly scrollY: MotionValue<number>;
+  readonly scrollVel: MotionValue<number>;
   readonly inView: boolean;
   readonly reduceMotion: boolean;
   readonly label: string;
@@ -55,14 +54,17 @@ function SkillRow({
   const loop = [...pills, ...pills];
 
   // Scroll-velocity driver (run-2 iter 11, React Bits "Scroll Velocity"
-  // pattern): the rows speed up with scroll velocity and lean into the
-  // scroll direction, converging to exactly the constant base rate at
-  // rest (marqueeBoost/marqueeSkewDeg are literally 0 below the
-  // reading-speed deadband). The spring settles velocity to 0 when
-  // scrolling stops; the deadband swallows any spring wobble.
+  // pattern; velocity source unified in run-2 iter 20): the rows speed up
+  // with scroll velocity and lean into the scroll direction, converging
+  // to exactly the constant base rate at rest (marqueeBoost/marqueeSkewDeg
+  // are literally 0 below the reading-speed deadband). The velocity is
+  // the shared snapshot publisher's low-passed px/s — the same sample
+  // the glyph field's warp reads — so the two velocity-driven surfaces
+  // can no longer disagree during flings (iter-19 audit vector c). The
+  // spring settles velocity to 0 when scrolling stops; the deadband
+  // swallows any spring wobble.
   const baseX = useMotionValue(0);
-  const rawVelocity = useVelocity(scrollY);
-  const velocity = useSpring(rawVelocity, { stiffness: 260, damping: 60 });
+  const velocity = useSpring(scrollVel, { stiffness: 260, damping: 60 });
   // Hover/focus pause eases 1 -> 0 over ~150ms (inside the <=200ms
   // feedback budget; the old CSS pause was instant). tabIndex stays:
   // focusing the row pauses the ticker = the WCAG 2.2.2 keyboard pause
@@ -74,6 +76,9 @@ function SkillRow({
     // Battery discipline (iter-28 rAF rule): the marquee only advances
     // while the skills section is near the viewport.
     if (reduceMotion || !inView) return;
+    // Feed the shared snapshot velocity into the spring's source (the
+    // rows' own animation frame — no extra rAF loop for this).
+    scrollVel.set(scrollSnapshot.velocity);
     const v = velocity.get();
     const target = paused.current ? 0 : 1;
     pauseAmt.current += (target - pauseAmt.current) * Math.min(1, delta / 150);
@@ -167,7 +172,15 @@ export function SkillMarquee({
   const rows = [groups.slice(0, 2), groups.slice(2)] as const;
   const stackRef = useRef<HTMLDivElement>(null);
   const inView = useInView(stackRef, { margin: "240px" });
-  const { scrollY } = useScroll();
+  // Shared scroll velocity (run-2 iter 20): the snapshot publisher's
+  // low-passed px/s, fed into each row's spring source on its own
+  // animation frame. Subscribed only in full-motion; the reduced-motion
+  // static variant never reads it.
+  const scrollVel = useMotionValue(0);
+  useEffect(() => {
+    if (reduceMotion) return;
+    return subscribeScrollSnapshot();
+  }, [reduceMotion]);
 
   return (
     <div className="skill-marquee-stack" data-skill-cluster ref={stackRef}>
@@ -180,7 +193,7 @@ export function SkillMarquee({
             key={`${index}-${rowGroups.map((group) => group.category).join("-")}`}
             groups={rowGroups}
             direction={index === 0 ? "forward" : "reverse"}
-            scrollY={scrollY}
+            scrollVel={scrollVel}
             inView={inView}
             reduceMotion={reduceMotion}
             label={rowGroups.map((group) => group.category).join(", ")}

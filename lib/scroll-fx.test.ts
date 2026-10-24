@@ -14,6 +14,7 @@ import {
   boundaryShapeGlyph,
   bustWipeDrop,
   chapterCrossingScrollY,
+  computeScrollSnapshot,
   ditherDissolveLevel,
   fbm2,
   gazeAngles,
@@ -669,5 +670,86 @@ describe("boundaryShapeGlyph", () => {
   it("treats out-of-grid as filled — the tile edge never triggers", () => {
     const tiny = new Uint8Array([1]);
     expect(boundaryShapeGlyph(tiny, 1, 1, 0, 0)).toBeNull();
+  });
+});
+
+describe("computeScrollSnapshot", () => {
+  const tops = [0, 1000, 2000, 3000, 4000, 5000, 6000];
+  const vh = 800;
+  const docH = 6800; // max scroll = 6000
+
+  it("reports progress 0 at the top, 1 at the bottom, clamped past the end", () => {
+    expect(computeScrollSnapshot(0, docH, vh, tops, 0, 0, 0).progress).toBe(0);
+    expect(
+      computeScrollSnapshot(3000, docH, vh, tops, 0, 0, 0).progress,
+    ).toBeCloseTo(0.5, 5);
+    expect(computeScrollSnapshot(6000, docH, vh, tops, 0, 0, 0).progress).toBe(
+      1,
+    );
+    expect(computeScrollSnapshot(9999, docH, vh, tops, 0, 0, 0).progress).toBe(
+      1,
+    );
+  });
+
+  it("reports progress 0 when the document fits in the viewport", () => {
+    expect(computeScrollSnapshot(0, 700, vh, tops, 0, 0, 0).progress).toBe(0);
+  });
+
+  it("derives signed velocity with the warp low-pass on the first moving frame", () => {
+    // dt = 1/60: factor = 1 - 0.88^1 = 0.12; raw = 100 / (1/60) = 6000.
+    const down = computeScrollSnapshot(100, docH, vh, tops, 1 / 60, 0, 0);
+    expect(down.velocity).toBeCloseTo(720, 5);
+    expect(down.y).toBe(100);
+    // Scrolling up is negative — the marquee needs the sign for its skew.
+    const up = computeScrollSnapshot(0, docH, vh, tops, 1 / 60, 100, 0);
+    expect(up.velocity).toBeCloseTo(-720, 5);
+  });
+
+  it("decays velocity toward 0 while settled and holds 0 at rest", () => {
+    const settled = computeScrollSnapshot(100, docH, vh, tops, 1 / 60, 100, 720);
+    expect(settled.velocity).toBeCloseTo(720 * 0.88, 5);
+    const rest = computeScrollSnapshot(100, docH, vh, tops, 1 / 60, 100, 0);
+    expect(rest.velocity).toBe(0);
+  });
+
+  it("ignores the frame delta on the seed call (dt = 0)", () => {
+    const seed = computeScrollSnapshot(2500, docH, vh, tops, 0, 0, 999);
+    expect(seed.velocity).toBe(999); // degenerate: no new information
+    expect(seed.y).toBe(2500);
+    expect(seed.progress).toBeCloseTo(2500 / 6000, 5);
+  });
+
+  it("resolves chapters with the shared 45%-activation-line rule", () => {
+    // activation line = 800 * 0.45 = 360.
+    expect(computeScrollSnapshot(0, docH, vh, tops, 0, 0, 0).chapterIndex).toBe(
+      0,
+    );
+    // y=700: viewport tops [-700, 300, 1300, ...] — last at/below 360 is index 1.
+    expect(
+      computeScrollSnapshot(700, docH, vh, tops, 0, 0, 0).chapterIndex,
+    ).toBe(1);
+    expect(
+      computeScrollSnapshot(1700, docH, vh, tops, 0, 0, 0).chapterIndex,
+    ).toBe(2);
+  });
+
+  it("never activates a missing section (+Infinity top)", () => {
+    const sparse = [0, Number.POSITIVE_INFINITY, 2000, 3000, 4000, 5000, 6000];
+    // y=1700: viewport tops [-1700, +Inf, 300, ...] — index 1 is skipped,
+    // index 2 (300 <= 360) activates.
+    expect(
+      computeScrollSnapshot(1700, docH, vh, sparse, 0, 0, 0).chapterIndex,
+    ).toBe(2);
+    // y=700: viewport tops [-700, +Inf, 1300, ...] — the gap resolves to 0.
+    expect(
+      computeScrollSnapshot(700, docH, vh, sparse, 0, 0, 0).chapterIndex,
+    ).toBe(0);
+  });
+
+  it("passes tops through as a copy and carries the viewport height", () => {
+    const snap = computeScrollSnapshot(0, docH, vh, tops, 0, 0, 0);
+    expect(snap.tops).toEqual(tops);
+    expect(snap.tops).not.toBe(tops);
+    expect(snap.vh).toBe(vh);
   });
 });

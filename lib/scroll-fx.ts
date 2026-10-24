@@ -33,6 +33,9 @@ export function useScrollDive<T extends HTMLElement>(
     const el = ref.current;
     if (!el || !active) return;
     if (window.matchMedia(REDUCED_MOTION_QUERY).matches) return;
+    // Scroll state comes from the shared snapshot publisher (run-2
+    // iter 20) — one sample per frame for every consumer, no skew.
+    const releaseSnapshot = subscribeScrollSnapshot();
 
     let raf = 0;
     let queued = false;
@@ -41,7 +44,7 @@ export function useScrollDive<T extends HTMLElement>(
 
     const apply = () => {
       queued = false;
-      const p = getScrollProgress();
+      const p = scrollSnapshot.progress;
       const y = Math.round(p * sinkPx);
       const s = Math.round((1 + p * grow) * 1000) / 1000;
       if (y !== lastY || s !== lastS) {
@@ -64,6 +67,7 @@ export function useScrollDive<T extends HTMLElement>(
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
+      releaseSnapshot();
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
@@ -332,7 +336,9 @@ export const CHAPTER_IDS = [
 /**
  * Resolve the active chapter from viewport-relative section tops: the
  * last chapter whose top is at or above the activation line — the same
- * rule the line-sidebar rail uses. Tops for missing sections should be
+ * rule shape the line-sidebar rail uses (the rail keeps its own
+ * deliberate 35% line; the background systems share the 45% line via
+ * the scroll snapshot publisher). Tops for missing sections should be
  * passed as +Infinity so they never activate. Pure function —
  * unit-tested.
  */
@@ -553,6 +559,166 @@ export function wipeGlyphChar(
  */
 export const scrollShared = { wipeThr: 0 };
 
+/* ------------------------------------------------------------------ */
+/* Single scroll snapshot publisher (run-2 iter 20 — the iter-19       */
+/* audit's fix). Before this, every scroll consumer sampled           */
+/* window.scrollY on its own cadence: the glyph field tick (3         */
+/* reads/draw at ~12fps), the bust loop (2 reads/tick at 15fps), the   */
+/* scroll-event-driven hooks (up to 60fps) — so during flings the     */
+/* field's warp, the bust's turn, the blur/dive ramps, the rail and   */
+/* hero-dim disagreed by up to a few ticks, and THREE independent     */
+/* chapter resolvers (field, bust, rail) could fire the ping, the      */
+/* glance and the rail highlight ~130ms apart. Now ONE full-rate rAF   */
+/* loop publishes { y, progress, velocity, chapterIndex, tops, vh }    */
+/* and every consumer reads the same snapshot — same-frame agreement  */
+/* by construction. Ref-counted: the loop runs while at least one     */
+/* subscriber exists and stops when the last one leaves, so            */
+/* reduced-motion paths (which never subscribe) keep zero rAF cost.   */
+/* A uniform one-frame lag vs Lenis's write is possible depending on  */
+/* registration order — harmless: every consumer shares the same      */
+/* value, which is what the skew fix requires (HAOI's ScrollBus has   */
+/* the same property).                                                */
+/* ------------------------------------------------------------------ */
+
+/** One published scroll sample — every field is scroll state, nothing else. */
+export type ScrollSnapshot = {
+  /** window.scrollY at publish time, px. */
+  y: number;
+  /** 0 at the top, 1 at the bottom — getScrollProgress(). */
+  progress: number;
+  /** Signed scroll velocity, px/s — the field's warp low-pass, shared. */
+  velocity: number;
+  /** resolveChapterIndex over tops at the 45% activation line. */
+  chapterIndex: number;
+  /** Document-relative section tops in CHAPTER_IDS order (+Infinity = missing). */
+  tops: number[];
+  /** window.innerHeight at publish time, px. */
+  vh: number;
+};
+
+/**
+ * The live snapshot. Mutated in place by the publisher each frame —
+ * consumers read its fields synchronously inside their own rAF
+ * callbacks (single-threaded: no tearing). Only valid while at least
+ * one subscriber holds the publisher alive; every subscriber reads it
+ * only after subscribing, and subscribe seeds it synchronously.
+ */
+export const scrollSnapshot: ScrollSnapshot = {
+  y: 0,
+  progress: 0,
+  velocity: 0,
+  chapterIndex: 0,
+  tops: [],
+  vh: 0,
+};
+
+/**
+ * Pure snapshot computation from explicit inputs — the unit-testable
+ * core of the publisher. velocity is the field's warp low-pass
+ * (1 - 0.88^(dt*60), the exact formula the glyph tick used), kept
+ * SIGNED here: the field takes Math.abs at its velocityStretch call,
+ * the marquee needs the sign for its skew direction. Pure function —
+ * unit-tested.
+ */
+export function computeScrollSnapshot(
+  scrollYPx: number,
+  docHeightPx: number,
+  viewportHPx: number,
+  sectionTopsPx: readonly number[],
+  dtS: number,
+  prevYPx: number,
+  prevVelocityPxS: number,
+): ScrollSnapshot {
+  const max = docHeightPx - viewportHPx;
+  const progress =
+    max <= 0 ? 0 : Math.min(1, Math.max(0, scrollYPx / max));
+  const raw = dtS > 0 ? (scrollYPx - prevYPx) / dtS : 0;
+  const velocity =
+    prevVelocityPxS +
+    (raw - prevVelocityPxS) * (1 - Math.pow(0.88, dtS * 60));
+  const chapterIndex = resolveChapterIndex(
+    sectionTopsPx.map((t) =>
+      Number.isFinite(t)
+        ? t - scrollYPx
+        : Number.POSITIVE_INFINITY,
+    ),
+    viewportHPx * 0.45,
+  );
+  return {
+    y: scrollYPx,
+    progress,
+    velocity,
+    chapterIndex,
+    tops: [...sectionTopsPx],
+    vh: viewportHPx,
+  };
+}
+
+let snapSubscribers = 0;
+let snapRaf = 0;
+let snapPrevY = 0;
+let snapPrevVel = 0;
+let snapLastT = 0;
+
+function publishSnapshot(seed: boolean): void {
+  const now = performance.now();
+  // Clamp the frame delta so a tab-return can't inject a huge raw velocity.
+  const dtS = seed ? 0 : Math.min(Math.max((now - snapLastT) / 1000, 0), 0.1);
+  snapLastT = now;
+  const y = window.scrollY;
+  const vh = window.innerHeight;
+  const next = computeScrollSnapshot(
+    y,
+    document.documentElement.scrollHeight,
+    vh,
+    CHAPTER_IDS.map((id) => {
+      const el = document.getElementById(id);
+      return el
+        ? el.getBoundingClientRect().top + y
+        : Number.POSITIVE_INFINITY;
+    }),
+    dtS,
+    snapPrevY,
+    snapPrevVel,
+  );
+  snapPrevY = next.y;
+  snapPrevVel = next.velocity;
+  scrollSnapshot.y = next.y;
+  scrollSnapshot.progress = next.progress;
+  scrollSnapshot.velocity = next.velocity;
+  scrollSnapshot.chapterIndex = next.chapterIndex;
+  scrollSnapshot.tops = next.tops;
+  scrollSnapshot.vh = next.vh;
+}
+
+function publishLoop(): void {
+  if (snapSubscribers === 0) return;
+  publishSnapshot(false);
+  snapRaf = requestAnimationFrame(publishLoop);
+}
+
+/**
+ * Hold the snapshot publisher alive; the returned function releases
+ * it. The first subscriber seeds the snapshot synchronously, so a
+ * read immediately after subscribing never sees the zero initial.
+ * Call only from client effects (never under prefers-reduced-motion —
+ * RM paths keep their direct sampling and zero rAF cost).
+ */
+export function subscribeScrollSnapshot(): () => void {
+  snapSubscribers += 1;
+  if (snapSubscribers === 1) {
+    publishSnapshot(true);
+    snapRaf = requestAnimationFrame(publishLoop);
+  }
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    snapSubscribers = Math.max(0, snapSubscribers - 1);
+    if (snapSubscribers === 0) cancelAnimationFrame(snapRaf);
+  };
+}
+
 /**
  * Bust dither-dissolve at chapter boundaries (run-2 IDEA iter 14 — "the
  * head tears at the boundary"): the portrait's point relief dissolves
@@ -641,6 +807,9 @@ export function useScrollBlur<T extends HTMLElement>(
     const el = ref.current;
     if (!el || !active) return;
     if (window.matchMedia(REDUCED_MOTION_QUERY).matches) return;
+    // Scroll state comes from the shared snapshot publisher (run-2
+    // iter 20) — one sample per frame for every consumer, no skew.
+    const releaseSnapshot = subscribeScrollSnapshot();
 
     let raf = 0;
     let queued = false;
@@ -649,7 +818,7 @@ export function useScrollBlur<T extends HTMLElement>(
     const apply = () => {
       queued = false;
       // Quantize to 0.5px steps.
-      const b = Math.round(getScrollProgress() * maxBlur * 2) / 2;
+      const b = Math.round(scrollSnapshot.progress * maxBlur * 2) / 2;
       if (b !== lastBlur) {
         lastBlur = b;
         el.style.filter = b > 0 ? `blur(${b}px)` : "";
@@ -666,6 +835,7 @@ export function useScrollBlur<T extends HTMLElement>(
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
+      releaseSnapshot();
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);

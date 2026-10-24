@@ -10,6 +10,13 @@ import {
 } from "react";
 
 import type { PortfolioContent } from "@/data/content";
+import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
+import {
+  CHAPTER_IDS,
+  resolveChapterIndex,
+  scrollSnapshot,
+  subscribeScrollSnapshot,
+} from "@/lib/scroll-fx";
 
 import styles from "./line-sidebar.module.css";
 
@@ -80,6 +87,14 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
   const runFrameRef = useRef<(now: number) => void>(() => undefined);
   const activeIndexRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Scroll state source (run-2 iter 20): the shared snapshot publisher
+  // in full-motion — one scroll sample per frame for the rail, the
+  // field, the bust and the marquee. Under prefers-reduced-motion the
+  // rail keeps its direct sampling (today's behavior, zero publisher
+  // rAF cost).
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia(REDUCED_MOTION_QUERY).matches;
 
   const runFrame = useCallback((now: number) => {
     const delta = Math.min((now - lastFrameRef.current) / 1000, 0.05);
@@ -130,41 +145,70 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
   };
 
   const updateActiveSection = useCallback(() => {
-    const activationLine = window.innerHeight * ACTIVATION_LINE;
-    let nextIndex = 0;
-
-    items.forEach((item, index) => {
-      const sectionTop = document
-        .getElementById(item.id)
-        ?.getBoundingClientRect().top;
-      if (sectionTop !== undefined && sectionTop <= activationLine) {
-        nextIndex = index;
+    const vh = window.innerHeight;
+    const activationLine = vh * ACTIVATION_LINE;
+    // The rail keeps its own deliberate 35% activation line (commit
+    // 6179062) — only the tops source changes: the shared snapshot's
+    // document-relative tops in full-motion (no per-consumer layout
+    // reads, no multi-tick disagreement), direct reads under RM.
+    const snap = reduceMotion ? null : scrollSnapshot;
+    const y = snap
+      ? snap.y
+      : Number.isFinite(window.scrollY)
+        ? window.scrollY
+        : 0;
+    const docTop = (id: string): number => {
+      if (snap) {
+        const ti = CHAPTER_IDS.indexOf(id as (typeof CHAPTER_IDS)[number]);
+        return ti >= 0 ? snap.tops[ti] : Number.POSITIVE_INFINITY;
       }
-    });
+      const el = document.getElementById(id);
+      return el
+        ? el.getBoundingClientRect().top + window.scrollY
+        : Number.POSITIVE_INFINITY;
+    };
+
+    const nextIndex = resolveChapterIndex(
+      items.map((item) => {
+        const t = docTop(item.id);
+        return Number.isFinite(t) ? t - y : Number.POSITIVE_INFINITY;
+      }),
+      activationLine,
+    );
 
     const documentHeight = document.documentElement.scrollHeight;
-    if (window.scrollY + window.innerHeight >= documentHeight - 2) {
-      nextIndex = items.length - 1;
-    }
+    const atBottom = y + vh >= documentHeight - 2;
+    const resolved = atBottom ? items.length - 1 : nextIndex;
 
-    if (activeIndexRef.current === nextIndex) return;
+    if (activeIndexRef.current === resolved) return;
 
-    activeIndexRef.current = nextIndex;
-    setActiveIndex(nextIndex);
+    activeIndexRef.current = resolved;
+    setActiveIndex(resolved);
     startLoop();
-  }, [items, startLoop]);
+  }, [items, startLoop, reduceMotion]);
 
   useEffect(() => {
     let updateFrame: number | null = null;
+    // Hold the shared scroll snapshot publisher (run-2 iter 20) in
+    // full-motion; under reduced motion the rail keeps its direct
+    // sampling and the publisher never starts for it.
+    const releaseSnapshot = reduceMotion
+      ? undefined
+      : subscribeScrollSnapshot();
 
     const scheduleUpdate = () => {
       if (updateFrame !== null) return;
 
       updateFrame = requestAnimationFrame(() => {
         updateFrame = null;
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        const y = Number.isFinite(window.scrollY) ? window.scrollY : 0;
-        const progress = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
+        const progress = reduceMotion
+          ? (() => {
+              const max =
+                document.documentElement.scrollHeight - window.innerHeight;
+              const y = Number.isFinite(window.scrollY) ? window.scrollY : 0;
+              return max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
+            })()
+          : scrollSnapshot.progress;
         navRef.current?.style.setProperty("--progress", String(progress));
         const slots = measureSectionSlots(items.map((item) => item.id));
         itemRefs.current.forEach((item, index) => {
@@ -180,12 +224,13 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
     window.addEventListener("hashchange", scheduleUpdate);
 
     return () => {
+      releaseSnapshot?.();
       window.removeEventListener("scroll", scheduleUpdate);
       window.removeEventListener("resize", scheduleUpdate);
       window.removeEventListener("hashchange", scheduleUpdate);
       if (updateFrame !== null) cancelAnimationFrame(updateFrame);
     };
-  }, [items, updateActiveSection]);
+  }, [items, updateActiveSection, reduceMotion]);
 
   useEffect(() => {
     runFrameRef.current = runFrame;

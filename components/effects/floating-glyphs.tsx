@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { MOBILE_QUERY, REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
-import { boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, getScrollProgress, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, resolveChapterIndex, scrollShared, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
+import { boundaryShapeGlyph, bustWipeDrop, ditherDissolveLevel, fbm2, inspectFocusEnvelope, lightWashFalloff, objectDefocus, pingEnvelope, pingRadius01, scrollShared, scrollSnapshot, subscribeScrollSnapshot, useScrollBlur, velocityStretch, chapterCrossingScrollY, wipeGlyphChar, wipeRawFrac, wipeSweepThreshold, WIPE_FBM_WEIGHT, WIPE_NOISE_PX, WIPE_SWEEP_BIAS, CHAPTER_IDS } from "@/lib/scroll-fx";
 
 /**
  * FloatingGlyphs — the site background since the 2026-10-22 simplification
@@ -628,6 +628,9 @@ export function FloatingGlyphs() {
     root.dataset.journey = "active";
     let disposed = false;
     let raf = 0;
+    // Snapshot-publisher hold (run-2 iter 20) — assigned in start()'s
+    // animated path, released in the effect cleanup below.
+    let snapRelease: (() => void) | undefined;
     let glyphs: Glyph[] = [];
     let w = 0;
     let h = 0;
@@ -642,9 +645,10 @@ export function FloatingGlyphs() {
     // page. During fast scrolls the glyph field streaks along the scroll
     // axis (a warp-field read); at rest vel decays to 0 and stretch is
     // exactly 0, so the still render is identical to the pre-warp field.
-    // Reduced-motion never reaches here — draw(0) leaves vel at 0.
-    let vel = 0;
-    let lastScrollY = 0;
+    // The velocity now comes from the shared snapshot publisher (run-2
+    // iter 20) — the same low-pass, sampled once per frame for every
+    // consumer. Reduced-motion never reaches here — draw(0) leaves the
+    // snapshot unread.
     // Pointer light-wash (run-2 iter 6): a FROST light source follows
     // the pointer and illuminates the glyphs around it — the pointer's
     // half of the background's reactivity (scroll owns the other half).
@@ -663,14 +667,15 @@ export function FloatingGlyphs() {
     // leaves the render identical; animated ticks only (dt>0), so the
     // reduced-motion still is untouched.
     let insp = [0, 0, 0];
-    // Chapter-reactive vocabulary (run-2 IDEA iter 7): section elements
-    // are resolved per animated tick via getBoundingClientRect (robust to
-    // transformed ancestors — the same rule the line-sidebar rail uses).
-    // curChapter starts at -1 so the first tick lands on the real chapter
-    // without presuming the visitor loaded at the top; vocabBlend 0→1
-    // over ~0.9s dissolves the field's characters toward the new
-    // chapter's set.
-    const chapterEls = CHAPTER_IDS.map((id) => document.getElementById(id));
+    // Chapter-reactive vocabulary (run-2 IDEA iter 7): the active chapter
+    // and the section tops come from the shared snapshot publisher
+    // (run-2 iter 20) — the same 45%-line resolution the bust's glance
+    // reads (the rail keeps its own deliberate 35% line over the same
+    // published tops), so the ping fires on the exact same frame as the
+    // glance. curChapter starts at -1 so the first tick lands on the
+    // real chapter without presuming the visitor loaded at the top;
+    // vocabBlend 0→1 over ~0.9s dissolves the field's characters toward
+    // the new chapter's set.
     let curChapter = -1;
     /**
      * Chapter-crossing noise wipe (run-2 IDEA iter 12): the continuous,
@@ -788,16 +793,13 @@ export function FloatingGlyphs() {
       if (!colors) return;
       timeS += dt;
       ctx.clearRect(0, 0, w, h);
-      // Warp stretch: sample scroll velocity on animated ticks only,
-      // smoothed with a fast-attack single-pole low-pass so flings
-      // bloom the field and slow reading scrolls stay calm.
+      // Warp stretch: scroll velocity from the shared snapshot
+      // publisher (run-2 iter 20) — one low-passed sample per frame for
+      // every consumer, so the field's warp and the marquee's boost read
+      // the same velocity during flings.
       let stretch = 0;
       if (dt > 0) {
-        const sy = window.scrollY;
-        const raw = Math.abs(sy - lastScrollY) / Math.max(dt, 1e-3);
-        lastScrollY = sy;
-        vel += (raw - vel) * (1 - Math.pow(0.88, dt * 60));
-        stretch = velocityStretch(vel);
+        stretch = velocityStretch(Math.abs(scrollSnapshot.velocity));
       }
       // Pointer parallax converges on wall-clock time, not per-draw call,
       // so the feel is identical whether this runs at 12 or 60 fps.
@@ -813,29 +815,24 @@ export function FloatingGlyphs() {
       const lightLX = (pointerX * 0.5 + 0.5) * w;
       const lightLY = (pointerY * 0.5 + 0.5) * h;
       const washRadius = Math.min(Math.max(Math.min(w, h) * 0.3, 200), 380);
-      const scrollShift = window.scrollY;
-      // Chapter-reactive vocabulary (animated ticks only): resolve the
-      // active chapter from the sections' viewport-relative tops against
-      // a 45% activation line (the rail's rule). The chapter-crossing
-      // noise wipe (declared above) owns every glyph's character on
-      // these ticks — a scroll-driven tear between dialects, never a
-      // global pop. The reduced-motion still (dt=0) never runs this and
-      // keeps the base GLYPHS field.
+      const scrollShift = scrollSnapshot.y;
+      // Chapter-reactive vocabulary (animated ticks only): the active
+      // chapter and document-relative section tops come from the shared
+      // snapshot publisher (run-2 iter 20) — no per-tick layout reads
+      // here, and the bust's glance + the rail resolve the identical
+      // value, so the ping fires on the same frame they do. The
+      // chapter-crossing noise wipe (declared above) owns every glyph's
+      // character on these ticks — a scroll-driven tear between dialects,
+      // never a global pop. The reduced-motion still (dt=0) never runs
+      // this and keeps the base GLYPHS field.
       if (dt > 0) {
-        const sy = window.scrollY;
-        // Document-relative section tops, computed once per tick — the
-        // viewport-relative tops (for resolveChapterIndex) derive from
+        const sy = scrollSnapshot.y;
+        // Document-relative section tops, published once per frame — the
+        // viewport-relative tops (for the wipe interval) derive from
         // these, so the crossing math and the activation rule can never
         // disagree about where a chapter begins.
-        const docTops = chapterEls.map((el) =>
-          el ? el.getBoundingClientRect().top + sy : Number.POSITIVE_INFINITY,
-        );
-        const next = resolveChapterIndex(
-          docTops.map((t) =>
-            Number.isFinite(t) ? t - sy : Number.POSITIVE_INFINITY,
-          ),
-          h * 0.45,
-        );
+        const docTops = scrollSnapshot.tops;
+        const next = scrollSnapshot.chapterIndex;
         // The wipe interval: k crossings sit at or above the scroll
         // position; the field tears from chapter k-1's dialect to chapter
         // k's across the interval between the surrounding crossings.
@@ -1080,7 +1077,7 @@ export function FloatingGlyphs() {
       // pattern cell is one device pixel; skipped at level 15, where the
       // settled window renders identically to the pre-dissolve object.
       if (dt > 0 && octx && objSlots.length === 3) {
-        const p = getScrollProgress();
+        const p = scrollSnapshot.progress;
         const accent = colors.accent;
         const sAlpha = stretch > 0.001 ? 1 - 0.3 * stretch : 1;
         const sX = stretch > 0.001 ? 1 - 0.15 * stretch : 1;
@@ -1297,11 +1294,14 @@ export function FloatingGlyphs() {
       }
       if (disposed) return;
       resize();
-      lastScrollY = window.scrollY;
       if (reduced) {
         draw(0); // one deliberate still frame; bust stays absent by design
         return;
       }
+      // Animated path only: hold the shared scroll snapshot publisher
+      // (run-2 iter 20) — one scroll sample per frame for the field, the
+      // bust, the rail and the marquee. Released on unmount.
+      snapRelease = subscribeScrollSnapshot();
       root.setAttribute("data-ascii", "active");
       window.addEventListener("pointermove", onPointer, { passive: true });
       document.addEventListener("pointerleave", onPointerGone);
@@ -1317,6 +1317,7 @@ export function FloatingGlyphs() {
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
+      snapRelease?.();
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointer);
       document.removeEventListener("pointerleave", onPointerGone);

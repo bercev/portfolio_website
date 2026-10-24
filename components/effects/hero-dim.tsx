@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from "react";
 
+import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
+import { scrollSnapshot, subscribeScrollSnapshot } from "@/lib/scroll-fx";
+
 /**
  * HeroDim — a scroll-aware frosted dim over the procedural background.
  *
@@ -20,12 +23,21 @@ export function HeroDim() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Scroll state comes from the shared snapshot publisher (run-2
+    // iter 20) in full-motion — one sample per frame for every
+    // consumer. Under prefers-reduced-motion the dim keeps its direct
+    // sampling (today's behavior) and the publisher never starts for it.
+    const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
+    const releaseSnapshot = reduceMotion
+      ? undefined
+      : subscribeScrollSnapshot();
 
     let raf = 0;
     const update = () => {
       raf = 0;
-      const vh = window.innerHeight || 1;
-      const t = Math.min(1, Math.max(0, window.scrollY / vh));
+      const vh = (reduceMotion ? window.innerHeight : scrollSnapshot.vh) || 1;
+      const y = reduceMotion ? window.scrollY : scrollSnapshot.y;
+      const t = Math.min(1, Math.max(0, y / vh));
       // Smoothstep ease: full strength at scroll 0, fully gone after 1 viewport.
       const eased = t * t * (3 - 2 * t);
       const strength = 1 - eased;
@@ -41,6 +53,7 @@ export function HeroDim() {
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
+      releaseSnapshot?.();
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);

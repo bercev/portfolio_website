@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { approachAngle, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, CHAPTER_IDS, fbm2, gazeAngles, getScrollProgress, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_DIR, GLANCE_IDLE_MS, resolveChapterIndex, scrollShared, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, bustGhostErase, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, fbm2, gazeAngles, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_DIR, GLANCE_IDLE_MS, scrollShared, scrollSnapshot, smoothstep01, subscribeScrollSnapshot, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -107,13 +107,13 @@ function RotatingBustCanvas(): React.JSX.Element {
     // GLANCE_IDLE_MS) keeps it from fighting the pointer gaze: an
     // actively-moving pointer owns the head's attention, not the
     // chapter. Chapter resolution reuses the rail's rule (last
-    // section-top at/above the 45% line), same as the glyph field's
-    // vocabulary — a one-tick disagreement between the two components
-    // during a fast fling only shifts the fire time by ~66ms, which the
-    // 1.2s decay swallows. Never fires on the initial resolve (like the
-    // chapter-entry ping), and the bust never mounts under reduced
-    // motion, so there is no RM branch to audit.
-    const chapterEls = CHAPTER_IDS.map((id) => document.getElementById(id));
+    // Attention glance state. The chapter comes from the shared scroll
+    // snapshot publisher (run-2 iter 20) — the same 45%-line resolution
+    // the glyph field's ping reads (the rail keeps its own deliberate
+    // 35% line over the same published tops) — so the glance fires on
+    // the exact same frame as the ping during a fast fling. Never fires
+    // on the initial resolve (like the chapter-entry ping), and the bust
+    // never mounts under reduced motion, so there is no RM branch to audit.
     let curChapter = -1; // resolved per draw tick; -1 = not yet resolved
     let glanceStart = Number.NEGATIVE_INFINITY; // wall-clock of the last fire
     let lastMoveT = Number.NEGATIVE_INFINITY; // last pointermove; -Inf = idle
@@ -141,7 +141,7 @@ function RotatingBustCanvas(): React.JSX.Element {
 
     const draw = (dtTickS = 0) => {
       if (!cssSize || points.length === 0) return;
-      const p = getScrollProgress();
+      const p = scrollSnapshot.progress;
       // Scroll turn + idle sway + pointer gaze + attention glance,
       // composed into one rotation. The glance is exactly 0 at rest, so
       // the settled render is byte-identical to the pre-glance one.
@@ -261,7 +261,7 @@ function RotatingBustCanvas(): React.JSX.Element {
       // scroll progress, so scrolling with a parked pointer stays correct —
       // then ease the head toward it (~1s settle, person-like, never a whip).
       // The same center also drives the rim-light direction and presence.
-      const cy = window.innerHeight / 2 + DIVE_SINK_PX * getScrollProgress();
+      const cy = window.innerHeight / 2 + DIVE_SINK_PX * scrollSnapshot.progress;
       let targetYaw = 0;
       let targetPitch = 0;
       let lightTarget = 0;
@@ -302,16 +302,17 @@ function RotatingBustCanvas(): React.JSX.Element {
       const gq = String(Math.round(glanceYaw * 1000));
       if (canvas.dataset.glance !== gq) canvas.dataset.glance = gq;
       if (acc >= TICK_S) {
-        // Chapter activation: resolve per draw tick (7 layout reads at
-        // 15fps — the glyph field does the same on its ticks). A real
-        // crossing with an idle pointer fires the glance; the initial
-        // resolve never does.
-        const next = resolveChapterIndex(
-          chapterEls.map((el) =>
-            el ? el.getBoundingClientRect().top : Number.POSITIVE_INFINITY,
-          ),
-          window.innerHeight * 0.45,
-        );
+        // Chapter activation: the shared snapshot publisher (run-2
+        // iter 20) resolves the chapter once per frame for every
+        // consumer — the bust's glance and the field's ping read the
+        // identical snapshot.chapterIndex, so they fire on the exact
+        // same frame during a fast fling (the old per-tick resolve
+        // could disagree by ~66ms, which the 1.2s decay used to
+        // swallow). The rail keeps its own deliberate 35% line over
+        // the same published tops (see line-sidebar). A real crossing
+        // with an idle pointer fires the glance; the initial resolve
+        // never does.
+        const next = scrollSnapshot.chapterIndex;
         if (next !== curChapter) {
           const initial = curChapter < 0;
           curChapter = next;
@@ -379,6 +380,11 @@ function RotatingBustCanvas(): React.JSX.Element {
 
     void start();
     window.addEventListener("resize", onResize);
+    // Shared scroll snapshot (run-2 iter 20): this component mounts only
+    // in animated desktop ASCII mode (never under reduced motion), so it
+    // always subscribes — one scroll sample per frame for the turn, the
+    // dive sink and the glance, identical to the field's and the rail's.
+    const releaseSnapshot = subscribeScrollSnapshot();
     // Gaze input: the bust mounts only in animated desktop ASCII mode (it
     // never renders under reduced motion), so these listeners exist only
     // there. Pointer-leave / hidden tab → ease back to the scroll pose.
@@ -399,6 +405,7 @@ function RotatingBustCanvas(): React.JSX.Element {
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
+      releaseSnapshot();
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointerMove);
       document.documentElement.removeEventListener(
