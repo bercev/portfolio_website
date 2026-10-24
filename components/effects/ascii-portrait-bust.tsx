@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { approachAngle, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, fbm2, gazeAngles, getScrollProgress, scrollShared, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
+import { approachAngle, bustLightPresence, bustRimLight, bustRimShaped, BUST_RIM_LUM, BUST_RIM_MAX, bustWipeDepth, BUST_WIPE_NOISE_K, CHAPTER_IDS, fbm2, gazeAngles, getScrollProgress, glanceYawOffset, GLANCE_AMP_RAD, GLANCE_DIR, GLANCE_IDLE_MS, resolveChapterIndex, scrollShared, smoothstep01, useScrollBlur, useScrollDive } from "@/lib/scroll-fx";
 
 /**
  * AsciiPortraitBust — Figure system v2 (replaces the hand-rolled
@@ -95,6 +95,27 @@ function RotatingBustCanvas(): React.JSX.Element {
     let lightV = 0;
     let lightPresence = 0; // eased 0..1 — exactly 0 at rest
 
+    // Attention glance (run-2 IDEA iter 16): on chapter activation with
+    // an idle pointer, the head glances toward the new chapter's
+    // headline — an additive yaw offset with a ~1.2s exponential decay,
+    // so the glance is a transient directed-motion beat and rest is
+    // provably byte-identical (the offset is exactly 0 beyond
+    // GLANCE_CUTOFF_MS). The idle-pointer gate (no pointermove for
+    // GLANCE_IDLE_MS) keeps it from fighting the pointer gaze: an
+    // actively-moving pointer owns the head's attention, not the
+    // chapter. Chapter resolution reuses the rail's rule (last
+    // section-top at/above the 45% line), same as the glyph field's
+    // vocabulary — a one-tick disagreement between the two components
+    // during a fast fling only shifts the fire time by ~66ms, which the
+    // 1.2s decay swallows. Never fires on the initial resolve (like the
+    // chapter-entry ping), and the bust never mounts under reduced
+    // motion, so there is no RM branch to audit.
+    const chapterEls = CHAPTER_IDS.map((id) => document.getElementById(id));
+    let curChapter = -1; // resolved per draw tick; -1 = not yet resolved
+    let glanceStart = Number.NEGATIVE_INFINITY; // wall-clock of the last fire
+    let lastMoveT = Number.NEGATIVE_INFINITY; // last pointermove; -Inf = idle
+    let glanceYaw = 0; // current additive offset, rad — exactly 0 at rest
+
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       cssSize = canvas.clientWidth;
@@ -118,11 +139,14 @@ function RotatingBustCanvas(): React.JSX.Element {
     const draw = () => {
       if (!cssSize || points.length === 0) return;
       const p = getScrollProgress();
-      // Scroll turn + idle sway + pointer gaze, composed into one rotation.
+      // Scroll turn + idle sway + pointer gaze + attention glance,
+      // composed into one rotation. The glance is exactly 0 at rest, so
+      // the settled render is byte-identical to the pre-glance one.
       const A =
         BUST_MAX_TURN * smoothstep01(p) +
         0.055 * Math.sin(timeS * 0.3) +
-        gazeYaw;
+        gazeYaw +
+        glanceYaw;
       const P = gazePitch;
       const cosA = Math.cos(A);
       const sinA = Math.sin(A);
@@ -241,7 +265,36 @@ function RotatingBustCanvas(): React.JSX.Element {
       gazeYaw = approachAngle(gazeYaw, targetYaw, dt);
       gazePitch = approachAngle(gazePitch, targetPitch, dt);
       lightPresence = approachAngle(lightPresence, lightTarget, dt);
+      // Attention glance: additive yaw offset from the last chapter
+      // crossing — decays to exactly 0 beyond GLANCE_CUTOFF_MS, so the
+      // at-rest render is the identical code path as settled.
+      glanceYaw = glanceYawOffset(
+        now - glanceStart,
+        GLANCE_AMP_RAD * GLANCE_DIR,
+      );
+      // Observability contract (same quantized pattern as the field's
+      // data-ping-env): the live glance yaw in milliradians, so probes
+      // gate on the component's own clock instead of wall-clock time.
+      // Exactly "0" at rest.
+      const gq = String(Math.round(glanceYaw * 1000));
+      if (canvas.dataset.glance !== gq) canvas.dataset.glance = gq;
       if (acc >= TICK_S) {
+        // Chapter activation: resolve per draw tick (7 layout reads at
+        // 15fps — the glyph field does the same on its ticks). A real
+        // crossing with an idle pointer fires the glance; the initial
+        // resolve never does.
+        const next = resolveChapterIndex(
+          chapterEls.map((el) =>
+            el ? el.getBoundingClientRect().top : Number.POSITIVE_INFINITY,
+          ),
+          window.innerHeight * 0.45,
+        );
+        if (next !== curChapter) {
+          const initial = curChapter < 0;
+          curChapter = next;
+          if (!initial && now - lastMoveT >= GLANCE_IDLE_MS)
+            glanceStart = now;
+        }
         draw();
         acc = 0;
       }
@@ -309,10 +362,13 @@ function RotatingBustCanvas(): React.JSX.Element {
     const onPointerMove = (e: PointerEvent) => {
       lastPX = e.clientX;
       lastPY = e.clientY;
+      lastMoveT = performance.now();
     };
     const onPointerGone = () => {
       lastPX = null;
       lastPY = null;
+      // No pointer in the window = nothing to fight the glance.
+      lastMoveT = Number.NEGATIVE_INFINITY;
     };
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", onPointerGone);

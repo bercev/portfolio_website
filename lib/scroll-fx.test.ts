@@ -13,6 +13,11 @@ import {
   ditherDissolveLevel,
   fbm2,
   gazeAngles,
+  glanceYawOffset,
+  GLANCE_AMP_RAD,
+  GLANCE_CUTOFF_MS,
+  GLANCE_DIR,
+  GLANCE_TAU_MS,
   hash2,
   inspectFocusEnvelope,
   lightWashFalloff,
@@ -222,6 +227,45 @@ describe("pingEnvelope", () => {
     expect(pingEnvelope(-1)).toBe(0);
     expect(pingEnvelope(0.5, 0)).toBe(0);
     expect(pingEnvelope(0.5, -2)).toBe(0);
+  });
+});
+
+describe("glanceYawOffset", () => {
+  it("peaks at the amplitude at t=0", () => {
+    expect(glanceYawOffset(0, 0.105)).toBe(0.105);
+    expect(glanceYawOffset(0, GLANCE_AMP_RAD * GLANCE_DIR)).toBeCloseTo(
+      -0.105,
+      10,
+    );
+  });
+  it("decays monotonically toward 0", () => {
+    const a = glanceYawOffset(100, 0.105);
+    const b = glanceYawOffset(500, 0.105);
+    const c = glanceYawOffset(1000, 0.105);
+    expect(a).toBeLessThan(0.105);
+    expect(b).toBeLessThan(a);
+    expect(c).toBeLessThan(b);
+    expect(c).toBeGreaterThan(0);
+    // e-folding check: value at one tau is amplitude/e
+    expect(glanceYawOffset(GLANCE_TAU_MS, 0.105)).toBeCloseTo(
+      0.105 / Math.E,
+      10,
+    );
+  });
+  it("is exactly 0 at and past the cutoff, and for degenerate input", () => {
+    expect(glanceYawOffset(GLANCE_CUTOFF_MS, 0.105)).toBe(0);
+    expect(glanceYawOffset(99999, 0.105)).toBe(0);
+    expect(glanceYawOffset(-1, 0.105)).toBe(0);
+    expect(glanceYawOffset(100, 0)).toBe(0);
+  });
+  it("preserves the sign of the amplitude", () => {
+    expect(glanceYawOffset(200, -0.105)).toBeLessThan(0);
+    expect(glanceYawOffset(200, 0.105)).toBeGreaterThan(0);
+  });
+  it("is ~1.2s to near-zero at the glance tau", () => {
+    expect(Math.abs(glanceYawOffset(1200, GLANCE_AMP_RAD))).toBeLessThan(
+      0.01,
+    );
   });
 });
 

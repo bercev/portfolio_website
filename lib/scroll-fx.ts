@@ -373,6 +373,29 @@ export function pingRadius01(elapsedS: number, durationS = 1.6): number {
   return smoothstep01(elapsedS / durationS);
 }
 
+// Portrait attention glance (run-2 IDEA iter 16): on chapter activation
+// with an idle pointer, the bust glances toward the new chapter's
+// headline — an additive yaw offset with an exponential decay, so the
+// glance is a transient directed-motion beat and rest is provably
+// byte-identical (exactly 0 beyond the cutoff). Direction: the headlines
+// sit in the content column, left of the right-parked bust — the same
+// sign convention gazeAngles uses (pointer-left → negative yaw → nose
+// turns toward the pointer). Pure function — unit-tested.
+export const GLANCE_AMP_RAD = 0.105; // ≈6° — a glance, not a turn
+export const GLANCE_DIR = -1; // toward the content column (left)
+export const GLANCE_TAU_MS = 400; // e-folding: ~1.2s to near-zero
+export const GLANCE_CUTOFF_MS = 1500; // beyond this the offset is exactly 0
+export const GLANCE_IDLE_MS = 2000; // no pointermove for this long = idle
+
+export function glanceYawOffset(
+  elapsedMs: number,
+  amplitudeRad: number,
+): number {
+  if (elapsedMs < 0 || elapsedMs >= GLANCE_CUTOFF_MS || amplitudeRad === 0)
+    return 0;
+  return amplitudeRad * Math.exp(-elapsedMs / GLANCE_TAU_MS);
+}
+
 /**
  * Deterministic 32-bit integer hash → [0, 1). The entropy source for
  * the procedural noise below (and for stable per-glyph picks) —
