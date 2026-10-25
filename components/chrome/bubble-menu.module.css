@@ -1,8 +1,16 @@
 .anchor {
-  /* Top-right dock below the fixed masthead. Bottom-center collided with the
-     hero headline; bottom-right collided with full-bleed mobile body copy.
-     The top-right slot is text-free at every section anchor, desktop + mobile,
-     so the dock is uniform across breakpoints. */
+  /* Desktop: top-right dock below the fixed masthead. Bottom-center collided
+     with the hero headline; bottom-right collided with full-bleed mobile
+     body copy. The top-right slot is text-free at every section anchor on
+     desktop, so the dock is uniform there.
+     Mobile (<900px) is different: the top-right slot is text-free ONLY at
+     anchors — mid-scroll any body copy can sit behind the opaque trigger
+     circle (run-3 iter 3 defect, v135 about frame). So on mobile the trigger
+     docks INTO the mobile chapter ribbon's opaque header band (see the
+     media query below): the band is already opaque chrome that content
+     scrolls under, so the trigger never sits over copy at any scroll
+     position. The ribbon exists exactly below 900px, so the dock and the
+     band appear and disappear together. */
   position: fixed;
   top: calc(env(safe-area-inset-top) + 4.5rem);
   right: max(1.25rem, env(safe-area-inset-right));
@@ -188,5 +196,41 @@
   .trigger,
   .link {
     transition-duration: 0ms;
+  }
+}
+
+/* Mobile dock (run-3 iter 4): below 900px the trigger joins the mobile
+   chapter ribbon's opaque header band instead of floating over body copy.
+   The ribbon is exactly 34px tall (2px track + name line), so the trigger
+   shrinks to 2rem (32px) and sits 1px inside the band — never over copy,
+   at any scroll position. The anchor's z-index steps above the ribbon's
+   (same --z-site-navigation base, ribbon is later in the DOM) so the
+   opaque band never paints over the trigger. The fan overlay re-anchors
+   to the new trigger top and re-centers on its 1rem half-width; the fan
+   itself still drops over content, but only while the menu is open —
+   intentional interactive chrome, like any dropdown, not a resting
+   obstruction. Desktop is untouched: no ribbon exists at >=900px. */
+@media (max-width: 899px) {
+  .anchor {
+    top: calc(env(safe-area-inset-top) + 1px);
+    z-index: calc(var(--z-site-navigation) + 1);
+  }
+
+  .trigger {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .icon {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .overlay {
+    top: calc(env(safe-area-inset-top) + 1px);
+    right: calc(
+      max(1.25rem, env(safe-area-inset-right)) + 1rem -
+        min(11rem, calc(100vw - 2rem)) / 2
+    );
   }
 }

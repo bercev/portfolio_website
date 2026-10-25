@@ -1,9 +1,10 @@
 /* Mobile chapter ribbon (run-2 iter 46): the line-sidebar rail's marker
    for viewports where the rail cannot fit. Hairline progress line + the
    current chapter name, nothing else. Pointer-events none, so it can
-   never intercept a tap; the FAB trigger sits 4.5rem down from the top
-   and the ribbon is ~2rem tall, so the two never meet, and the contact
-   CTA lives at the page bottom, far from this top-edge strip. */
+   never intercept a tap; since run-3 iter 4 the utility-menu trigger docks
+   inside this band (32px trigger in the 34px band) instead of floating
+   4.5rem down over body copy, and the contact CTA lives at the page
+   bottom, far from this top-edge strip. */
 .ribbon {
   --ribbon-accent: #000000;
   --progress: 0;
