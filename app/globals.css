@@ -2432,6 +2432,10 @@ a.skills-ledger-note {
 .tech-pill-linked:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+  /* Experience rows are plain articles, not buttons, so a linked pill
+     needs its own pointer affordance (run-3 iter 25); project-row pills
+     already sit inside a button and are unaffected. */
+  cursor: pointer;
 }
 
 @media (max-width: 900px) {
