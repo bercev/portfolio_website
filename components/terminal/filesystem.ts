@@ -54,7 +54,11 @@ export function buildFilesystem(): FsDir {
 
   const paperFiles: Record<string, FsFile> = {};
   for (const p of portfolio.publications) {
-    const name = slugify(p.title) + ".txt";
+    // Keyed by the publication's data slug — the same key every other paper
+    // surface uses (row anchors #paper-<slug>, goto/search targets, the
+    // /publications/[slug] route) — never the title slug, whose 48-char
+    // truncation made `ls` output unmatchable to the names goto/search print.
+    const name = p.slug + ".txt";
     paperFiles[name] = file(
       [
         `TITLE: ${p.title}`,
