@@ -12,6 +12,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useState, type MouseEvent } from "react";
+import { flushSync } from "react-dom";
 
 import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
@@ -228,6 +229,17 @@ export function CaseStudyRow({
   readonly skillNames: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
+  // Print record (run-3 iter 27): expanded panels are unmounted when
+  // closed, so no print stylesheet can reveal them (iter 12 documented the
+  // CSS-only impossibility). beforeprint expands every case-study row for
+  // the paper record and afterprint restores the screen state — the row's
+  // own `open` state is never touched, so restore is just clearing this
+  // flag. flushSync commits before beforeprint returns, and the print
+  // branch below renders a plain div, never the height-animated motion
+  // panel — so the print layout sees full-height panels, not a mid-
+  // animation frame. Verified: headless page.pdf() fires beforeprint once
+  // and afterprint once (vf157 baseline probe on HEAD 302101a).
+  const [printOpen, setPrintOpen] = useState(false);
   const panelId = useId();
   const shouldReduceMotion = useReducedMotion();
   const preview = projectPreviews[project.title];
@@ -300,6 +312,28 @@ export function CaseStudyRow({
     };
   }, [project.title, rowId]);
 
+  // Print expansion (see the printOpen note above): rows with no case
+  // study have no panel to expand, so they never subscribe.
+  useEffect(() => {
+    if (!project.caseStudy) return;
+    const expandForPrint = () => {
+      flushSync(() => {
+        setPrintOpen(true);
+      });
+    };
+    const restoreAfterPrint = () => {
+      flushSync(() => {
+        setPrintOpen(false);
+      });
+    };
+    window.addEventListener("beforeprint", expandForPrint);
+    window.addEventListener("afterprint", restoreAfterPrint);
+    return () => {
+      window.removeEventListener("beforeprint", expandForPrint);
+      window.removeEventListener("afterprint", restoreAfterPrint);
+    };
+  }, [project.caseStudy]);
+
   return (
     <article
       id={rowId}
@@ -371,6 +405,16 @@ export function CaseStudyRow({
         </span>
       </button>
 
+      {/* Print branch: a plain div at natural height, so the print layout
+          never depends on the motion panel's animation frame. AnimatePresence
+          is unmounted while printing and remounts after (initial={false}),
+          so a row that was open before printing reappears instantly on
+          screen after print, with no re-animation. */}
+      {printOpen && project.caseStudy ? (
+        <div id={panelId}>
+          <CaseStudyPanel project={project} />
+        </div>
+      ) : (
       <AnimatePresence initial={false}>
         {open && project.caseStudy ? (
           <motion.div
@@ -393,6 +437,7 @@ export function CaseStudyRow({
           </motion.div>
         ) : null}
       </AnimatePresence>
+      )}
     </article>
   );
 }
