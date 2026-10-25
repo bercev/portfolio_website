@@ -2417,6 +2417,14 @@ a.skills-ledger-note {
   background: color-mix(in srgb, var(--portfolio-accent) 18%, transparent);
 }
 
+/* Reverse navigation (run-3 iter 23): a linked project-row pill
+   reveals its clickability on hover only — at rest the row stays calm,
+   and the underline matches the site's calm link treatment. */
+.tech-pill-linked:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 @media (max-width: 900px) {
 
 }

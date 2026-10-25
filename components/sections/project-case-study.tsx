@@ -11,14 +11,18 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type MouseEvent } from "react";
 
 import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
 import { TechPills } from "@/components/ui/tech-pills";
 import type { Project } from "@/data/content";
 import { isProjectHash, projectAnchorId } from "@/lib/project-anchor";
-import { techKeyList } from "@/lib/skill-work";
+import {
+  dispatchSkillHighlight,
+  resolveSkillParam,
+  techKeyList,
+} from "@/lib/skill-work";
 
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
 
@@ -216,15 +220,43 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
 export function CaseStudyRow({
   project,
   featured = false,
+  skillNames,
 }: {
   readonly project: Project;
   readonly featured?: boolean;
+  /** Ledger skill names, for the reverse-navigation pill links. */
+  readonly skillNames: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const shouldReduceMotion = useReducedMotion();
   const preview = projectPreviews[project.title];
   const rowId = projectAnchorId(project.title);
+
+  // Reverse skill navigation (run-3 iter 23): the pills live INSIDE
+  // this toggle button, so they cannot themselves be <button>s (nested
+  // interactive content is invalid HTML and an axe violation). The
+  // click is delegated instead: a click landing on a pill that resolves
+  // to a ledger skill dispatches the highlight event and does NOT
+  // toggle the row; every other click toggles as before. Unlinked
+  // pills stay static labels — their click toggles, exactly as before
+  // this change. Keyboard parity note: pills are not separately
+  // focusable, so the ledger's own skill buttons remain the keyboard
+  // path to a skill's entry; the ledger itself is reachable via rail,
+  // FAB, and #skills.
+  const handleToggleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    const target = event.target as HTMLElement | null;
+    const key = target?.closest?.("[data-tech]")?.getAttribute("data-tech");
+    if (
+      key !== null &&
+      key !== undefined &&
+      resolveSkillParam(key, skillNames) !== null
+    ) {
+      dispatchSkillHighlight(key);
+      return;
+    }
+    setOpen((value) => !value);
+  };
 
   // Deep-link entry (run-3 iter 14): a #project-<slug> hash — from a
   // skills-ledger proof link or a shared URL — expands this row on load
@@ -283,7 +315,7 @@ export function CaseStudyRow({
         className="journey-case-study-toggle"
         aria-expanded={open}
         aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={handleToggleClick}
       >
         {/* At rest: problem-framed headline + product meta + one pill strip on
             the left, a calm static preview sidecar on the right. The preview
@@ -304,7 +336,10 @@ export function CaseStudyRow({
               {project.title} · {project.dates}
             </span>
             <span className="journey-case-study-pills">
-              <TechPills technologies={project.technologies} />
+              <TechPills
+                technologies={project.technologies}
+                linkedNames={skillNames}
+              />
             </span>
             {project.caseStudy ? (
               <span className="journey-case-study-more" aria-hidden="true">

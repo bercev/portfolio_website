@@ -50,6 +50,24 @@ export function resolveSkillParam(
   return skillNames.find((name) => normalizeTech(name) === needle) ?? null;
 }
 
+/**
+ * Reverse navigation (run-3 iter 23): the custom event a linked
+ * project-row pill click dispatches so the skills ledger can highlight
+ * that skill and land the visitor on it — the reverse of the
+ * skill→work click path. The detail carries the pill's normalized tech
+ * key (the `data-tech` value); the ledger resolves it to the canonical
+ * skill name and gates on skillHasWork, so a stray or unlinked key is
+ * ignored rather than rendered.
+ */
+export const SKILL_HIGHLIGHT_EVENT = "portfolio:highlight-skill";
+
+/** Dispatch a reverse-navigation highlight request for one pill key. */
+export function dispatchSkillHighlight(skillKey: string): void {
+  window.dispatchEvent(
+    new CustomEvent(SKILL_HIGHLIGHT_EVENT, { detail: { skillKey } }),
+  );
+}
+
 /** True when any work entry's stack contains the skill, exactly. */
 export function skillHasWork(
   skillName: string,

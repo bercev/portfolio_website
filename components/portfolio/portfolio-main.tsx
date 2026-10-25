@@ -32,6 +32,9 @@ export function PortfolioMain() {
       <Projects
         content={portfolio.projects}
         heading={portfolio.navigation[4].label}
+        skillNames={portfolio.skills.flatMap((group) =>
+          group.items.map((item) => item.name),
+        )}
       />
       <Skills
         content={portfolio.skills}

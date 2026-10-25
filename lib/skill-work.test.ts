@@ -56,6 +56,21 @@ describe("resolveSkillParam", () => {
   });
 });
 
+describe("reverse skill navigation", () => {
+  const names = ["Python", "NextJS", "discord.py", "Git"];
+
+  it("resolves pill keys to canonical ledger names", () => {
+    expect(resolveSkillParam("nextjs", names)).toBe("NextJS");
+    expect(resolveSkillParam("discord.py", names)).toBe("discord.py");
+    expect(resolveSkillParam("python", names)).toBe("Python");
+  });
+
+  it("leaves unlinked project tech unresolved", () => {
+    expect(resolveSkillParam("mongodb", names)).toBeNull();
+    expect(resolveSkillParam("scrum", names)).toBeNull();
+  });
+});
+
 describe("skillHasWork", () => {
   const work = [
     ["Python", "Google ADK"],

@@ -8,6 +8,7 @@ import { skillProofHref } from "@/lib/skill-proof";
 import {
   normalizeTech,
   resolveSkillParam,
+  SKILL_HIGHLIGHT_EVENT,
   skillHasWork,
 } from "@/lib/skill-work";
 
@@ -64,6 +65,39 @@ export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
       suppressScrollRef.current = true;
       setActiveSkill(resolved);
     }
+  }, []);
+
+  // Reverse navigation (run-3 iter 23): a linked pill click on a
+  // project row dispatches SKILL_HIGHLIGHT_EVENT; the ledger honors it
+  // by highlighting that skill and landing the visitor on the ledger —
+  // the reverse of the skill→work click path. The highlight effect's
+  // scroll-to-first-match is suppressed for this path (the visitor is
+  // already travelling TO the ledger), mirroring the ?skill= param's
+  // one-shot suppression. The resolve + skillHasWork gates are defense
+  // in depth: the row only dispatches linked pills, and this listener
+  // ignores anything else rather than rendering it. Focus is
+  // deliberately NOT moved: the ledger's own click path scrolls without
+  // moving focus, and this path's confirmation is the "Highlighting
+  // work using X" line plus the pressed ledger button.
+  useEffect(() => {
+    const onHighlight = (event: Event) => {
+      const detail = (event as CustomEvent<{ skillKey?: unknown }>).detail;
+      const key =
+        typeof detail?.skillKey === "string" ? detail.skillKey : null;
+      const names = groups.flatMap((group) =>
+        group.items.map((item) => item.name),
+      );
+      const resolved = resolveSkillParam(key, names);
+      if (resolved !== null && skillHasWork(resolved, workTech)) {
+        suppressScrollRef.current = true;
+        setActiveSkill(resolved);
+        document
+          .getElementById("skills")
+          ?.scrollIntoView({ behavior: "auto", block: "start" });
+      }
+    };
+    window.addEventListener(SKILL_HIGHLIGHT_EVENT, onHighlight);
+    return () => window.removeEventListener(SKILL_HIGHLIGHT_EVENT, onHighlight);
   }, []);
 
   useEffect(() => {
