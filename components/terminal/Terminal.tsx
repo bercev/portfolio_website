@@ -47,6 +47,8 @@ export function Terminal({
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<Shell | null>(null);
   const termRef = useRef<import("@xterm/xterm").Terminal | null>(null);
+  /** A focus request that arrived before async xterm init finished. */
+  const pendingFocusRef = useRef(false);
 
   useEffect(() => {
     let disposed = false;
@@ -79,6 +81,16 @@ export function Terminal({
       term.open(containerRef.current);
       termRef.current = term;
       fit.fit();
+
+      // A focus request may have arrived while xterm was still loading
+      // (dynamic import) — the focusSignal effect's immediate attempt was
+      // a no-op then, so honor the pending request now that the terminal
+      // exists. Without this, opening the flyout never lands focus in the
+      // shell on first open.
+      if (pendingFocusRef.current) {
+        term.focus();
+        pendingFocusRef.current = false;
+      }
 
       const shell = new Shell({
         write: (text) => term?.write(text),
@@ -147,9 +159,16 @@ export function Terminal({
     };
   }, []);
 
-  // External focus requests (e.g. flyout opened).
+  // External focus requests (e.g. flyout opened). The request is recorded
+  // as pending so a late async init can honor it, and the attempt runs
+  // immediately for the already-mounted case (the flyout re-bumps the
+  // signal when its panel finishes showing, since an attempt fired while
+  // the panel is still visibility-hidden silently fails).
   useEffect(() => {
-    if (focusSignal && focusSignal > 0) termRef.current?.focus();
+    if (focusSignal && focusSignal > 0) {
+      pendingFocusRef.current = true;
+      termRef.current?.focus();
+    }
   }, [focusSignal]);
 
   return (

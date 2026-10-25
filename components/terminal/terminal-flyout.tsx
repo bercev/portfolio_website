@@ -4,6 +4,7 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Terminal } from "./Terminal";
+import { shouldOpenTerminalOnBackquote } from "@/lib/terminal-hotkey";
 
 /**
  * Terminal flyout — the portfolio shell lives behind a hover/tap trigger
@@ -23,9 +24,11 @@ export function TerminalFlyout() {
   /** Once true the dialog stays in the DOM (hidden) so the shell session survives. */
   const [everOpened, setEverOpened] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  /** Incremented on every open; Terminal focuses xterm when it changes. */
+  /** Incremented on every open; Terminal focuses xterm when it changes.
+   * Re-bumped when the panel finishes showing: an attempt fired at open
+   * lands while the panel is still visibility-hidden and silently fails,
+   * so the post-animation bump is what actually delivers focus. */
   const [focusSignal, setFocusSignal] = useState(0);
-
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const hoverTimer = useRef(0);
@@ -81,6 +84,36 @@ export function TerminalFlyout() {
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [open, doClose]);
+
+  // Backquote hotkey (run-3 iter 13): pressing ` opens the flyout when
+  // closed — the terminal-native affordance. Never fires while typing
+  // (editable target), while already open (the key belongs to the live
+  // shell then), or with a modifier held (Cmd+` is the OS window switch).
+  // Opening via doOpen bumps focusSignal, so xterm receives focus.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target;
+      const targetIsEditable =
+        target instanceof HTMLElement &&
+        target.closest('input, textarea, [contenteditable="true"]') !== null;
+      if (
+        !shouldOpenTerminalOnBackquote({
+          code: e.code,
+          key: e.key,
+          open,
+          metaKey: e.metaKey,
+          ctrlKey: e.ctrlKey,
+          altKey: e.altKey,
+          targetIsEditable,
+        })
+      )
+        return;
+      e.preventDefault();
+      doOpen();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, doOpen]);
 
   // Lock body scroll while the dialog is open.
   useEffect(() => {
@@ -142,6 +175,7 @@ export function TerminalFlyout() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="portfolio-terminal-dialog"
+        aria-keyshortcuts="`"
         onMouseEnter={onTriggerEnter}
         onMouseLeave={onTriggerLeave}
         onClick={doOpen}
@@ -176,6 +210,9 @@ export function TerminalFlyout() {
             variants={panelVariants}
             transition={{ duration, ease: EASE }}
             onKeyDown={onPanelKeyDown}
+            onAnimationComplete={(variant) => {
+              if (variant === "show" && open) setFocusSignal((n) => n + 1);
+            }}
           >
             <div className="terminal-flyout-header">
               <span className="terminal-flyout-title">
