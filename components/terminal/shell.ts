@@ -495,6 +495,18 @@ export class Shell {
     }
   }
 
+  cmdExperience() {
+    // Summaries carry **emphasis** markers for the rendered site; the
+    // terminal prints plain text, so strip them (never trim prose).
+    this.cb.writeln(`\x1b[36mexperience/\x1b[0m — ${portfolio.experience.length} roles:`);
+    for (const e of portfolio.experience) {
+      const org = e.organization ? ` — ${e.organization}` : ``;
+      this.cb.writeln(`  • ${e.role}${org} (${e.dates})`);
+      this.cb.writeln(`    ${e.summary.replace(/\*\*/g, "")}`);
+    }
+    this.cb.writeln(`tip: \x1b[33mgoto experience\x1b[0m for the full section`);
+  }
+
   cmdBeratfetch() {
     const cyan = "\x1b[36m";
     const reset = "\x1b[0m";
@@ -614,6 +626,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["echo <text>", "print text"],
   ["projects", "list shipped projects"],
   ["publications", "list papers"],
+  ["experience", "list roles"],
   ["contact", "how to reach bercev"],
   ["goto <chapter>", "jump to a chapter, project, or paper"],
   ["search <keyword>", "find projects, papers, skills"],
@@ -655,6 +668,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   search: (s, a) => s.cmdSearch(a),
   projects: (s) => s.cmdProjects(),
   publications: (s) => s.cmdPublications(),
+  experience: (s) => s.cmdExperience(),
   fortune: (s) => s.cmdFortune(),
   history: (s) => s.cmdHistory(),
   resume: (s) => s.cmdResume(),

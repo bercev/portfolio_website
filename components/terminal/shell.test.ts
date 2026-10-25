@@ -247,6 +247,45 @@ describe("history command", () => {
   });
 });
 
+describe("experience command", () => {
+  it("lists every role with organization and dates", () => {
+    const h = makeShell();
+    h.type("experience");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("AI Systems Engineer Intern"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("Stealth Startup"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("Apr 2026-Aug 2026"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("LLM Researcher"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("Algoverse"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("SWE Intern"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("Trustd.ai"))).toBe(true);
+  });
+
+  it("prints summaries with emphasis markers stripped, prose intact", () => {
+    const h = makeShell();
+    h.type("experience");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("**"))).toBe(false);
+    expect(
+      h.printed.some((l) => l.includes("100+ upper-division students per quarter")),
+    ).toBe(true);
+  });
+
+  it("completes from the help-derived command list", () => {
+    const h = makeShell();
+    h.type("exp");
+    h.shell.tab();
+    expect(h.line).toBe("experience");
+  });
+
+  it("appears in help", () => {
+    const h = makeShell();
+    h.type("help");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("experience"))).toBe(true);
+  });
+});
+
 describe("untouched completion branches", () => {
   it("still completes the first token against commands", () => {
     const h = makeShell();
