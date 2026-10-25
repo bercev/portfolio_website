@@ -3,6 +3,8 @@
 import { Color, Mesh, Program, Renderer, Triangle } from "ogl";
 import { useEffect, useRef } from "react";
 
+import { normalizeTokenHex } from "@/lib/css-token-color";
+
 import styles from "./specular-controls.module.css";
 
 const CANVAS_PADDING = 16;
@@ -81,7 +83,9 @@ function readToken(token: string, fallback: string) {
   const value = getComputedStyle(document.documentElement)
     .getPropertyValue(token)
     .trim();
-  return value.startsWith("#") ? value : fallback;
+  // Never hand OGL a raw #-prefixed value: Chromium serializes translucent
+  // tokens as 8-digit hex, which OGL's parser throws on (run-3 iter 19).
+  return normalizeTokenHex(value, fallback);
 }
 
 function getTarget(eventTarget: EventTarget | null, selector: string) {
