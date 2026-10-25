@@ -4,6 +4,7 @@ import {
   gotoTargets,
   resolveGotoTarget,
 } from "@/lib/terminal-goto";
+import { searchPortfolio } from "@/lib/terminal-search";
 import {
   HOME,
   buildFilesystem,
@@ -333,6 +334,23 @@ export class Shell {
     this.cb.navigate?.(target.hash);
   }
 
+  cmdSearch(args: string[]) {
+    const query = args.join(" ").trim();
+    if (!query) {
+      this.cb.writeln(`usage: search <keyword>`);
+      return;
+    }
+    const hits = searchPortfolio(query, portfolio);
+    if (hits.length === 0) {
+      this.cb.writeln(`no matches for "${query}" — try a project, paper, or tech name.`);
+      return;
+    }
+    this.cb.writeln(`\x1b[36m${hits.length} match${hits.length === 1 ? "" : "es"} for "${query}":\x1b[0m`);
+    for (const hit of hits) {
+      this.cb.writeln(`  • ${hit.label} — \x1b[33mgoto ${hit.goto}\x1b[0m`);
+    }
+  }
+
   cmdProjects() {
     this.cb.writeln(`\x1b[36mprojects/\x1b[0m — ${portfolio.projects.length} shipped:`);
     for (const p of portfolio.projects) {
@@ -469,6 +487,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["publications", "list papers"],
   ["contact", "how to reach bercev"],
   ["goto <chapter>", "jump to a chapter or project"],
+  ["search <keyword>", "find projects, papers, skills"],
   ["fortune", "one honest line from the case studies"],
   ["cowsay <text>", "the cow says what you type"],
   ["vim", "you have been warned"],
@@ -502,6 +521,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   hello: (s) => s.cmdHello(),
   contact: (s) => s.cmdContact(),
   goto: (s, a) => s.cmdGoto(a),
+  search: (s, a) => s.cmdSearch(a),
   projects: (s) => s.cmdProjects(),
   publications: (s) => s.cmdPublications(),
   fortune: (s) => s.cmdFortune(),
