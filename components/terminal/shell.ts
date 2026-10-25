@@ -61,6 +61,33 @@ const FORTUNES: readonly string[] = [
   "Those sessions were a weekly pressure test for walking through recursion, graphs, and complexity out loud.",
 ];
 
+/**
+ * Path-aware completion candidates for a filesystem token. A bare token
+ * completes against the cwd exactly as before; a token containing "/"
+ * splits at its last slash, resolves the directory part against the cwd
+ * (cwd-relative, "." / ".." honored, absolute paths from the root), and
+ * completes the basename against that directory's children, reattaching
+ * the directory prefix so the completed token stays a valid path. A
+ * trailing "/" cycles the directory's children (basename ""). A leading
+ * "/" resolves against the root, not the cwd — resolvePath(cwd, "")
+ * would return the cwd, so "/" is substituted for an empty directory part.
+ * Unresolvable directory parts (too many "..", a file in the middle)
+ * yield no candidates rather than a wrong one.
+ */
+function completePath(root: FsDir, cwd: string[], token: string): string[] {
+  const slash = token.lastIndexOf("/");
+  if (slash === -1) {
+    return listNames(root, cwd).filter((n) => n.startsWith(token));
+  }
+  const dirPart = token.slice(0, slash);
+  const base = token.slice(slash + 1);
+  const dirPath = resolvePath(cwd, dirPart === "" ? "/" : dirPart);
+  if (!dirPath) return [];
+  return listNames(root, dirPath)
+    .filter((n) => n.startsWith(base))
+    .map((n) => `${dirPart}/${n}`);
+}
+
 export class Shell {
   private root: FsDir = buildFilesystem();
   private cwd: string[] = [...HOME];
@@ -159,7 +186,21 @@ export class Shell {
     const last = tokens[tokens.length - 1] ?? "";
     const isFirst = tokens.length <= 1;
 
-    if (this.completions.length === 0 || this.completionPrefix !== last) {
+    // Repeated Tab cycles the same candidate list: the token after a pick
+    // IS the previous pick, so "prefix changed" must not recompute — a
+    // recompute filtered by the pick itself would collapse the list to one
+    // and cycling could never advance (the pre-fix behavior, where every
+    // Tab just re-selected the first match). Typing or backspacing clears
+    // completions, so any other token change means a fresh prefix.
+    const lastPick =
+      this.completions.length > 0
+        ? this.completions[
+            (this.completionIndex - 1 + this.completions.length) %
+              this.completions.length
+          ]
+        : null;
+    const continuing = lastPick !== null && last === lastPick;
+    if (!continuing) {
       this.completionPrefix = last;
       this.completionIndex = 0;
       const projectTitles = portfolio.projects.map((p) => p.title);
@@ -173,7 +214,7 @@ export class Shell {
           ? gotoCompletionNames(projectTitles, paperTargets).filter((n) =>
               n.startsWith(last),
             )
-          : listNames(this.root, this.cwd).filter((n) => n.startsWith(last));
+          : completePath(this.root, this.cwd, last);
       this.completions = candidates;
     }
     if (this.completions.length === 0) return;
