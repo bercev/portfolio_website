@@ -1,5 +1,10 @@
 import { portfolio } from "@/data/content";
 import {
+  gotoCompletionNames,
+  gotoTargets,
+  resolveGotoTarget,
+} from "@/lib/terminal-goto";
+import {
   HOME,
   buildFilesystem,
   displayPath,
@@ -21,6 +26,8 @@ export interface ShellCallbacks {
   write: (text: string) => void;
   writeln: (text?: string) => void;
   clear: () => void;
+  /** Jump the page to an anchor (the flyout closes first, then navigates). */
+  navigate?: (hash: string) => void;
 }
 
 const JOKES: Record<string, string> = {
@@ -154,9 +161,14 @@ export class Shell {
     if (this.completions.length === 0 || this.completionPrefix !== last) {
       this.completionPrefix = last;
       this.completionIndex = 0;
+      const projectTitles = portfolio.projects.map((p) => p.title);
       const candidates = isFirst
         ? COMMANDS.filter((c) => c.startsWith(last))
-        : listNames(this.root, this.cwd).filter((n) => n.startsWith(last));
+        : tokens[0] === "goto" && tokens.length === 2
+          ? gotoCompletionNames(projectTitles).filter((n) =>
+              n.startsWith(last),
+            )
+          : listNames(this.root, this.cwd).filter((n) => n.startsWith(last));
       this.completions = candidates;
     }
     if (this.completions.length === 0) return;
@@ -189,7 +201,10 @@ export class Shell {
   cmdHelp() {
     this.cb.writeln(`available commands:`);
     for (const [name, desc] of HELP_TEXT) {
-      this.cb.writeln(`  \x1b[36m${name.padEnd(14)}\x1b[0m${desc}`);
+      // A literal space after the pad: names at/over the 14-col width
+      // ("goto <chapter>", "sudo hire bercev") otherwise run straight
+      // into their description with no gap.
+      this.cb.writeln(`  \x1b[36m${name.padEnd(14)}\x1b[0m ${desc}`);
     }
   }
 
@@ -294,6 +309,28 @@ export class Shell {
 
   cmdContact() {
     this.cmdCat(["contact.txt"]);
+  }
+
+  cmdGoto(args: string[]) {
+    const projectTitles = portfolio.projects.map((p) => p.title);
+    const listTargets = () => {
+      this.cb.writeln(`chapters and projects:`);
+      for (const t of gotoTargets(projectTitles)) {
+        this.cb.writeln(`  \x1b[36m${t.name.padEnd(20)}\x1b[0m${t.hash}`);
+      }
+    };
+    if (args.length === 0) {
+      listTargets();
+      return;
+    }
+    const target = resolveGotoTarget(args.join(" "), projectTitles);
+    if (!target) {
+      this.cb.writeln(`goto: unknown target: ${args.join(" ")}`);
+      listTargets();
+      return;
+    }
+    this.cb.writeln(`\x1b[32m→ ${target.label} (${target.hash})\x1b[0m`);
+    this.cb.navigate?.(target.hash);
   }
 
   cmdProjects() {
@@ -431,6 +468,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["projects", "list shipped projects"],
   ["publications", "list papers"],
   ["contact", "how to reach bercev"],
+  ["goto <chapter>", "jump to a chapter or project"],
   ["fortune", "one honest line from the case studies"],
   ["cowsay <text>", "the cow says what you type"],
   ["vim", "you have been warned"],
@@ -463,6 +501,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   rm: (s) => s.cmdRm(),
   hello: (s) => s.cmdHello(),
   contact: (s) => s.cmdContact(),
+  goto: (s, a) => s.cmdGoto(a),
   projects: (s) => s.cmdProjects(),
   publications: (s) => s.cmdPublications(),
   fortune: (s) => s.cmdFortune(),

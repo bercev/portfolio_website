@@ -60,6 +60,30 @@ export function TerminalFlyout() {
     window.setTimeout(() => triggerRef.current?.focus(), 60);
   }, []);
 
+  /**
+   * Shell `goto` navigation: close the flyout FIRST (no doClose — its
+   * focus-return timer would fight the section focus), then, once the
+   * 0.45s panel animation has cleared, jump to the anchor. A same-hash
+   * jump scrolls directly (setting an identical hash is a no-op), and
+   * focus moves to the section itself — never lost to BODY — with
+   * preventScroll so it cannot disturb the Lenis travel. Project rows
+   * expand via their own hashchange effect (run-3 iter 14).
+   */
+  const handleNavigate = useCallback((hash: string) => {
+    setOpen(false);
+    window.setTimeout(() => {
+      const el = document.getElementById(hash.slice(1));
+      if (!el) return;
+      if (window.location.hash === hash) {
+        el.scrollIntoView({ behavior: "auto", block: "start" });
+      } else {
+        window.location.hash = hash;
+      }
+      el.setAttribute("tabindex", "-1");
+      el.focus({ preventScroll: true });
+    }, 500);
+  }, []);
+
   const onTriggerEnter = useCallback(() => {
     if (!finePointer.current || open) return;
     window.clearTimeout(hoverTimer.current);
@@ -231,6 +255,7 @@ export function TerminalFlyout() {
               focusSignal={focusSignal}
               bare
               className="terminal-flyout-term"
+              onNavigate={handleNavigate}
             />
           </motion.aside>
         </>

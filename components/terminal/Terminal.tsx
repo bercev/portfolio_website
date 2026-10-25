@@ -37,12 +37,15 @@ export function Terminal({
   className,
   focusSignal,
   bare,
+  onNavigate,
 }: {
   className?: string;
   /** Increment to programmatically focus the xterm instance (e.g. when a flyout opens). */
   focusSignal?: number;
   /** Skip the framed chrome (border/glow) when the parent provides its own. */
   bare?: boolean;
+  /** Page jump for the shell's `goto` command (flyout closes first). */
+  onNavigate?: (hash: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<Shell | null>(null);
@@ -96,6 +99,7 @@ export function Terminal({
         write: (text) => term?.write(text),
         writeln: (text) => term?.writeln(text ?? ""),
         clear: () => term?.clear(),
+        navigate: onNavigate,
       });
       shellRef.current = shell;
       shell.boot();
