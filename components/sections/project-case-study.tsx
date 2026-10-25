@@ -17,6 +17,7 @@ import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
 import { TechPills } from "@/components/ui/tech-pills";
 import type { Project } from "@/data/content";
+import { techKeyList } from "@/lib/skill-work";
 
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
 
@@ -224,7 +225,10 @@ export function CaseStudyRow({
   const preview = projectPreviews[project.title];
 
   return (
-    <article className={featured ? "journey-project-featured" : undefined}>
+    <article
+      className={featured ? "journey-project-featured" : undefined}
+      data-work-tech={techKeyList(project.technologies)}
+    >
       <button
         type="button"
         className="journey-case-study-toggle"

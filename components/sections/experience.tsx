@@ -4,6 +4,7 @@ import type { PortfolioContent } from "@/data/content";
 
 import { Station } from "@/components/ui/station";
 import { TechPills } from "@/components/ui/tech-pills";
+import { techKeyList } from "@/lib/skill-work";
 
 type ExperienceProps = {
   readonly content: PortfolioContent["experience"];
@@ -39,6 +40,7 @@ export function Experience({ content, heading }: ExperienceProps) {
           <article
             key={`${experience.role}-${experience.dates}`}
             data-experience-row
+            data-work-tech={techKeyList(experience.technologies)}
             data-experience-featured={index === 0 ? "true" : undefined}
             className={
               index === 0

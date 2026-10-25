@@ -2311,6 +2311,73 @@ a.skills-ledger-note {
   text-underline-offset: 3px;
 }
 
+/* Skill → work highlight (run-3 iter 7): the hint and active lines span
+   the ledger grid; linked skill names use the same quiet underline as the
+   hero signal links, so the rows still read as facts, not buttons. */
+.skills-ledger-hint,
+.skills-ledger-active {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.skills-ledger-hint {
+  color: var(--muted-foreground);
+  font: 400 0.85rem/1.4 var(--font-sans);
+}
+
+.skills-ledger-active {
+  color: var(--foreground);
+  font: 400 0.9rem/1.4 var(--font-sans);
+}
+
+.skills-ledger-clear {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+.skills-ledger-skill {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--foreground);
+  font: 500 0.95rem/1.4 var(--font-sans);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+  transition: text-decoration-color 150ms ease-out;
+}
+
+.skills-ledger-skill:hover,
+.skills-ledger-skill[aria-pressed="true"] {
+  text-decoration-color: currentColor;
+}
+
+.skills-ledger-skill[aria-pressed="true"] {
+  color: var(--portfolio-accent);
+}
+
+/* Highlighted work rows + pills: an accent outline on the row, an
+   accent pill for the exact matching tech — nothing is hidden. */
+[data-work-tech].is-skill-match {
+  outline: 1px solid color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
+.tech-pill.is-skill-match-pill {
+  border-color: var(--portfolio-accent);
+  background: color-mix(in srgb, var(--portfolio-accent) 18%, transparent);
+}
+
 @media (max-width: 900px) {
 
 }

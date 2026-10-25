@@ -7,9 +7,11 @@ import { Station } from "@/components/ui/station";
 type SkillsProps = {
   readonly content: PortfolioContent["skills"];
   readonly heading: PortfolioContent["navigation"][number]["label"];
+  /** Every experience + project stack, for the ledger's skill links. */
+  readonly workTech: readonly (readonly string[])[];
 };
 
-export function Skills({ content, heading }: SkillsProps) {
+export function Skills({ content, heading, workTech }: SkillsProps) {
   return (
     <Station
       id="skills"
@@ -23,7 +25,7 @@ export function Skills({ content, heading }: SkillsProps) {
         are the one heading per category, visible to everyone, so screen
         readers don't get the same heading twice.
       */}
-      <SkillsLedger groups={content} />
+      <SkillsLedger groups={content} workTech={workTech} />
     </Station>
   );
 }

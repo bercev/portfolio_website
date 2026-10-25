@@ -1,3 +1,4 @@
+import { normalizeTech } from "@/lib/skill-work";
 import { iconForTech } from "@/lib/tech-icons";
 
 export function TechPills({
@@ -18,6 +19,7 @@ export function TechPills({
             <li
               key={`${technology}-${index}`}
               className="tech-pill"
+              data-tech={normalizeTech(technology)}
               aria-hidden={
                 marquee && index >= technologies.length ? true : undefined
               }
