@@ -19,7 +19,7 @@ type SkillsLedgerProps = {
  * this is the surface a hiring manager actually reads — visible category
  * headings (the old ones were sr-only), every skill name, and its proof
  * note as visible text (the old rendering kept notes in title tooltips).
- * Notes that name a chapter link to that chapter; ambiguous notes stay
+ * Notes that name a project link to that exact row; ambiguous notes stay
  * plain text (see skillProofHref). Static text, so the reduced-motion
  * poster is the same record, not a lesser one.
  *

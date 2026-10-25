@@ -11,12 +11,13 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
 import { TechPills } from "@/components/ui/tech-pills";
 import type { Project } from "@/data/content";
+import { isProjectHash, projectAnchorId } from "@/lib/project-anchor";
 import { techKeyList } from "@/lib/skill-work";
 
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
@@ -223,10 +224,58 @@ export function CaseStudyRow({
   const panelId = useId();
   const shouldReduceMotion = useReducedMotion();
   const preview = projectPreviews[project.title];
+  const rowId = projectAnchorId(project.title);
+
+  // Deep-link entry (run-3 iter 14): a #project-<slug> hash — from a
+  // skills-ledger proof link or a shared URL — expands this row on load
+  // and on later hash changes (e.g. a ledger link clicked while already
+  // on the page). Mount-effect only, never a lazy initializer, so SSR
+  // HTML stays identical (run-2 iter 43 hydration sign). The hash never
+  // closes a row: it is an entry affordance, not a router.
+  //
+  // The scroll re-asserts are load-bearing, not belt-and-braces. The
+  // browser's native anchor jump is lerped slowly by Lenis, and while
+  // the viewport is still travelling, this row's expansion grows the
+  // page above the viewport's current position, so scroll anchoring
+  // shoves the viewport past the row (measured: +~1750px overshoot on
+  // the hashchange path, row ending 4338px above the viewport). The
+  // first scroll (next frame) gets the journey started; the second —
+  // after the 0.45s height animation, when no more growth can trigger
+  // an anchoring adjustment — sticks. Verified: the rAF scroll alone
+  // still overshot on desktop (row top -1810) while fresh loads and
+  // mobile landed clean, so the second pass is what closes the race.
+  useEffect(() => {
+    let reassert: number | undefined;
+    const expandIfHashed = () => {
+      if (!isProjectHash(window.location.hash, project.title)) return;
+      setOpen(true);
+      const scrollRow = () => {
+        document
+          .getElementById(rowId)
+          ?.scrollIntoView({ behavior: "auto", block: "start" });
+      };
+      requestAnimationFrame(scrollRow);
+      window.clearTimeout(reassert);
+      reassert = window.setTimeout(() => {
+        if (isProjectHash(window.location.hash, project.title)) scrollRow();
+      }, 650);
+    };
+    expandIfHashed();
+    window.addEventListener("hashchange", expandIfHashed);
+    return () => {
+      window.removeEventListener("hashchange", expandIfHashed);
+      window.clearTimeout(reassert);
+    };
+  }, [project.title, rowId]);
 
   return (
     <article
-      className={featured ? "journey-project-featured" : undefined}
+      id={rowId}
+      className={
+        featured
+          ? "journey-project-featured scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+          : "scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+      }
       data-work-tech={techKeyList(project.technologies)}
     >
       <button

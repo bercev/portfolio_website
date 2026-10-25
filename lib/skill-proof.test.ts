@@ -9,11 +9,11 @@ import { skillProofHref } from "./skill-proof";
  */
 describe("skillProofHref", () => {
   it.each([
-    ["Discord bot + research", "#projects"],
+    ["Discord bot + research", "#project-ai-discord-chatbot"],
     ["Research area — see publications", "#publications"],
     ["Internship + research", null],
-    ["Shipped in the Discord bot", "#projects"],
-    ["Shipped in Vitae", "#projects"],
+    ["Shipped in the Discord bot", "#project-ai-discord-chatbot"],
+    ["Shipped in Vitae", "#project-vitae"],
     ["This site's test suite", null],
     ["Daily driver", null],
     ["Tutored DSA at UC Santa Cruz", null],
@@ -28,6 +28,6 @@ describe("skillProofHref", () => {
   });
 
   it("matches case-insensitively", () => {
-    expect(skillProofHref("SHIPPED IN VITAE")).toBe("#projects");
+    expect(skillProofHref("SHIPPED IN VITAE")).toBe("#project-vitae");
   });
 });
