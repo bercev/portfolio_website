@@ -8,8 +8,13 @@
  * Paper rows reuse the run-3 iter-31 anchor scheme (`paper-<slug>`,
  * keyed on the publication's data slug, not its title — titles carry
  * "@", ":", and trailing periods), so `goto skilloptimizer` lands on
- * the exact row. Unknown input returns null: the shell prints the
- * target list instead of navigating anywhere.
+ * the exact row. Skill rows (run-3 iter 41) land on `#skills` and carry
+ * the canonical skill name, so the shell can highlight that skill via
+ * the iter-23 reverse-navigation event instead of landing on the
+ * chapter unhighlighted: `goto python` lands on the ledger with Python
+ * pressed, and `search` skill hits print the per-skill goto name.
+ * Unknown input returns null: the shell prints the target list
+ * instead of navigating anywhere.
  */
 
 import { paperAnchorId } from "./paper-anchor";
@@ -21,6 +26,21 @@ export interface GotoTarget {
   /** Human label printed by the shell, e.g. "Vitae". */
   label: string;
   hash: string;
+  /** Canonical skill name, set only on skill rows (for highlighting). */
+  skillName?: string;
+}
+
+/**
+ * Single-token slug for a skill name: "Data Structures" →
+ * "data-structures", "discord.py" → "discord-py". Compared slug-to-slug
+ * so an input in any of those spellings resolves to the same skill.
+ */
+export function skillSlug(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 const CHAPTERS: ReadonlyArray<{
@@ -43,10 +63,11 @@ export interface PaperGotoTarget {
   label: string;
 }
 
-/** All goto targets for given project titles + paper targets (chapters, projects, papers). */
+/** All goto targets (chapters, projects, papers, then skills). */
 export function gotoTargets(
   projectTitles: readonly string[],
   papers: readonly PaperGotoTarget[] = [],
+  skillNames: readonly string[] = [],
 ): GotoTarget[] {
   const chapters = CHAPTERS.map((c) => ({
     name: c.names[0],
@@ -63,15 +84,22 @@ export function gotoTargets(
     label: p.label,
     hash: `#${paperAnchorId(p.slug)}`,
   }));
-  return [...chapters, ...rows, ...paperRows];
+  const skillRows = skillNames.map((name) => ({
+    name: skillSlug(name),
+    label: name,
+    hash: "#skills",
+    skillName: name,
+  }));
+  return [...chapters, ...rows, ...paperRows, ...skillRows];
 }
 
-/** Single-token names for tab-completion (chapters + project slugs + paper slugs). */
+/** Single-token names for tab-completion (chapters + project/paper/skill slugs). */
 export function gotoCompletionNames(
   projectTitles: readonly string[],
   papers: readonly PaperGotoTarget[] = [],
+  skillNames: readonly string[] = [],
 ): string[] {
-  return gotoTargets(projectTitles, papers).map((t) => t.name);
+  return gotoTargets(projectTitles, papers, skillNames).map((t) => t.name);
 }
 
 function normalize(input: string): string {
@@ -88,14 +116,19 @@ function normalize(input: string): string {
  * Resolve a `goto` argument to its target, or null when unknown.
  * Matching is case-insensitive and accepts the chapter aliases, the
  * project title ("AI Discord Chatbot"), the hyphenated project slug
- * ("ai-discord-chatbot"), and the paper data slug ("skilloptimizer",
- * "grokset") — all through the same normalization, so no alias table
- * can drift from the anchor schemes.
+ * ("ai-discord-chatbot"), the paper data slug ("skilloptimizer",
+ * "grokset"), and a skill name or slug ("Data Structures",
+ * "data-structures", "discord.py") — all through the same
+ * normalization, so no alias table can drift from the anchor schemes.
+ * Skill rows sort last, so a skill slug colliding with a chapter,
+ * project, or paper name resolves to the earlier kind, and the chapter
+ * alias "skills" still wins over any skill row.
  */
 export function resolveGotoTarget(
   input: string,
   projectTitles: readonly string[],
   papers: readonly PaperGotoTarget[] = [],
+  skillNames: readonly string[] = [],
 ): GotoTarget | null {
   const norm = normalize(input);
   if (!norm) return null;
@@ -119,6 +152,21 @@ export function resolveGotoTarget(
         label: paper.label,
         hash: `#${paperAnchorId(paper.slug)}`,
       };
+    }
+  }
+  // Skill names/slugs, compared slug-to-slug so "Data Structures",
+  // "data-structures", and "discord.py" all resolve to their skill row.
+  const inputSlug = skillSlug(norm);
+  if (inputSlug) {
+    for (const name of skillNames) {
+      if (skillSlug(name) === inputSlug) {
+        return {
+          name: skillSlug(name),
+          label: name,
+          hash: "#skills",
+          skillName: name,
+        };
+      }
     }
   }
   return null;

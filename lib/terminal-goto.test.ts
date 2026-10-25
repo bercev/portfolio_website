@@ -4,6 +4,7 @@ import {
   gotoCompletionNames,
   gotoTargets,
   resolveGotoTarget,
+  skillSlug,
 } from "./terminal-goto";
 
 const PROJECTS = ["Vitae", "AI Discord Chatbot"];
@@ -11,6 +12,7 @@ const PAPERS = [
   { slug: "skilloptimizer", label: "SkillOptimizer" },
   { slug: "grokset", label: "@GrokSet" },
 ];
+const SKILLS = ["Python", "Data Structures", "discord.py"];
 
 describe("resolveGotoTarget", () => {
   it("resolves every chapter", () => {
@@ -94,5 +96,56 @@ describe("resolveGotoTarget", () => {
       "#paper-grokset",
     ]);
     expect(gotoCompletionNames(PROJECTS, PAPERS)).toContain("grokset");
+  });
+});
+
+describe("skill goto targets (run-3 iter 41)", () => {
+  it("slugs skill names for single-token completion", () => {
+    expect(skillSlug("Data Structures")).toBe("data-structures");
+    expect(skillSlug("discord.py")).toBe("discord-py");
+    expect(skillSlug("Python")).toBe("python");
+  });
+
+  it("resolves skill names and slugs to #skills with the canonical name", () => {
+    expect(resolveGotoTarget("python", PROJECTS, PAPERS, SKILLS)).toMatchObject({
+      hash: "#skills",
+      skillName: "Python",
+    });
+    expect(
+      resolveGotoTarget("Data Structures", PROJECTS, PAPERS, SKILLS),
+    ).toMatchObject({ hash: "#skills", skillName: "Data Structures" });
+    expect(
+      resolveGotoTarget("data-structures", PROJECTS, PAPERS, SKILLS),
+    ).toMatchObject({ hash: "#skills", skillName: "Data Structures" });
+    expect(
+      resolveGotoTarget("discord.py", PROJECTS, PAPERS, SKILLS),
+    ).toMatchObject({ hash: "#skills", skillName: "discord.py" });
+    expect(
+      resolveGotoTarget("DISCORD.PY", PROJECTS, PAPERS, SKILLS),
+    ).toMatchObject({ hash: "#skills", skillName: "discord.py" });
+  });
+
+  it("keeps the chapter alias and rejects unknown skills", () => {
+    expect(resolveGotoTarget("skills", PROJECTS, PAPERS, SKILLS)).toMatchObject({
+      hash: "#skills",
+    });
+    expect(
+      resolveGotoTarget("skills", PROJECTS, PAPERS, SKILLS)?.skillName,
+    ).toBeUndefined();
+    expect(resolveGotoTarget("cobol", PROJECTS, PAPERS, SKILLS)).toBeNull();
+  });
+
+  it("lists skill rows after papers, with slugs for completion", () => {
+    const targets = gotoTargets(PROJECTS, PAPERS, SKILLS);
+    expect(targets.slice(-3).map((t) => t.name)).toEqual([
+      "python",
+      "data-structures",
+      "discord-py",
+    ]);
+    expect(targets.slice(-3).every((t) => t.hash === "#skills")).toBe(true);
+    expect(targets.slice(-3).map((t) => t.skillName)).toEqual(SKILLS);
+    expect(gotoCompletionNames(PROJECTS, PAPERS, SKILLS)).toContain(
+      "data-structures",
+    );
   });
 });

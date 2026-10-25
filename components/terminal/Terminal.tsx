@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { dispatchSkillHighlight } from "@/lib/skill-work";
+
 import { Shell } from "./shell";
 
 /**
@@ -100,6 +102,10 @@ export function Terminal({
         writeln: (text) => term?.writeln(text ?? ""),
         clear: () => term?.clear(),
         navigate: onNavigate,
+        // `goto <skill>` highlights via the ledger's own reverse-nav
+        // event (run-3 iter 23) — no new plumbing, and the ledger gates
+        // unlinked skills itself.
+        highlightSkill: (name) => dispatchSkillHighlight(name),
         openExternal: (url) => window.open(url, "_blank", "noopener,noreferrer"),
         // Live cols (FitAddon refits on resize) so wrapped-line edits
         // redraw the whole logical line instead of per-char erasing.

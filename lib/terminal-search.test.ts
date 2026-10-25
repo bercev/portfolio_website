@@ -152,10 +152,21 @@ describe("searchPortfolio", () => {
     ]);
   });
 
-  it("matches skills by note and lands on the skills chapter", () => {
+  it("matches skills by note and prints per-skill goto slugs", () => {
     const hits = searchPortfolio("Tutored", FIXTURE);
     expect(hits.map((h) => h.label)).toEqual(["Data Structures", "Algorithms"]);
-    expect(hits.every((h) => h.goto === "skills")).toBe(true);
+    expect(hits.map((h) => h.goto)).toEqual([
+      "data-structures",
+      "algorithms",
+    ]);
+  });
+
+  it("prints the skill slug a goto command can land on", () => {
+    const skillHits = searchPortfolio("Python", FIXTURE).filter(
+      (h) => h.kind === "skill",
+    );
+    expect(skillHits).toHaveLength(1);
+    expect(skillHits[0]).toMatchObject({ label: "Python", goto: "python" });
   });
 
   it("is case-insensitive and spans kinds", () => {

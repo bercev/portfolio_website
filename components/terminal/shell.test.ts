@@ -11,7 +11,14 @@ import { Shell } from "./shell";
  * writeln output is collected separately for commands that print.
  * Pass cols to wire the cols-aware redraw path (narrow terminals).
  */
-function makeShell(cols?: number, openExternal?: (url: string) => void) {
+function makeShell(
+  cols?: number,
+  openExternal?: (url: string) => void,
+  extra?: {
+    navigate?: (hash: string) => void;
+    highlightSkill?: (name: string) => void;
+  },
+) {
   const printed: string[] = [];
   let line = "";
   let col = 0;
@@ -61,6 +68,8 @@ function makeShell(cols?: number, openExternal?: (url: string) => void) {
     clear: () => {},
     ...(cols ? { cols: () => cols } : {}),
     ...(openExternal ? { openExternal } : {}),
+    ...(extra?.navigate ? { navigate: extra.navigate } : {}),
+    ...(extra?.highlightSkill ? { highlightSkill: extra.highlightSkill } : {}),
   });
   const type = (text: string) => {
     for (const ch of text) shell.type(ch);
@@ -306,6 +315,52 @@ describe("search covers experience roles", () => {
     miss.type("search definitelyNotAKeyword");
     miss.shell.enter();
     expect(miss.printed.some((l) => l.includes("role"))).toBe(true);
+  });
+});
+
+describe("goto lands on a skill", () => {
+  it("navigates to #skills and highlights the canonical skill name", () => {
+    const nav: string[] = [];
+    const highlighted: string[] = [];
+    const h = makeShell(undefined, undefined, {
+      navigate: (hash) => {
+        nav.push(hash);
+      },
+      highlightSkill: (name) => {
+        highlighted.push(name);
+      },
+    });
+    h.type("goto data structures");
+    h.shell.enter();
+    expect(nav).toEqual(["#skills"]);
+    expect(highlighted).toEqual(["Data Structures"]);
+    expect(h.printed.some((l) => l.includes("Data Structures"))).toBe(true);
+  });
+
+  it("completes a skill slug and lists skills in the bare goto dump", () => {
+    const h = makeShell();
+    h.type("goto data-");
+    h.shell.tab();
+    expect(h.line).toBe("goto data-structures");
+    const list = makeShell();
+    list.type("goto");
+    list.shell.enter();
+    expect(list.printed.some((l) => l.includes("data-structures"))).toBe(true);
+    expect(list.printed.some((l) => l.includes("papers, and skills"))).toBe(
+      true,
+    );
+  });
+
+  it("does not highlight on an unknown target", () => {
+    const highlighted: string[] = [];
+    const h = makeShell(undefined, undefined, {
+      highlightSkill: (name) => {
+        highlighted.push(name);
+      },
+    });
+    h.type("goto not-a-skill");
+    h.shell.enter();
+    expect(highlighted).toEqual([]);
   });
 });
 

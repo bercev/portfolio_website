@@ -19,7 +19,9 @@
  * Each hit carries the `goto` name that lands on it: project rows reuse
  * the iter-14 slug scheme, paper hits print the paper's data slug (the
  * run-3 iter-32 goto-paper extension — `goto grokset` lands on the row
- * via the iter-31 anchor), and skills and roles land on their chapters.
+ * via the iter-31 anchor), skill hits print the skill slug (run-3
+ * iter 41 — `goto data-structures` lands on the ledger with that skill
+ * highlighted), and roles land on their chapter.
  * Roles are appended AFTER skills: the iter-20 order (projects → papers
  * → skills) stays stable for every pre-existing query, and the new kind
  * extends it rather than re-sorting it.
@@ -29,6 +31,7 @@
 
 import type { PortfolioContent } from "@/data/content";
 import { projectSlug } from "./project-anchor";
+import { skillSlug } from "./terminal-goto";
 
 /** The slices search reads — a structural subset, so tests pass fixtures. */
 export type SearchableContent = Pick<
@@ -87,7 +90,12 @@ export function searchPortfolio(
   for (const category of content.skills) {
     for (const skill of category.items) {
       if (haystack([skill.name, skill.note]).includes(needle)) {
-        hits.push({ kind: "skill", label: skill.name, detail: skill.note, goto: "skills" });
+        hits.push({
+          kind: "skill",
+          label: skill.name,
+          detail: skill.note,
+          goto: skillSlug(skill.name),
+        });
       }
     }
   }

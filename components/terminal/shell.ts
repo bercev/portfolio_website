@@ -30,6 +30,14 @@ export interface ShellCallbacks {
   /** Jump the page to an anchor (the flyout closes first, then navigates). */
   navigate?: (hash: string) => void;
   /**
+   * Highlight one ledger skill after a `goto <skill>` landing (the
+   * iter-23 reverse-navigation event, wired by the real terminal).
+   * Fires even when navigate is absent (unit tests, embeds); the
+   * ledger itself gates on skillHasWork, so an unlinked skill simply
+   * lands on the chapter without a highlight.
+   */
+  highlightSkill?: (skillName: string) => void;
+  /**
    * Open an external URL in a new tab (e.g. the pinned resume PDF).
    * Kept behind a callback like `navigate` so the shell stays
    * unit-testable without a window; the real terminal wires it to
@@ -264,11 +272,14 @@ export class Shell {
         slug: p.slug,
         label: p.title,
       }));
+      const skillNames = portfolio.skills.flatMap((g) =>
+        g.items.map((i) => i.name),
+      );
       const candidates = isFirst
         ? COMMANDS.filter((c) => c.startsWith(last))
         : tokens[0] === "goto" && tokens.length === 2
-          ? gotoCompletionNames(projectTitles, paperTargets).filter((n) =>
-              n.startsWith(last),
+          ? gotoCompletionNames(projectTitles, paperTargets, skillNames).filter(
+              (n) => n.startsWith(last),
             )
           : completePath(this.root, this.cwd, last);
       this.completions = candidates;
@@ -442,17 +453,27 @@ export class Shell {
       slug: p.slug,
       label: p.title,
     }));
+    const skillNames = portfolio.skills.flatMap((g) =>
+      g.items.map((i) => i.name),
+    );
     const listTargets = () => {
-      this.cb.writeln(`chapters, projects, and papers:`);
-      for (const t of gotoTargets(projectTitles, paperTargets)) {
-        this.cb.writeln(`  \x1b[36m${t.name.padEnd(20)}\x1b[0m${t.hash}`);
+      this.cb.writeln(`chapters, projects, papers, and skills:`);
+      for (const t of gotoTargets(projectTitles, paperTargets, skillNames)) {
+        // A literal space after the pad: the longest skill slug
+        // ("multi-agent-systems", 20 cols) otherwise runs into its hash.
+        this.cb.writeln(`  \x1b[36m${t.name.padEnd(20)}\x1b[0m ${t.hash}`);
       }
     };
     if (args.length === 0) {
       listTargets();
       return;
     }
-    const target = resolveGotoTarget(args.join(" "), projectTitles, paperTargets);
+    const target = resolveGotoTarget(
+      args.join(" "),
+      projectTitles,
+      paperTargets,
+      skillNames,
+    );
     if (!target) {
       this.cb.writeln(`goto: unknown target: ${args.join(" ")}`);
       listTargets();
@@ -460,6 +481,10 @@ export class Shell {
     }
     this.cb.writeln(`\x1b[32m→ ${target.label} (${target.hash})\x1b[0m`);
     this.cb.navigate?.(target.hash);
+    // Highlight after navigating: the ledger state persists across the
+    // flyout close, and the flyout's delayed landing re-asserts #skills
+    // without clearing it — so the visitor lands highlighted, not bare.
+    if (target.skillName) this.cb.highlightSkill?.(target.skillName);
   }
 
   cmdSearch(args: string[]) {
@@ -628,7 +653,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["publications", "list papers"],
   ["experience", "list roles"],
   ["contact", "how to reach bercev"],
-  ["goto <chapter>", "jump to a chapter, project, or paper"],
+  ["goto <chapter>", "jump to a chapter, project, paper, or skill"],
   ["search <keyword>", "find projects, papers, roles, skills"],
   ["fortune", "one honest line from the case studies"],
   ["cowsay <text>", "the cow says what you type"],
