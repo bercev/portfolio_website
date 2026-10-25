@@ -15,9 +15,12 @@
  * because the data spells it "NextJS".
  *
  * Each hit carries the `goto` name that lands on it: project rows reuse
- * the iter-14 slug scheme, papers and skills land on their chapters
- * (no per-paper/per-skill anchors exist). Zero results is an empty list:
- * the shell prints the hint, never navigates.
+ * the iter-14 slug scheme, papers and skills land on their chapters —
+ * per-paper row anchors exist since run-3 iter 31, but the shell's goto
+ * resolver does not take paper targets yet, so paper hits still print
+ * the chapter target (the goto-paper extension is the filed next item).
+ * Zero results is an empty list: the shell prints the hint, never
+ * navigates.
  */
 
 import type { PortfolioContent } from "@/data/content";

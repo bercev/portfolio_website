@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import type { PortfolioContent, Publication } from "@/data/content";
 
+import { paperAnchorId } from "@/lib/paper-anchor";
 import { HoverPreview } from "@/components/ui/hover-preview";
 import { Station } from "@/components/ui/station";
 
@@ -91,12 +92,13 @@ export function Publications({ content, heading }: PublicationsProps) {
         {content.map((publication, index) => (
           <article
             key={publication.href}
+            id={paperAnchorId(publication.slug)}
             data-publication-row
             data-publication-lead={index === 0 ? "true" : undefined}
             className={
               index === 0
-                ? "journey-pub-row journey-pub-row--lead"
-                : "journey-pub-row"
+                ? "journey-pub-row journey-pub-row--lead scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+                : "journey-pub-row scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
             }
           >
             <p className="journey-pub-index" aria-hidden="true">
