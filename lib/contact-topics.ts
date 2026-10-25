@@ -18,6 +18,23 @@ export const CONTACT_TOPICS: readonly ContactTopic[] = [
   { label: "Research question", prefix: "Topic: Research question — " },
 ];
 
+/** Resolve a `?topic=` query value to a known topic, or null.
+ *
+ * Run-3 iter 16 (?topic= deep links): the value is matched
+ * case-insensitively against the known chip labels ONLY — an unknown
+ * value is ignored, never rendered, so a crafted URL cannot inject
+ * arbitrary text into the form. The "Topic: … — " prefix form itself is
+ * not accepted: only the bare label ("Hiring", "Research question"). */
+export function resolveTopicParam(raw: string | null): ContactTopic | null {
+  if (raw === null) return null;
+  const needle = raw.trim().toLowerCase();
+  if (needle === "") return null;
+  return (
+    CONTACT_TOPICS.find((topic) => topic.label.toLowerCase() === needle) ??
+    null
+  );
+}
+
 /** Leading "Topic: ... — " prefix, if the message starts with one. */
 const LEADING_TOPIC_RE = /^Topic: [^—\n]*— /;
 

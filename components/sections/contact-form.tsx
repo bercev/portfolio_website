@@ -8,7 +8,11 @@ import {
   contactDraftAction,
   parseContactDraft,
 } from "@/lib/contact-draft";
-import { CONTACT_TOPICS, applyTopicPrefix } from "@/lib/contact-topics";
+import {
+  CONTACT_TOPICS,
+  applyTopicPrefix,
+  resolveTopicParam,
+} from "@/lib/contact-topics";
 
 type Status = "idle" | "sending" | "sent" | "error";
 type FieldName = "name" | "email" | "message";
@@ -37,7 +41,20 @@ export function ContactForm() {
   // non-empty for the chip append/swap rules. Deliberately NOT a lazy
   // useState initializer: localStorage differs at SSR, which would be a
   // hydration mismatch (see the run-2 iter 43 sign).
+  //
+  // Deep-linkable topics (run-3 iter 16) are resolved in THIS same
+  // effect, not a second one: a second mount effect reading `message`
+  // state would still see the initial "" (state updates batch), so it
+  // could not tell a restored draft from an empty form. Precedence, by
+  // design: the visitor's own words always win — a ?topic= value applies
+  // ONLY when the restored message is empty (a draft with a name/email
+  // but an empty message still gets the prefill; a non-empty draft keeps
+  // its own topic and body untouched). Unknown values are ignored by
+  // resolveTopicParam, never rendered. Read via window.location in the
+  // mount effect (not useSearchParams) so no Suspense boundary is needed
+  // and SSR output is untouched.
   useEffect(() => {
+    let restoredMessage = "";
     try {
       const draft = parseContactDraft(
         window.localStorage.getItem(CONTACT_DRAFT_KEY),
@@ -46,9 +63,16 @@ export function ContactForm() {
         setName(draft.name);
         setEmail(draft.email);
         setMessage(draft.message);
+        restoredMessage = draft.message;
       }
     } catch {
       // No usable storage — the form simply starts empty.
+    }
+    if (restoredMessage === "") {
+      const topic = resolveTopicParam(
+        new URLSearchParams(window.location.search).get("topic"),
+      );
+      if (topic !== null) setMessage(topic.prefix);
     }
     setDraftReady(true);
   }, []);
