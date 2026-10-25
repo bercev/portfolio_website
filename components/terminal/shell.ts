@@ -470,7 +470,7 @@ export class Shell {
     }
     const hits = searchPortfolio(query, portfolio);
     if (hits.length === 0) {
-      this.cb.writeln(`no matches for "${query}" — try a project, paper, or tech name.`);
+      this.cb.writeln(`no matches for "${query}" — try a project, paper, role, or tech name.`);
       return;
     }
     this.cb.writeln(`\x1b[36m${hits.length} match${hits.length === 1 ? "" : "es"} for "${query}":\x1b[0m`);
@@ -629,7 +629,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["experience", "list roles"],
   ["contact", "how to reach bercev"],
   ["goto <chapter>", "jump to a chapter, project, or paper"],
-  ["search <keyword>", "find projects, papers, skills"],
+  ["search <keyword>", "find projects, papers, roles, skills"],
   ["fortune", "one honest line from the case studies"],
   ["cowsay <text>", "the cow says what you type"],
   ["vim", "you have been warned"],

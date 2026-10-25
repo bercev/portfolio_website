@@ -286,6 +286,29 @@ describe("experience command", () => {
   });
 });
 
+describe("search covers experience roles", () => {
+  it("finds a role by employer and prints its goto target", () => {
+    const h = makeShell();
+    h.type("search algoverse");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("LLM Researcher"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("goto experience"))).toBe(true);
+  });
+
+  it("advertises roles in help and in the no-match hint", () => {
+    const h = makeShell();
+    h.type("help");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes("find projects, papers, roles, skills")),
+    ).toBe(true);
+    const miss = makeShell();
+    miss.type("search definitelyNotAKeyword");
+    miss.shell.enter();
+    expect(miss.printed.some((l) => l.includes("role"))).toBe(true);
+  });
+});
+
 describe("untouched completion branches", () => {
   it("still completes the first token against commands", () => {
     const h = makeShell();

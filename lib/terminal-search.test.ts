@@ -50,6 +50,32 @@ const FIXTURE: SearchableContent = {
       preview: { src: "", alt: "", width: 0, height: 0, isPlaceholder: true },
     },
   ],
+  experience: [
+    {
+      role: "LLM Researcher",
+      organization: "Algoverse",
+      dates: "Jun 2025-Jan 2026",
+      summary:
+        "Built and analyzed a large dataset of public chatbot conversations and cut collection cost",
+      technologies: ["LLMs", "Python"],
+    },
+    {
+      role: "DSA Tutor",
+      organization: "UCSC",
+      dates: "Apr 2025-Jun 2026",
+      summary:
+        "Supported upper-division students through office hours and project guidance",
+      technologies: ["Data Structures", "Algorithms"],
+    },
+    {
+      role: "SWE Intern",
+      organization: "Trustd.ai",
+      dates: "Oct 2024-Feb 2025",
+      summary:
+        "Shipped admin workflows with validation and hardened CI/CD pipelines",
+      technologies: ["React", "TypeScript"],
+    },
+  ],
   skills: [
     {
       category: "AI & agents",
@@ -160,6 +186,43 @@ describe("searchPortfolio", () => {
     expect(searchPortfolio("NextJS", FIXTURE).map((h) => h.label)).toEqual([
       "Vitae",
       "NextJS",
+    ]);
+  });
+
+  it("matches a role by organization and lands on the experience chapter", () => {
+    const hits = searchPortfolio("Algoverse", FIXTURE);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({
+      kind: "experience",
+      label: "LLM Researcher",
+      detail: "Algoverse (Jun 2025-Jan 2026)",
+      goto: "experience",
+    });
+  });
+
+  it("matches a role by summary keyword and by title", () => {
+    expect(searchPortfolio("validation", FIXTURE).map((h) => h.label)).toEqual([
+      "SWE Intern",
+    ]);
+    // "tutor" also matches the "Tutored DSA" skill notes — skills sort first.
+    expect(searchPortfolio("TUTOR", FIXTURE).map((h) => h.label)).toEqual([
+      "Data Structures",
+      "Algorithms",
+      "DSA Tutor",
+    ]);
+  });
+
+  it("sorts roles after skills, keeping the iter-20 kind order stable", () => {
+    const hits = searchPortfolio("Python", FIXTURE);
+    expect(hits.map((h) => h.label)).toEqual([
+      "AI Discord Chatbot",
+      "Python",
+      "LLM Researcher",
+    ]);
+    expect(hits.map((h) => h.kind)).toEqual([
+      "project",
+      "skill",
+      "experience",
     ]);
   });
 
