@@ -1140,6 +1140,26 @@ html:not(.dark) .journey-masthead {
   padding: clamp(48px, 6vh, 80px) var(--journey-content-inline);
 }
 
+/* Rail clearance (run-3 iter 30): the fixed line sidebar's longest label
+   ("Publications") ends at ~111px, while the centered station measure
+   starts section headings at ~104px on a 1280px viewport — so the active
+   label and its heading read as one doubled line ("PUBLICATIONS
+   Publications"). On rail widths (≥900px) floor the station's left
+   padding so headings start at 140px (29px clear of the label) until the
+   centered measure naturally clears it, after which the normal padding
+   resumes. Right padding, block padding, and the mobile layout are
+   untouched. */
+@media (min-width: 900px) {
+  [data-journey-station] {
+    padding-left: max(
+      var(--journey-content-inline),
+      calc(
+        140px - max(0px, (100vw - var(--journey-content-max)) / 2)
+      )
+    );
+  }
+}
+
 /* Anything unplaced still spans the full measure, so no block can drift. */
 [data-journey-station] > * {
   grid-column: 1 / -1;
