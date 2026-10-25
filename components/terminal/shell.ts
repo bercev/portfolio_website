@@ -163,10 +163,14 @@ export class Shell {
       this.completionPrefix = last;
       this.completionIndex = 0;
       const projectTitles = portfolio.projects.map((p) => p.title);
+      const paperTargets = portfolio.publications.map((p) => ({
+        slug: p.slug,
+        label: p.title,
+      }));
       const candidates = isFirst
         ? COMMANDS.filter((c) => c.startsWith(last))
         : tokens[0] === "goto" && tokens.length === 2
-          ? gotoCompletionNames(projectTitles).filter((n) =>
+          ? gotoCompletionNames(projectTitles, paperTargets).filter((n) =>
               n.startsWith(last),
             )
           : listNames(this.root, this.cwd).filter((n) => n.startsWith(last));
@@ -314,9 +318,13 @@ export class Shell {
 
   cmdGoto(args: string[]) {
     const projectTitles = portfolio.projects.map((p) => p.title);
+    const paperTargets = portfolio.publications.map((p) => ({
+      slug: p.slug,
+      label: p.title,
+    }));
     const listTargets = () => {
-      this.cb.writeln(`chapters and projects:`);
-      for (const t of gotoTargets(projectTitles)) {
+      this.cb.writeln(`chapters, projects, and papers:`);
+      for (const t of gotoTargets(projectTitles, paperTargets)) {
         this.cb.writeln(`  \x1b[36m${t.name.padEnd(20)}\x1b[0m${t.hash}`);
       }
     };
@@ -324,7 +332,7 @@ export class Shell {
       listTargets();
       return;
     }
-    const target = resolveGotoTarget(args.join(" "), projectTitles);
+    const target = resolveGotoTarget(args.join(" "), projectTitles, paperTargets);
     if (!target) {
       this.cb.writeln(`goto: unknown target: ${args.join(" ")}`);
       listTargets();
@@ -486,7 +494,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["projects", "list shipped projects"],
   ["publications", "list papers"],
   ["contact", "how to reach bercev"],
-  ["goto <chapter>", "jump to a chapter or project"],
+  ["goto <chapter>", "jump to a chapter, project, or paper"],
   ["search <keyword>", "find projects, papers, skills"],
   ["fortune", "one honest line from the case studies"],
   ["cowsay <text>", "the cow says what you type"],

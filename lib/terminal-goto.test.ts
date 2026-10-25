@@ -7,6 +7,10 @@ import {
 } from "./terminal-goto";
 
 const PROJECTS = ["Vitae", "AI Discord Chatbot"];
+const PAPERS = [
+  { slug: "skilloptimizer", label: "SkillOptimizer" },
+  { slug: "grokset", label: "@GrokSet" },
+];
 
 describe("resolveGotoTarget", () => {
   it("resolves every chapter", () => {
@@ -49,6 +53,20 @@ describe("resolveGotoTarget", () => {
     expect(resolveGotoTarget("chatbot", PROJECTS)).toBeNull();
   });
 
+  it("resolves paper rows by data slug, never by title", () => {
+    expect(resolveGotoTarget("skilloptimizer", PROJECTS, PAPERS)?.hash).toBe(
+      "#paper-skilloptimizer",
+    );
+    expect(resolveGotoTarget("GROKSET", PROJECTS, PAPERS)?.hash).toBe(
+      "#paper-grokset",
+    );
+    expect(resolveGotoTarget("grokset", PROJECTS, PAPERS)?.label).toBe("@GrokSet");
+    // The chapter alias still wins for the chapter target.
+    expect(resolveGotoTarget("papers", PROJECTS, PAPERS)?.hash).toBe(
+      "#publications",
+    );
+  });
+
   it("lists chapters then project rows, with slugs for completion", () => {
     expect(gotoTargets(PROJECTS).map((t) => t.hash)).toEqual([
       "#home",
@@ -62,5 +80,19 @@ describe("resolveGotoTarget", () => {
       "#project-ai-discord-chatbot",
     ]);
     expect(gotoCompletionNames(PROJECTS)).toContain("ai-discord-chatbot");
+    expect(gotoTargets(PROJECTS, PAPERS).map((t) => t.hash)).toEqual([
+      "#home",
+      "#about",
+      "#publications",
+      "#experience",
+      "#projects",
+      "#skills",
+      "#contact",
+      "#project-vitae",
+      "#project-ai-discord-chatbot",
+      "#paper-skilloptimizer",
+      "#paper-grokset",
+    ]);
+    expect(gotoCompletionNames(PROJECTS, PAPERS)).toContain("grokset");
   });
 });

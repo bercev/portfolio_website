@@ -88,13 +88,13 @@ describe("searchPortfolio", () => {
     });
   });
 
-  it("matches a paper by title and lands on the publications chapter", () => {
+  it("matches a paper by title and prints its goto data slug", () => {
     const hits = searchPortfolio("GrokSet", FIXTURE);
     expect(hits).toHaveLength(1);
     expect(hits[0]).toMatchObject({
       kind: "paper",
       label: "@GrokSet: A Dataset of Public Grok Conversations",
-      goto: "publications",
+      goto: "grokset",
     });
   });
 

@@ -15,10 +15,9 @@
  * because the data spells it "NextJS".
  *
  * Each hit carries the `goto` name that lands on it: project rows reuse
- * the iter-14 slug scheme, papers and skills land on their chapters —
- * per-paper row anchors exist since run-3 iter 31, but the shell's goto
- * resolver does not take paper targets yet, so paper hits still print
- * the chapter target (the goto-paper extension is the filed next item).
+ * the iter-14 slug scheme, paper hits print the paper's data slug (the
+ * run-3 iter-32 goto-paper extension — `goto grokset` lands on the row
+ * via the iter-31 anchor), and skills land on their chapter.
  * Zero results is an empty list: the shell prints the hint, never
  * navigates.
  */
@@ -77,7 +76,7 @@ export function searchPortfolio(
   }
   for (const paper of content.publications) {
     if (haystack([paper.title, paper.venue]).includes(needle)) {
-      hits.push({ kind: "paper", label: paper.title, detail: paper.venue, goto: "publications" });
+      hits.push({ kind: "paper", label: paper.title, detail: paper.venue, goto: paper.slug });
     }
   }
   for (const category of content.skills) {
