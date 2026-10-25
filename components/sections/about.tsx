@@ -1,5 +1,6 @@
 import type { PortfolioContent } from "@/data/content";
 
+import { LedeReveal } from "@/components/sections/lede-reveal";
 import { Station } from "@/components/ui/station";
 
 type AboutProps = {
@@ -18,18 +19,15 @@ export function About({ content, heading }: AboutProps) {
     >
       <div className="journey-col-main journey-about-column">
         <div className="journey-copy">
-          {content.bio.map((paragraph, index) => (
-            <p
-              key={paragraph}
-              className={
-                index === 0
-                  ? "journey-body journey-body--lede"
-                  : "journey-body"
-              }
-            >
-              {paragraph}
-            </p>
-          ))}
+          {content.bio.map((paragraph, index) =>
+            index === 0 ? (
+              <LedeReveal key={paragraph} text={paragraph} />
+            ) : (
+              <p key={paragraph} className="journey-body">
+                {paragraph}
+              </p>
+            ),
+          )}
         </div>
       </div>
 

@@ -1438,6 +1438,15 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--foreground);
 }
 
+/* Scroll-linked lede reveal: reduced-motion readers get the full lede
+   at once — a media query, never a conditional render (no hydration
+   mismatch), and it pins over any inline opacity the effect wrote. */
+@media (prefers-reduced-motion: reduce) {
+  .journey-body--lede [data-lede-word] {
+    opacity: 1 !important;
+  }
+}
+
 /* Liquid glass is an accent material — Vitae/deep-dive only. */
 .liquid-glass {
   background: var(--glass-bg);
