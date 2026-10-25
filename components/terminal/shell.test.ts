@@ -11,7 +11,7 @@ import { Shell } from "./shell";
  * writeln output is collected separately for commands that print.
  * Pass cols to wire the cols-aware redraw path (narrow terminals).
  */
-function makeShell(cols?: number) {
+function makeShell(cols?: number, openExternal?: (url: string) => void) {
   const printed: string[] = [];
   let line = "";
   let col = 0;
@@ -60,6 +60,7 @@ function makeShell(cols?: number) {
     },
     clear: () => {},
     ...(cols ? { cols: () => cols } : {}),
+    ...(openExternal ? { openExternal } : {}),
   });
   const type = (text: string) => {
     for (const ch of text) shell.type(ch);
@@ -174,6 +175,38 @@ describe("wrapped-line redraw (cols known)", () => {
     expect(h.line).toBe(
       "bercev@portfolio:~$ ls publications/skilloptimizer.txt",
     );
+  });
+});
+
+describe("resume command", () => {
+  it("opens the pinned resume pdf through the callback", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("resume");
+    h.shell.enter();
+    expect(opened).toEqual(["/assets/documents/resume.pdf"]);
+    expect(h.printed.some((l) => l.includes("opening resume"))).toBe(true);
+  });
+
+  it("prints without throwing when no opener is wired", () => {
+    const h = makeShell();
+    h.type("resume");
+    expect(() => h.shell.enter()).not.toThrow();
+    expect(h.printed.some((l) => l.includes("opening resume"))).toBe(true);
+  });
+
+  it("completes from the help-derived command list", () => {
+    const h = makeShell();
+    h.type("res");
+    h.shell.tab();
+    expect(h.line).toBe("resume");
+  });
+
+  it("appears in help", () => {
+    const h = makeShell();
+    h.type("help");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("resume"))).toBe(true);
   });
 });
 

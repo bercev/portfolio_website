@@ -30,6 +30,13 @@ export interface ShellCallbacks {
   /** Jump the page to an anchor (the flyout closes first, then navigates). */
   navigate?: (hash: string) => void;
   /**
+   * Open an external URL in a new tab (e.g. the pinned resume PDF).
+   * Kept behind a callback like `navigate` so the shell stays
+   * unit-testable without a window; the real terminal wires it to
+   * window.open. Absent in tests/embeds, where the command just prints.
+   */
+  openExternal?: (url: string) => void;
+  /**
    * Live terminal columns, when the shell is wired to a real xterm
    * instance. The erase path needs it: a "\b \b" triple never crosses
    * a wrapped-line boundary in xterm, so on narrow terminals editing a
@@ -417,6 +424,18 @@ export class Shell {
     this.cmdCat(["contact.txt"]);
   }
 
+  cmdResume() {
+    // The pinned resume entry from data/content.ts — the same href the
+    // rail/FAB menu link to — so the shell never hardcodes the asset path.
+    const resume = portfolio.contact.links.find((l) => l.label === "Resume");
+    if (!resume) {
+      this.cb.writeln(`resume: not available`);
+      return;
+    }
+    this.cb.writeln(`\x1b[32m→ opening resume (${resume.href})\x1b[0m`);
+    this.cb.openExternal?.(resume.href);
+  }
+
   cmdGoto(args: string[]) {
     const projectTitles = portfolio.projects.map((p) => p.title);
     const paperTargets = portfolio.publications.map((p) => ({
@@ -603,6 +622,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["vim", "you have been warned"],
   ["clear", "clear the screen"],
   ["history", "list past commands"],
+  ["resume", "open the resume (PDF)"],
   ["sudo hire bercev", "???"],
 ];
 
@@ -637,5 +657,6 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   publications: (s) => s.cmdPublications(),
   fortune: (s) => s.cmdFortune(),
   history: (s) => s.cmdHistory(),
+  resume: (s) => s.cmdResume(),
   cowsay: (s, a) => s.cmdCowsay(a),
 };

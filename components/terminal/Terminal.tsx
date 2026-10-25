@@ -100,6 +100,7 @@ export function Terminal({
         writeln: (text) => term?.writeln(text ?? ""),
         clear: () => term?.clear(),
         navigate: onNavigate,
+        openExternal: (url) => window.open(url, "_blank", "noopener,noreferrer"),
         // Live cols (FitAddon refits on resize) so wrapped-line edits
         // redraw the whole logical line instead of per-char erasing.
         cols: () => term?.cols ?? 80,
