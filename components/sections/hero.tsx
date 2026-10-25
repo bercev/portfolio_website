@@ -83,7 +83,15 @@ export function Hero({ content }: { content: HeroContent }) {
             {hero.signals.map((signal) => (
               <div key={signal.label} data-hero-signal>
                 <dt>{signal.label}</dt>
-                <dd>{signal.value}</dd>
+                <dd>
+                  {signal.href ? (
+                    <a href={signal.href} data-hero-signal-link>
+                      {signal.value}
+                    </a>
+                  ) : (
+                    signal.value
+                  )}
+                </dd>
               </div>
             ))}
           </dl>

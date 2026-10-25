@@ -2531,6 +2531,21 @@ html[data-journey="active"] [data-hero-name-fallback] {
   text-wrap: pretty;
 }
 
+/* A signal value that links (currently only "Open to" → #contact): same quiet
+   underline as the hero's plain links, so the row still reads as three facts. */
+[data-hero-signal-link] {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+  transition: text-decoration-color 150ms ease-out;
+}
+
+[data-hero-signal-link]:hover {
+  text-decoration-color: currentColor;
+}
+
 [data-hero-plain-link] {
   margin: 0.35rem 0 0;
   font: 500 0.82rem/1.5 var(--font-sans);

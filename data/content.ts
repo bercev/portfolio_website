@@ -110,6 +110,8 @@ export interface PortfolioContent {
     readonly signals: readonly {
       readonly label: string;
       readonly value: string;
+      /** Optional in-place link (e.g. the hiring signal → the contact form). */
+      readonly href?: string;
     }[];
   };
   readonly about: {
@@ -178,7 +180,7 @@ export const portfolio = {
     signals: [
       { label: "Now", value: "Building products" },
       { label: "Published", value: "ICML 2026 AIWILD · arXiv" },
-      { label: "Open to", value: "Software engineering roles" },
+      { label: "Open to", value: "Software engineering roles", href: "#contact" },
     ],
   },
   about: {
