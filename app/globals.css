@@ -1373,10 +1373,32 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--foreground);
   text-decoration: underline;
   text-underline-offset: 0.25em;
+  /* WCAG 2.5.8 (run-3 iter 17 census): the link is 18px tall and stands
+     alone on its line, so no inline exception applies — expand the hit
+     area to 26px with vertical padding. This is an inline link, so the
+     padding expands the hit area without moving the line box. */
+  padding-block: 4px;
 }
 
 .journey-epilogue-top:hover {
   color: var(--portfolio-accent);
+}
+
+/* Mobile keyboard-focus clearance (run-3 iter 17 census spot-check):
+   the opaque 34px chapter ribbon covers the top of the viewport, and a
+   settled Tab walk landed one paper link fully behind it (rect -0.2 to
+   15.8). scroll-margin-top on interactive elements makes focus scrolling
+   land below the band. Scoped to the ribbon's viewport range only:
+   desktop has no fixed top band, so its focus behavior is untouched. */
+@media (max-width: 899px) {
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  [tabindex] {
+    scroll-margin-top: 48px;
+  }
 }
 
 /* Primary email CTA — the highest-intent recruiter action. */
@@ -2309,6 +2331,12 @@ html:not(.dark) .skill-pill {
 a.skills-ledger-note {
   text-decoration: underline;
   text-underline-offset: 3px;
+  /* WCAG 2.5.8 (run-3 iter 17 census): the note text is 19px tall, so
+     expand the hit area to 24px with padding and neutralize the visual
+     shift with a matching negative margin (the iter-43 pattern; the row
+     is flex, so the link is blockified and both apply). */
+  padding-block: 2.5px;
+  margin-block: -2.5px;
 }
 
 /* Skill → work highlight (run-3 iter 7): the hint and active lines span
@@ -2331,7 +2359,11 @@ a.skills-ledger-note {
 }
 
 .skills-ledger-clear {
-  padding: 0;
+  /* WCAG 2.5.8 (run-3 iter 17 census): the text is 20.2px tall, so expand
+     the hit area to 24px with padding and neutralize the visual shift with
+     a matching negative margin (the iter-43 rail-utility pattern). */
+  padding-block: 2px;
+  margin-block: -2px;
   border: 0;
   background: none;
   color: inherit;
@@ -2342,7 +2374,14 @@ a.skills-ledger-note {
 }
 
 .skills-ledger-skill {
-  padding: 0;
+  /* WCAG 2.5.8 (run-3 iter 17 census): the text is 21.3px tall and the
+     shortest name ("Git") 20.5px wide, so expand the hit area past 24px
+     on both axes with padding and neutralize the visual shift with
+     matching negative margins (the iter-43 rail-utility pattern). */
+  padding-block: 1.5px;
+  padding-inline: 2px;
+  margin-block: -1.5px;
+  margin-inline: -2px;
   border: 0;
   background: none;
   color: var(--foreground);
