@@ -1,8 +1,13 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { StatefulSubmitButton } from "@/components/ui/stateful-button";
+import {
+  CONTACT_DRAFT_KEY,
+  contactDraftAction,
+  parseContactDraft,
+} from "@/lib/contact-draft";
 import { CONTACT_TOPICS, applyTopicPrefix } from "@/lib/contact-topics";
 
 type Status = "idle" | "sending" | "sent" | "error";
@@ -19,6 +24,57 @@ export function ContactForm() {
   const [error, setError] = useState("");
   const [invalidField, setInvalidField] = useState<FieldName | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  // Draft autosave (run-3 iter 11): false until the one-shot restore effect
+  // below has run, so the debounced save never fires on the initial empty
+  // fields and wipes a stored draft before it is read. Storage IO is
+  // try/catch-guarded throughout — a denied quota or private mode must
+  // never break the form.
+  const [draftReady, setDraftReady] = useState(false);
+
+  // Restore once on mount, when the fields are initial-empty: a stored
+  // draft can never clobber a topic-chip prefill (chips only run on user
+  // taps, after mount), and a restored non-empty message counts as
+  // non-empty for the chip append/swap rules. Deliberately NOT a lazy
+  // useState initializer: localStorage differs at SSR, which would be a
+  // hydration mismatch (see the run-2 iter 43 sign).
+  useEffect(() => {
+    try {
+      const draft = parseContactDraft(
+        window.localStorage.getItem(CONTACT_DRAFT_KEY),
+      );
+      if (draft !== null) {
+        setName(draft.name);
+        setEmail(draft.email);
+        setMessage(draft.message);
+      }
+    } catch {
+      // No usable storage — the form simply starts empty.
+    }
+    setDraftReady(true);
+  }, []);
+
+  // Debounced save (~500ms, not per keystroke). Skipped while status is
+  // "sent": the success branch clears the key, and this guard stops the
+  // effect from resurrecting the sent message after the receipt renders.
+  // Validation failure and send errors never reach the clear branch, so a
+  // failed send keeps the draft — exactly when it matters.
+  useEffect(() => {
+    if (!draftReady || status === "sent") return;
+    const timer = window.setTimeout(() => {
+      try {
+        const action = contactDraftAction({ name, email, message });
+        if (action.action === "write") {
+          window.localStorage.setItem(CONTACT_DRAFT_KEY, action.value);
+        } else if (action.action === "clear") {
+          window.localStorage.removeItem(CONTACT_DRAFT_KEY);
+        }
+        // "skip" (oversized): refuse, leaving the previous draft untouched.
+      } catch {
+        // Storage unavailable — drafting in memory only.
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [name, email, message, draftReady, status]);
 
   function fail(field: FieldName, message: string) {
     setInvalidField(field);
@@ -61,6 +117,13 @@ export function ContactForm() {
         throw new Error(data?.error ?? `request failed (${res.status})`);
       }
       setStatus("sent");
+      // Draft autosave: a sent message must not resurrect — clear the
+      // stored draft (the save effect's "sent" guard stops it rewriting).
+      try {
+        window.localStorage.removeItem(CONTACT_DRAFT_KEY);
+      } catch {
+        // Storage unavailable — nothing stored to clear.
+      }
       // Transmit burst (run-2 IDEA iter 24, built iter 50): a
       // successful submit fires a one-shot dithered shockwave on
       // the glyph field from the form's position — the terminal's
