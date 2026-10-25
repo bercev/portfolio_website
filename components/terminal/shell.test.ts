@@ -177,6 +177,43 @@ describe("wrapped-line redraw (cols known)", () => {
   });
 });
 
+describe("history command", () => {
+  it("lists past commands oldest-first with bash-style numbering", () => {
+    const h = makeShell();
+    h.type("whoami");
+    h.shell.enter();
+    h.type("pwd");
+    h.shell.enter();
+    h.type("history");
+    h.shell.enter();
+    // The `history` invocation itself is recorded before it runs, as in
+    // a real shell, so it appears last with the highest number.
+    expect(h.printed).toContain("1  whoami");
+    expect(h.printed).toContain("2  pwd");
+    expect(h.printed).toContain("3  history");
+  });
+
+  it("arrow-cycling is unchanged after listing history", () => {
+    const h = makeShell();
+    h.type("pwd");
+    h.shell.enter();
+    h.type("history");
+    h.shell.enter();
+    h.resetLine();
+    h.shell.historyUp();
+    expect(h.line).toBe("history");
+    h.shell.historyUp();
+    expect(h.line).toBe("pwd");
+  });
+
+  it("completes from the help-derived command list", () => {
+    const h = makeShell();
+    h.type("hist");
+    h.shell.tab();
+    expect(h.line).toBe("history");
+  });
+});
+
 describe("untouched completion branches", () => {
   it("still completes the first token against commands", () => {
     const h = makeShell();

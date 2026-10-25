@@ -307,6 +307,17 @@ export class Shell {
     this.cb.writeln(`${portfolio.identity.name} — ${portfolio.identity.role}`);
   }
 
+  cmdHistory() {
+    // Stored newest-first (unshift on enter); print oldest-first with
+    // bash-style numbering, so the most recent command has the highest
+    // number. The `history` invocation itself is already recorded by
+    // enter() before run(), exactly as in a real shell.
+    const oldestFirst = [...this.history].reverse();
+    oldestFirst.forEach((cmd, i) => {
+      this.cb.writeln(`${i + 1}  ${cmd}`);
+    });
+  }
+
   cmdPwd() {
     this.cb.writeln(displayPath(this.cwd));
   }
@@ -591,6 +602,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["cowsay <text>", "the cow says what you type"],
   ["vim", "you have been warned"],
   ["clear", "clear the screen"],
+  ["history", "list past commands"],
   ["sudo hire bercev", "???"],
 ];
 
@@ -624,5 +636,6 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   projects: (s) => s.cmdProjects(),
   publications: (s) => s.cmdPublications(),
   fortune: (s) => s.cmdFortune(),
+  history: (s) => s.cmdHistory(),
   cowsay: (s, a) => s.cmdCowsay(a),
 };
