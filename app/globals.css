@@ -2712,6 +2712,45 @@ html[data-journey="active"] [data-hero-name-fallback] {
   min-height: 7rem;
   line-height: 1.5;
 }
+/* Topic chips (run-3 iter 2): text-only, FROST-only, static under
+   reduced motion (no animation anywhere in this block). */
+.journey-contact-form-topics {
+  margin-bottom: 1rem;
+}
+.journey-contact-form-topic-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.journey-contact-form-topic-chip {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.85rem;
+  color: var(--portfolio-accent);
+  background: transparent;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s ease-out, background-color 0.15s ease-out;
+}
+.journey-contact-form-topic-chip:hover:not(:disabled) {
+  background: rgba(125, 211, 252, 0.12);
+}
+.journey-contact-form-topic-chip:focus-visible {
+  outline: none;
+  border-color: var(--portfolio-accent);
+  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.18);
+}
+.journey-contact-form-topic-chip[aria-pressed="true"] {
+  color: #05070c;
+  background: var(--portfolio-accent);
+  border-color: var(--portfolio-accent);
+  font-weight: 600;
+}
+.journey-contact-form-topic-chip:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
 .journey-contact-form-error {
   margin: 0 0 1rem;
   font-size: 0.82rem;

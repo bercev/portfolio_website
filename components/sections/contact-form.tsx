@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { StatefulSubmitButton } from "@/components/ui/stateful-button";
+import { CONTACT_TOPICS, applyTopicPrefix } from "@/lib/contact-topics";
 
 type Status = "idle" | "sending" | "sent" | "error";
 type FieldName = "name" | "email" | "message";
@@ -17,6 +18,7 @@ export function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [invalidField, setInvalidField] = useState<FieldName | null>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   function fail(field: FieldName, message: string) {
     setInvalidField(field);
@@ -147,9 +149,45 @@ export function ContactForm() {
         />
       </label>
 
+      {/* Topic chips (run-3 iter 2): a tap, not a blank field — tapping a
+          chip starts the message with a topic prefix without clobbering
+          already-typed text (see lib/contact-topics.ts). Placed inside the
+          terminal frame directly above the message field, so the chip sits
+          next to the field it fills; real buttons, keyboard + screen-reader
+          reachable, and the transmit burst's fire-time origin read is
+          unaffected (the origin is resolved at submit-click time). */}
+      <div
+        className="journey-contact-form-topics"
+        role="group"
+        aria-label="Start your message with a topic"
+      >
+        <span className="journey-contact-form-label" aria-hidden="true">
+          $ topic
+        </span>
+        <span className="journey-contact-form-topic-row">
+          {CONTACT_TOPICS.map((topic) => (
+            <button
+              key={topic.label}
+              type="button"
+              disabled={status === "sending"}
+              aria-pressed={message.startsWith(topic.prefix)}
+              onClick={() => {
+                setMessage(applyTopicPrefix(message, topic.prefix));
+                setInvalidField(null);
+                messageRef.current?.focus();
+              }}
+              className="journey-contact-form-topic-chip"
+            >
+              {topic.label}
+            </button>
+          ))}
+        </span>
+      </div>
+
       <label className="journey-contact-form-field">
         <span className="journey-contact-form-label">$ cat message.txt</span>
         <textarea
+          ref={messageRef}
           name="message"
           value={message}
           onChange={(e) => {
