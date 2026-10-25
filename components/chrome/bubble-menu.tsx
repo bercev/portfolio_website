@@ -21,6 +21,10 @@ import styles from "./bubble-menu.module.css";
 
 type BubbleMenuProps = {
   links: PortfolioContent["contact"]["links"];
+  /** The 7 chapters (same list the rail and ribbon use) — rendered as a
+      separate text-link group below the bubble column, never appended to
+      it: 12 bubbles would overflow the viewport and crowd the fan. */
+  chapters: PortfolioContent["navigation"];
 };
 
 const ITEM_ROTATIONS = [-7, 5, -4, 6, -5] as const;
@@ -34,7 +38,7 @@ const PROFILE_ICONS = {
   Resume: FilePdfIcon,
 } as const;
 
-export function BubbleMenu({ links }: BubbleMenuProps) {
+export function BubbleMenu({ links, chapters }: BubbleMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showItems, setShowItems] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -75,6 +79,35 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
   const handleTriggerClick = () => {
     if (isOpen) closeMenu();
     else openMenu();
+  };
+
+  // A chapter link unmounts with the overlay when the menu closes, and
+  // focusing the trigger inside the click handler does NOT stick: the
+  // click's own default-action window moves focus back to BODY within
+  // ~2ms (v151c probe), even though the trigger stays mounted. So this
+  // mirrors the terminal flyout's proven `goto` pattern instead: close
+  // first, navigate explicitly (same-hash scrolls directly — setting an
+  // identical hash is a no-op), and focus the section itself with
+  // preventScroll so focus cannot disturb the Lenis travel. Modified
+  // clicks (new tab etc.) are left to the browser.
+  const handleChapterClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    id: string,
+  ) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    event.preventDefault();
+    closeMenu();
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (window.location.hash === `#${id}`) {
+      el.scrollIntoView({ behavior: "auto", block: "start" });
+    } else {
+      window.location.hash = id;
+    }
+    el.setAttribute("tabindex", "-1");
+    el.focus({ preventScroll: true });
   };
 
   const handlePointerEnter = (event: PointerEvent<HTMLElement>) => {
@@ -274,6 +307,22 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
               >
                 <ThemeSelector variant="menu" />
               </li>
+            </ul>
+            {/* Chapters: a separate group, separated from the bubbles by
+                spacing alone (no label — the names are self-evident — and
+                no divider rule). Plain anchors, exactly like the rail's. */}
+            <ul aria-label="Chapters" className={styles.chapterList}>
+              {chapters.map((chapter) => (
+                <li key={chapter.id} className={styles.chapterItem}>
+                  <a
+                    href={`#${chapter.id}`}
+                    className={`cursor-target ${styles.chapterLink}`}
+                    onClick={(event) => handleChapterClick(event, chapter.id)}
+                  >
+                    {chapter.label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         ) : null}

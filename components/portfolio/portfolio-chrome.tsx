@@ -15,7 +15,7 @@ const resumeLink = portfolio.contact.links.find(
 export function PortfolioChrome() {
   return (
     <>
-      <BubbleMenu links={portfolio.contact.links} />
+      <BubbleMenu links={portfolio.contact.links} chapters={portfolio.navigation} />
       <LineSidebar items={portfolio.navigation} resumeHref={resumeLink?.href} />
       <MobileChapterRibbon items={portfolio.navigation} />
     </>
