@@ -29,6 +29,16 @@ export interface ShellCallbacks {
   clear: () => void;
   /** Jump the page to an anchor (the flyout closes first, then navigates). */
   navigate?: (hash: string) => void;
+  /**
+   * Live terminal columns, when the shell is wired to a real xterm
+   * instance. The erase path needs it: a "\b \b" triple never crosses
+   * a wrapped-line boundary in xterm, so on narrow terminals editing a
+   * wrapped line left the first row stale on screen while the buffer
+   * stayed correct. With cols known, edits redraw the whole logical
+   * line instead; without it (unit tests, embeds) the legacy
+   * per-character erase is kept.
+   */
+  cols?: () => number;
 }
 
 const JOKES: Record<string, string> = {
@@ -98,6 +108,10 @@ export class Shell {
   private completions: string[] = [];
   private completionIndex = 0;
   private completionPrefix = "";
+  /** Visible width of the prompt currently on screen (0 when none is). */
+  private promptLen = 0;
+  /** True while a prompt written by prompt() is the visible input line. */
+  private promptOnScreen = false;
   /** Fake-vim trap state: while true, input goes to vimCommand(), not the shell. */
   private vimMode = false;
   private fortuneIndex = 0;
@@ -111,8 +125,45 @@ export class Shell {
     this.prompt();
   }
 
+  private promptText() {
+    return `\x1b[32m${PROMPT_USER}@${PROMPT_HOST}\x1b[0m:\x1b[34m${displayPath(this.cwd)}\x1b[0m$ `;
+  }
+
   private prompt() {
-    this.cb.write(`\x1b[32m${PROMPT_USER}@${PROMPT_HOST}\x1b[0m:\x1b[34m${displayPath(this.cwd)}\x1b[0m$ `);
+    this.promptLen =
+      PROMPT_USER.length + 1 + PROMPT_HOST.length + 1 +
+      displayPath(this.cwd).length + 2;
+    this.promptOnScreen = true;
+    this.cb.write(this.promptText());
+  }
+
+  /**
+   * Redraw the current input line after the buffer changed. oldLen is
+   * the buffer length BEFORE the change: the row count must come from
+   * the line as the terminal still shows it, or a deletion that
+   * unwraps the last row leaves that row's glyphs behind. With cols
+   * known, move up to the line's first row, erase to end of screen
+   * (the input line is the bottom line, so nothing below it is real
+   * content), and rewrite prompt + buffer. Without cols, fall back to
+   * the legacy per-character erase. After the redraw the cursor sits
+   * at the end of the buffer — the line-editing paths already assume
+   * end-of-line editing, and a full rewrite is strictly more correct
+   * than the old partial erase for mid-line edits too.
+   */
+  private redrawLine(oldLen: number) {
+    const cols = this.cb.cols?.();
+    if (cols && cols > 0) {
+      const shown = (this.promptOnScreen ? this.promptLen : 0) + oldLen;
+      const rows = Math.max(1, Math.ceil(shown / cols));
+      if (rows > 1) this.cb.write(`\x1b[${rows - 1}A`);
+      this.cb.write("\r\x1b[J");
+      if (this.promptOnScreen) this.cb.write(this.promptText());
+      this.cb.write(this.buffer);
+    } else {
+      for (let i = 0; i < oldLen; i++) this.cb.write("\b \b");
+      this.cb.write(this.buffer);
+    }
+    this.cursor = this.buffer.length;
   }
 
   /** Feed a printable character. */
@@ -127,14 +178,15 @@ export class Shell {
   backspace() {
     if (this.cursor === 0) return;
     this.completions = [];
+    const oldLen = this.buffer.length;
     this.buffer =
       this.buffer.slice(0, this.cursor - 1) + this.buffer.slice(this.cursor);
-    this.cursor -= 1;
-    this.cb.write("\b \b");
+    this.redrawLine(oldLen);
   }
 
   enter() {
     this.cb.writeln("");
+    this.promptOnScreen = false;
     const line = this.buffer.trim();
     this.buffer = "";
     this.cursor = 0;
@@ -171,12 +223,9 @@ export class Shell {
   }
 
   private replaceBuffer(text: string) {
-    while (this.cursor > 0) {
-      this.cb.write("\b \b");
-      this.cursor -= 1;
-    }
-    this.buffer = "";
-    for (const ch of text) this.type(ch);
+    const oldLen = this.buffer.length;
+    this.buffer = text;
+    this.redrawLine(oldLen);
     this.completions = [];
   }
 
@@ -221,11 +270,11 @@ export class Shell {
     const pick = this.completions[this.completionIndex % this.completions.length];
     this.completionIndex += 1;
 
-    // Erase the partial token, then type the completion.
-    for (let i = 0; i < last.length; i++) this.cb.write("\b \b");
+    // Erase the partial token, then type the completion — via a full
+    // line redraw, so a wrapped token leaves no stale row behind.
+    const oldLen = this.buffer.length;
     this.buffer = this.buffer.slice(0, this.buffer.length - last.length) + pick;
-    this.cursor = this.buffer.length;
-    this.cb.write(pick);
+    this.redrawLine(oldLen);
   }
 
   private run(line: string) {
@@ -486,6 +535,7 @@ export class Shell {
 
   cmdVim() {
     this.vimMode = true;
+    this.promptOnScreen = false;
     this.cb.clear();
     this.cb.writeln(`\x1b[32m"todo.txt" [readonly] 3 lines\x1b[0m`);
     this.cb.writeln(`buy more coffee`);

@@ -4,24 +4,53 @@ import { Shell } from "./shell";
 
 /**
  * Drives a Shell without boot() (no prompt written) and models the
- * terminal's input line from the write stream: printable chars append,
- * each "\b \b" triple erases one char. ANSI escapes are stripped.
+ * terminal's input line from the write stream: printable chars insert
+ * at the cursor, each "\b \b" triple erases one char, and the redraw
+ * sequences (cursor-up, CR, erase-below) reset the line before the
+ * rewritten prompt + buffer land. ANSI color escapes are stripped.
  * writeln output is collected separately for commands that print.
+ * Pass cols to wire the cols-aware redraw path (narrow terminals).
  */
-function makeShell() {
+function makeShell(cols?: number) {
   const printed: string[] = [];
   let line = "";
+  let col = 0;
   const shell = new Shell({
     write: (text: string) => {
       const clean = text.replace(/\x1b\[[0-9;]*m/g, "");
       for (let i = 0; i < clean.length; ) {
         if (clean.startsWith("\b \b", i)) {
-          line = line.slice(0, -1);
+          if (col > 0) {
+            line = line.slice(0, col - 1) + line.slice(col);
+            col -= 1;
+          }
           i += 3;
+        } else if (clean.startsWith("\x1b[", i)) {
+          const m = /^.\[(\d*)([A-Za-z])/.exec(clean.slice(i));
+          if (!m) {
+            i += 1;
+          } else if (m[2] === "J") {
+            // Erase below: the redrawn line starts fresh.
+            line = "";
+            col = 0;
+            i += m[0].length;
+          } else {
+            // Cursor-up and any other CSI: no model state to change.
+            i += m[0].length;
+          }
+        } else if (clean[i] === "\r") {
+          col = 0;
+          i += 1;
         } else if (clean[i] === "\b") {
           i += 1;
         } else {
-          line += clean[i];
+          const ch = clean[i];
+          if (col < line.length) {
+            line = line.slice(0, col) + ch + line.slice(col + 1);
+          } else {
+            line += ch;
+          }
+          col += 1;
           i += 1;
         }
       }
@@ -30,6 +59,7 @@ function makeShell() {
       printed.push(text ?? "");
     },
     clear: () => {},
+    ...(cols ? { cols: () => cols } : {}),
   });
   const type = (text: string) => {
     for (const ch of text) shell.type(ch);
@@ -38,6 +68,7 @@ function makeShell() {
   // buffer content, so tests that change directory first reset it here.
   const resetLine = () => {
     line = "";
+    col = 0;
   };
   return { shell, type, printed, resetLine, get line() {
     return line;
@@ -109,6 +140,40 @@ describe("path-aware tab completion", () => {
     expect(h.line).toBe("cat publications/grokset.txt");
     h.shell.enter();
     expect(h.printed.join("\n")).toContain("TITLE: @GrokSet");
+  });
+});
+
+describe("wrapped-line redraw (cols known)", () => {
+  it("backspace on a wrapped line leaves no stale first row", () => {
+    const h = makeShell(20);
+    h.type("ls publications/skilloptimizer.txt");
+    h.shell.backspace();
+    expect(h.line).toBe("ls publications/skilloptimizer.tx");
+    for (let i = 0; i < 12; i++) h.shell.backspace();
+    expect(h.line).toBe("ls publications/skill");
+  });
+
+  it("tab-cycles a wrapped token without stale rows", () => {
+    const h = makeShell(16);
+    h.type("cat publications/");
+    h.shell.tab();
+    expect(h.line).toBe("cat publications/skilloptimizer.txt");
+    h.shell.tab();
+    expect(h.line).toBe("cat publications/grokset.txt");
+    h.shell.tab();
+    expect(h.line).toBe("cat publications/skilloptimizer.txt");
+  });
+
+  it("history recall redraws a wrapped junk line to the recalled command", () => {
+    const h = makeShell(20);
+    h.type("ls publications/skilloptimizer.txt");
+    h.shell.enter();
+    h.resetLine();
+    h.type("zzzzzzzzzzzzzzzzzzzzzzzzzz");
+    h.shell.historyUp();
+    expect(h.line).toBe(
+      "bercev@portfolio:~$ ls publications/skilloptimizer.txt",
+    );
   });
 });
 
