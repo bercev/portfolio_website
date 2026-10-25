@@ -157,7 +157,7 @@ export function BubbleMenu({ links }: BubbleMenuProps) {
   }, [isOpen, reducedMotion, showItems]);
 
   return (
-    <div className={styles.anchor}>
+    <div className={styles.anchor} data-bubble-menu>
       <Confetti
         ref={confettiRef}
         manualstart

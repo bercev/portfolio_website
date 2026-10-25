@@ -3144,3 +3144,104 @@ html.dark .plain-backdrop {
 .terminal-flyout-term .xterm-viewport {
   scrollbar-width: thin;
 }
+
+/* Print record (run-3 iter 12): a recruiter printing the page to PDF gets a
+   clean single-column paper record instead of the dark canvas-heavy screen.
+   Screen styles are untouched — every rule below lives inside @media print.
+   Patterns per Reintech's print-stylesheet guide: hide chrome/interactive,
+   light paper + dark ink, external URLs printed after link text, break rules. */
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  /* Fixed chrome, canvases, and interactive widgets never print. The hooks
+     are stable attributes/plain classes, never CSS-module hashes. */
+  canvas,
+  nav[data-line-sidebar],
+  [data-mobile-chapter-ribbon],
+  [data-bubble-menu],
+  [data-effect-mode],
+  .grain-overlay,
+  .terminal-flyout-panel,
+  .journey-terminal-flyout-wrap,
+  div[aria-label="System boot sequence"],
+  .journey-snake,
+  .journey-contact-form,
+  .skill-marquee,
+  .journey-case-study-more,
+  .journey-epilogue-top {
+    display: none !important;
+  }
+
+  /* The hero name is an sr-only h1 on screen (BERAT is canvas art). On paper
+     the canvas is gone, so the name itself prints as the document title. */
+  #home-heading {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 0 0.5cm !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: normal !important;
+    font-size: 28pt !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Paper links carry their destinations: a printed hiring record is useless
+     if every proof link is just underlined text. Anchor links print bare. */
+  a {
+    text-decoration: underline !important;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    word-break: break-all;
+  }
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Keep each record row together where it fits on one page. Project rows
+     carry no row class (featured or none), so they are matched by their
+     data-work-tech attribute, which experience rows share. */
+  .journey-pub-row,
+  article[data-work-tech],
+  .journey-xp-item {
+    break-inside: avoid;
+  }
+}
