@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   normalizeTech,
+  resolveSkillParam,
   rowUsesSkill,
   skillHasWork,
   techKeyList,
@@ -35,6 +36,23 @@ describe("rowUsesSkill", () => {
 
   it("rejects an empty skill name", () => {
     expect(rowUsesSkill(["Python"], "   ")).toBe(false);
+  });
+});
+
+describe("resolveSkillParam", () => {
+  const names = ["Python", "NextJS", "Vitest"];
+
+  it("matches case-insensitively and returns the canonical name", () => {
+    expect(resolveSkillParam("python", names)).toBe("Python");
+    expect(resolveSkillParam("  NEXTJS ", names)).toBe("NextJS");
+  });
+
+  it("ignores unknown, empty, and substring values", () => {
+    expect(resolveSkillParam("DefinitelyNotASkill", names)).toBeNull();
+    expect(resolveSkillParam("   ", names)).toBeNull();
+    expect(resolveSkillParam(null, names)).toBeNull();
+    expect(resolveSkillParam("Py", names)).toBeNull();
+    expect(resolveSkillParam("Next.js", names)).toBeNull();
   });
 });
 

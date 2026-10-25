@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { PortfolioContent } from "@/data/content";
 
 import { skillProofHref } from "@/lib/skill-proof";
-import { normalizeTech, skillHasWork } from "@/lib/skill-work";
+import {
+  normalizeTech,
+  resolveSkillParam,
+  skillHasWork,
+} from "@/lib/skill-work";
 
 type SkillsLedgerProps = {
   readonly groups: PortfolioContent["skills"];
@@ -34,6 +38,33 @@ type SkillsLedgerProps = {
  */
 export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
   const [activeSkill, setActiveSkill] = useState<string | null>(null);
+  // True only for the mount-applied param highlight: the highlight
+  // effect below skips its scroll once, then resets, so clicks scroll.
+  const suppressScrollRef = useRef(false);
+
+  // Deep-linkable highlight (run-3 iter 22, mirroring ?topic=).
+  // Mount only, and deliberately NOT a lazy useState initializer:
+  // window.location differs at SSR, which would be a hydration mismatch
+  // (run-2 iter 43 sign). Read via window.location, not useSearchParams,
+  // so no Suspense boundary is needed and SSR output is untouched.
+  // Gated on skillHasWork: a plain-text skill has no highlight to
+  // activate. Deliberately does NOT scroll — the linker's own #skills
+  // hash lands the visitor on the ledger, and the click path's
+  // scroll-to-first-match would yank them away from it. A later click
+  // overrides the param highlight normally.
+  useEffect(() => {
+    const names = groups.flatMap((group) =>
+      group.items.map((item) => item.name),
+    );
+    const resolved = resolveSkillParam(
+      new URLSearchParams(window.location.search).get("skill"),
+      names,
+    );
+    if (resolved !== null && skillHasWork(resolved, workTech)) {
+      suppressScrollRef.current = true;
+      setActiveSkill(resolved);
+    }
+  }, []);
 
   useEffect(() => {
     const key = activeSkill === null ? null : normalizeTech(activeSkill);
@@ -49,10 +80,20 @@ export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
       });
     });
     if (key !== null) {
-      const first = document.querySelector("[data-work-tech].is-skill-match");
-      if (first) {
-        const top = first.getBoundingClientRect().top + window.scrollY - 96;
-        window.scrollTo({ top, behavior: "auto" });
+      // Consume the one-shot param suppression here, not
+      // unconditionally: on the mount commit key is null and the param
+      // effect has only just set the flag, so an unconditional reset
+      // would clear it before the highlight's effect ever sees it.
+      if (suppressScrollRef.current) {
+        suppressScrollRef.current = false;
+      } else {
+        const first = document.querySelector(
+          "[data-work-tech].is-skill-match",
+        );
+        if (first) {
+          const top = first.getBoundingClientRect().top + window.scrollY - 96;
+          window.scrollTo({ top, behavior: "auto" });
+        }
       }
     }
   }, [activeSkill]);

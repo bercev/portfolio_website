@@ -28,6 +28,28 @@ export function rowUsesSkill(
   return technologies.some((tech) => normalizeTech(tech) === key);
 }
 
+/** Resolve a `?skill=` query value to a known skill name, or null.
+ *
+ * Run-3 iter 22 (?skill= deep links, mirroring ?topic= in
+ * lib/contact-topics.ts): the value is matched case-insensitively
+ * against the ledger's own skill names ONLY — an unknown value is
+ * ignored, never rendered, so a crafted URL cannot inject arbitrary
+ * text into the ledger. No alias table: free text is not an exact tech
+ * key (see the iter-20 search item), so "Next.js" matches nothing while
+ * "NextJS" matches the ledger row. The caller additionally gates on
+ * skillHasWork: only a skill that is a ledger button (linked to work)
+ * may become the highlight, since plain-text skills have no highlight
+ * affordance to activate. */
+export function resolveSkillParam(
+  raw: string | null,
+  skillNames: readonly string[],
+): string | null {
+  if (raw === null) return null;
+  const needle = normalizeTech(raw);
+  if (needle === "") return null;
+  return skillNames.find((name) => normalizeTech(name) === needle) ?? null;
+}
+
 /** True when any work entry's stack contains the skill, exactly. */
 export function skillHasWork(
   skillName: string,
