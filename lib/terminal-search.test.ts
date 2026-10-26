@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   SEARCH_RESULT_LIMIT,
   searchPortfolio,
+  searchTerms,
   type SearchableContent,
 } from "./terminal-search";
 
@@ -240,5 +241,37 @@ describe("searchPortfolio", () => {
   it("caps results at the limit", () => {
     const hits = searchPortfolio("e", FIXTURE);
     expect(hits).toHaveLength(SEARCH_RESULT_LIMIT);
+  });
+});
+
+describe("searchTerms", () => {
+  it("collects lowercase words from all four kinds, deduped and sorted", () => {
+    const terms = searchTerms(FIXTURE);
+    expect(terms).toContain("python");
+    expect(terms.filter((t) => t === "python")).toHaveLength(1);
+    expect(terms).toContain("algoverse");
+    expect(terms).toContain("skilloptimizer");
+    expect(terms).toContain("workflows");
+    expect(terms).toEqual([...terms].sort());
+  });
+
+  it("splits punctuation and drops single letters", () => {
+    const terms = searchTerms(FIXTURE);
+    expect(terms).toContain("discord");
+    expect(terms).toContain("py");
+    expect(terms).not.toContain("a");
+    expect(terms).not.toContain("discord.py");
+  });
+
+  it("never suggests a word outside the searched fields", () => {
+    const terms = searchTerms(FIXTURE);
+    expect(terms).not.toContain("about");
+    expect(terms).not.toContain("publications");
+  });
+
+  it("every term matches when searched, so a Tab pick never lands on zero hits", () => {
+    for (const term of searchTerms(FIXTURE)) {
+      expect(searchPortfolio(term, FIXTURE).length).toBeGreaterThan(0);
+    }
   });
 });

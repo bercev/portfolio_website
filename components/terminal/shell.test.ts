@@ -427,3 +427,53 @@ describe("untouched completion branches", () => {
     expect(h.line).toBe("goto grokset");
   });
 });
+
+describe("search tab completion", () => {
+  it("completes a search term from the searched vocabulary", () => {
+    const h = makeShell();
+    h.type("search py");
+    // The first pick is "py" itself (a term via discord.py), so the line
+    // only visibly advances on the second Tab — the same cycling
+    // contract as the goto/path branches, where an exact match is a pick.
+    h.shell.tab();
+    expect(h.line).toBe("search py");
+    h.shell.tab();
+    expect(h.line).toBe("search python");
+  });
+
+  it("cycles through prefix matches without leaving the search domain", () => {
+    const h = makeShell();
+    h.type("search d");
+    h.shell.tab();
+    const first = h.line;
+    expect(first).toMatch(/^search d[a-z0-9]+$/);
+    h.shell.tab();
+    expect(h.line).toMatch(/^search d[a-z0-9]+$/);
+    expect(h.line).not.toBe(first);
+    expect(h.line).not.toContain("/");
+  });
+
+  it("leaves unmatched search tokens untouched", () => {
+    const h = makeShell();
+    h.type("search zzz");
+    h.shell.tab();
+    expect(h.line).toBe("search zzz");
+  });
+
+  it("never falls through to path completion for search arguments", () => {
+    const h = makeShell();
+    h.type("search skills/");
+    h.shell.tab();
+    expect(h.line).toBe("search skills/");
+  });
+
+  it("a Tab-completed term runs and matches", () => {
+    const h = makeShell();
+    h.type("search py");
+    h.shell.tab();
+    h.shell.tab();
+    expect(h.line).toBe("search python");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("Python"))).toBe(true);
+  });
+});

@@ -63,6 +63,52 @@ function haystack(parts: readonly (string | undefined)[]): string {
     .toLowerCase();
 }
 
+/**
+ * Tab-completion vocabulary for `search` (run-3 iter 43): every distinct
+ * word of length 2+ from exactly the fields searchPortfolio reads
+ * (project titles + framing + tech, paper titles + venues, skill names +
+ * notes, role titles + organizations + summaries + tech), lowercased and
+ * sorted. Keep this field list in sync with searchPortfolio — a term must
+ * come from a searched field, or the Tab-completed query could return
+ * zero hits. That is the whole contract: because the matcher is a plain
+ * substring over these fields, every term here is a substring of at least
+ * one haystack, so `search <term>` always matches. Punctuation splits
+ * words ("discord.py" yields "discord" and "py"); `**` emphasis markers
+ * in role summaries vanish the same way. Single letters are noise, not
+ * completions, so they are dropped.
+ */
+export function searchTerms(content: SearchableContent): string[] {
+  const terms = new Set<string>();
+  const collect = (parts: readonly (string | undefined)[]) => {
+    for (const part of parts) {
+      if (typeof part !== "string") continue;
+      for (const word of part.toLowerCase().split(/[^a-z0-9]+/)) {
+        if (word.length >= 2) terms.add(word);
+      }
+    }
+  };
+  for (const project of content.projects) {
+    collect([project.title, project.framing, ...project.technologies]);
+  }
+  for (const paper of content.publications) {
+    collect([paper.title, paper.venue]);
+  }
+  for (const category of content.skills) {
+    for (const skill of category.items) {
+      collect([skill.name, skill.note]);
+    }
+  }
+  for (const role of content.experience) {
+    collect([
+      role.role,
+      role.organization,
+      role.summary,
+      ...role.technologies,
+    ]);
+  }
+  return [...terms].sort();
+}
+
 export function searchPortfolio(
   query: string,
   content: SearchableContent,

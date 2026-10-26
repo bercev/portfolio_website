@@ -4,7 +4,7 @@ import {
   gotoTargets,
   resolveGotoTarget,
 } from "@/lib/terminal-goto";
-import { searchPortfolio } from "@/lib/terminal-search";
+import { searchPortfolio, searchTerms } from "@/lib/terminal-search";
 import {
   HOME,
   buildFilesystem,
@@ -288,7 +288,11 @@ export class Shell {
               skillNames,
               roleTargets,
             ).filter((n) => n.startsWith(last))
-          : completePath(this.root, this.cwd, last);
+          : tokens[0] === "search" && tokens.length >= 2
+            ? searchTerms(portfolio).filter((t) =>
+                t.startsWith(last.toLowerCase()),
+              )
+            : completePath(this.root, this.cwd, last);
       this.completions = candidates;
     }
     if (this.completions.length === 0) return;
