@@ -1,4 +1,5 @@
-import { portfolio } from "@/data/content";
+import { portfolio, type Project } from "@/data/content";
+import { projectSlug } from "@/lib/project-anchor";
 import {
   gotoCompletionNames,
   gotoTargets,
@@ -32,6 +33,29 @@ export const PROMPT_HOST = "portfolio";
  */
 function openableProfiles() {
   return portfolio.contact.links.filter((l) => !("download" in l && l.download));
+}
+
+/**
+ * Projects with somewhere to open: live site preferred, then source repo,
+ * then the legacy href (Vitae carries live + href, the Discord bot source
+ * + href — same URL either way). Projects without any link are excluded:
+ * `open` lists only what it can actually open.
+ */
+function openableProjects() {
+  // The map param widens each `as const` project literal to Project: the
+  // union of literals can't be member-accessed for `live`/`source` (Vitae
+  // carries no `source`, the bot no `live`), while the interface has all
+  // three as optional.
+  return portfolio.projects
+    .map((p: Project) => ({
+      title: p.title,
+      slug: projectSlug(p.title),
+      url: p.live ?? p.source ?? p.href,
+    }))
+    .filter(
+      (p): p is { title: string; slug: string; url: string } =>
+        p.url !== undefined,
+    );
 }
 
 export interface ShellCallbacks {
@@ -383,6 +407,7 @@ export class Shell {
         label: e.role,
       }));
       const linkNames = openableProfiles().map((l) => l.label.toLowerCase());
+      const openNames = openableProjects().map((p) => p.slug);
       const candidates = isFirst
         ? COMMANDS.filter((c) => c.startsWith(last))
         : tokens[0] === "goto" && tokens.length === 2
@@ -398,7 +423,9 @@ export class Shell {
               )
             : tokens[0] === "links" && tokens.length === 2
               ? linkNames.filter((n) => n.startsWith(last.toLowerCase()))
-              : completePath(this.root, this.cwd, last);
+              : tokens[0] === "open" && tokens.length === 2
+                ? openNames.filter((n) => n.startsWith(last.toLowerCase()))
+                : completePath(this.root, this.cwd, last);
       this.completions = candidates;
     }
     if (this.completions.length === 0) return;
@@ -589,6 +616,34 @@ export class Shell {
       `\x1b[32m→ opening ${match.label.toLowerCase()} (${match.href})\x1b[0m`,
     );
     this.cb.openExternal?.(match.href);
+  }
+
+  cmdOpen(args: string[]) {
+    // Mirrors cmdLinks: bare `open` lists the openable targets, `open
+    // <project>` opens one. Names are title slugs (projectSlug), so
+    // `open vitae`, `open ai-discord-chatbot`, and `open AI Discord
+    // Chatbot` all resolve — the same slug the goto/anchor scheme uses.
+    const projects = openableProjects();
+    if (args.length === 0) {
+      for (const p of projects)
+        this.cb.writeln(`• ${p.title} — ${p.url}`);
+      const first = projects[0]?.slug ?? "vitae";
+      this.cb.writeln(
+        `tip: open ${first} — open a project's site in a new tab`,
+      );
+      return;
+    }
+    const slug = projectSlug(args.join(" "));
+    const match = projects.find((p) => p.slug === slug);
+    if (!match) {
+      const names = projects.map((p) => p.slug).join(", ");
+      this.cb.writeln(`open: no project "${args.join(" ")}" — try ${names}`);
+      return;
+    }
+    this.cb.writeln(
+      `\x1b[32m→ opening ${match.slug} (${match.url})\x1b[0m`,
+    );
+    this.cb.openExternal?.(match.url);
   }
 
   cmdGoto(args: string[]) {
@@ -816,6 +871,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["history", "list past commands"],
   ["resume", "open the resume (PDF)"],
   ["links [name]", "open a profile in a new tab"],
+  ["open <project>", "open a project's live site or source"],
   ["sudo hire bercev", "???"],
 ];
 
@@ -853,5 +909,6 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   history: (s) => s.cmdHistory(),
   resume: (s) => s.cmdResume(),
   links: (s, a) => s.cmdLinks(a),
+  open: (s, a) => s.cmdOpen(a),
   cowsay: (s, a) => s.cmdCowsay(a),
 };

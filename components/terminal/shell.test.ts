@@ -299,6 +299,77 @@ describe("links command", () => {
   });
 });
 
+describe("open command", () => {
+  it("lists the openable projects with their URLs", () => {
+    const h = makeShell();
+    h.type("open");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("Vitae"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("https://vitae.tools/"))).toBe(
+      true,
+    );
+    expect(
+      h.printed.some((l) => l.includes("AI Discord Chatbot")),
+    ).toBe(true);
+  });
+
+  it("opens vitae through the callback", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open vitae");
+    h.shell.enter();
+    expect(opened).toEqual(["https://vitae.tools/"]);
+    expect(h.printed.some((l) => l.includes("opening vitae"))).toBe(true);
+  });
+
+  it("opens the discord bot by slug", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open ai-discord-chatbot");
+    h.shell.enter();
+    expect(opened).toEqual(["https://github.com/bercev/Discord-Chatbot-AI"]);
+  });
+
+  it("matches a full title case-insensitively", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open AI Discord Chatbot");
+    h.shell.enter();
+    expect(opened).toEqual(["https://github.com/bercev/Discord-Chatbot-AI"]);
+  });
+
+  it("prints the available slugs and opens nothing for an unknown project", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open nope");
+    h.shell.enter();
+    expect(opened).toEqual([]);
+    expect(h.printed.some((l) => l.includes("no project"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("vitae"))).toBe(true);
+  });
+
+  it("prints without throwing when no opener is wired", () => {
+    const h = makeShell();
+    h.type("open vitae");
+    expect(() => h.shell.enter()).not.toThrow();
+    expect(h.printed.some((l) => l.includes("opening vitae"))).toBe(true);
+  });
+
+  it("completes project slugs on the second token", () => {
+    const h = makeShell();
+    h.type("open v");
+    h.shell.tab();
+    expect(h.line).toBe("open vitae");
+  });
+
+  it("appears in help", () => {
+    const h = makeShell();
+    h.type("help");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("open <project>"))).toBe(true);
+  });
+});
+
 describe("history command", () => {
   it("lists past commands oldest-first with bash-style numbering", () => {
     const h = makeShell();
