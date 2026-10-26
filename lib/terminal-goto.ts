@@ -13,12 +13,16 @@
  * the iter-23 reverse-navigation event instead of landing on the
  * chapter unhighlighted: `goto python` lands on the ledger with Python
  * pressed, and `search` skill hits print the per-skill goto name.
+ * Role rows (run-3 iter 42) land on the exact row via the iter-42
+ * anchor scheme (`role-<slug>`), so `goto llm-researcher` lands on the
+ * role row and `search` role hits print the per-role goto name.
  * Unknown input returns null: the shell prints the target list
  * instead of navigating anywhere.
  */
 
 import { paperAnchorId } from "./paper-anchor";
 import { projectSlug } from "./project-anchor";
+import { roleAnchorId, roleSlug } from "./role-anchor";
 
 export interface GotoTarget {
   /** Single-token completion name, e.g. "vitae" or "ai-discord-chatbot". */
@@ -63,11 +67,18 @@ export interface PaperGotoTarget {
   label: string;
 }
 
-/** All goto targets (chapters, projects, papers, then skills). */
+/** A role goto target: the role title plus the human label. */
+export interface RoleGotoTarget {
+  role: string;
+  label: string;
+}
+
+/** All goto targets (chapters, projects, papers, skills, then roles). */
 export function gotoTargets(
   projectTitles: readonly string[],
   papers: readonly PaperGotoTarget[] = [],
   skillNames: readonly string[] = [],
+  roles: readonly RoleGotoTarget[] = [],
 ): GotoTarget[] {
   const chapters = CHAPTERS.map((c) => ({
     name: c.names[0],
@@ -90,16 +101,24 @@ export function gotoTargets(
     hash: "#skills",
     skillName: name,
   }));
-  return [...chapters, ...rows, ...paperRows, ...skillRows];
+  const roleRows = roles.map((r) => ({
+    name: roleSlug(r.role),
+    label: r.label,
+    hash: `#${roleAnchorId(r.role)}`,
+  }));
+  return [...chapters, ...rows, ...paperRows, ...skillRows, ...roleRows];
 }
 
-/** Single-token names for tab-completion (chapters + project/paper/skill slugs). */
+/** Single-token names for tab-completion (chapters + project/paper/skill/role slugs). */
 export function gotoCompletionNames(
   projectTitles: readonly string[],
   papers: readonly PaperGotoTarget[] = [],
   skillNames: readonly string[] = [],
+  roles: readonly RoleGotoTarget[] = [],
 ): string[] {
-  return gotoTargets(projectTitles, papers, skillNames).map((t) => t.name);
+  return gotoTargets(projectTitles, papers, skillNames, roles).map(
+    (t) => t.name,
+  );
 }
 
 function normalize(input: string): string {
@@ -122,13 +141,17 @@ function normalize(input: string): string {
  * normalization, so no alias table can drift from the anchor schemes.
  * Skill rows sort last, so a skill slug colliding with a chapter,
  * project, or paper name resolves to the earlier kind, and the chapter
- * alias "skills" still wins over any skill row.
+ * alias "skills" still wins over any skill row. Role rows (run-3
+ * iter 42) sort after skills, so the chapter alias "experience" still
+ * wins for the chapter target, and a role slug colliding with an
+ * earlier kind resolves to the earlier kind.
  */
 export function resolveGotoTarget(
   input: string,
   projectTitles: readonly string[],
   papers: readonly PaperGotoTarget[] = [],
   skillNames: readonly string[] = [],
+  roles: readonly RoleGotoTarget[] = [],
 ): GotoTarget | null {
   const norm = normalize(input);
   if (!norm) return null;
@@ -167,6 +190,19 @@ export function resolveGotoTarget(
           skillName: name,
         };
       }
+    }
+  }
+  // Role titles/slugs, like project rows: "LLM Researcher" and
+  // "llm-researcher" both resolve to the role row. The chapter alias
+  // "experience" above still wins for the chapter target.
+  for (const r of roles) {
+    const slug = roleSlug(r.role);
+    if (norm === slug.replace(/-/g, " ") || norm === r.role.toLowerCase()) {
+      return {
+        name: slug,
+        label: r.label,
+        hash: `#${roleAnchorId(r.role)}`,
+      };
     }
   }
   return null;

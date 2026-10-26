@@ -4,6 +4,7 @@ import { Fragment, type MouseEvent } from "react";
 
 import type { PortfolioContent } from "@/data/content";
 
+import { roleAnchorId } from "@/lib/role-anchor";
 import { Station } from "@/components/ui/station";
 import { TechPills } from "@/components/ui/tech-pills";
 import {
@@ -69,13 +70,14 @@ export function Experience({ content, heading, skillNames }: ExperienceProps) {
         {content.map((experience, index) => (
           <article
             key={`${experience.role}-${experience.dates}`}
+            id={roleAnchorId(experience.role)}
             data-experience-row
             data-work-tech={techKeyList(experience.technologies)}
             data-experience-featured={index === 0 ? "true" : undefined}
             className={
               index === 0
-                ? "journey-xp-item journey-xp-item--featured"
-                : "journey-xp-item"
+                ? "journey-xp-item journey-xp-item--featured scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+                : "journey-xp-item scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
             }
             onClick={index === 0 ? undefined : handleRowClick}
           >

@@ -13,6 +13,10 @@ const PAPERS = [
   { slug: "grokset", label: "@GrokSet" },
 ];
 const SKILLS = ["Python", "Data Structures", "discord.py"];
+const ROLES = [
+  { role: "LLM Researcher", label: "LLM Researcher" },
+  { role: "DSA Tutor", label: "DSA Tutor" },
+];
 
 describe("resolveGotoTarget", () => {
   it("resolves every chapter", () => {
@@ -147,5 +151,48 @@ describe("skill goto targets (run-3 iter 41)", () => {
     expect(gotoCompletionNames(PROJECTS, PAPERS, SKILLS)).toContain(
       "data-structures",
     );
+  });
+});
+
+describe("role goto targets (run-3 iter 42)", () => {
+  it("resolves role titles and slugs to the role row", () => {
+    expect(
+      resolveGotoTarget("llm-researcher", PROJECTS, PAPERS, SKILLS, ROLES)
+        ?.hash,
+    ).toBe("#role-llm-researcher");
+    expect(
+      resolveGotoTarget("LLM Researcher", PROJECTS, PAPERS, SKILLS, ROLES)
+        ?.hash,
+    ).toBe("#role-llm-researcher");
+    expect(
+      resolveGotoTarget("dsa-tutor", PROJECTS, PAPERS, SKILLS, ROLES)?.hash,
+    ).toBe("#role-dsa-tutor");
+  });
+
+  it("keeps the chapter alias and rejects unknown roles", () => {
+    expect(
+      resolveGotoTarget("experience", PROJECTS, PAPERS, SKILLS, ROLES)?.hash,
+    ).toBe("#experience");
+    expect(
+      resolveGotoTarget("experience", PROJECTS, PAPERS, SKILLS, ROLES)?.hash,
+    ).not.toBe("#role-llm-researcher");
+    expect(
+      resolveGotoTarget("ceo", PROJECTS, PAPERS, SKILLS, ROLES),
+    ).toBeNull();
+  });
+
+  it("lists role rows after skills, with slugs for completion", () => {
+    const targets = gotoTargets(PROJECTS, PAPERS, SKILLS, ROLES);
+    expect(targets.slice(-2).map((t) => t.name)).toEqual([
+      "llm-researcher",
+      "dsa-tutor",
+    ]);
+    expect(targets.slice(-2).map((t) => t.hash)).toEqual([
+      "#role-llm-researcher",
+      "#role-dsa-tutor",
+    ]);
+    expect(
+      gotoCompletionNames(PROJECTS, PAPERS, SKILLS, ROLES),
+    ).toContain("llm-researcher");
   });
 });

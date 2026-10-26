@@ -21,7 +21,8 @@
  * run-3 iter-32 goto-paper extension — `goto grokset` lands on the row
  * via the iter-31 anchor), skill hits print the skill slug (run-3
  * iter 41 — `goto data-structures` lands on the ledger with that skill
- * highlighted), and roles land on their chapter.
+ * highlighted), and role hits print the role slug (run-3 iter 42 —
+ * `goto llm-researcher` lands on the row via the iter-42 anchor).
  * Roles are appended AFTER skills: the iter-20 order (projects → papers
  * → skills) stays stable for every pre-existing query, and the new kind
  * extends it rather than re-sorting it.
@@ -31,6 +32,7 @@
 
 import type { PortfolioContent } from "@/data/content";
 import { projectSlug } from "./project-anchor";
+import { roleSlug } from "./role-anchor";
 import { skillSlug } from "./terminal-goto";
 
 /** The slices search reads — a structural subset, so tests pass fixtures. */
@@ -115,7 +117,7 @@ export function searchPortfolio(
         detail: role.organization
           ? `${role.organization} (${role.dates})`
           : role.dates,
-        goto: "experience",
+        goto: roleSlug(role.role),
       });
     }
   }

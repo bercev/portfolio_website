@@ -200,14 +200,14 @@ describe("searchPortfolio", () => {
     ]);
   });
 
-  it("matches a role by organization and lands on the experience chapter", () => {
+  it("matches a role by organization and lands on the role row", () => {
     const hits = searchPortfolio("Algoverse", FIXTURE);
     expect(hits).toHaveLength(1);
     expect(hits[0]).toMatchObject({
       kind: "experience",
       label: "LLM Researcher",
       detail: "Algoverse (Jun 2025-Jan 2026)",
-      goto: "experience",
+      goto: "llm-researcher",
     });
   });
 

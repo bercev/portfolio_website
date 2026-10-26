@@ -275,12 +275,19 @@ export class Shell {
       const skillNames = portfolio.skills.flatMap((g) =>
         g.items.map((i) => i.name),
       );
+      const roleTargets = portfolio.experience.map((e) => ({
+        role: e.role,
+        label: e.role,
+      }));
       const candidates = isFirst
         ? COMMANDS.filter((c) => c.startsWith(last))
         : tokens[0] === "goto" && tokens.length === 2
-          ? gotoCompletionNames(projectTitles, paperTargets, skillNames).filter(
-              (n) => n.startsWith(last),
-            )
+          ? gotoCompletionNames(
+              projectTitles,
+              paperTargets,
+              skillNames,
+              roleTargets,
+            ).filter((n) => n.startsWith(last))
           : completePath(this.root, this.cwd, last);
       this.completions = candidates;
     }
@@ -456,9 +463,18 @@ export class Shell {
     const skillNames = portfolio.skills.flatMap((g) =>
       g.items.map((i) => i.name),
     );
+    const roleTargets = portfolio.experience.map((e) => ({
+      role: e.role,
+      label: e.role,
+    }));
     const listTargets = () => {
-      this.cb.writeln(`chapters, projects, papers, and skills:`);
-      for (const t of gotoTargets(projectTitles, paperTargets, skillNames)) {
+      this.cb.writeln(`chapters, projects, papers, skills, and roles:`);
+      for (const t of gotoTargets(
+        projectTitles,
+        paperTargets,
+        skillNames,
+        roleTargets,
+      )) {
         // A literal space after the pad: the longest skill slug
         // ("multi-agent-systems", 20 cols) otherwise runs into its hash.
         this.cb.writeln(`  \x1b[36m${t.name.padEnd(20)}\x1b[0m ${t.hash}`);
@@ -473,6 +489,7 @@ export class Shell {
       projectTitles,
       paperTargets,
       skillNames,
+      roleTargets,
     );
     if (!target) {
       this.cb.writeln(`goto: unknown target: ${args.join(" ")}`);
@@ -653,7 +670,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["publications", "list papers"],
   ["experience", "list roles"],
   ["contact", "how to reach bercev"],
-  ["goto <chapter>", "jump to a chapter, project, paper, or skill"],
+  ["goto <chapter>", "jump to a chapter, project, paper, skill, or role"],
   ["search <keyword>", "find projects, papers, roles, skills"],
   ["fortune", "one honest line from the case studies"],
   ["cowsay <text>", "the cow says what you type"],

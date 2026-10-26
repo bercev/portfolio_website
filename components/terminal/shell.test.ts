@@ -301,7 +301,9 @@ describe("search covers experience roles", () => {
     h.type("search algoverse");
     h.shell.enter();
     expect(h.printed.some((l) => l.includes("LLM Researcher"))).toBe(true);
-    expect(h.printed.some((l) => l.includes("goto experience"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("goto llm-researcher"))).toBe(
+      true,
+    );
   });
 
   it("advertises roles in help and in the no-match hint", () => {
@@ -346,7 +348,7 @@ describe("goto lands on a skill", () => {
     list.type("goto");
     list.shell.enter();
     expect(list.printed.some((l) => l.includes("data-structures"))).toBe(true);
-    expect(list.printed.some((l) => l.includes("papers, and skills"))).toBe(
+    expect(list.printed.some((l) => l.includes("skills, and roles"))).toBe(
       true,
     );
   });
@@ -361,6 +363,52 @@ describe("goto lands on a skill", () => {
     h.type("goto not-a-skill");
     h.shell.enter();
     expect(highlighted).toEqual([]);
+  });
+});
+
+describe("goto lands on a role", () => {
+  it("navigates to the role row without highlighting", () => {
+    const nav: string[] = [];
+    const highlighted: string[] = [];
+    const h = makeShell(undefined, undefined, {
+      navigate: (hash) => {
+        nav.push(hash);
+      },
+      highlightSkill: (name) => {
+        highlighted.push(name);
+      },
+    });
+    h.type("goto llm-researcher");
+    h.shell.enter();
+    expect(nav).toEqual(["#role-llm-researcher"]);
+    expect(highlighted).toEqual([]);
+    expect(h.printed.some((l) => l.includes("LLM Researcher"))).toBe(true);
+  });
+
+  it("completes a role slug and lists roles in the bare goto dump", () => {
+    const h = makeShell();
+    h.type("goto llm-");
+    h.shell.tab();
+    expect(h.line).toBe("goto llm-researcher");
+    const list = makeShell();
+    list.type("goto");
+    list.shell.enter();
+    expect(list.printed.some((l) => l.includes("llm-researcher"))).toBe(true);
+    expect(list.printed.some((l) => l.includes("#role-llm-researcher"))).toBe(
+      true,
+    );
+  });
+
+  it("still lands on the chapter for the chapter alias", () => {
+    const nav: string[] = [];
+    const h = makeShell(undefined, undefined, {
+      navigate: (hash) => {
+        nav.push(hash);
+      },
+    });
+    h.type("goto experience");
+    h.shell.enter();
+    expect(nav).toEqual(["#experience"]);
   });
 });
 
