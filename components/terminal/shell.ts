@@ -23,6 +23,17 @@ import {
 export const PROMPT_USER = "bercev";
 export const PROMPT_HOST = "portfolio";
 
+/**
+ * Contact links openable in a new tab: every contact link that is not a
+ * download. The Resume entry carries download: true (and has its own
+ * `resume` command); the rest are the Elsewhere profiles. The tuple is
+ * `as const`, so only the Resume member carries `download` — the `in`
+ * guard is the narrowing that keeps this typecheck-clean.
+ */
+function openableProfiles() {
+  return portfolio.contact.links.filter((l) => !("download" in l && l.download));
+}
+
 export interface ShellCallbacks {
   write: (text: string) => void;
   writeln: (text?: string) => void;
@@ -371,6 +382,7 @@ export class Shell {
         role: e.role,
         label: e.role,
       }));
+      const linkNames = openableProfiles().map((l) => l.label.toLowerCase());
       const candidates = isFirst
         ? COMMANDS.filter((c) => c.startsWith(last))
         : tokens[0] === "goto" && tokens.length === 2
@@ -384,7 +396,9 @@ export class Shell {
             ? searchTerms(portfolio).filter((t) =>
                 t.startsWith(last.toLowerCase()),
               )
-            : completePath(this.root, this.cwd, last);
+            : tokens[0] === "links" && tokens.length === 2
+              ? linkNames.filter((n) => n.startsWith(last.toLowerCase()))
+              : completePath(this.root, this.cwd, last);
       this.completions = candidates;
     }
     if (this.completions.length === 0) return;
@@ -548,6 +562,33 @@ export class Shell {
     }
     this.cb.writeln(`\x1b[32m→ opening resume (${resume.href})\x1b[0m`);
     this.cb.openExternal?.(resume.href);
+  }
+
+  cmdLinks(args: string[]) {
+    // Openable profiles: the contact links that are NOT downloads. The
+    // Resume entry carries download: true and already has its own command,
+    // so `links` owns exactly the Elsewhere profiles (GitHub, LinkedIn) —
+    // the same source the contact footer renders, never hardcoded labels.
+    // (The tuple is `as const`, so only the Resume member carries
+    // `download`; the `in` guard is the narrowing that keeps this clean.)
+    const profiles = openableProfiles();
+    if (args.length === 0) {
+      for (const p of profiles) this.cb.writeln(`• ${p.label}`);
+      const first = profiles[0]?.label.toLowerCase() ?? "github";
+      this.cb.writeln(`tip: links ${first} — open a profile in a new tab`);
+      return;
+    }
+    const name = args.join(" ").toLowerCase();
+    const match = profiles.find((p) => p.label.toLowerCase() === name);
+    if (!match) {
+      const names = profiles.map((p) => p.label.toLowerCase()).join(", ");
+      this.cb.writeln(`links: no profile "${args.join(" ")}" — try ${names}`);
+      return;
+    }
+    this.cb.writeln(
+      `\x1b[32m→ opening ${match.label.toLowerCase()} (${match.href})\x1b[0m`,
+    );
+    this.cb.openExternal?.(match.href);
   }
 
   cmdGoto(args: string[]) {
@@ -774,6 +815,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["clear", "clear the screen"],
   ["history", "list past commands"],
   ["resume", "open the resume (PDF)"],
+  ["links [name]", "open a profile in a new tab"],
   ["sudo hire bercev", "???"],
 ];
 
@@ -810,5 +852,6 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   fortune: (s) => s.cmdFortune(),
   history: (s) => s.cmdHistory(),
   resume: (s) => s.cmdResume(),
+  links: (s, a) => s.cmdLinks(a),
   cowsay: (s, a) => s.cmdCowsay(a),
 };

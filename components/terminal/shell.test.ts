@@ -232,6 +232,73 @@ describe("resume command", () => {
   });
 });
 
+describe("links command", () => {
+  it("lists the Elsewhere profiles, not the resume", () => {
+    const h = makeShell();
+    h.type("links");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("GitHub"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("LinkedIn"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("Resume"))).toBe(false);
+  });
+
+  it("opens github through the callback", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("links github");
+    h.shell.enter();
+    expect(opened).toEqual(["https://github.com/bercev"]);
+    expect(h.printed.some((l) => l.includes("opening github"))).toBe(true);
+  });
+
+  it("opens linkedin through the callback", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("links linkedin");
+    h.shell.enter();
+    expect(opened).toEqual(["https://linkedin.com/in/berat-ercevik"]);
+  });
+
+  it("matches names case-insensitively", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("links GITHUB");
+    h.shell.enter();
+    expect(opened).toEqual(["https://github.com/bercev"]);
+  });
+
+  it("prints the available names and opens nothing for an unknown name", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("links mastodon");
+    h.shell.enter();
+    expect(opened).toEqual([]);
+    expect(h.printed.some((l) => l.includes("no profile"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("github"))).toBe(true);
+  });
+
+  it("prints without throwing when no opener is wired", () => {
+    const h = makeShell();
+    h.type("links github");
+    expect(() => h.shell.enter()).not.toThrow();
+    expect(h.printed.some((l) => l.includes("opening github"))).toBe(true);
+  });
+
+  it("completes profile names on the second token", () => {
+    const h = makeShell();
+    h.type("links g");
+    h.shell.tab();
+    expect(h.line).toBe("links github");
+  });
+
+  it("appears in help", () => {
+    const h = makeShell();
+    h.type("help");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("links"))).toBe(true);
+  });
+});
+
 describe("history command", () => {
   it("lists past commands oldest-first with bash-style numbering", () => {
     const h = makeShell();
