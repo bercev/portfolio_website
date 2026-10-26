@@ -41,6 +41,17 @@ function makeShell(
             line = "";
             col = 0;
             i += m[0].length;
+          } else if (m[2] === "D") {
+            // Cursor-left: the ghost render's cursor-back. The ghost
+            // chars stay in `line` past col until erased; `line` below
+            // slices to col so it reads as the buffer, `visible` reads
+            // the full on-screen line including the ghost.
+            col = Math.max(0, col - (parseInt(m[1], 10) || 0));
+            i += m[0].length;
+          } else if (m[2] === "K") {
+            // Erase to end of line: drops a stale ghost tail.
+            line = line.slice(0, col);
+            i += m[0].length;
           } else {
             // Cursor-up and any other CSI: no model state to change.
             i += m[0].length;
@@ -81,6 +92,8 @@ function makeShell(
     col = 0;
   };
   return { shell, type, printed, resetLine, get line() {
+    return line.slice(0, col);
+  }, get visible() {
     return line;
   } };
 }
@@ -475,5 +488,75 @@ describe("search tab completion", () => {
     expect(h.line).toBe("search python");
     h.shell.enter();
     expect(h.printed.some((l) => l.includes("Python"))).toBe(true);
+  });
+});
+
+describe("fish-style history autosuggestion", () => {
+  it("shows the newest matching history entry as ghost text, never in the buffer", () => {
+    const h = makeShell();
+    h.type("goto skills");
+    h.shell.enter();
+    h.resetLine();
+    h.type("got");
+    expect(h.line).toBe("got");
+    expect(h.visible).toBe("goto skills");
+  });
+
+  it("prefers the newest entry when several match", () => {
+    const h = makeShell();
+    h.type("goto skills");
+    h.shell.enter();
+    h.resetLine();
+    h.type("goto projects");
+    h.shell.enter();
+    h.resetLine();
+    h.type("got");
+    expect(h.visible).toBe("goto projects");
+  });
+
+  it("shows nothing for a non-matching prefix, and accept is a no-op there", () => {
+    const h = makeShell();
+    h.type("goto skills");
+    h.shell.enter();
+    h.resetLine();
+    h.type("xyz");
+    expect(h.visible).toBe("xyz");
+    h.shell.acceptSuggestion();
+    expect(h.line).toBe("xyz");
+  });
+
+  it("accepts the ghost into the buffer, and a divergent keystroke clears it", () => {
+    const h = makeShell();
+    h.type("goto skills");
+    h.shell.enter();
+    h.resetLine();
+    h.type("got");
+    h.shell.acceptSuggestion();
+    expect(h.line).toBe("goto skills");
+    expect(h.visible).toBe("goto skills");
+    h.shell.backspace();
+    h.shell.backspace();
+    // Buffer "goto skil" still prefixes the entry, so a shorter ghost returns.
+    expect(h.line).toBe("goto skil");
+    expect(h.visible).toBe("goto skills");
+  });
+
+  it("on a narrow terminal accepts the FULL remainder, not the truncated display, then backspaces cleanly on the wrapped line", () => {
+    // Prompt is 20 cols (bercev@portfolio:~$ ); at 26 cols, typing
+    // "goto" leaves 2 cols, so the display is cut to " s" while the
+    // full remainder is " skills".
+    const h = makeShell(26);
+    h.type("goto skills");
+    h.shell.enter();
+    h.resetLine();
+    h.type("goto");
+    // The cols redraw path rewrites the prompt into the harness line.
+    expect(h.line).toBe("bercev@portfolio:~$ goto");
+    expect(h.visible).toBe("bercev@portfolio:~$ goto s");
+    h.shell.acceptSuggestion();
+    expect(h.line).toBe("bercev@portfolio:~$ goto skills");
+    h.shell.backspace();
+    expect(h.line).toBe("bercev@portfolio:~$ goto skill");
+    expect(h.visible).toBe("bercev@portfolio:~$ goto skills");
   });
 });

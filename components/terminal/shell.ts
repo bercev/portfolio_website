@@ -127,6 +127,20 @@ export class Shell {
   private promptLen = 0;
   /** True while a prompt written by prompt() is the visible input line. */
   private promptOnScreen = false;
+  /**
+   * Fish-style autosuggestion currently shown after the cursor: the
+   * remainder of the newest history entry matching the buffer prefix.
+   * Display-only — never part of `buffer`, never counted in promptLen.
+   * `ghost` is the DISPLAYED (possibly width-truncated) text; `ghostFull`
+   * is the whole remainder, which is what accept takes — accepting a
+   * truncated display would strand the buffer at a partial token with
+   * the ghost suppressed at the row boundary. The display is truncated
+   * so it never wraps past the buffer's last row (see renderGhost),
+   * which keeps the cursor-back after it a single-row move and keeps
+   * redrawLine's row math valid.
+   */
+  private ghost = "";
+  private ghostFull = "";
   /** Fake-vim trap state: while true, input goes to vimCommand(), not the shell. */
   private vimMode = false;
   private fortuneIndex = 0;
@@ -166,6 +180,7 @@ export class Shell {
    * than the old partial erase for mid-line edits too.
    */
   private redrawLine(oldLen: number) {
+    const oldGhost = this.ghost;
     const cols = this.cb.cols?.();
     if (cols && cols > 0) {
       const shown = (this.promptOnScreen ? this.promptLen : 0) + oldLen;
@@ -177,17 +192,92 @@ export class Shell {
     } else {
       for (let i = 0; i < oldLen; i++) this.cb.write("\b \b");
       this.cb.write(this.buffer);
+      // The cols path erases to end of screen; the legacy path does
+      // not, so a stale ghost tail would survive a shrink. Erase to
+      // end of line (the ghost never wraps in the cols path, and this
+      // branch only runs where cols is unknown).
+      if (oldGhost) this.cb.write("\x1b[K");
     }
     this.cursor = this.buffer.length;
+    this.renderGhost();
+  }
+
+  /**
+   * Newest history entry (newest-first storage) that extends the
+   * current buffer, minus the buffer itself — the full fish
+   * autosuggestion. Empty unless the cursor is at the end of a
+   * non-empty buffer: a mid-line cursor has no ghost, since the
+   * suggestion reads as a continuation.
+   */
+  private computeGhost(): string {
+    if (
+      !this.promptOnScreen ||
+      this.buffer.length === 0 ||
+      this.cursor !== this.buffer.length
+    ) {
+      return "";
+    }
+    const match = this.history.find(
+      (entry) => entry.length > this.buffer.length && entry.startsWith(this.buffer),
+    );
+    if (!match) return "";
+    return match.slice(this.buffer.length);
+  }
+
+  /**
+   * Write the current ghost in dim SGR after the buffer, then move the
+   * cursor back to the buffer end so the next keystroke lands on the
+   * buffer, not past the ghost. The ghost is display-only: it is
+   * never written into `buffer` and promptLen never counts it. With
+   * cols known, the display is cut to the space left on the buffer's
+   * last row, so it never adds a row (a wrapped ghost would break
+   * both redrawLine's row count and the cursor-back here); at an
+   * exact row boundary the display is suppressed, since xterm's
+   * pending-wrap state makes "last row" ambiguous — and accept is
+   * then a no-op too, since there is nothing visible to accept.
+   */
+  private renderGhost() {
+    this.ghostFull = this.computeGhost();
+    let shown = this.ghostFull;
+    const cols = this.cb.cols?.();
+    if (cols && cols > 0) {
+      const col = (this.promptLen + this.buffer.length) % cols;
+      shown = col === 0 ? "" : shown.slice(0, cols - col);
+    }
+    this.ghost = shown;
+    if (this.ghost) {
+      this.cb.write(`\x1b[2m${this.ghost}\x1b[0m`);
+      this.cb.write(`\x1b[${this.ghost.length}D`);
+    }
+  }
+
+  /** Accept the ghost suggestion into the buffer (Right-arrow / End). */
+  acceptSuggestion() {
+    if (this.vimMode) return;
+    if (!this.ghost) return;
+    const oldLen = this.buffer.length;
+    this.buffer += this.ghostFull;
+    this.completions = [];
+    // Redraw erases the ghost's row span and recomputes: the buffer
+    // now equals the history entry, so no ghost remains.
+    this.redrawLine(oldLen);
   }
 
   /** Feed a printable character. */
   type(char: string) {
     this.completions = [];
+    const oldLen = this.buffer.length;
     this.buffer =
       this.buffer.slice(0, this.cursor) + char + this.buffer.slice(this.cursor);
     this.cursor += char.length;
-    this.cb.write(char);
+    // A visible ghost (or a newly appearing one) must be erased and
+    // re-rendered, not typed over: a direct write would leave the old
+    // ghost's tail on screen past the new buffer end.
+    if (this.ghost || this.computeGhost()) {
+      this.redrawLine(oldLen);
+    } else {
+      this.cb.write(char);
+    }
   }
 
   backspace() {
@@ -206,6 +296,8 @@ export class Shell {
     this.buffer = "";
     this.cursor = 0;
     this.completions = [];
+    this.ghost = "";
+    this.ghostFull = "";
     if (this.vimMode) {
       this.vimCommand(line);
       return;

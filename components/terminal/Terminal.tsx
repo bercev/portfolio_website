@@ -148,6 +148,11 @@ export function Terminal({
             const seq = data.slice(i, i + 3);
             if (seq === "\x1b[A") shell.historyUp();
             else if (seq === "\x1b[B") shell.historyDown();
+            // Right-arrow / End accept the fish-style ghost suggestion;
+            // with no ghost they are no-ops (the cursor is already at
+            // the buffer end, since line editing is end-of-line).
+            else if (seq === "\x1b[C" || seq === "\x1b[F")
+              shell.acceptSuggestion();
             i += 3;
           } else if (ch >= " " && ch <= "~") {
             // Printable run (includes pasted text).
