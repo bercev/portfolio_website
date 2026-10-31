@@ -800,3 +800,33 @@ describe("theme command (run-4 iter 5)", () => {
     expect(h2.printed.some((l) => l.includes("theme [palette]"))).toBe(true);
   });
 });
+
+describe("skills command (run-4 iter 6)", () => {
+  it("lists every category with its skills and notes", () => {
+    const h = makeShell();
+    h.type("skills");
+    h.shell.enter();
+    for (const category of ["AI & agents", "Full-stack", "Systems & delivery", "Foundations"]) {
+      expect(h.printed.some((l) => l.includes(category))).toBe(true);
+    }
+    expect(h.printed.some((l) => l.includes("Python — Discord bot + research"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("TypeScript — Shipped in Vitae"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("Docker — Shipped in Vitae"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("Data Structures — Tutored DSA at UC Santa Cruz"))).toBe(true);
+    // The tip colors `goto <skill>` with an ANSI code, so the two fragments
+    // never sit contiguously — assert both halves instead of the joined string.
+    expect(h.printed.some((l) => l.includes("goto <skill>"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("highlight it in the ledger"))).toBe(true);
+  });
+
+  it("completes from the help-derived command list and appears in help", () => {
+    const h = makeShell();
+    h.type("ski");
+    h.shell.tab();
+    expect(h.line).toBe("skills");
+    const h2 = makeShell();
+    h2.type("help");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("skills"))).toBe(true);
+  });
+});

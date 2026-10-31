@@ -814,6 +814,20 @@ export class Shell {
     this.cb.writeln(`tip: \x1b[33mgoto experience\x1b[0m for the full section`);
   }
 
+  cmdSkills() {
+    const total = portfolio.skills.reduce((n, g) => n + g.items.length, 0);
+    this.cb.writeln(
+      `\x1b[36mskills/\x1b[0m — ${portfolio.skills.length} categories, ${total} skills:`,
+    );
+    for (const g of portfolio.skills) {
+      this.cb.writeln(`  ${g.category}:`);
+      for (const item of g.items) {
+        this.cb.writeln(`    • ${item.name} — ${item.note}`);
+      }
+    }
+    this.cb.writeln(`tip: \x1b[33mgoto <skill>\x1b[0m to highlight it in the ledger`);
+  }
+
   cmdBeratfetch() {
     const cyan = "\x1b[36m";
     const reset = "\x1b[0m";
@@ -934,6 +948,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["projects", "list shipped projects"],
   ["publications", "list papers"],
   ["experience", "list roles"],
+  ["skills", "list skills"],
   ["contact", "how to reach bercev"],
   ["goto <chapter>", "jump to a chapter, project, paper, skill, or role"],
   ["search <keyword>", "find projects, papers, roles, skills"],
@@ -979,6 +994,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   projects: (s) => s.cmdProjects(),
   publications: (s) => s.cmdPublications(),
   experience: (s) => s.cmdExperience(),
+  skills: (s) => s.cmdSkills(),
   fortune: (s) => s.cmdFortune(),
   history: (s) => s.cmdHistory(),
   resume: (s) => s.cmdResume(),
