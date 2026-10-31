@@ -16,6 +16,7 @@ function makeShell(
   openExternal?: (url: string) => void,
   extra?: {
     navigate?: (hash: string) => void;
+    close?: () => void;
     highlightSkill?: (name: string) => void;
     getPalette?: () => import("@/lib/theme-palette").ThemePalette | null;
     setPalette?: (palette: import("@/lib/theme-palette").ThemePalette) => void;
@@ -83,6 +84,7 @@ function makeShell(
     ...(cols ? { cols: () => cols } : {}),
     ...(openExternal ? { openExternal } : {}),
     ...(extra?.navigate ? { navigate: extra.navigate } : {}),
+    ...(extra?.close ? { close: extra.close } : {}),
     ...(extra?.highlightSkill ? { highlightSkill: extra.highlightSkill } : {}),
     ...(extra?.getPalette ? { getPalette: extra.getPalette } : {}),
     ...(extra?.setPalette ? { setPalette: extra.setPalette } : {}),
@@ -1200,5 +1202,49 @@ describe("help <command> detail pages (run-4 iter 12)", () => {
     h2.type("help ");
     h2.shell.tab();
     expect(h2.line).toBe("help help");
+  });
+});
+
+describe("exit command (run-4 iter 13)", () => {
+  it("calls the close callback and prints the closing line", () => {
+    let closed = 0;
+    const h = makeShell(undefined, undefined, {
+      close: () => {
+        closed += 1;
+      },
+    });
+    h.type("exit");
+    h.shell.enter();
+    expect(closed).toBe(1);
+    expect(h.printed.some((l) => l.includes("→ closing terminal"))).toBe(
+      true,
+    );
+  });
+
+  it("prints a no-session line and never throws without a close callback", () => {
+    const h = makeShell();
+    h.type("exit");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes("exit: no terminal session to close")),
+    ).toBe(true);
+  });
+
+  it("appears in help, has a detail page, and Tab-completes", () => {
+    const h = makeShell();
+    h.type("help");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("exit"))).toBe(true);
+    const h2 = makeShell();
+    h2.type("help exit");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("usage: exit"))).toBe(true);
+    expect(
+      h2.printed.some((l) => l.includes("closes the flyout")),
+    ).toBe(true);
+    const h3 = makeShell();
+    h3.type("exi");
+    h3.shell.tab();
+    expect(h3.line).toBe("exit");
   });
 });

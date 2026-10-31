@@ -256,6 +256,7 @@ export function TerminalFlyout() {
               bare
               className="terminal-flyout-term"
               onNavigate={handleNavigate}
+              onClose={doClose}
             />
           </motion.aside>
         </>

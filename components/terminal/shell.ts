@@ -114,6 +114,14 @@ export interface ShellCallbacks {
    */
   setPalette?: (palette: ThemePalette) => void;
   /**
+   * Close the terminal session (the `exit` command). Kept behind a
+   * callback like `navigate` so the shell stays unit-testable without
+   * React; the real terminal wires it to the flyout's close, which
+   * returns focus to the trigger. Absent in tests/embeds, where the
+   * command prints a no-session line instead of throwing.
+   */
+  close?: () => void;
+  /**
    * Live terminal columns, when the shell is wired to a real xterm
    * instance. The erase path needs it: a "\b \b" triple never crosses
    * a wrapped-line boundary in xterm, so on narrow terminals editing a
@@ -721,6 +729,18 @@ export class Shell {
     this.cb.clear();
   }
 
+  cmdExit() {
+    // Mirror cmdGoto's green confirmation line before the side effect:
+    // the flyout slides away over 0.45s, so the line is visible during
+    // the close. Without a close callback there is no session to close.
+    if (this.cb.close) {
+      this.cb.writeln(`\x1b[32m→ closing terminal\x1b[0m`);
+      this.cb.close();
+    } else {
+      this.cb.writeln(`exit: no terminal session to close`);
+    }
+  }
+
   cmdSudo(args: string[]) {
     const rest = args.join(" ");
     if (/^hire(\s+bercev)?$/.test(rest)) {
@@ -1124,6 +1144,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["cowsay <text>", "the cow says what you type"],
   ["vim", "you have been warned"],
   ["clear", "clear the screen"],
+  ["exit", "close this terminal"],
   ["history", "list past commands"],
   ["!!", "repeat the last command"],
   ["!n", "repeat history entry n"],
@@ -1192,6 +1213,10 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
   cowsay: ["usage: cowsay <text>", "example: cowsay hello"],
   vim: ["usage: vim", "you have been warned (:q quits)"],
   clear: ["usage: clear", "clears the screen"],
+  exit: [
+    "usage: exit",
+    "closes the flyout (Esc and the [esc] button do the same)",
+  ],
   history: [
     "usage: history",
     "lists past commands, oldest first, numbered for !n",
@@ -1248,6 +1273,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   cat: (s, a) => s.cmdCat(a),
   echo: (s, a) => s.cmdEcho(a),
   clear: (s) => s.cmdClear(),
+  exit: (s) => s.cmdExit(),
   sudo: (s, a) => s.cmdSudo(a),
   vim: (s) => s.cmdVim(),
   emacs: (s) => s.cmdJoke("emacs"),

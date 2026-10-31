@@ -47,6 +47,7 @@ export function Terminal({
   focusSignal,
   bare,
   onNavigate,
+  onClose,
 }: {
   className?: string;
   /** Increment to programmatically focus the xterm instance (e.g. when a flyout opens). */
@@ -55,6 +56,8 @@ export function Terminal({
   bare?: boolean;
   /** Page jump for the shell's `goto` command (flyout closes first). */
   onNavigate?: (hash: string) => void;
+  /** Close the session for the shell's `exit` command (flyout only). */
+  onClose?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<Shell | null>(null);
@@ -118,6 +121,9 @@ export function Terminal({
         writeln: (text) => term?.writeln(text ?? ""),
         clear: () => term?.clear(),
         navigate: onNavigate,
+        // `exit` closes the flyout (run-4 iter 13); absent outside a
+        // flyout, where the shell prints its no-session line instead.
+        close: onClose,
         // `goto <skill>` highlights via the ledger's own reverse-nav
         // event (run-3 iter 23) — no new plumbing, and the ledger gates
         // unlinked skills itself.
