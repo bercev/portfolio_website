@@ -587,6 +587,129 @@ describe("!! repeat-last-command (run-4 iter 10)", () => {
   });
 });
 
+describe("!n repeat-history-entry (run-4 iter 11)", () => {
+  it("re-runs the nth entry in history numbering (oldest-first, 1-based)", () => {
+    const h = makeShell();
+    h.type("echo one");
+    h.shell.enter();
+    h.type("echo two");
+    h.shell.enter();
+    h.type("history");
+    h.shell.enter();
+    // Printed numbering was 1 echo one, 2 echo two, 3 history; !2 must
+    // resolve against that same numbering, not against newest-first
+    // storage (where position 2 would be echo one).
+    h.type("!2");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("→ echo two"))).toBe(true);
+    expect(h.printed.filter((l) => l === "two").length).toBe(2);
+    expect(h.printed.filter((l) => l === "one").length).toBe(1);
+  });
+
+  it("!1 re-runs the first printed entry even after a history listing", () => {
+    const h = makeShell();
+    h.type("echo first");
+    h.shell.enter();
+    h.type("history");
+    h.shell.enter();
+    h.type("!1");
+    h.shell.enter();
+    expect(h.printed.filter((l) => l === "first").length).toBe(2);
+  });
+
+  it("an expansion chain terminates on the original command", () => {
+    const h = makeShell();
+    h.type("echo base");
+    h.shell.enter();
+    h.type("!1");
+    h.shell.enter();
+    // History before this line, oldest-first: [echo base, !1]; !2 is
+    // the !1 line, which re-resolves to echo base — never to itself.
+    h.type("!2");
+    h.shell.enter();
+    expect(h.printed.filter((l) => l === "base").length).toBe(3);
+    expect(h.printed.some((l) => l.includes("command not found"))).toBe(
+      false,
+    );
+  });
+
+  it("out-of-range and zero print the valid range and re-run nothing", () => {
+    const h = makeShell();
+    h.type("echo hi");
+    h.shell.enter();
+    h.type("!9");
+    h.shell.enter();
+    expect(h.printed).toContain(
+      "!9: no such history entry (valid range: 1-1)",
+    );
+    h.type("!0");
+    h.shell.enter();
+    expect(h.printed).toContain(
+      "!0: no such history entry (valid range: 1-2)",
+    );
+    expect(h.printed.filter((l) => l === "hi").length).toBe(1);
+  });
+
+  it("prints a no-history line, never throws, on empty history", () => {
+    const h = makeShell();
+    h.type("!1");
+    h.shell.enter();
+    expect(h.printed).toContain("!1: no history entries");
+  });
+
+  it("leaves !! unchanged and appears in help, with ! still completing to !! first", () => {
+    const h = makeShell();
+    h.type("echo hello");
+    h.shell.enter();
+    h.type("!!");
+    h.shell.enter();
+    expect(h.printed.filter((l) => l === "hello").length).toBe(2);
+    const h2 = makeShell();
+    h2.type("help");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("repeat history entry n"))).toBe(
+      true,
+    );
+    const h3 = makeShell();
+    h3.type("!");
+    h3.shell.tab();
+    expect(h3.line).toBe("!!");
+  });
+
+  it("a failed !n line at its own position does not recurse forever", () => {
+    const h = makeShell();
+    h.type("!1");
+    h.shell.enter();
+    expect(h.printed).toContain("!1: no history entries");
+    h.type("echo hi");
+    h.shell.enter();
+    // !1 now resolves to the failed !1 line at position 1 — the chain
+    // guard must stop it there instead of expanding itself forever.
+    h.type("!1");
+    h.shell.enter();
+    expect(h.printed).toContain("!1: history expansion loop");
+    expect(h.printed.filter((l) => l === "hi").length).toBe(1);
+  });
+
+  it("!! through a failed !n line also terminates via the chain guard", () => {
+    const h = makeShell();
+    h.type("!1");
+    h.shell.enter();
+    h.type("!!");
+    h.shell.enter();
+    expect(h.printed).toContain("!1: history expansion loop");
+  });
+
+  it("!abc is not history expansion", () => {
+    const h = makeShell();
+    h.type("!abc");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("command not found: !abc"))).toBe(
+      true,
+    );
+  });
+});
+
 describe("experience command", () => {
   it("lists every role with organization and dates", () => {
     const h = makeShell();

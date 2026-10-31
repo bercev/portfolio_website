@@ -510,8 +510,15 @@ export class Shell {
   private run(line: string) {
     // History expansion is not a HANDLERS entry: "!!" is the whole line,
     // and "!! <args>" falls through to the unknown-command path below.
+    // Likewise "!n" (digits only, exact token) is history expansion;
+    // "!abc" or "! 1" fall through to the unknown-command path.
     if (line === "!!") {
       this.cmdBangBang();
+      return;
+    }
+    const bangN = /^!(\d+)$/.exec(line);
+    if (bangN) {
+      this.cmdBangN(parseInt(bangN[1], 10));
       return;
     }
     const [cmd, ...args] = line.split(/\s+/);
@@ -554,6 +561,54 @@ export class Shell {
     });
   }
 
+  // Lines currently being expanded in this chain (synchronous only, so
+  // a typed line can never land in it). A FAILED "!n" line is still
+  // recorded in history, and it can sit at exactly its own numbered
+  // position — e.g. "!1" as the first command ever occupies position 1,
+  // so a later "!1" resolves to it and re-expands forever. The chain
+  // guard below is what stops that fixed point (and !!→!n→!n chains
+  // through it); without it the shell stack-overflows (caught live,
+  // run-4 iter 11, before this guard existed).
+  private expansionChain: string[] = [];
+
+  cmdBangN(n: number) {
+    const line = `!${n}`;
+    if (this.expansionChain.includes(line)) {
+      this.cb.writeln(`${line}: history expansion loop`);
+      return;
+    }
+    // Numbering is the `history` command's own numbering: oldest-first,
+    // 1-based. enter() already recorded this "!n" line at history[0], so
+    // the resolvable list is everything BEFORE it (history.slice(1)) —
+    // exactly the entries a preceding `history` print showed, with the
+    // not-yet-typed expansion line excluded. Index-based, never
+    // find-based: skipping expansion entries would shift every number
+    // after them and break the printed mapping. Chains terminate: an
+    // expansion line "!k" was valid only against entries older than
+    // itself, so re-running it always resolves to a strictly older
+    // position, and a line can never resolve to itself.
+    const prior = this.history.slice(1);
+    const oldestFirst = [...prior].reverse();
+    if (n < 1 || n > oldestFirst.length) {
+      if (oldestFirst.length === 0) {
+        this.cb.writeln(`!${n}: no history entries`);
+      } else {
+        this.cb.writeln(
+          `!${n}: no such history entry (valid range: 1-${oldestFirst.length})`,
+        );
+      }
+      return;
+    }
+    const target = oldestFirst[n - 1];
+    this.cb.writeln(`\x1b[32m→ ${target}\x1b[0m`);
+    this.expansionChain.push(line);
+    try {
+      this.run(target);
+    } finally {
+      this.expansionChain.pop();
+    }
+  }
+
   cmdBangBang() {
     // enter() already recorded this "!!" at history[0], so the previous
     // command is the newest entry that is not itself "!!". Skipping
@@ -567,7 +622,12 @@ export class Shell {
       return;
     }
     this.cb.writeln(`\x1b[32m→ ${target}\x1b[0m`);
-    this.run(target);
+    this.expansionChain.push("!!");
+    try {
+      this.run(target);
+    } finally {
+      this.expansionChain.pop();
+    }
   }
 
   cmdPwd() {
@@ -1046,6 +1106,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["clear", "clear the screen"],
   ["history", "list past commands"],
   ["!!", "repeat the last command"],
+  ["!n", "repeat history entry n"],
   ["resume", "open the resume (PDF)"],
   ["links [name]", "open a profile in a new tab"],
   ["open <project|paper> [pdf]", "open a project's site, a paper, or a paper's PDF"],
