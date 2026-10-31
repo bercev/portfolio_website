@@ -77,8 +77,19 @@
   z-index: 1;
   width: min(11rem, calc(100vw - 2rem));
   /* Height wraps the bubble column plus the chapter list below it; the
-     list keeps its own explicit height so the fan geometry is untouched. */
+     list keeps its own explicit height so the fan geometry is untouched.
+     Short-viewport guard (run-4 iter 32): the fan (20rem bubble column +
+     ~15rem chapter list) overflows viewports below ~700px, and a fixed
+     overlay cannot be page-scrolled into view — so the overlay itself is
+     the scroll region, capped at the viewport minus its top offset and a
+     bottom margin. The trigger lives outside the overlay (in .anchor), so
+     it never scrolls away. */
   height: auto;
+  max-height: calc(
+    100dvh - (env(safe-area-inset-top) + 4.5rem) - 0.75rem
+  );
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: transparent;
   pointer-events: none;
 }
@@ -299,5 +310,27 @@
       max(1.25rem, env(safe-area-inset-right)) + 1rem -
         min(11rem, calc(100vw - 2rem)) / 2
     );
+    /* Mobile dock top differs from desktop, so the viewport cap must
+       track it — otherwise the cap over/under-shoots by ~71px. */
+    max-height: calc(
+      100dvh - (env(safe-area-inset-top) + 1px) - 0.75rem
+    );
+  }
+}
+
+/* Short-viewport compression (run-4 iter 32): on viewports below ~700px
+   tall, tighten only the chapter list (bubble geometry is untouched, so
+   the gsap fan is unaffected) — chapter rows stay at the 24px WCAG floor
+   and the list shrinks ~44px, so 600px viewports need little or no
+   scrolling. Below that the overlay's own scroll region (above) still
+   guarantees every chapter link is reachable. */
+@media (max-height: 43.75rem) {
+  .chapterList {
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+
+  .chapterLink {
+    min-height: 1.5rem;
   }
 }
