@@ -345,6 +345,53 @@ describe("open command", () => {
     expect(opened).toEqual(["https://github.com/bercev/Discord-Chatbot-AI"]);
   });
 
+  it("opens a paper by its data slug", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open skilloptimizer");
+    h.shell.enter();
+    expect(opened).toEqual(["https://openreview.net/forum?id=nZYF0aPAMP"]);
+    expect(h.printed.some((l) => l.includes("opening skilloptimizer"))).toBe(
+      true,
+    );
+  });
+
+  it("opens the second paper by its data slug", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open grokset");
+    h.shell.enter();
+    expect(opened).toEqual(["https://arxiv.org/abs/2602.21236"]);
+  });
+
+  it("lists papers alongside projects for bare open", () => {
+    const h = makeShell();
+    h.type("open");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes("https://openreview.net/forum")),
+    ).toBe(true);
+    expect(h.printed.some((l) => l.includes("https://arxiv.org/abs/"))).toBe(
+      true,
+    );
+  });
+
+  it("names paper slugs in the unknown-target error", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open nope");
+    h.shell.enter();
+    expect(opened).toEqual([]);
+    expect(h.printed.some((l) => l.includes("skilloptimizer"))).toBe(true);
+  });
+
+  it("completes a paper slug after open", () => {
+    const h = makeShell();
+    h.type("open sk");
+    h.shell.tab();
+    expect(h.line).toBe("open skilloptimizer");
+  });
+
   it("prints the available slugs and opens nothing for an unknown project", () => {
     const opened: string[] = [];
     const h = makeShell(undefined, (url) => opened.push(url));
@@ -373,7 +420,7 @@ describe("open command", () => {
     const h = makeShell();
     h.type("help");
     h.shell.enter();
-    expect(h.printed.some((l) => l.includes("open <project>"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("open <project|paper>"))).toBe(true);
   });
 });
 

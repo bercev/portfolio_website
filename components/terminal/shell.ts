@@ -63,6 +63,19 @@ function openableProjects() {
     );
 }
 
+// Papers carry the same openable shape as projects: the data slug (the
+// goto/anchor key, not a title slug — titles carry "@"/":"/trailing periods)
+// plus the venue href. Every publication has an href, so this list is the
+// full paper set; it exists because `open` previously covered projects only
+// while `goto`/`search` already named papers by these slugs.
+function openablePapers() {
+  return portfolio.publications.map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    url: p.href,
+  }));
+}
+
 export interface ShellCallbacks {
   write: (text: string) => void;
   writeln: (text?: string) => void;
@@ -448,7 +461,10 @@ export class Shell {
         label: e.role,
       }));
       const linkNames = openableProfiles().map((l) => l.label.toLowerCase());
-      const openNames = openableProjects().map((p) => p.slug);
+      const openNames = [
+        ...openableProjects().map((p) => p.slug),
+        ...openablePapers().map((p) => p.slug),
+      ];
       const candidates = isFirst
         ? COMMANDS.filter((c) => c.startsWith(last))
         : tokens[0] === "goto" && tokens.length === 2
@@ -668,21 +684,33 @@ export class Shell {
     // <project>` opens one. Names are title slugs (projectSlug), so
     // `open vitae`, `open ai-discord-chatbot`, and `open AI Discord
     // Chatbot` all resolve — the same slug the goto/anchor scheme uses.
+    // Papers join the same list under their data slugs (skilloptimizer,
+    // grokset), the keys goto/search already print — a paper's title slug
+    // would be long and fragile, so only the data slug resolves.
     const projects = openableProjects();
+    const papers = openablePapers();
     if (args.length === 0) {
       for (const p of projects)
         this.cb.writeln(`• ${p.title} — ${p.url}`);
+      for (const p of papers)
+        // Titles end with a period; strip one trailing period so the list
+        // reads as a name, not a sentence fragment.
+        this.cb.writeln(`• ${p.title.replace(/\.$/, "")} — ${p.url}`);
       const first = projects[0]?.slug ?? "vitae";
       this.cb.writeln(
-        `tip: open ${first} — open a project's site in a new tab`,
+        `tip: open ${first} — open a project's site or a paper in a new tab`,
       );
       return;
     }
     const slug = projectSlug(args.join(" "));
-    const match = projects.find((p) => p.slug === slug);
+    const match =
+      projects.find((p) => p.slug === slug) ??
+      papers.find((p) => p.slug === slug);
     if (!match) {
-      const names = projects.map((p) => p.slug).join(", ");
-      this.cb.writeln(`open: no project "${args.join(" ")}" — try ${names}`);
+      const names = [...projects, ...papers].map((p) => p.slug).join(", ");
+      this.cb.writeln(
+        `open: no project or paper "${args.join(" ")}" — try ${names}`,
+      );
       return;
     }
     this.cb.writeln(
@@ -959,7 +987,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["history", "list past commands"],
   ["resume", "open the resume (PDF)"],
   ["links [name]", "open a profile in a new tab"],
-  ["open <project>", "open a project's live site or source"],
+  ["open <project|paper>", "open a project's site or a paper"],
   ["theme [palette]", "recolor the site"],
   ["sudo hire bercev", "???"],
 ];
