@@ -30,6 +30,17 @@ export const PROMPT_USER = "bercev";
 export const PROMPT_HOST = "portfolio";
 
 /**
+ * Light/dark mode names (next-themes: "system" follows the OS). Kept
+ * here, not in theme-palette.ts, because modes are orthogonal to the
+ * five accent palettes — the `theme` command spans both dimensions.
+ */
+const THEME_MODES = ["dark", "light", "system"] as const;
+type ThemeMode = (typeof THEME_MODES)[number];
+function isThemeMode(value: string): value is ThemeMode {
+  return (THEME_MODES as readonly string[]).includes(value);
+}
+
+/**
  * Contact links openable in a new tab: every contact link that is not a
  * download. The Resume entry carries download: true (and has its own
  * `resume` command); the rest are the Elsewhere profiles. The tuple is
@@ -113,6 +124,20 @@ export interface ShellCallbacks {
    * where the command prints without throwing.
    */
   setPalette?: (palette: ThemePalette) => void;
+  /**
+   * Current light/dark mode preference, read live (the shell outlives
+   * UI-toggle changes, so a captured value would go stale). The real
+   * terminal reads next-themes' persisted "theme" value; absent in
+   * tests/embeds, where the bare `theme` list simply omits the mode line.
+   */
+  getMode?: () => ThemeMode | null;
+  /**
+   * Switch the light/dark mode (the `theme <mode>` command). Same
+   * callback precedent as setPalette: the real terminal wires it to
+   * next-themes' setTheme, which persists the choice. Absent in
+   * tests/embeds, where the command prints without throwing.
+   */
+  setMode?: (mode: ThemeMode) => void;
   /**
    * Close the terminal session (the `exit` command). Kept behind a
    * callback like `navigate` so the shell stays unit-testable without
@@ -501,9 +526,10 @@ export class Shell {
                   )
                 ? ["pdf"].filter((n) => n.startsWith(last.toLowerCase()))
                 : tokens[0] === "theme" && tokens.length === 2
-                  ? (Object.keys(THEME_PALETTES) as ThemePalette[]).filter(
-                      (n) => n.startsWith(last.toLowerCase()),
-                    )
+                  ? [
+                      ...(Object.keys(THEME_PALETTES) as ThemePalette[]),
+                      ...THEME_MODES,
+                    ].filter((n) => n.startsWith(last.toLowerCase()))
                   : tokens[0] === "help" && tokens.length === 2
                     ? COMMANDS.filter((n) =>
                         n.startsWith(last.toLowerCase()),
@@ -919,6 +945,10 @@ export class Shell {
     // Mirrors cmdLinks/cmdOpen: bare `theme` lists the targets, `theme
     // <name>` switches. Palette names/labels come from THEME_PALETTES —
     // the same source the UI theme selector renders, never hardcoded.
+    // Modes are the second theme dimension (next-themes): `theme dark`
+    // used to error as "no palette", even though dark/light IS a theme
+    // choice on this site — the UI toggle and the shell now span the
+    // same two dimensions, palettes + light/dark mode.
     const names = Object.keys(THEME_PALETTES) as ThemePalette[];
     if (args.length === 0) {
       const current = this.cb.getPalette?.() ?? null;
@@ -927,13 +957,25 @@ export class Shell {
         const marker = name === current ? " (current)" : "";
         this.cb.writeln(`• ${name} — ${label}${marker}`);
       }
-      this.cb.writeln(`tip: theme orchid — recolor the site`);
+      const mode = this.cb.getMode?.() ?? null;
+      if (mode !== null) {
+        this.cb.writeln(`mode: ${mode}`);
+      }
+      this.cb.writeln(
+        `tip: theme orchid — recolor the site · theme dark — switch light/dark mode`,
+      );
       return;
     }
     const name = args.join(" ").toLowerCase();
+    if (isThemeMode(name)) {
+      const label = name.charAt(0).toUpperCase() + name.slice(1);
+      this.cb.writeln(`\x1b[32m→ theme mode: ${label}\x1b[0m`);
+      this.cb.setMode?.(name);
+      return;
+    }
     if (!isThemePalette(name)) {
       this.cb.writeln(
-        `theme: no palette "${args.join(" ")}" — try ${names.join(", ")}`,
+        `theme: no palette or mode "${args.join(" ")}" — try ${names.join(", ")}, dark, light, system`,
       );
       return;
     }
@@ -1187,7 +1229,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["resume", "open the resume (PDF)"],
   ["links [name]", "open a profile in a new tab"],
   ["open <project|paper> [pdf]", "open a project's site, a paper, or a paper's PDF"],
-  ["theme [palette]", "recolor the site"],
+  ["theme [palette|mode]", "recolor the site or switch light/dark mode"],
   ["sudo hire bercev", "???"],
 ];
 
@@ -1277,8 +1319,8 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
     "example: open skilloptimizer pdf — the paper's PDF, not its venue",
   ],
   theme: [
-    "usage: theme [palette]",
-    "example: theme orchid — palettes: ocean, orchid, citrus, forest, rose",
+    "usage: theme [palette|mode]",
+    "example: theme dark — modes: dark, light, system; palettes: ocean, orchid, citrus, forest, rose",
   ],
   sudo: [
     "usage: sudo hire bercev",

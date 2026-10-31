@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { useTheme } from "next-themes";
+
 import { dispatchSkillHighlight } from "@/lib/skill-work";
 import { isThemePalette } from "@/lib/theme-palette";
 
@@ -65,6 +67,10 @@ export function Terminal({
   // terminal mounts can recolor the site; the default context degrades
   // to a no-op setPalette outside a provider (embeds, tests).
   const { setPalette } = usePalette();
+  // next-themes is the single authority for light/dark mode (see
+  // providers/theme-provider); useTheme degrades to a no-op setTheme
+  // outside a provider, so this is safe for embeds too.
+  const { setTheme } = useTheme();
   const termRef = useRef<import("@xterm/xterm").Terminal | null>(null);
   /** A focus request that arrived before async xterm init finished. */
   const pendingFocusRef = useRef(false);
@@ -137,6 +143,22 @@ export function Terminal({
           return isThemePalette(value) ? value : null;
         },
         setPalette: (palette) => setPalette(palette),
+        // `theme <mode>` command: read the live persisted preference
+        // (next-themes stores it under "theme"; missing/invalid means
+        // the defaultTheme, "system") — same live-read rule as the
+        // palette, so the UI toggle can never leave the shell stale —
+        // and switch through next-themes, which persists it.
+        getMode: () => {
+          try {
+            const value = window.localStorage.getItem("theme");
+            return value === "dark" || value === "light" || value === "system"
+              ? value
+              : "system";
+          } catch {
+            return "system";
+          }
+        },
+        setMode: (mode) => setTheme(mode),
         // Live cols (FitAddon refits on resize) so wrapped-line edits
         // redraw the whole logical line instead of per-char erasing.
         cols: () => term?.cols ?? 80,

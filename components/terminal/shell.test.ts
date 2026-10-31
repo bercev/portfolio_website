@@ -20,6 +20,8 @@ function makeShell(
     highlightSkill?: (name: string) => void;
     getPalette?: () => import("@/lib/theme-palette").ThemePalette | null;
     setPalette?: (palette: import("@/lib/theme-palette").ThemePalette) => void;
+    getMode?: () => "dark" | "light" | "system" | null;
+    setMode?: (mode: "dark" | "light" | "system") => void;
     shellOptions?: import("./shell").ShellOptions;
   },
 ) {
@@ -88,6 +90,8 @@ function makeShell(
     ...(extra?.highlightSkill ? { highlightSkill: extra.highlightSkill } : {}),
     ...(extra?.getPalette ? { getPalette: extra.getPalette } : {}),
     ...(extra?.setPalette ? { setPalette: extra.setPalette } : {}),
+    ...(extra?.getMode ? { getMode: extra.getMode } : {}),
+    ...(extra?.setMode ? { setMode: extra.setMode } : {}),
   },
   extra?.shellOptions,
   );
@@ -1134,7 +1138,7 @@ describe("theme command (run-4 iter 5)", () => {
     h.shell.enter();
     expect(
       h.printed.some((l) =>
-        l.includes('theme: no palette "ultraviolet" — try ocean, orchid, citrus, forest, rose'),
+        l.includes('theme: no palette or mode "ultraviolet" — try ocean, orchid, citrus, forest, rose, dark, light, system'),
       ),
     ).toBe(true);
   });
@@ -1149,7 +1153,67 @@ describe("theme command (run-4 iter 5)", () => {
     const h2 = makeShell();
     h2.type("help");
     h2.shell.enter();
-    expect(h2.printed.some((l) => l.includes("theme [palette]"))).toBe(true);
+    expect(h2.printed.some((l) => l.includes("theme [palette|mode]"))).toBe(true);
+  });
+});
+
+describe("theme mode command (run-4 iter 17)", () => {
+  it("lists the current mode and tips both theme dimensions", () => {
+    const h = makeShell(undefined, undefined, { getMode: () => "system" });
+    h.type("theme");
+    h.shell.enter();
+    expect(h.printed.some((l) => l === "mode: system")).toBe(true);
+    expect(h.printed.some((l) => l.includes("tip: theme orchid"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("theme dark"))).toBe(true);
+  });
+
+  it("omits the mode line when no mode callback is wired", () => {
+    const h = makeShell();
+    h.type("theme");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.startsWith("mode:"))).toBe(false);
+  });
+
+  it("switches modes through the callback, case-insensitively", () => {
+    const seen: string[] = [];
+    const h = makeShell(undefined, undefined, {
+      setMode: (m) => seen.push(m),
+    });
+    h.type("theme dark");
+    h.shell.enter();
+    h.type("theme LIGHT");
+    h.shell.enter();
+    h.type("theme system");
+    h.shell.enter();
+    expect(seen).toEqual(["dark", "light", "system"]);
+    expect(h.printed.some((l) => l.includes("theme mode: Dark"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("theme mode: Light"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("theme mode: System"))).toBe(true);
+  });
+
+  it("prints without throwing when no mode callback is wired", () => {
+    const h = makeShell();
+    h.type("theme light");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("theme mode: Light"))).toBe(true);
+  });
+
+  it("completes mode names and documents them in help theme", () => {
+    const h = makeShell();
+    h.type("theme d");
+    h.shell.tab();
+    expect(h.line).toBe("theme dark");
+    const h2 = makeShell();
+    h2.type("theme l");
+    h2.shell.tab();
+    expect(h2.line).toBe("theme light");
+    const h3 = makeShell();
+    h3.type("help theme");
+    h3.shell.enter();
+    expect(h3.printed.some((l) => l.includes("theme [palette|mode]"))).toBe(true);
+    expect(
+      h3.printed.some((l) => l.includes("modes: dark, light, system")),
+    ).toBe(true);
   });
 });
 
