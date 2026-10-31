@@ -508,6 +508,12 @@ export class Shell {
   }
 
   private run(line: string) {
+    // History expansion is not a HANDLERS entry: "!!" is the whole line,
+    // and "!! <args>" falls through to the unknown-command path below.
+    if (line === "!!") {
+      this.cmdBangBang();
+      return;
+    }
     const [cmd, ...args] = line.split(/\s+/);
     const handler = HANDLERS[cmd];
     if (handler) {
@@ -546,6 +552,22 @@ export class Shell {
     oldestFirst.forEach((cmd, i) => {
       this.cb.writeln(`${i + 1}  ${cmd}`);
     });
+  }
+
+  cmdBangBang() {
+    // enter() already recorded this "!!" at history[0], so the previous
+    // command is the newest entry that is not itself "!!". Skipping
+    // consecutive "!!" entries means a repeated "!!" re-runs the last
+    // real command instead of recursing into itself; the re-run goes
+    // through run() but is never recorded twice, since only enter()
+    // records. With no previous command, print and never throw.
+    const target = this.history.find((entry) => entry !== "!!");
+    if (!target) {
+      this.cb.writeln(`!!: no previous command`);
+      return;
+    }
+    this.cb.writeln(`\x1b[32m→ ${target}\x1b[0m`);
+    this.run(target);
   }
 
   cmdPwd() {
@@ -1023,6 +1045,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["vim", "you have been warned"],
   ["clear", "clear the screen"],
   ["history", "list past commands"],
+  ["!!", "repeat the last command"],
   ["resume", "open the resume (PDF)"],
   ["links [name]", "open a profile in a new tab"],
   ["open <project|paper> [pdf]", "open a project's site, a paper, or a paper's PDF"],

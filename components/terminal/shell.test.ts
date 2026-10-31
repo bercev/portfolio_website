@@ -517,6 +517,76 @@ describe("history command", () => {
   });
 });
 
+describe("!! repeat-last-command (run-4 iter 10)", () => {
+  it("re-runs the previous command and echoes it first", () => {
+    const h = makeShell();
+    h.type("echo hello");
+    h.shell.enter();
+    h.type("!!");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("→ echo hello"))).toBe(true);
+    expect(h.printed.filter((l) => l === "hello").length).toBe(2);
+  });
+
+  it("prints a no-history line, never throws, on empty history", () => {
+    const h = makeShell();
+    h.type("!!");
+    h.shell.enter();
+    expect(h.printed).toContain("!!: no previous command");
+  });
+
+  it("a repeated !! re-runs the last real command, not itself", () => {
+    const h = makeShell();
+    h.type("echo hi");
+    h.shell.enter();
+    h.type("!!");
+    h.shell.enter();
+    h.type("!!");
+    h.shell.enter();
+    expect(h.printed.filter((l) => l === "hi").length).toBe(3);
+    expect(h.printed.some((l) => l.includes("command not found"))).toBe(
+      false,
+    );
+  });
+
+  it("leaves Up-arrow recall intact, with !! itself the newest entry", () => {
+    const h = makeShell();
+    h.type("echo hello");
+    h.shell.enter();
+    h.type("!!");
+    h.shell.enter();
+    h.resetLine();
+    h.shell.historyUp();
+    expect(h.line).toBe("!!");
+    h.shell.historyUp();
+    expect(h.line).toBe("echo hello");
+  });
+
+  it("completes from ! and appears in help", () => {
+    const h = makeShell();
+    h.type("!");
+    h.shell.tab();
+    expect(h.line).toBe("!!");
+    const h2 = makeShell();
+    h2.type("help");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("repeat the last command"))).toBe(
+      true,
+    );
+  });
+
+  it("!! with trailing args is not history expansion", () => {
+    const h = makeShell();
+    h.type("echo hello");
+    h.shell.enter();
+    h.type("!! foo");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("command not found: !!"))).toBe(
+      true,
+    );
+  });
+});
+
 describe("experience command", () => {
   it("lists every role with organization and dates", () => {
     const h = makeShell();
