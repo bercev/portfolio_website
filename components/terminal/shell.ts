@@ -1188,6 +1188,20 @@ export class Shell {
     this.cb.writeln(`tip: \x1b[33mgoto <skill>\x1b[0m to highlight it in the ledger`);
   }
 
+  cmdEducation() {
+    // The one content kind without a list command: projects,
+    // publications, experience, and skills each have one, while
+    // education lived only in about.txt (which needs the filename)
+    // and the About panel. Derives from portfolio.about.education —
+    // the same source the panel renders — never hardcoded.
+    const edu = portfolio.about.education;
+    this.cb.writeln(`\x1b[36meducation/\x1b[0m — ${edu.institution}:`);
+    this.cb.writeln(`  • ${edu.degree} (${edu.dates})`);
+    this.cb.writeln(`  • GPA ${edu.gpa}`);
+    this.cb.writeln(`  • Coursework: ${edu.coursework.join(", ")}`);
+    this.cb.writeln(`tip: \x1b[33mgoto about\x1b[0m for the full section`);
+  }
+
   cmdBeratfetch() {
     const cyan = "\x1b[36m";
     const reset = "\x1b[0m";
@@ -1310,6 +1324,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["publications", "list papers"],
   ["experience", "list roles"],
   ["skills", "list skills"],
+  ["education", "list education"],
   ["contact", "how to reach bercev"],
   ["goto <chapter>", "jump to a chapter, project, paper, skill, or role"],
   ["search <keyword>", "find projects, papers, roles, skills"],
@@ -1376,6 +1391,10 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
   skills: [
     "usage: skills",
     "lists skill categories; goto <skill> highlights it in the ledger",
+  ],
+  education: [
+    "usage: education",
+    "lists education; goto about shows the education panel",
   ],
   contact: [
     "usage: contact",
@@ -1515,6 +1534,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   publications: (s) => s.cmdPublications(),
   experience: (s) => s.cmdExperience(),
   skills: (s) => s.cmdSkills(),
+  education: (s) => s.cmdEducation(),
   fortune: (s) => s.cmdFortune(),
   history: (s, a) => s.cmdHistory(a),
   resume: (s) => s.cmdResume(),

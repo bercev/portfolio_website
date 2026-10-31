@@ -1642,3 +1642,38 @@ describe("grep -r recursive search (run-4 iter 22)", () => {
     ).toBe(true);
   });
 });
+
+describe("education command (run-4 iter 23)", () => {
+  it("lists institution, degree, dates, GPA, and coursework from the data", () => {
+    const h = makeShell();
+    h.type("education");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("UC Santa Cruz"))).toBe(true);
+    expect(
+      h.printed.some((l) => l.includes("B.S. Computer Science (Sep 2024-Dec 2026)")),
+    ).toBe(true);
+    expect(h.printed.some((l) => l.includes("GPA 4.0/4.0"))).toBe(true);
+    expect(
+      h.printed.some((l) =>
+        l.includes("Coursework: DSA, AI, ML, Computer Architecture, Compiler Design, Computer Systems Design, Software Engineering"),
+      ),
+    ).toBe(true);
+    expect(h.printed.some((l) => l.includes("goto about"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("for the full section"))).toBe(true);
+  });
+
+  it("completes from the help-derived command list and appears in help", () => {
+    const h = makeShell();
+    h.type("edu");
+    h.shell.tab();
+    expect(h.line).toBe("education");
+    const h2 = makeShell();
+    h2.type("help");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("education"))).toBe(true);
+    const h3 = makeShell();
+    h3.type("help education");
+    h3.shell.enter();
+    expect(h3.printed.some((l) => l.includes("usage: education"))).toBe(true);
+  });
+});
