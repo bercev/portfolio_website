@@ -791,10 +791,15 @@ export class Shell {
   cmdGrep(args: string[]) {
     // Substring match, not a regex: a regex would surprise on the
     // special characters visitors type as plain words. Flags -i
-    // (case-insensitive) and -n (line numbers) may combine; "--" ends
-    // flag parsing so a pattern starting with "-" stays searchable.
+    // (case-insensitive), -n (line numbers), and -r (recurse into
+    // directories, GNU precedent: a directory operand without -r still
+    // errors, and walked matches always carry their filename, as with
+    // GNU's implied -H) may combine; "--" ends flag parsing so a
+    // pattern starting with "-" stays searchable. The virtual FS has
+    // no symlinks, so there is no -R distinction to draw.
     let insensitive = false;
     let numbered = false;
+    let recursive = false;
     const rest: string[] = [];
     let flagsDone = false;
     for (const arg of args) {
@@ -802,21 +807,37 @@ export class Shell {
         flagsDone = true;
         continue;
       }
-      if (!flagsDone && /^-[in]+$/.test(arg)) {
+      if (!flagsDone && /^-[inr]+$/.test(arg)) {
         insensitive = insensitive || arg.includes("i");
         numbered = numbered || arg.includes("n");
+        recursive = recursive || arg.includes("r");
         continue;
       }
       rest.push(arg);
     }
     const [pattern, ...files] = rest;
     if (!pattern || files.length === 0) {
-      this.cb.writeln(`usage: grep [-i] [-n] <pattern> <file...>`);
+      this.cb.writeln(`usage: grep [-i] [-n] [-r] <pattern> <file...>`);
       return;
     }
     const needle = insensitive ? pattern.toLowerCase() : pattern;
-    let matches = 0;
-    let searched = false;
+    // Resolve operands to search targets first: a plain file is one
+    // target, a directory under -r expands to every file below it in
+    // insertion order (depth-first, so a directory's own files print
+    // before any subdirectory's). Labels stay in the visitor's own
+    // spelling (arg + relative path), never a resolved absolute path.
+    type Target = { label: string; content: string; alwaysPrefix: boolean };
+    const targets: Target[] = [];
+    let walked = false;
+    const walk = (dirNode: FsDir, prefix: string) => {
+      for (const [name, child] of Object.entries(dirNode.children)) {
+        if (child.type === "file") {
+          targets.push({ label: `${prefix}/${name}`, content: child.content, alwaysPrefix: true });
+        } else {
+          walk(child, `${prefix}/${name}`);
+        }
+      }
+    };
     for (const fileArg of files) {
       const target = resolvePath(this.cwd, fileArg);
       const node = target ? getNode(this.root, target) : null;
@@ -825,20 +846,33 @@ export class Shell {
         continue;
       }
       if (node.type === "dir") {
-        this.cb.writeln(`grep: ${fileArg}: is a directory`);
+        if (!recursive) {
+          this.cb.writeln(`grep: ${fileArg}: is a directory`);
+          continue;
+        }
+        const base = fileArg.replace(/\/+$/, "") || fileArg;
+        walked = true;
+        walk(node, base);
         continue;
       }
+      targets.push({ label: fileArg, content: node.content, alwaysPrefix: false });
+    }
+    let matches = 0;
+    let searched = false;
+    for (const t of targets) {
       searched = true;
-      node.content.split("\n").forEach((line, i) => {
+      t.content.split("\n").forEach((line, i) => {
         const hay = insensitive ? line.toLowerCase() : line;
         if (!hay.includes(needle)) return;
         matches += 1;
-        const prefix = files.length > 1 ? `${fileArg}:` : "";
+        const prefix = targets.length > 1 || t.alwaysPrefix ? `${t.label}:` : "";
         const num = numbered ? `${i + 1}:` : "";
         this.cb.writeln(`${prefix}${num}${line}`);
       });
     }
-    if (searched && matches === 0) {
+    // A walked directory counts as searched even if it holds no files,
+    // so a no-match report still prints instead of silence.
+    if ((searched || walked) && matches === 0) {
       this.cb.writeln(`grep: no matches for "${pattern}"`);
     }
   }
@@ -1270,7 +1304,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["ls [dir]", "list directory contents"],
   ["cd <dir>", "change directory; cd - goes back"],
   ["cat <file>", "print file contents"],
-  ["grep [-i] [-n] <pattern> <file...>", "search file contents for a line"],
+  ["grep [-i] [-n] [-r] <pattern> <file...>", "search file contents for a line"],
   ["echo <text>", "print text"],
   ["projects", "list shipped projects"],
   ["publications", "list papers"],
@@ -1321,9 +1355,10 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
     "example: cat publications/skilloptimizer.txt",
   ],
   grep: [
-    "usage: grep [-i] [-n] <pattern> <file...>",
+    "usage: grep [-i] [-n] [-r] <pattern> <file...>",
     "example: grep STACK projects/vitae.txt — substring match, not a regex",
     "grep -i matches case-insensitively; -n prefixes line numbers",
+    "grep -r searches a directory tree; walked matches always name their file",
   ],
   echo: ["usage: echo <text>", "example: echo hello"],
   projects: [

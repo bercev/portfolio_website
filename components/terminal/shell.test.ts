@@ -1572,3 +1572,73 @@ describe("grep command (run-4 iter 21)", () => {
     ).toBe(true);
   });
 });
+
+describe("grep -r recursive search (run-4 iter 22)", () => {
+  it("walks a directory and always prefixes walked matches with the file", () => {
+    const h = makeShell();
+    h.type("grep -r STACK projects");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.startsWith("projects/vitae.txt:STACK:")),
+    ).toBe(true);
+    // Every walked match names its file (a description line can also
+    // match STACK without a colon of its own, so the prefix — not the
+    // colon — is the property under test; enter() itself writes one
+    // empty line, filtered out here).
+    expect(
+      h.printed
+        .filter((l) => l.length > 0)
+        .every((l) => l.startsWith("projects/")),
+    ).toBe(true);
+  });
+
+  it("combines -r with -n and -i, and reports no matches across a tree", () => {
+    const h = makeShell();
+    h.type("grep -rn STACK projects");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => /^projects\/vitae\.txt:\d+:STACK:/.test(l)),
+    ).toBe(true);
+    const h2 = makeShell();
+    h2.type("grep -ri stack projects");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) => l.startsWith("projects/vitae.txt:STACK:")),
+    ).toBe(true);
+    const h3 = makeShell();
+    h3.type("grep -r zzz-no-such-word projects");
+    h3.shell.enter();
+    expect(
+      h3.printed.some((l) =>
+        l.includes('grep: no matches for "zzz-no-such-word"'),
+      ),
+    ).toBe(true);
+  });
+
+  it("still errors on a directory without -r and on a missing path with -r", () => {
+    const h = makeShell();
+    h.type("grep STACK projects");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes("grep: projects: is a directory")),
+    ).toBe(true);
+    const h2 = makeShell();
+    h2.type("grep -r STACK projects/nope");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) => l.includes("grep: projects/nope: no such file")),
+    ).toBe(true);
+  });
+
+  it("names -r in help and the detail page", () => {
+    const h = makeShell();
+    h.type("help grep");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes("usage: grep [-i] [-n] [-r]")),
+    ).toBe(true);
+    expect(
+      h.printed.some((l) => l.includes("grep -r searches a directory tree")),
+    ).toBe(true);
+  });
+});
