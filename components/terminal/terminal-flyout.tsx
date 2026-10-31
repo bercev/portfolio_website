@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { Terminal } from "./Terminal";
 import { shouldOpenTerminalOnBackquote } from "@/lib/terminal-hotkey";
@@ -211,10 +212,20 @@ export function TerminalFlyout() {
         <span aria-hidden="true" className="terminal-flyout-cursor" />
       </button>
 
-      {everOpened && (
-        <>
-          <motion.div
-            className="terminal-flyout-backdrop"
+      {/* Portaled to document.body (run-4 iter 33): the flyout lives inside
+          <main className="relative z-[var(--z-page-content)]">, whose z-10
+          stacking context caps the panel's local z-81 BELOW the root-level
+          bubble-menu anchor (z-50/51) and ribbon — so the FAB trigger
+          painted over the drawer's [esc] button in the 768–899px band (and
+          over the panel body at desktop widths). At root level the panel's
+          z-81 / backdrop's z-80 genuinely sit above all site chrome, and
+          the backdrop dims the anchor/ribbon like a proper modal backdrop.
+          everOpened is only ever set by a client event, so document exists. */}
+      {everOpened &&
+        createPortal(
+          <>
+            <motion.div
+              className="terminal-flyout-backdrop"
             aria-hidden="true"
             initial="hide"
             animate={open ? "show" : "hide"}
@@ -258,9 +269,10 @@ export function TerminalFlyout() {
               onNavigate={handleNavigate}
               onClose={doClose}
             />
-          </motion.aside>
-        </>
-      )}
+            </motion.aside>
+          </>,
+          document.body,
+        )}
     </>
   );
 }
