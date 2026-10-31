@@ -493,6 +493,10 @@ export class Shell {
                   ? (Object.keys(THEME_PALETTES) as ThemePalette[]).filter(
                       (n) => n.startsWith(last.toLowerCase()),
                     )
+                  : tokens[0] === "help" && tokens.length === 2
+                    ? COMMANDS.filter((n) =>
+                        n.startsWith(last.toLowerCase()),
+                      )
                   : completePath(this.root, this.cwd, last);
       this.completions = candidates;
     }
@@ -536,14 +540,30 @@ export class Shell {
 
   // ---- command implementations ----
 
-  cmdHelp() {
-    this.cb.writeln(`available commands:`);
-    for (const [name, desc] of HELP_TEXT) {
-      // A literal space after the pad: names at/over the 14-col width
-      // ("goto <chapter>", "sudo hire bercev") otherwise run straight
-      // into their description with no gap.
-      this.cb.writeln(`  \x1b[36m${name.padEnd(14)}\x1b[0m ${desc}`);
+  cmdHelp(args: string[]) {
+    if (args.length === 0) {
+      this.cb.writeln(`available commands:`);
+      for (const [name, desc] of HELP_TEXT) {
+        // A literal space after the pad: names at/over the 14-col width
+        // ("goto <chapter>", "sudo hire bercev") otherwise run straight
+        // into their description with no gap.
+        this.cb.writeln(`  \x1b[36m${name.padEnd(14)}\x1b[0m ${desc}`);
+      }
+      return;
     }
+    // Bash `help <builtin>` precedent: a terse usage + one example, not a
+    // pager. The lookup is by base command, so "help sudo hire bercev"
+    // and "help sudo" both land on sudo; unknown names name the fix.
+    const name = args[0].toLowerCase();
+    const detail = HELP_DETAIL[name];
+    if (!detail) {
+      this.cb.writeln(`help: no help for "${args[0]}" — try \x1b[33mhelp\x1b[0m`);
+      return;
+    }
+    const desc =
+      HELP_TEXT.find(([n]) => n.split(" ")[0] === name)?.[1] ?? "";
+    this.cb.writeln(`\x1b[36m${name}\x1b[0m — ${desc}`);
+    for (const line of detail) this.cb.writeln(`  ${line}`);
   }
 
   cmdWhoami() {
@@ -1085,7 +1105,7 @@ export class Shell {
 }
 
 const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
-  ["help", "show this help"],
+  ["help", "show this help — try `help <command>` for details"],
   ["whoami", "who is bercev"],
   ["beratfetch", "bercev, neofetch-style"],
   ["pwd", "print working directory"],
@@ -1114,6 +1134,102 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["sudo hire bercev", "???"],
 ];
 
+// Terse per-command detail for `help <command>`: usage first, then one
+// example that actually runs. Every line here must stay true to the
+// command's implementation — a detail that invents syntax is worse than
+// no detail. Keys are base commands (HELP_TEXT first words + the
+// history-expansion tokens, which are commands but not HANDLERS entries).
+const HELP_DETAIL: Record<string, readonly string[]> = {
+  help: [
+    "usage: help [command]",
+    "example: help goto — usage and an example for one command",
+  ],
+  whoami: ["usage: whoami", "prints bercev's name and role"],
+  beratfetch: ["usage: beratfetch", "neofetch-style summary of the site"],
+  pwd: ["usage: pwd", "prints the virtual working directory"],
+  ls: [
+    "usage: ls [dir]",
+    "example: ls projects/ — list the project files",
+  ],
+  cd: [
+    "usage: cd <dir>",
+    "example: cd projects — then cat vitae.txt",
+  ],
+  cat: [
+    "usage: cat <file>",
+    "example: cat publications/skilloptimizer.txt",
+  ],
+  echo: ["usage: echo <text>", "example: echo hello"],
+  projects: [
+    "usage: projects",
+    "lists shipped projects; open <slug> opens one in a new tab",
+  ],
+  publications: [
+    "usage: publications",
+    "lists papers; open <slug> opens its venue, open <slug> pdf its PDF",
+  ],
+  experience: [
+    "usage: experience",
+    "lists roles; goto <role-slug> lands on that row",
+  ],
+  skills: [
+    "usage: skills",
+    "lists skill categories; goto <skill> highlights it in the ledger",
+  ],
+  contact: [
+    "usage: contact",
+    "prints how to reach bercev (the same text as cat contact.txt)",
+  ],
+  goto: [
+    "usage: goto <chapter|project|paper|skill|role>",
+    "example: goto python — skills, highlighted; bare goto lists targets",
+  ],
+  search: [
+    "usage: search <keyword>",
+    "example: search algoverse — Tab completes search terms",
+  ],
+  fortune: ["usage: fortune", "one honest line from the case studies"],
+  cowsay: ["usage: cowsay <text>", "example: cowsay hello"],
+  vim: ["usage: vim", "you have been warned (:q quits)"],
+  clear: ["usage: clear", "clears the screen"],
+  history: [
+    "usage: history",
+    "lists past commands, oldest first, numbered for !n",
+  ],
+  "!!": [
+    "usage: !!",
+    "repeats the last command; a repeated !! re-runs the same command",
+  ],
+  "!n": [
+    "usage: !n",
+    "example: !2 — re-runs history entry 2 (the history command's numbering)",
+  ],
+  resume: ["usage: resume", "opens the resume PDF in a new tab"],
+  links: [
+    "usage: links [name]",
+    "example: links github — bare links lists the profiles",
+  ],
+  open: [
+    "usage: open <project|paper> [pdf]",
+    "example: open skilloptimizer pdf — the paper's PDF, not its venue",
+  ],
+  theme: [
+    "usage: theme [palette]",
+    "example: theme orchid — palettes: ocean, orchid, citrus, forest, rose",
+  ],
+  sudo: [
+    "usage: sudo hire bercev",
+    "the only sudo that works here",
+  ],
+  hello: ["usage: hello", "a greeting, nothing more"],
+  emacs: ["usage: emacs", "a joke at emacs' expense"],
+  nano: ["usage: nano", "a joke at nano's expense"],
+  rm: [
+    "usage: rm ...",
+    "permission denied — the portfolio is immutable, as it should be",
+  ],
+};
+
 const COMMANDS = [
   ...HELP_TEXT.map(([name]) => name.split(" ")[0]),
   "hello",
@@ -1123,7 +1239,7 @@ const COMMANDS = [
 ];
 
 const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
-  help: (s) => s.cmdHelp(),
+  help: (s, a) => s.cmdHelp(a),
   whoami: (s) => s.cmdWhoami(),
   beratfetch: (s) => s.cmdBeratfetch(),
   pwd: (s) => s.cmdPwd(),

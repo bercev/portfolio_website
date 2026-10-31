@@ -1126,3 +1126,79 @@ describe("skills command (run-4 iter 6)", () => {
     expect(h2.printed.some((l) => l.includes("skills"))).toBe(true);
   });
 });
+
+describe("help <command> detail pages (run-4 iter 12)", () => {
+  it("prints usage and an example for a named command", () => {
+    const h = makeShell();
+    h.type("help goto");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("goto"))).toBe(true);
+    expect(
+      h.printed.some((l) =>
+        l.includes("usage: goto <chapter|project|paper|skill|role>"),
+      ),
+    ).toBe(true);
+    expect(h.printed.some((l) => l.includes("goto python"))).toBe(true);
+  });
+
+  it("covers the newer commands: open pdf, theme palettes, !n numbering", () => {
+    const h = makeShell();
+    h.type("help open");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes("open skilloptimizer pdf")),
+    ).toBe(true);
+    const h2 = makeShell();
+    h2.type("help theme");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) =>
+        l.includes("ocean, orchid, citrus, forest, rose"),
+      ),
+    ).toBe(true);
+    const h3 = makeShell();
+    h3.type("help !n");
+    h3.shell.enter();
+    expect(h3.printed.some((l) => l.includes("!2"))).toBe(true);
+  });
+
+  it("is case-insensitive, resolves multi-word help lines by base command, and errors cleanly on unknown names", () => {
+    const h = makeShell();
+    h.type("help GOTO");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes("usage: goto")),
+    ).toBe(true);
+    const h2 = makeShell();
+    h2.type("help sudo hire bercev");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) => l.includes("sudo hire bercev")),
+    ).toBe(true);
+    const h3 = makeShell();
+    h3.type("help nope");
+    h3.shell.enter();
+    expect(
+      h3.printed.some((l) => l.includes('no help for "nope"')),
+    ).toBe(true);
+  });
+
+  it("bare help still lists every command and advertises the detail form", () => {
+    const h = makeShell();
+    h.type("help");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("help <command>"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("goto <chapter>"))).toBe(true);
+  });
+
+  it("Tab-completes the second token against base command names", () => {
+    const h = makeShell();
+    h.type("help go");
+    h.shell.tab();
+    expect(h.line).toBe("help goto");
+    const h2 = makeShell();
+    h2.type("help ");
+    h2.shell.tab();
+    expect(h2.line).toBe("help help");
+  });
+});
