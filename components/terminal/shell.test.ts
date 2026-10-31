@@ -1302,3 +1302,71 @@ describe("exit command (run-4 iter 13)", () => {
     expect(h3.line).toBe("exit");
   });
 });
+
+describe("cd - returns to the previous directory (run-4 iter 16)", () => {
+  it("toggles between two directories and prints the landed path", () => {
+    const h = makeShell();
+    h.type("cd projects");
+    h.shell.enter();
+    h.type("cd -");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("→ ~"))).toBe(true);
+    h.type("pwd");
+    h.shell.enter();
+    expect(h.printed).toContain("~");
+    h.type("cd -");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("→ ~/projects"))).toBe(true);
+    h.type("pwd");
+    h.shell.enter();
+    expect(h.printed).toContain("~/projects");
+  });
+
+  it("prints a no-previous line on a fresh shell and stays home", () => {
+    const h = makeShell();
+    h.type("cd -");
+    h.shell.enter();
+    expect(h.printed).toContain("cd: no previous directory");
+    h.type("pwd");
+    h.shell.enter();
+    expect(h.printed).toContain("~");
+  });
+
+  it("treats bare cd as a change, so cd - after it returns to the old dir", () => {
+    const h = makeShell();
+    h.type("cd projects");
+    h.shell.enter();
+    h.type("cd");
+    h.shell.enter();
+    h.type("cd -");
+    h.shell.enter();
+    h.type("pwd");
+    h.shell.enter();
+    expect(h.printed).toContain("~/projects");
+  });
+
+  it("does not let a failed cd clobber the previous directory", () => {
+    const h = makeShell();
+    h.type("cd projects");
+    h.shell.enter();
+    h.type("cd nope");
+    h.shell.enter();
+    expect(h.printed).toContain("cd: no such file or directory: nope");
+    h.type("cd -");
+    h.shell.enter();
+    h.type("pwd");
+    h.shell.enter();
+    expect(h.printed).toContain("~");
+  });
+
+  it("documents cd - on the help cd detail page", () => {
+    const h = makeShell();
+    h.type("help cd");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) =>
+        l.includes("cd - returns to the previous directory"),
+      ),
+    ).toBe(true);
+  });
+});

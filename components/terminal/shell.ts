@@ -206,6 +206,9 @@ export interface ShellOptions {
 export class Shell {
   private root: FsDir = buildFilesystem();
   private cwd: string[] = [...HOME];
+  // Previous directory for `cd -` (bash OLDPWD). Null until the first
+  // successful directory change, so a fresh shell has nothing to go back to.
+  private prevCwd: string[] | null = null;
   private history: string[] = [];
   private historyIndex = -1;
   private buffer = "";
@@ -701,7 +704,23 @@ export class Shell {
 
   cmdCd(args: string[]) {
     if (!args[0]) {
+      // Bare `cd` is a successful change (to HOME), so it saves the
+      // previous directory like any other cd — bash does the same.
+      this.prevCwd = [...this.cwd];
       this.cwd = [...HOME];
+      return;
+    }
+    if (args[0] === "-") {
+      if (!this.prevCwd) {
+        this.cb.writeln(`cd: no previous directory`);
+        return;
+      }
+      const landed = this.prevCwd;
+      this.prevCwd = [...this.cwd];
+      this.cwd = landed;
+      // Bash prints the landed path on `cd -`; this shell's green `→`
+      // confirmation style carries it, so the path still reads plainly.
+      this.cb.writeln(`\x1b[32m→ ${displayPath(this.cwd)}\x1b[0m`);
       return;
     }
     const target = resolvePath(this.cwd, args[0]);
@@ -714,6 +733,9 @@ export class Shell {
       this.cb.writeln(`cd: not a directory: ${args[0]}`);
       return;
     }
+    // Only successful changes move prevCwd: a failed cd leaves the
+    // way back intact.
+    this.prevCwd = [...this.cwd];
     this.cwd = target!;
   }
 
@@ -1144,7 +1166,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["beratfetch", "bercev, neofetch-style"],
   ["pwd", "print working directory"],
   ["ls [dir]", "list directory contents"],
-  ["cd <dir>", "change directory"],
+  ["cd <dir>", "change directory; cd - goes back"],
   ["cat <file>", "print file contents"],
   ["echo <text>", "print text"],
   ["projects", "list shipped projects"],
@@ -1189,6 +1211,7 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
   cd: [
     "usage: cd <dir>",
     "example: cd projects — then cat vitae.txt",
+    "cd - returns to the previous directory",
   ],
   cat: [
     "usage: cat <file>",
