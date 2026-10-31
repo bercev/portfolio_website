@@ -4,6 +4,7 @@ import { CheckIcon, PaletteIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 
 import { THEME_PALETTES, type ThemePalette } from "@/lib/theme-palette";
+import { useAsciiActive } from "@/lib/use-ascii-active";
 import { usePalette } from "@/components/providers/palette-provider";
 
 import styles from "./theme-selector.module.css";
@@ -14,6 +15,10 @@ type ThemeSelectorProps = {
 
 export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
   const { palette, setPalette } = usePalette();
+  // Same lock as the mode toggle: while the ASCII scene runs, the FROST
+  // remap + palette lock collapse every accent to ocean, so picking a
+  // palette changes nothing visible. Disable with the reason instead.
+  const asciiActive = useAsciiActive();
   const selectedPalette = palette ? THEME_PALETTES[palette] : null;
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
@@ -47,13 +52,18 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
     >
       <button
         type="button"
-        className={`cursor-target ${styles.trigger}`}
+        className={`cursor-target ${styles.trigger}${asciiActive ? " opacity-50" : ""}`}
         data-variant={variant}
         data-bubble-menu-item={variant === "menu" ? "" : undefined}
         aria-label={`Color theme: ${selectedPalette?.label ?? "Base"}`}
         aria-controls="theme-palette-options"
         aria-expanded={isOpen}
-        title="Choose a color theme"
+        title={
+          asciiActive
+            ? "Color theme locked while the ASCII scene runs"
+            : "Choose a color theme"
+        }
+        disabled={asciiActive}
         style={
           selectedPalette
             ? {
@@ -92,6 +102,12 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
               title={option.label}
               tabIndex={isOpen ? 0 : -1}
               onClick={() => {
+                // Guard the pre-lock-open race: options opened before the
+                // scene booted must not apply once it has.
+                if (asciiActive) {
+                  setIsOpen(false);
+                  return;
+                }
                 setPalette(isSelected ? null : themeName);
                 setIsOpen(false);
               }}

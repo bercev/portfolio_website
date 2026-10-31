@@ -313,10 +313,13 @@ html[data-ascii="active"] .term-emphasis {
   color: #7dd3fc;
 }
 
-/* Hide palette switcher in terminal mode — terminal is always ocean. */
-html[data-ascii="active"] .theme-selector {
-  display: none;
-}
+/* NOTE: theme controls are NOT hidden here. The old `.theme-selector`
+   rule never matched anything (the selector's class is a CSS-module hash),
+   and hiding would leave gaps in the bubble-menu fan. The lock instead
+   lives in the controls themselves (lib/use-ascii-active.ts): while this
+   FROST remap runs, ThemeToggle and ThemeSelector render disabled, dimmed,
+   and titled with the reason — they return to normal under reduced motion,
+   where the scene never boots and both dimensions genuinely apply. */
 
 /* Palette accents are neon on dark space; light mode remixes `--*-neon` into ink. */
 [data-palette="ocean"] {

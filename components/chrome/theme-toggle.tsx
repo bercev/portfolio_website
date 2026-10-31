@@ -4,6 +4,8 @@ import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
+import { useAsciiActive } from "@/lib/use-ascii-active";
+
 const toggleClassName =
   "cursor-target inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-wait";
 
@@ -20,6 +22,10 @@ export function ThemeToggle({
 }: ThemeToggleProps) {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
+  // While the ASCII scene runs, the FROST remap locks light/dark tokens to
+  // dark, so this toggle is a no-op there: show it dimmed and disabled with
+  // the reason, instead of a clickable control that changes nothing.
+  const asciiActive = useAsciiActive();
   const resolvedClassName = className ?? toggleClassName;
 
   useEffect(() => {
@@ -52,9 +58,14 @@ export function ThemeToggle({
   return (
     <button
       type="button"
-      className={resolvedClassName}
+      className={`${resolvedClassName}${asciiActive ? " opacity-50" : ""}`}
       aria-label={label}
-      title={label}
+      title={
+        asciiActive
+          ? "Light/dark locked while the ASCII scene runs"
+          : label
+      }
+      disabled={asciiActive}
       data-bubble-menu-item={menuItem ? "" : undefined}
       onClick={() => setTheme(nextTheme)}
     >
