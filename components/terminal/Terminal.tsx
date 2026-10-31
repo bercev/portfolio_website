@@ -5,6 +5,10 @@ import { useEffect, useRef } from "react";
 import { dispatchSkillHighlight } from "@/lib/skill-work";
 
 import { Shell } from "./shell";
+import {
+  loadPersistedHistory,
+  persistHistory,
+} from "@/lib/terminal-history";
 
 /**
  * Portfolio terminal — a real working shell (xterm.js) themed phosphor.
@@ -97,7 +101,12 @@ export function Terminal({
         pendingFocusRef.current = false;
       }
 
-      const shell = new Shell({
+      // Restore the previous session's command history so Up-arrow
+      // recall and the fish-style autosuggestion survive reloads
+      // (run-4 iter 3). Effect-only, so this never runs on the server;
+      // the store functions swallow storage failures themselves.
+      const shell = new Shell(
+        {
         write: (text) => term?.write(text),
         writeln: (text) => term?.writeln(text ?? ""),
         clear: () => term?.clear(),
@@ -110,7 +119,13 @@ export function Terminal({
         // Live cols (FitAddon refits on resize) so wrapped-line edits
         // redraw the whole logical line instead of per-char erasing.
         cols: () => term?.cols ?? 80,
-      });
+        },
+        {
+          initialHistory: loadPersistedHistory(window.localStorage),
+          onHistoryChange: (entries) =>
+            persistHistory(window.localStorage, entries),
+        },
+      );
       shellRef.current = shell;
       shell.boot();
 

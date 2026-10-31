@@ -17,6 +17,7 @@ function makeShell(
   extra?: {
     navigate?: (hash: string) => void;
     highlightSkill?: (name: string) => void;
+    shellOptions?: import("./shell").ShellOptions;
   },
 ) {
   const printed: string[] = [];
@@ -81,7 +82,9 @@ function makeShell(
     ...(openExternal ? { openExternal } : {}),
     ...(extra?.navigate ? { navigate: extra.navigate } : {}),
     ...(extra?.highlightSkill ? { highlightSkill: extra.highlightSkill } : {}),
-  });
+  },
+  extra?.shellOptions,
+  );
   const type = (text: string) => {
     for (const ch of text) shell.type(ch);
   };
@@ -696,5 +699,45 @@ describe("fish-style history autosuggestion", () => {
     h.shell.backspace();
     expect(h.line).toBe("bercev@portfolio:~$ goto skill");
     expect(h.visible).toBe("bercev@portfolio:~$ goto skills");
+  });
+});
+
+describe("persisted history (run-4 iter 3)", () => {
+  it("recalls restored entries with Up-arrow and suggests from them", () => {
+    const h = makeShell(undefined, undefined, {
+      shellOptions: { initialHistory: ["goto skills", "whoami"] },
+    });
+    h.shell.historyUp();
+    expect(h.line).toBe("goto skills");
+    h.shell.historyDown();
+    // The ghost renders only with a prompt on screen, so run a command
+    // first (as the existing autosuggestion tests do), then type a
+    // prefix of a restored entry.
+    h.type("pwd");
+    h.shell.enter();
+    h.resetLine();
+    h.type("who");
+    expect(h.visible).toBe("whoami");
+  });
+
+  it("fires onHistoryChange newest-first after each recorded command", () => {
+    const seen: string[][] = [];
+    const h = makeShell(undefined, undefined, {
+      shellOptions: {
+        initialHistory: ["whoami"],
+        onHistoryChange: (entries) => seen.push(entries),
+      },
+    });
+    h.type("pwd");
+    h.shell.enter();
+    expect(seen).toEqual([["pwd", "whoami"]]);
+  });
+
+  it("ignores blank restored entries", () => {
+    const h = makeShell(undefined, undefined, {
+      shellOptions: { initialHistory: ["", "whoami"] },
+    });
+    h.shell.historyUp();
+    expect(h.line).toBe("whoami");
   });
 });

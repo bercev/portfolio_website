@@ -148,6 +148,19 @@ function completePath(root: FsDir, cwd: string[], token: string): string[] {
     .map((n) => `${dirPart}/${n}`);
 }
 
+/** Optional shell wiring beyond the terminal callbacks. */
+export interface ShellOptions {
+  /**
+   * History restored from a previous session, newest-first (the
+   * terminal loads this from localStorage — run-4 iter 3). Filtered to
+   * non-empty strings and capped, so a corrupt store cannot inject
+   * blank entries into recall or autosuggestion.
+   */
+  initialHistory?: string[];
+  /** Fires with a newest-first copy after every recorded command. */
+  onHistoryChange?: (entries: string[]) => void;
+}
+
 export class Shell {
   private root: FsDir = buildFilesystem();
   private cwd: string[] = [...HOME];
@@ -180,7 +193,14 @@ export class Shell {
   private vimMode = false;
   private fortuneIndex = 0;
 
-  constructor(private cb: ShellCallbacks) {}
+  constructor(
+    private cb: ShellCallbacks,
+    private opts: ShellOptions = {},
+  ) {
+    this.history = (opts.initialHistory ?? [])
+      .filter((entry) => typeof entry === "string" && entry.length > 0)
+      .slice(0, 200);
+  }
 
   boot() {
     this.cb.writeln(`\x1b[36mbercevOS v2.6 — portfolio shell\x1b[0m`);
@@ -340,6 +360,7 @@ export class Shell {
     if (line) {
       this.history.unshift(line);
       this.historyIndex = -1;
+      this.opts.onHistoryChange?.([...this.history]);
       this.run(line);
     }
     // A command may have switched modes (e.g. vim) — it owns the prompt then.
