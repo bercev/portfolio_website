@@ -788,6 +788,61 @@ export class Shell {
     for (const line of node.content.split("\n")) this.cb.writeln(line);
   }
 
+  cmdGrep(args: string[]) {
+    // Substring match, not a regex: a regex would surprise on the
+    // special characters visitors type as plain words. Flags -i
+    // (case-insensitive) and -n (line numbers) may combine; "--" ends
+    // flag parsing so a pattern starting with "-" stays searchable.
+    let insensitive = false;
+    let numbered = false;
+    const rest: string[] = [];
+    let flagsDone = false;
+    for (const arg of args) {
+      if (!flagsDone && arg === "--") {
+        flagsDone = true;
+        continue;
+      }
+      if (!flagsDone && /^-[in]+$/.test(arg)) {
+        insensitive = insensitive || arg.includes("i");
+        numbered = numbered || arg.includes("n");
+        continue;
+      }
+      rest.push(arg);
+    }
+    const [pattern, ...files] = rest;
+    if (!pattern || files.length === 0) {
+      this.cb.writeln(`usage: grep [-i] [-n] <pattern> <file...>`);
+      return;
+    }
+    const needle = insensitive ? pattern.toLowerCase() : pattern;
+    let matches = 0;
+    let searched = false;
+    for (const fileArg of files) {
+      const target = resolvePath(this.cwd, fileArg);
+      const node = target ? getNode(this.root, target) : null;
+      if (!node) {
+        this.cb.writeln(`grep: ${fileArg}: no such file`);
+        continue;
+      }
+      if (node.type === "dir") {
+        this.cb.writeln(`grep: ${fileArg}: is a directory`);
+        continue;
+      }
+      searched = true;
+      node.content.split("\n").forEach((line, i) => {
+        const hay = insensitive ? line.toLowerCase() : line;
+        if (!hay.includes(needle)) return;
+        matches += 1;
+        const prefix = files.length > 1 ? `${fileArg}:` : "";
+        const num = numbered ? `${i + 1}:` : "";
+        this.cb.writeln(`${prefix}${num}${line}`);
+      });
+    }
+    if (searched && matches === 0) {
+      this.cb.writeln(`grep: no matches for "${pattern}"`);
+    }
+  }
+
   cmdEcho(args: string[]) {
     this.cb.writeln(args.join(" "));
   }
@@ -1215,6 +1270,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["ls [dir]", "list directory contents"],
   ["cd <dir>", "change directory; cd - goes back"],
   ["cat <file>", "print file contents"],
+  ["grep [-i] [-n] <pattern> <file...>", "search file contents for a line"],
   ["echo <text>", "print text"],
   ["projects", "list shipped projects"],
   ["publications", "list papers"],
@@ -1263,6 +1319,11 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
   cat: [
     "usage: cat <file>",
     "example: cat publications/skilloptimizer.txt",
+  ],
+  grep: [
+    "usage: grep [-i] [-n] <pattern> <file...>",
+    "example: grep STACK projects/vitae.txt — substring match, not a regex",
+    "grep -i matches case-insensitively; -n prefixes line numbers",
   ],
   echo: ["usage: echo <text>", "example: echo hello"],
   projects: [
@@ -1402,6 +1463,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   ls: (s, a) => s.cmdLs(a),
   cd: (s, a) => s.cmdCd(a),
   cat: (s, a) => s.cmdCat(a),
+  grep: (s, a) => s.cmdGrep(a),
   echo: (s, a) => s.cmdEcho(a),
   clear: (s) => s.cmdClear(),
   exit: (s) => s.cmdExit(),

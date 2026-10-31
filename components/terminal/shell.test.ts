@@ -1495,3 +1495,80 @@ describe("did-you-mean suggestion on unknown commands (run-4 iter 20)", () => {
     );
   });
 });
+
+describe("grep command (run-4 iter 21)", () => {
+  it("prints matching lines from a single file with no prefix", () => {
+    const h = makeShell();
+    h.type("grep STACK projects/vitae.txt");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.startsWith("STACK:"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("projects/vitae.txt:"))).toBe(
+      false,
+    );
+  });
+
+  it("-i matches case-insensitively and -n prefixes line numbers", () => {
+    const h = makeShell();
+    h.type("grep -i stack projects/vitae.txt");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.startsWith("STACK:"))).toBe(true);
+    const h2 = makeShell();
+    h2.type("grep -n STACK projects/vitae.txt");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => /^\d+:STACK:/.test(l))).toBe(true);
+  });
+
+  it("prefixes the filename with multiple files and reports no matches", () => {
+    const h = makeShell();
+    h.type("grep STACK projects/vitae.txt publications/skilloptimizer.txt");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.startsWith("projects/vitae.txt:STACK:")),
+    ).toBe(true);
+    const h2 = makeShell();
+    h2.type("grep zzz-no-such-word projects/vitae.txt");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) =>
+        l.includes('grep: no matches for "zzz-no-such-word"'),
+      ),
+    ).toBe(true);
+  });
+
+  it("errors like cat on missing files and directories, usage without args", () => {
+    const h = makeShell();
+    h.type("grep STACK projects/nope.txt");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes("grep: projects/nope.txt: no such file")),
+    ).toBe(true);
+    const h2 = makeShell();
+    h2.type("grep STACK projects");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) => l.includes("grep: projects: is a directory")),
+    ).toBe(true);
+    const h3 = makeShell();
+    h3.type("grep");
+    h3.shell.enter();
+    expect(
+      h3.printed.some((l) => l.includes("usage: grep [-i] [-n]")),
+    ).toBe(true);
+  });
+
+  it("appears in help, completes, and has a detail page", () => {
+    const h = makeShell();
+    h.type("gre");
+    h.shell.tab();
+    expect(h.line).toBe("grep");
+    const h2 = makeShell();
+    h2.type("help grep");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) => l.includes("usage: grep [-i] [-n]")),
+    ).toBe(true);
+    expect(
+      h2.printed.some((l) => l.includes("grep STACK projects/vitae.txt")),
+    ).toBe(true);
+  });
+});
