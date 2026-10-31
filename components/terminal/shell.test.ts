@@ -364,6 +364,62 @@ describe("open command", () => {
     expect(opened).toEqual(["https://arxiv.org/abs/2602.21236"]);
   });
 
+  it("opens a paper's PDF with the pdf variant", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open skilloptimizer pdf");
+    h.shell.enter();
+    expect(opened).toEqual(["/assets/publications/skilloptimizer.pdf"]);
+    expect(h.printed.some((l) => l.includes("opening skilloptimizer pdf"))).toBe(
+      true,
+    );
+  });
+
+  it("opens the second paper's PDF with the pdf variant", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open grokset pdf");
+    h.shell.enter();
+    expect(opened).toEqual(["/assets/publications/grokset.pdf"]);
+  });
+
+  it("errors without opening for a project's pdf variant", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open vitae pdf");
+    h.shell.enter();
+    expect(opened).toEqual([]);
+    expect(h.printed.some((l) => l.includes("no PDF"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("skilloptimizer"))).toBe(true);
+  });
+
+  it("errors without opening for an unknown slug's pdf variant", () => {
+    const opened: string[] = [];
+    const h = makeShell(undefined, (url) => opened.push(url));
+    h.type("open nope pdf");
+    h.shell.enter();
+    expect(opened).toEqual([]);
+    expect(h.printed.some((l) => l.includes("no project or paper"))).toBe(
+      true,
+    );
+  });
+
+  it("completes pdf after a paper slug", () => {
+    const h = makeShell();
+    h.type("open grokset p");
+    h.shell.tab();
+    expect(h.line).toBe("open grokset pdf");
+  });
+
+  it("names the pdf variant in the bare open tip", () => {
+    const h = makeShell();
+    h.type("open");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("open skilloptimizer pdf"))).toBe(
+      true,
+    );
+  });
+
   it("lists papers alongside projects for bare open", () => {
     const h = makeShell();
     h.type("open");

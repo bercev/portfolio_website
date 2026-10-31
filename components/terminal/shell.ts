@@ -73,6 +73,7 @@ function openablePapers() {
     slug: p.slug,
     title: p.title,
     url: p.href,
+    pdfUrl: p.pdfUrl,
   }));
 }
 
@@ -482,6 +483,12 @@ export class Shell {
               ? linkNames.filter((n) => n.startsWith(last.toLowerCase()))
               : tokens[0] === "open" && tokens.length === 2
                 ? openNames.filter((n) => n.startsWith(last.toLowerCase()))
+              : tokens[0] === "open" &&
+                  tokens.length === 3 &&
+                  openablePapers().some(
+                    (p) => p.slug === projectSlug(tokens[1]),
+                  )
+                ? ["pdf"].filter((n) => n.startsWith(last.toLowerCase()))
                 : tokens[0] === "theme" && tokens.length === 2
                   ? (Object.keys(THEME_PALETTES) as ThemePalette[]).filter(
                       (n) => n.startsWith(last.toLowerCase()),
@@ -697,8 +704,39 @@ export class Shell {
         // reads as a name, not a sentence fragment.
         this.cb.writeln(`• ${p.title.replace(/\.$/, "")} — ${p.url}`);
       const first = projects[0]?.slug ?? "vitae";
+      const firstPaper = papers[0]?.slug ?? "skilloptimizer";
       this.cb.writeln(
-        `tip: open ${first} — open a project's site or a paper in a new tab`,
+        `tip: open ${first} — open a project's site or a paper in a new tab; open ${firstPaper} pdf — open a paper's PDF`,
+      );
+      return;
+    }
+    // `open <paper> pdf` opens the paper's PDF asset instead of its venue:
+    // `cat publications/<slug>.txt` prints the PDF URL as text only, and
+    // the venue is what bare `open <paper>` opens, so without this variant
+    // a shell visitor had no in-shell path to the PDF itself (the same
+    // class of gap this command closed for venues). Projects carry no PDF,
+    // so the variant errors naming the paper slugs; any other second token
+    // falls through to the slug path below, unchanged.
+    if (args.length === 2 && args[1].toLowerCase() === "pdf") {
+      const slug = projectSlug(args[0]);
+      const paper = papers.find((p) => p.slug === slug);
+      if (paper) {
+        this.cb.writeln(
+          `\x1b[32m→ opening ${paper.slug} pdf (${paper.pdfUrl})\x1b[0m`,
+        );
+        this.cb.openExternal?.(paper.pdfUrl);
+        return;
+      }
+      if (projects.some((p) => p.slug === slug)) {
+        const names = papers.map((p) => p.slug).join(", ");
+        this.cb.writeln(
+          `open: no PDF for "${args[0]}" — PDFs exist for papers only, try ${names}`,
+        );
+        return;
+      }
+      const names = [...projects, ...papers].map((p) => p.slug).join(", ");
+      this.cb.writeln(
+        `open: no project or paper "${args[0]}" — try ${names}`,
       );
       return;
     }
@@ -987,7 +1025,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["history", "list past commands"],
   ["resume", "open the resume (PDF)"],
   ["links [name]", "open a profile in a new tab"],
-  ["open <project|paper>", "open a project's site or a paper"],
+  ["open <project|paper> [pdf]", "open a project's site, a paper, or a paper's PDF"],
   ["theme [palette]", "recolor the site"],
   ["sudo hire bercev", "???"],
 ];
