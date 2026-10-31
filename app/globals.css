@@ -3246,6 +3246,11 @@ html.dark .plain-backdrop {
     color: #000 !important;
     box-shadow: none !important;
     text-shadow: none !important;
+    /* Paper has no translucency: scroll-linked reveals (the About lede
+       writes inline per-word opacity) print pale at scrollY=0 otherwise —
+       v219 p2 showed the first About paragraph gray while the rest
+       printed black. !important beats the inline opacity. */
+    opacity: 1 !important;
   }
 
   html,
@@ -3270,10 +3275,30 @@ html.dark .plain-backdrop {
   .journey-contact-form,
   .skill-marquee,
   .journey-case-study-more,
-  .journey-epilogue-top {
+  .journey-epilogue-top,
+  /* Print record (run-4 iter 39): the skip link is position:fixed, and
+     Chromium repeats fixed elements on every printed page — it leaked
+     onto 12/16 pages of the v219 PDF and interleaved into reading order
+     ("Skip SCRUM to main content"). Screen-only chrome; never paper. */
+  .skip-link {
     display: none !important;
   }
 
+  /* The hero is min-h-[100dvh] with a flex-1 BERAT band on screen; in
+     print the canvas is hidden but the band still stretches the section
+     to a full page, leaving a void between the name and the copy (v219
+     p1). Collapse the hero to its content height on paper. */
+  #home {
+    min-height: auto !important;
+  }
+
+  /* The BERAT band itself holds the void: min-height ~56vh + padding even
+     with its canvas hidden (v219 p1 was byte-identical after the #home
+     rule alone). The band is aria-hidden decoration; the h1 above already
+     prints the name, so hide the band outright on paper. */
+  [data-hero-glyph-band] {
+    display: none !important;
+  }
   /* The hero name is an sr-only h1 on screen (BERAT is canvas art). On paper
      the canvas is gone, so the name itself prints as the document title. */
   #home-heading {
@@ -3314,16 +3339,29 @@ html.dark .plain-backdrop {
     break-after: avoid;
   }
 
+  /* Case-study labels are <p> elements, so the heading rule above does
+     not cover them — v219 p7 ended with an orphaned "Problem" label whose
+     body started on p8. Keep each label with its section body. */
+  .journey-case-study-label {
+    break-after: avoid;
+  }
+
   p {
     orphans: 3;
     widows: 3;
   }
 
   /* Keep each record row together where it fits on one page. Project rows
-     carry no row class (featured or none), so they are matched by their
-     data-work-tech attribute, which experience rows share. */
+     are deliberately NOT here (run-4 iter 39): a case-study row with its
+     beforeprint-expanded panel is taller than an A4 page, and
+     break-inside:avoid on a taller-than-page block manufactures a fully
+     blank page in Chromium (v219 bisection: avoid-on = 16 pages with a
+     blank p7; avoid-off for project rows = 15 pages, no blank, pages 1–6
+     byte-identical). Project rows carry no row class (featured or none),
+     so they were matched by their data-work-tech attribute, which
+     experience rows share — experience rows keep avoid via
+     .journey-xp-item below, so this split affects project rows only. */
   .journey-pub-row,
-  article[data-work-tech],
   .journey-xp-item {
     break-inside: avoid;
   }
