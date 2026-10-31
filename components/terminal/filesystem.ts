@@ -1,4 +1,5 @@
 import { portfolio } from "@/data/content";
+import { roleSlug } from "@/lib/role-anchor";
 
 /**
  * Virtual filesystem for the terminal, built from real portfolio content.
@@ -83,6 +84,29 @@ export function buildFilesystem(): FsDir {
     );
   }
 
+  // Keyed by the role title slug — the same key `goto` and search print
+  // for roles (goto <roleSlug>, #role-<roleSlug> anchors), so an explorer
+  // who lists then cats uses the name the shell itself already names.
+  // Summaries carry **emphasis** markers for the rendered site; the
+  // terminal prints plain text, so strip them (never trim prose).
+  const experienceFiles: Record<string, FsFile> = {};
+  for (const e of portfolio.experience) {
+    const name = roleSlug(e.role) + ".txt";
+    experienceFiles[name] = file(
+      [
+        `ROLE: ${e.role}`,
+        e.organization ? `ORGANIZATION: ${e.organization}` : "",
+        `DATES: ${e.dates}`,
+        ``,
+        e.summary.replace(/\*\*/g, ""),
+        ``,
+        `STACK: ${e.technologies.join(", ")}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+
   return dir({
     home: dir({
       bercev: dir({
@@ -116,6 +140,7 @@ export function buildFilesystem(): FsDir {
         projects: dir(projectFiles),
         publications: dir(paperFiles),
         skills: dir(skillFiles),
+        experience: dir(experienceFiles),
       }),
     }),
   });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { portfolio } from "@/data/content";
+import { roleSlug } from "@/lib/role-anchor";
 
 import { buildFilesystem, getNode, listNames } from "./filesystem";
 
@@ -33,6 +34,33 @@ describe("paper files", () => {
     // so the truncated SkillOptimizer name ends mid-word on a dash.
     expect(names).not.toContain("skilloptimizer-agent-skill-optimization-through-.txt");
     expect(names).not.toContain("grokset-multi-party-human-llm-interactions-in-so.txt");
+  });
+});
+
+describe("experience files", () => {
+  it("are keyed by the role slug goto/search print, in portfolio order", () => {
+    const root = buildFilesystem();
+    expect(listNames(root, [...HOME, "experience"])).toEqual(
+      portfolio.experience.map((e) => `${roleSlug(e.role)}.txt`),
+    );
+    expect(listNames(root, HOME)).toContain("experience");
+  });
+
+  it("carry role, organization, dates, plain-text summary, and stack", () => {
+    const root = buildFilesystem();
+    for (const e of portfolio.experience) {
+      const node = getNode(root, [...HOME, "experience", `${roleSlug(e.role)}.txt`]);
+      expect(node?.type).toBe("file");
+      if (node?.type !== "file") continue;
+      expect(node.content).toContain(`ROLE: ${e.role}`);
+      if (e.organization) {
+        expect(node.content).toContain(`ORGANIZATION: ${e.organization}`);
+      }
+      expect(node.content).toContain(`DATES: ${e.dates}`);
+      expect(node.content).toContain(e.summary.replace(/\*\*/g, ""));
+      expect(node.content).not.toContain("**");
+      expect(node.content).toContain(`STACK: ${e.technologies.join(", ")}`);
+    }
   });
 });
 
