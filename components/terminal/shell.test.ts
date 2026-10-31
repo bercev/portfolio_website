@@ -519,6 +519,60 @@ describe("history command", () => {
   });
 });
 
+describe("history -c clears history (run-4 iter 14)", () => {
+  it("empties the list, so Up-arrow recalls nothing and numbering restarts", () => {
+    const h = makeShell();
+    h.type("whoami");
+    h.shell.enter();
+    h.type("pwd");
+    h.shell.enter();
+    h.type("history -c");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("history cleared"))).toBe(true);
+    h.resetLine();
+    h.shell.historyUp();
+    expect(h.line).toBe("");
+    // A later `history` lists only itself: the cleared entries are gone
+    // and the -c line itself did not survive the clear.
+    h.type("history");
+    h.shell.enter();
+    expect(h.printed).toContain("1  history");
+    expect(h.printed.some((l) => /^\d+  (whoami|pwd)$/.test(l))).toBe(false);
+  });
+
+  it("fires onHistoryChange with [] so the persisted store is wiped too", () => {
+    const seen: string[][] = [];
+    const h = makeShell(undefined, undefined, {
+      shellOptions: {
+        initialHistory: ["whoami"],
+        onHistoryChange: (entries) => seen.push(entries),
+      },
+    });
+    h.type("pwd");
+    h.shell.enter();
+    h.type("history -c");
+    h.shell.enter();
+    expect(seen[seen.length - 1]).toEqual([]);
+  });
+
+  it("prints the confirmation and never throws without a history callback", () => {
+    const h = makeShell();
+    h.type("history -c");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("history cleared"))).toBe(true);
+  });
+
+  it("bare history still lists, and help names the -c form", () => {
+    const h = makeShell();
+    h.type("history");
+    h.shell.enter();
+    expect(h.printed).toContain("1  history");
+    h.type("help history");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("history -c"))).toBe(true);
+  });
+});
+
 describe("!! repeat-last-command (run-4 iter 10)", () => {
   it("re-runs the previous command and echoes it first", () => {
     const h = makeShell();

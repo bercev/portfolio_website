@@ -578,7 +578,21 @@ export class Shell {
     this.cb.writeln(`${portfolio.identity.name} — ${portfolio.identity.role}`);
   }
 
-  cmdHistory() {
+  cmdHistory(args: string[] = []) {
+    // `history -c` (bash precedent): wipe the whole list. Unlike bash,
+    // where -c alone leaves the history file untouched until a later
+    // -w, this shell's Terminal persists every onHistoryChange, so
+    // firing it with [] also wipes the persisted store — the next
+    // mount (flyout or contact terminal, same key) starts empty.
+    // The `history -c` line itself was recorded by enter() before
+    // run(), so clearing here removes it too: nothing survives.
+    if (args[0] === "-c") {
+      this.history = [];
+      this.historyIndex = -1;
+      this.opts.onHistoryChange?.([]);
+      this.cb.writeln(`\x1b[32m→ history cleared\x1b[0m`);
+      return;
+    }
     // Stored newest-first (unshift on enter); print oldest-first with
     // bash-style numbering, so the most recent command has the highest
     // number. The `history` invocation itself is already recorded by
@@ -1145,7 +1159,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["vim", "you have been warned"],
   ["clear", "clear the screen"],
   ["exit", "close this terminal"],
-  ["history", "list past commands"],
+  ["history [-c]", "list past commands; -c clears them"],
   ["!!", "repeat the last command"],
   ["!n", "repeat history entry n"],
   ["resume", "open the resume (PDF)"],
@@ -1218,8 +1232,9 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
     "closes the flyout (Esc and the [esc] button do the same)",
   ],
   history: [
-    "usage: history",
+    "usage: history [-c]",
     "lists past commands, oldest first, numbered for !n",
+    "example: history -c — clears the list, including persisted history",
   ],
   "!!": [
     "usage: !!",
@@ -1288,7 +1303,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   experience: (s) => s.cmdExperience(),
   skills: (s) => s.cmdSkills(),
   fortune: (s) => s.cmdFortune(),
-  history: (s) => s.cmdHistory(),
+  history: (s, a) => s.cmdHistory(a),
   resume: (s) => s.cmdResume(),
   links: (s, a) => s.cmdLinks(a),
   open: (s, a) => s.cmdOpen(a),
