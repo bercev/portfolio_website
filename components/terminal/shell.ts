@@ -743,6 +743,50 @@ export class Shell {
     }
   }
 
+  cmdTree(args: string[]) {
+    // Draws the virtual filesystem as an ASCII tree — the one hierarchy
+    // view `ls` cannot give (it lists a single level). Bare `tree` roots
+    // at the working directory; `tree <dir>` roots at that directory; a
+    // file operand prints just itself, GNU-style. Counts follow GNU tree:
+    // directories below the root, files at every level.
+    const target = args[0] ? resolvePath(this.cwd, args[0]) : this.cwd;
+    const node = target ? getNode(this.root, target) : null;
+    if (!node) {
+      this.cb.writeln(`tree: no such file or directory: ${args[0]}`);
+      return;
+    }
+    this.cb.writeln(args[0] ?? displayPath(this.cwd));
+    if (node.type === "file") {
+      this.cb.writeln("");
+      this.cb.writeln("0 directories, 1 file");
+      return;
+    }
+    let dirs = 0;
+    let files = 0;
+    const walk = (dirNode: FsDir, prefix: string) => {
+      const names = Object.keys(dirNode.children);
+      names.forEach((name, i) => {
+        const child = dirNode.children[name];
+        const last = i === names.length - 1;
+        const branch = last ? "└── " : "├── ";
+        const label =
+          child.type === "dir" ? `\x1b[34m${name}/\x1b[0m` : name;
+        this.cb.writeln(`${prefix}${branch}${label}`);
+        if (child.type === "dir") {
+          dirs += 1;
+          walk(child, prefix + (last ? "    " : "│   "));
+        } else {
+          files += 1;
+        }
+      });
+    };
+    walk(node, "");
+    this.cb.writeln("");
+    this.cb.writeln(
+      `${dirs} ${dirs === 1 ? "directory" : "directories"}, ${files} ${files === 1 ? "file" : "files"}`,
+    );
+  }
+
   cmdCd(args: string[]) {
     if (!args[0]) {
       // Bare `cd` is a successful change (to HOME), so it saves the
@@ -1331,6 +1375,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["beratfetch", "bercev, neofetch-style"],
   ["pwd", "print working directory"],
   ["ls [dir]", "list directory contents"],
+  ["tree [dir]", "draw the directory tree"],
   ["cd <dir>", "change directory; cd - goes back"],
   ["cat <file>", "print file contents"],
   ["grep [-i] [-n] [-r] <pattern> <file...>", "search file contents for a line"],
@@ -1378,6 +1423,11 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
   ls: [
     "usage: ls [dir]",
     "example: ls projects/ — list the project files",
+  ],
+  tree: [
+    "usage: tree [dir]",
+    "example: tree projects — the project files as a tree",
+    "bare tree roots at the working directory; a file operand prints itself",
   ],
   cd: [
     "usage: cd <dir>",
@@ -1534,6 +1584,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   beratfetch: (s) => s.cmdBeratfetch(),
   pwd: (s) => s.cmdPwd(),
   ls: (s, a) => s.cmdLs(a),
+  tree: (s, a) => s.cmdTree(a),
   cd: (s, a) => s.cmdCd(a),
   cat: (s, a) => s.cmdCat(a),
   grep: (s, a) => s.cmdGrep(a),

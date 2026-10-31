@@ -1704,3 +1704,65 @@ describe("welcome command (run-4 iter 24)", () => {
     expect(h3.printed.some((l) => l.includes("usage: welcome"))).toBe(true);
   });
 });
+
+describe("tree command (run-4 iter 26)", () => {
+  it("draws the home tree with branches, dir markers, and counts", () => {
+    const h = makeShell();
+    h.type("tree");
+    h.shell.enter();
+    // enter() pushes a leading empty line; the tree root is the first
+    // non-empty line. Dir labels carry ANSI blue, so strip escapes before
+    // asserting branch + name adjacencies.
+    const clean = h.printed.map((l) => l.replace(/\x1b\[[0-9;]*m/g, ""));
+    const lines = clean.filter((l) => l.length > 0);
+    expect(lines[0]).toBe("~");
+    expect(clean.some((l) => l.includes("├── about.txt"))).toBe(true);
+    expect(clean.some((l) => l.includes("projects/"))).toBe(true);
+    expect(clean.some((l) => l.includes("└── experience/"))).toBe(true);
+    expect(clean.some((l) => /│.*vitae\.txt/.test(l))).toBe(true);
+    expect(clean.some((l) => /^4 directories, \d+ files$/.test(l))).toBe(
+      true,
+    );
+  });
+
+  it("roots at a directory operand and counts only its files", () => {
+    const h = makeShell();
+    h.type("tree projects");
+    h.shell.enter();
+    expect(h.printed.filter((l) => l.length > 0)[0]).toBe("projects");
+    expect(
+      h.printed.some((l) => /^0 directories, \d+ files$/.test(l)),
+    ).toBe(true);
+  });
+
+  it("prints a file operand alone and errors on a missing path", () => {
+    const h = makeShell();
+    h.type("tree about.txt");
+    h.shell.enter();
+    expect(h.printed.filter((l) => l.length > 0)[0]).toBe("about.txt");
+    expect(h.printed.some((l) => l === "0 directories, 1 file")).toBe(
+      true,
+    );
+    const h2 = makeShell();
+    h2.type("tree nope");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) =>
+        l.includes("tree: no such file or directory: nope"),
+      ),
+    ).toBe(true);
+  });
+
+  it("completes from the help-derived command list and appears in help", () => {
+    const h = makeShell();
+    h.type("tre");
+    h.shell.tab();
+    expect(h.line).toBe("tree");
+    const h2 = makeShell();
+    h2.type("help tree");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("usage: tree [dir]"))).toBe(
+      true,
+    );
+  });
+});
