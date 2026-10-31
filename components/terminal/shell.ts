@@ -529,6 +529,10 @@ export class Shell {
               ? linkNames.filter((n) => n.startsWith(last.toLowerCase()))
               : tokens[0] === "open" && tokens.length === 2
                 ? openNames.filter((n) => n.startsWith(last.toLowerCase()))
+              : tokens[0] === "cite" && tokens.length === 2
+                ? openablePapers()
+                    .map((p) => p.slug)
+                    .filter((n) => n.startsWith(last.toLowerCase()))
               : tokens[0] === "open" &&
                   tokens.length === 3 &&
                   openablePapers().some(
@@ -1093,6 +1097,44 @@ export class Shell {
     this.cb.openExternal?.(match.url);
   }
 
+  cmdCite(args: string[]) {
+    // Mirrors cmdOpen's paper-by-slug pattern: bare `cite` lists the
+    // papers, `cite <slug>` prints that paper's BibTeX entry verbatim
+    // from data/content.ts (the same strings the publications UI's
+    // copy-BibTeX button copies — never invented here). A shell visitor
+    // who found a paper via `search`/`open` previously had no in-shell
+    // path to its citation; `cat publications/<slug>.txt` prints the
+    // gloss and links but not the BibTeX block. Printed line by line
+    // (the cmdCat convention) so xterm wraps the long single lines
+    // instead of truncating them.
+    const papers = portfolio.publications;
+    if (args.length === 0) {
+      for (const p of papers)
+        this.cb.writeln(`• ${p.slug} — ${p.title.replace(/\.$/, "")}`);
+      const first = papers[0]?.slug ?? "skilloptimizer";
+      this.cb.writeln(
+        `tip: cite ${first} — print that paper's BibTeX entry`,
+      );
+      return;
+    }
+    const slug = projectSlug(args.join(" "));
+    const paper = papers.find((p) => p.slug === slug);
+    if (!paper) {
+      const names = papers.map((p) => p.slug).join(", ");
+      if (openableProjects().some((p) => p.slug === slug)) {
+        this.cb.writeln(
+          `cite: no citation for "${args.join(" ")}" — cite covers papers only, try ${names}`,
+        );
+        return;
+      }
+      this.cb.writeln(
+        `cite: no paper "${args.join(" ")}" — try ${names}`,
+      );
+      return;
+    }
+    for (const line of paper.bibtex.split("\n")) this.cb.writeln(line);
+  }
+
   cmdTheme(args: string[]) {
     // Mirrors cmdLinks/cmdOpen: bare `theme` lists the targets, `theme
     // <name>` switches. Palette names/labels come from THEME_PALETTES —
@@ -1399,6 +1441,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["resume", "open the resume (PDF)"],
   ["links [name]", "open a profile in a new tab"],
   ["open <project|paper> [pdf]", "open a project's site, a paper, or a paper's PDF"],
+  ["cite <paper>", "print a paper's BibTeX entry"],
   ["theme [palette|mode]", "recolor the site or switch light/dark mode"],
   ["sudo hire bercev", "???"],
 ];
@@ -1507,6 +1550,10 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
     "usage: open <project|paper> [pdf]",
     "example: open skilloptimizer pdf — the paper's PDF, not its venue",
   ],
+  cite: [
+    "usage: cite <paper>",
+    "example: cite skilloptimizer — prints the paper's BibTeX entry; bare cite lists the papers",
+  ],
   theme: [
     "usage: theme [palette|mode]",
     "example: theme dark — modes: dark, light, system; palettes: ocean, orchid, citrus, forest, rose",
@@ -1611,6 +1658,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   resume: (s) => s.cmdResume(),
   links: (s, a) => s.cmdLinks(a),
   open: (s, a) => s.cmdOpen(a),
+  cite: (s, a) => s.cmdCite(a),
   theme: (s, a) => s.cmdTheme(a),
   cowsay: (s, a) => s.cmdCowsay(a),
 };

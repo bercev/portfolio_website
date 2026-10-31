@@ -486,6 +486,83 @@ describe("open command", () => {
   });
 });
 
+describe("cite command (run-4 iter 34)", () => {
+  it("prints the SkillOptimizer BibTeX entry verbatim", () => {
+    const h = makeShell();
+    h.type("cite skilloptimizer");
+    h.shell.enter();
+    const out = h.printed.join("\n");
+    expect(out).toContain("@inproceedings{ercevik2026skilloptimizer,");
+    expect(out).toContain(
+      "title={SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision}",
+    );
+    expect(out).toContain("booktitle={ICML 2026 AIWILD Workshop}");
+    expect(out).toContain("url={https://openreview.net/forum?id=nZYF0aPAMP}");
+  });
+
+  it("prints the @GrokSet BibTeX entry verbatim", () => {
+    const h = makeShell();
+    h.type("cite grokset");
+    h.shell.enter();
+    const out = h.printed.join("\n");
+    expect(out).toContain("@article{ercevik2026grokset,");
+    expect(out).toContain("journal={arXiv preprint arXiv:2602.21236}");
+    expect(out).toContain("url={https://arxiv.org/abs/2602.21236}");
+  });
+
+  it("lists both paper slugs plus a tip for bare cite", () => {
+    const h = makeShell();
+    h.type("cite");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("skilloptimizer"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("grokset"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("cite skilloptimizer"))).toBe(
+      true,
+    );
+  });
+
+  it("names both slugs for an unknown paper", () => {
+    const h = makeShell();
+    h.type("cite nope");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("no paper"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("skilloptimizer"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("grokset"))).toBe(true);
+  });
+
+  it("rejects a project slug as papers-only", () => {
+    const h = makeShell();
+    h.type("cite vitae");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("papers only"))).toBe(true);
+    expect(h.printed.some((l) => l.includes("skilloptimizer"))).toBe(true);
+  });
+
+  it("completes ci to cite and a paper slug after cite", () => {
+    const h = makeShell();
+    h.type("ci");
+    h.shell.tab();
+    expect(h.line).toBe("cite");
+    const h2 = makeShell();
+    h2.type("cite sk");
+    h2.shell.tab();
+    expect(h2.line).toBe("cite skilloptimizer");
+  });
+
+  it("appears in help with a detail page", () => {
+    const h = makeShell();
+    h.type("help");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("cite <paper>"))).toBe(true);
+    const h2 = makeShell();
+    h2.type("help cite");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("usage: cite <paper>"))).toBe(
+      true,
+    );
+  });
+});
+
 describe("history command", () => {
   it("lists past commands oldest-first with bash-style numbering", () => {
     const h = makeShell();
