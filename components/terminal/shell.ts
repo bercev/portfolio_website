@@ -567,7 +567,12 @@ export class Shell {
     if (handler) {
       handler(this, args);
     } else if (cmd) {
-      this.cb.writeln(`command not found: ${cmd} — try \x1b[33mhelp\x1b[0m`);
+      const suggestion = suggestCommand(cmd);
+      this.cb.writeln(
+        suggestion
+          ? `command not found: ${cmd} — did you mean "${suggestion}"? — try \x1b[33mhelp\x1b[0m`
+          : `command not found: ${cmd} — try \x1b[33mhelp\x1b[0m`,
+      );
     }
   }
 
@@ -1334,6 +1339,52 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
     "permission denied — the portfolio is immutable, as it should be",
   ],
 };
+
+// Edit-distance between two words (plain Levenshtein: insert, delete,
+// substitute — a transposition costs 2, which the threshold below absorbs
+// for words of 4+ letters, e.g. "serach" -> "search").
+function levenshtein(a: string, b: string): number {
+  const prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i += 1) {
+    let above = prev[0];
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const temp = prev[j];
+      prev[j] = Math.min(
+        prev[j] + 1,
+        prev[j - 1] + 1,
+        above + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      above = temp;
+    }
+  }
+  return prev[b.length];
+}
+
+// Git ("the most similar command is") / zsh (`correct`) "did you mean"
+// convention, suggestion only: the shell NEVER auto-runs the guess —
+// auto-running a guessed command (git help.autocorrect=immediate) would
+// surprise a visitor, and `open`/`theme`/`exit` guesses have side effects.
+// Only alphabetic words are suggested, so history tokens ("!!", "!n")
+// and punctuation keep the bare error; the threshold (1 for 2-letter
+// words, 2 otherwise) keeps "xy" from "suggesting" ls/cd/rm at distance 2.
+function suggestCommand(input: string): string | null {
+  const word = input.toLowerCase();
+  if (!/^[a-z]{2,}$/.test(word)) return null;
+  const maxDistance = word.length <= 2 ? 1 : 2;
+  let best: string | null = null;
+  let bestDistance = maxDistance + 1;
+  for (const candidate of COMMANDS) {
+    if (!/^[a-z]+$/.test(candidate)) continue;
+    const distance = levenshtein(word, candidate);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+      if (distance === 0) break;
+    }
+  }
+  return bestDistance <= maxDistance ? best : null;
+}
 
 const COMMANDS = [
   ...HELP_TEXT.map(([name]) => name.split(" ")[0]),

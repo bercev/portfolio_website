@@ -1434,3 +1434,64 @@ describe("cd - returns to the previous directory (run-4 iter 16)", () => {
     ).toBe(true);
   });
 });
+
+describe("did-you-mean suggestion on unknown commands (run-4 iter 20)", () => {
+  it("suggests goto for gto and search for a transposed serach", () => {
+    const h = makeShell();
+    h.type("gto");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes('command not found: gto')),
+    ).toBe(true);
+    expect(
+      h.printed.some((l) => l.includes('did you mean "goto"')),
+    ).toBe(true);
+    const h2 = makeShell();
+    h2.type("serach foo");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) => l.includes('did you mean "search"')),
+    ).toBe(true);
+  });
+
+  it("suggests case-insensitively and keeps the bare error for far words", () => {
+    const h = makeShell();
+    h.type("GOTO");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes('did you mean "goto"')),
+    ).toBe(true);
+    const h2 = makeShell();
+    h2.type("xyzzy");
+    h2.shell.enter();
+    expect(
+      h2.printed.some((l) => l.includes("command not found: xyzzy")),
+    ).toBe(true);
+    expect(h2.printed.some((l) => l.includes("did you mean"))).toBe(false);
+  });
+
+  it("never suggests for history tokens or two-letter noise", () => {
+    const h = makeShell();
+    h.type("!! foo");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("did you mean"))).toBe(false);
+    const h2 = makeShell();
+    h2.type("xy");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("did you mean"))).toBe(false);
+  });
+
+  it("suggests but never auto-runs the guess", () => {
+    const h = makeShell();
+    h.type("gto projects");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) => l.includes('did you mean "goto"')),
+    ).toBe(true);
+    // No navigation happened: the flyout navigate callback is absent in
+    // this harness, and no project list printed either.
+    expect(h.printed.some((l) => l.includes("shipped projects"))).toBe(
+      false,
+    );
+  });
+});
