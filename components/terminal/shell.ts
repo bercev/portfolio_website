@@ -7,6 +7,11 @@ import {
 } from "@/lib/terminal-goto";
 import { searchPortfolio, searchTerms } from "@/lib/terminal-search";
 import {
+  isThemePalette,
+  THEME_PALETTES,
+  type ThemePalette,
+} from "@/lib/theme-palette";
+import {
   HOME,
   buildFilesystem,
   displayPath,
@@ -79,6 +84,21 @@ export interface ShellCallbacks {
    * window.open. Absent in tests/embeds, where the command just prints.
    */
   openExternal?: (url: string) => void;
+  /**
+   * Current site palette, read live (the shell outlives palette changes
+   * made through the UI selector, so a captured value would go stale).
+   * The real terminal reads document.documentElement.dataset.palette;
+   * absent in tests/embeds, where the bare list simply shows no marker.
+   */
+  getPalette?: () => ThemePalette | null;
+  /**
+   * Recolor the site (the `theme` command). Kept behind a callback like
+   * `navigate`/`openExternal` so the shell stays unit-testable without
+   * React; the real terminal wires it to the palette provider's
+   * setPalette, which persists the choice. Absent in tests/embeds,
+   * where the command prints without throwing.
+   */
+  setPalette?: (palette: ThemePalette) => void;
   /**
    * Live terminal columns, when the shell is wired to a real xterm
    * instance. The erase path needs it: a "\b \b" triple never crosses
@@ -446,7 +466,11 @@ export class Shell {
               ? linkNames.filter((n) => n.startsWith(last.toLowerCase()))
               : tokens[0] === "open" && tokens.length === 2
                 ? openNames.filter((n) => n.startsWith(last.toLowerCase()))
-                : completePath(this.root, this.cwd, last);
+                : tokens[0] === "theme" && tokens.length === 2
+                  ? (Object.keys(THEME_PALETTES) as ThemePalette[]).filter(
+                      (n) => n.startsWith(last.toLowerCase()),
+                    )
+                  : completePath(this.root, this.cwd, last);
       this.completions = candidates;
     }
     if (this.completions.length === 0) return;
@@ -665,6 +689,34 @@ export class Shell {
       `\x1b[32m→ opening ${match.slug} (${match.url})\x1b[0m`,
     );
     this.cb.openExternal?.(match.url);
+  }
+
+  cmdTheme(args: string[]) {
+    // Mirrors cmdLinks/cmdOpen: bare `theme` lists the targets, `theme
+    // <name>` switches. Palette names/labels come from THEME_PALETTES —
+    // the same source the UI theme selector renders, never hardcoded.
+    const names = Object.keys(THEME_PALETTES) as ThemePalette[];
+    if (args.length === 0) {
+      const current = this.cb.getPalette?.() ?? null;
+      for (const name of names) {
+        const label = THEME_PALETTES[name].label;
+        const marker = name === current ? " (current)" : "";
+        this.cb.writeln(`• ${name} — ${label}${marker}`);
+      }
+      this.cb.writeln(`tip: theme orchid — recolor the site`);
+      return;
+    }
+    const name = args.join(" ").toLowerCase();
+    if (!isThemePalette(name)) {
+      this.cb.writeln(
+        `theme: no palette "${args.join(" ")}" — try ${names.join(", ")}`,
+      );
+      return;
+    }
+    this.cb.writeln(
+      `\x1b[32m→ theme: ${THEME_PALETTES[name].label}\x1b[0m`,
+    );
+    this.cb.setPalette?.(name);
   }
 
   cmdGoto(args: string[]) {
@@ -893,6 +945,7 @@ const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["resume", "open the resume (PDF)"],
   ["links [name]", "open a profile in a new tab"],
   ["open <project>", "open a project's live site or source"],
+  ["theme [palette]", "recolor the site"],
   ["sudo hire bercev", "???"],
 ];
 
@@ -931,5 +984,6 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   resume: (s) => s.cmdResume(),
   links: (s, a) => s.cmdLinks(a),
   open: (s, a) => s.cmdOpen(a),
+  theme: (s, a) => s.cmdTheme(a),
   cowsay: (s, a) => s.cmdCowsay(a),
 };

@@ -3,6 +3,9 @@
 import { useEffect, useRef } from "react";
 
 import { dispatchSkillHighlight } from "@/lib/skill-work";
+import { isThemePalette } from "@/lib/theme-palette";
+
+import { usePalette } from "@/components/providers/palette-provider";
 
 import { Shell } from "./shell";
 import {
@@ -55,6 +58,10 @@ export function Terminal({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<Shell | null>(null);
+  // Palette provider wraps the whole page (via ThemeProvider), so both
+  // terminal mounts can recolor the site; the default context degrades
+  // to a no-op setPalette outside a provider (embeds, tests).
+  const { setPalette } = usePalette();
   const termRef = useRef<import("@xterm/xterm").Terminal | null>(null);
   /** A focus request that arrived before async xterm init finished. */
   const pendingFocusRef = useRef(false);
@@ -116,6 +123,14 @@ export function Terminal({
         // unlinked skills itself.
         highlightSkill: (name) => dispatchSkillHighlight(name),
         openExternal: (url) => window.open(url, "_blank", "noopener,noreferrer"),
+        // `theme` command: read the live dataset value (the shell
+        // outlives UI-selector changes, so a captured palette would go
+        // stale) and switch through the provider, which persists it.
+        getPalette: () => {
+          const value = document.documentElement.dataset.palette;
+          return isThemePalette(value) ? value : null;
+        },
+        setPalette: (palette) => setPalette(palette),
         // Live cols (FitAddon refits on resize) so wrapped-line edits
         // redraw the whole logical line instead of per-char erasing.
         cols: () => term?.cols ?? 80,

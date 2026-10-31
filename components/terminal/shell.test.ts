@@ -17,6 +17,8 @@ function makeShell(
   extra?: {
     navigate?: (hash: string) => void;
     highlightSkill?: (name: string) => void;
+    getPalette?: () => import("@/lib/theme-palette").ThemePalette | null;
+    setPalette?: (palette: import("@/lib/theme-palette").ThemePalette) => void;
     shellOptions?: import("./shell").ShellOptions;
   },
 ) {
@@ -82,6 +84,8 @@ function makeShell(
     ...(openExternal ? { openExternal } : {}),
     ...(extra?.navigate ? { navigate: extra.navigate } : {}),
     ...(extra?.highlightSkill ? { highlightSkill: extra.highlightSkill } : {}),
+    ...(extra?.getPalette ? { getPalette: extra.getPalette } : {}),
+    ...(extra?.setPalette ? { setPalette: extra.setPalette } : {}),
   },
   extra?.shellOptions,
   );
@@ -739,5 +743,60 @@ describe("persisted history (run-4 iter 3)", () => {
     });
     h.shell.historyUp();
     expect(h.line).toBe("whoami");
+  });
+});
+
+describe("theme command (run-4 iter 5)", () => {
+  it("lists all five palettes with the current one marked", () => {
+    const h = makeShell(undefined, undefined, { getPalette: () => "ocean" });
+    h.type("theme");
+    h.shell.enter();
+    for (const name of ["ocean", "orchid", "citrus", "forest", "rose"]) {
+      expect(h.printed.some((l) => l.startsWith(`• ${name} —`))).toBe(true);
+    }
+    expect(h.printed.some((l) => l === "• ocean — Ocean (current)")).toBe(true);
+    expect(h.printed.some((l) => l.includes("tip: theme orchid"))).toBe(true);
+  });
+
+  it("switches to a valid palette through the callback", () => {
+    const seen: string[] = [];
+    const h = makeShell(undefined, undefined, {
+      setPalette: (p) => seen.push(p),
+    });
+    h.type("theme orchid");
+    h.shell.enter();
+    expect(seen).toEqual(["orchid"]);
+    expect(h.printed.some((l) => l.includes("theme: Orchid"))).toBe(true);
+  });
+
+  it("prints without throwing when no palette callback is wired", () => {
+    const h = makeShell();
+    h.type("theme rose");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("theme: Rose"))).toBe(true);
+  });
+
+  it("rejects an unknown palette with the valid names", () => {
+    const h = makeShell();
+    h.type("theme ultraviolet");
+    h.shell.enter();
+    expect(
+      h.printed.some((l) =>
+        l.includes('theme: no palette "ultraviolet" — try ocean, orchid, citrus, forest, rose'),
+      ),
+    ).toBe(true);
+  });
+
+  it("completes palette names and appears in help", () => {
+    const h = makeShell();
+    h.type("theme o");
+    h.shell.tab();
+    expect(h.line).toBe("theme ocean");
+    h.shell.tab();
+    expect(h.line).toBe("theme orchid");
+    const h2 = makeShell();
+    h2.type("help");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("theme [palette]"))).toBe(true);
   });
 });
