@@ -273,10 +273,20 @@ export class Shell {
   }
 
   boot() {
+    this.printBanner();
+    this.prompt();
+  }
+
+  /**
+   * The opening banner, shared by boot() and the `welcome` command:
+   * after `clear` (or Ctrl+L) the banner is gone with no way back
+   * short of closing and reopening the flyout, so `welcome` re-prints
+   * exactly these lines — one source, never two copies to drift.
+   */
+  private printBanner() {
     this.cb.writeln(`\x1b[36mbercevOS v2.6 — portfolio shell\x1b[0m`);
     this.cb.writeln(`type \x1b[33mhelp\x1b[0m to see what you can do.`);
     this.cb.writeln(``);
-    this.prompt();
   }
 
   private promptText() {
@@ -921,6 +931,10 @@ export class Shell {
     this.cb.writeln(`hello, visitor. welcome to the machine.`);
   }
 
+  cmdWelcome() {
+    this.printBanner();
+  }
+
   cmdContact() {
     this.cmdCat(["contact.txt"]);
   }
@@ -1312,6 +1326,7 @@ export class Shell {
 
 const HELP_TEXT: ReadonlyArray<readonly [string, string]> = [
   ["help", "show this help — try `help <command>` for details"],
+  ["welcome", "re-print the opening banner"],
   ["whoami", "who is bercev"],
   ["beratfetch", "bercev, neofetch-style"],
   ["pwd", "print working directory"],
@@ -1352,6 +1367,10 @@ const HELP_DETAIL: Record<string, readonly string[]> = {
   help: [
     "usage: help [command]",
     "example: help goto — usage and an example for one command",
+  ],
+  welcome: [
+    "usage: welcome",
+    "re-prints the bercevOS banner — handy after clear",
   ],
   whoami: ["usage: whoami", "prints bercev's name and role"],
   beratfetch: ["usage: beratfetch", "neofetch-style summary of the site"],
@@ -1527,6 +1546,7 @@ const HANDLERS: Record<string, (shell: Shell, args: string[]) => void> = {
   nano: (s) => s.cmdJoke("nano"),
   rm: (s) => s.cmdRm(),
   hello: (s) => s.cmdHello(),
+  welcome: (s) => s.cmdWelcome(),
   contact: (s) => s.cmdContact(),
   goto: (s, a) => s.cmdGoto(a),
   search: (s, a) => s.cmdSearch(a),

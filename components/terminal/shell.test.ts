@@ -1677,3 +1677,30 @@ describe("education command (run-4 iter 23)", () => {
     expect(h3.printed.some((l) => l.includes("usage: education"))).toBe(true);
   });
 });
+
+describe("welcome command (run-4 iter 24)", () => {
+  it("re-prints the boot banner lines exactly", () => {
+    const h = makeShell();
+    h.type("welcome");
+    h.shell.enter();
+    expect(h.printed.some((l) => l.includes("bercevOS v2.6"))).toBe(true);
+    expect(
+      h.printed.some((l) => l.includes("to see what you can do")),
+    ).toBe(true);
+  });
+
+  it("completes from the help-derived command list and appears in help", () => {
+    const h = makeShell();
+    h.type("wel");
+    h.shell.tab();
+    expect(h.line).toBe("welcome");
+    const h2 = makeShell();
+    h2.type("help");
+    h2.shell.enter();
+    expect(h2.printed.some((l) => l.includes("welcome"))).toBe(true);
+    const h3 = makeShell();
+    h3.type("help welcome");
+    h3.shell.enter();
+    expect(h3.printed.some((l) => l.includes("usage: welcome"))).toBe(true);
+  });
+});
