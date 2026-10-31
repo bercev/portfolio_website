@@ -39,7 +39,7 @@ const projectPreviews: Partial<
   >
 > = {
   Vitae: {
-    src: "/assets/projects/vitae.png",
+    src: "/assets/projects/vitae.webp",
     alt: "Vitae landing page: resume version control with Get Started and Why Vitae.",
     chromatic: true,
   },
