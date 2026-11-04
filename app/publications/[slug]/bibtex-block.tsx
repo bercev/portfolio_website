@@ -30,7 +30,7 @@ export function BibtexBlock({ bibtex }: { bibtex: string }) {
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed">
+      <pre className="whitespace-pre-wrap break-words p-4 font-mono text-xs leading-relaxed">
         {bibtex}
       </pre>
     </div>
