@@ -142,7 +142,7 @@ export default async function PublicationPage({
         </a>
         <a
           href={publication.pdfUrl}
-          className="rounded border px-4 py-2 text-sm font-medium underline-offset-4 hover:underline"
+          className="journey-pub-pdf-link rounded border px-4 py-2 text-sm font-medium underline-offset-4 hover:underline"
         >
           Download PDF
         </a>

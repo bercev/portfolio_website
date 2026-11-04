@@ -3282,6 +3282,19 @@ html.dark .plain-backdrop {
     line-height: 1.5;
   }
 
+  /* Print record (run-6 iter 17): the @page margin area sits outside the
+     html box, so the print-whitened html/body above does not reach it —
+     under the site's dark color-scheme Chromium paints the margins
+     rgb(18,18,18) on every page (iter-16 mechanism probe: light
+     color-scheme renders white margins). Forcing light here whitens the
+     margin area itself; screen color-scheme is untouched. */
+  html {
+    /* !important: the screen rules html[data-ascii="active"] and .dark
+       both outrank a bare html selector, so a plain declaration loses
+       and the margins stay dark. Print-scoped, so screen is untouched. */
+    color-scheme: light !important;
+  }
+
   /* Fixed chrome, canvases, and interactive widgets never print. The hooks
      are stable attributes/plain classes, never CSS-module hashes. */
   canvas,
@@ -3304,6 +3317,44 @@ html.dark .plain-backdrop {
      ("Skip SCRUM to main content"). Screen-only chrome; never paper. */
   .skip-link {
     display: none !important;
+  }
+
+  /* Print record (run-6 iter 17, RUN6-PRINT clauses b–d):
+     (b) the experience tech marquee renders its list twice for the loop;
+     the second copy is aria-hidden and clips at the page edge on paper —
+     hide the duplicate items, keeping one list. The selector is li-scoped
+     so the aria-hidden icon svgs inside kept items are untouched.
+     (c) the "View without animations" footer link is screen chrome; it
+     leaked onto the final printed page. Targeted via its own
+     data-motion-version-link hook — NOT .journey-contact-link, which the
+     Elsewhere links share (hiding that class would also kill the GitHub /
+     LinkedIn / resume links whose URLs do print).
+     (d) the pub-page "Download PDF" button points at a relative asset
+     path, so the http-only URL rule prints no destination — dead text on
+     paper, while the paper URL already prints beside it via "Read the
+     paper". Hide the button on paper rather than printing a relative
+     path that is useless off-screen. */
+  .tech-pills-marquee li[aria-hidden="true"],
+  [data-motion-version-link],
+  .journey-pub-pdf-link {
+    display: none !important;
+  }
+
+  /* Print record (run-6 iter 17, RUN6-PRINT clause b, second half): hiding
+     the duplicate loop is not enough — the marquee ul still carries its
+     28s loop animation, and the print snapshot freezes it mid-transit, so
+     the first kept item prints shifted under the edge mask ("Python" came
+     out as "ython" on v6iter17 home-pg-04). Mirror the reduced-motion
+     treatment on paper: static wrapped list, no mask fade, no animation,
+     so the single list starts at the left edge fully visible. */
+  .tech-pills-marquee {
+    mask-image: none;
+  }
+
+  .tech-pills-marquee .tech-pills {
+    flex-wrap: wrap;
+    width: auto;
+    animation: none;
   }
 
   /* The hero is min-h-[100dvh] with a flex-1 BERAT band on screen; in
