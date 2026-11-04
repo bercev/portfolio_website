@@ -268,12 +268,25 @@ html[data-ascii="active"] body {
    The station already carries a scrim, so cards stay light and sit in the
    scene instead of floating as isolated dark blobs — consistent with the
    flat editorial panel language used elsewhere. */
-html[data-ascii="active"] .journey-pub-row,
 html[data-ascii="active"] .journey-project,
 html[data-ascii="active"] .journey-panel:not(.journey-panel--open):not(.journey-panel--strip):not(.journey-panel--ruled) {
   background: rgba(5, 7, 12, 0.3);
   border: 1px solid rgba(125, 211, 252, 0.16);
   border-radius: 0;
+}
+
+/* RUN6-BORDERS (reel 8): publication rows stay quiet rows in ASCII mode
+   too — no box border, no scrim panel; the station's own scrim already
+   carries readability, and the hairline below separates the rows. Project
+   cards and diagram panels keep their boxed chrome (out of scope). */
+html[data-ascii="active"] .journey-pub-row {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--journey-rule-soft);
+}
+
+html[data-ascii="active"] .journey-pub-row:last-child {
+  border-bottom: 0;
 }
 
 /* Body copy gets a stronger halo in ASCII mode. */
@@ -1541,6 +1554,13 @@ html[data-journey] [data-effect-layer="background"] {
   padding: clamp(20px, 2.6vw, 30px) 0;
   background: transparent;
   overflow: visible;
+  /* Quiet row like experience rows (RUN6-BORDERS, reel 8): a hairline
+     between rows, not a bordered card. */
+  border-bottom: 1px solid var(--journey-rule-soft);
+}
+
+.journey-pub-row:last-child {
+  border-bottom: 0;
 }
 
 .journey-pub-index {
