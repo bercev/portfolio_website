@@ -118,7 +118,7 @@ export default async function PublicationPage({
           Publications
         </Link>
       </nav>
-      <p className="text-sm font-medium uppercase tracking-[0.2em] opacity-70">
+      <p className="text-sm font-medium opacity-70">
         {publication.venue} · {publication.date}
       </p>
       <h1 className="mt-4 text-3xl font-semibold leading-tight md:text-4xl">

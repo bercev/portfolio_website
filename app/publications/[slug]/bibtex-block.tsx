@@ -18,7 +18,7 @@ export function BibtexBlock({ bibtex }: { bibtex: string }) {
   return (
     <div className="mt-3 overflow-hidden rounded border">
       <div className="flex items-center justify-between border-b px-4 py-2">
-        <span className="text-xs font-medium uppercase tracking-widest opacity-70">
+        <span className="text-xs font-medium opacity-70">
           BibTeX
         </span>
         <button

@@ -45,8 +45,6 @@
   color: var(--ribbon-accent);
   font-family: var(--font-sans);
   font-size: 0.75rem;
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
 }
 
 :global(.dark) .ribbon {

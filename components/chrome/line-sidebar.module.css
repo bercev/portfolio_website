@@ -121,8 +121,6 @@
   color: color-mix(in srgb, var(--foreground) 72%, transparent);
   font-family: var(--font-sans);
   font-size: 0.75rem;
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
   text-decoration: none;
   transform: translateX(calc(var(--effect) * 0.35rem));
   transition: color 100ms ease-out;

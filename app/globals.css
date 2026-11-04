@@ -1324,8 +1324,6 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-spec-row dt {
   margin: 0;
   font: 400 10px/1.7 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
@@ -1734,8 +1732,6 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-pub-venue,
 .journey-pub-date {
   font: 400 11px/1.45 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
@@ -1842,8 +1838,6 @@ html[data-journey] [data-effect-layer="background"] {
 
 .journey-xp-when {
   font: 500 11px/1.5 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
   color: var(--muted-foreground);
   font-variant-numeric: tabular-nums;
 }
@@ -1851,8 +1845,6 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-xp-org {
   margin: 0;
   font: 400 11px/1.5 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
   color: var(--portfolio-accent);
 }
 
