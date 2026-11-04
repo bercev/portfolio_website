@@ -1918,10 +1918,16 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
+/* Run-6 RUN6-PILLS (reel 1): tech stacks are quiet text, not pill
+   chrome — no border, background, or capsule radius. Class names are
+   kept: e2e locators, the skill→work data-tech delegation, and the
+   skill-match class toggle all still resolve to these elements. The
+   padding-block + negative-margin pair keeps the delegated click target
+   at 24px (the run-3 iter-17 census pattern) without visual padding. */
 .tech-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.25rem 0.9rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1931,19 +1937,11 @@ html[data-journey] [data-effect-layer="background"] {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.34rem 0.72rem 0.34rem 0.58rem;
-  border: 1px solid var(--journey-rule);
-  border-radius: 999px;
-  color: var(--foreground);
-  background: color-mix(in srgb, var(--card) 50%, transparent);
+  padding-block: 4.5px;
+  margin-block: -4.5px;
+  color: var(--muted-foreground);
   font: 500 0.78rem/1.2 var(--font-sans);
   letter-spacing: -0.01em;
-}
-
-html:not(.dark) .tech-pill,
-html:not(.dark) .skill-pill {
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  border-color: color-mix(in srgb, var(--foreground) 22%, transparent);
 }
 
 .tech-pill-icon {
@@ -2278,16 +2276,23 @@ html:not(.dark) .skill-pill {
   display: none;
 }
 
+/* Run-6 RUN6-PILLS (reel 1): the skills ticker is quiet text, not
+   pill chrome — the motion (JS-driven track) stays, the capsules go.
+   Middot separators keep the continuous ticker parseable; the duplicated
+   loop copy gets its separator too, so the wrap reads continuously. */
 .skill-pill {
   flex: none;
-  padding: 0.48rem 0.95rem;
-  border: 1px solid var(--journey-rule);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 55%, transparent);
-  color: var(--foreground);
+  padding: 0.2rem 0;
+  color: var(--muted-foreground);
   font: 500 0.92rem/1.2 var(--font-sans);
   letter-spacing: -0.01em;
   white-space: nowrap;
+}
+
+.skill-marquee-track > li + li::before {
+  content: "·";
+  margin-right: 0.65rem;
+  color: var(--muted-foreground);
 }
 
 @keyframes skill-marquee {
@@ -2436,8 +2441,9 @@ a.skills-ledger-note {
   color: var(--portfolio-accent);
 }
 
-/* Highlighted work rows + pills: an accent outline on the row, an
-   accent pill for the exact matching tech — nothing is hidden. */
+/* Highlighted work rows + tech: an accent outline on the row, accent
+   text + underline for the exact matching tech (run-6: no pill fill) —
+   nothing is hidden. */
 [data-work-tech].is-skill-match {
   outline: 1px solid color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
   outline-offset: 6px;
@@ -2445,8 +2451,9 @@ a.skills-ledger-note {
 }
 
 .tech-pill.is-skill-match-pill {
-  border-color: var(--portfolio-accent);
-  background: color-mix(in srgb, var(--portfolio-accent) 18%, transparent);
+  color: var(--portfolio-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Reverse navigation (run-3 iter 23): a linked project-row pill
@@ -2877,7 +2884,10 @@ html[data-journey="active"] [data-hero-name-fallback] {
   min-height: 7rem;
   line-height: 1.5;
 }
-/* Topic chips (run-3 iter 2): text-only, FROST-only, static under
+/* Topic chips (run-3 iter 2; run-6 RUN6-PILLS restyle): quiet text
+   buttons, not pill chrome — no border, background, or capsule radius.
+   They stay real buttons (tap-to-start topics), with the active topic
+   in accent + underline instead of an accent fill. Static under
    reduced motion (no animation anywhere in this block). */
 .journey-contact-form-topics {
   margin-bottom: 1rem;
@@ -2885,31 +2895,31 @@ html[data-journey="active"] [data-hero-name-fallback] {
 .journey-contact-form-topic-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.5rem 1rem;
 }
 .journey-contact-form-topic-chip {
   font: inherit;
   font-size: 0.82rem;
-  padding: 0.35rem 0.85rem;
-  color: var(--portfolio-accent);
+  padding: 0.35rem 0.25rem;
+  color: var(--muted-foreground);
   background: transparent;
-  border: 1px solid rgba(125, 211, 252, 0.35);
-  border-radius: 999px;
+  border: 0;
   cursor: pointer;
-  transition: border-color 0.15s ease-out, background-color 0.15s ease-out;
+  transition: color 0.15s ease-out;
 }
 .journey-contact-form-topic-chip:hover:not(:disabled) {
-  background: rgba(125, 211, 252, 0.12);
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .journey-contact-form-topic-chip:focus-visible {
-  outline: none;
-  border-color: var(--portfolio-accent);
-  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.18);
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
 }
 .journey-contact-form-topic-chip[aria-pressed="true"] {
-  color: #05070c;
-  background: var(--portfolio-accent);
-  border-color: var(--portfolio-accent);
+  color: var(--portfolio-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   font-weight: 600;
 }
 .journey-contact-form-topic-chip:disabled {
