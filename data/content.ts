@@ -430,7 +430,7 @@ export const portfolio = {
     },
   ],
   contact: {
-    heading: "Let’s connect.",
+    heading: "Let’s connect",
     message: "If you are hiring software engineers, I want to hear from you.",
     links: profileLinks,
   },
