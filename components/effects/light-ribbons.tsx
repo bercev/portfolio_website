@@ -17,6 +17,11 @@ import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
  * in the accent family, rendered as thin vertical slices from soft
  * vertical-gradient sprites onto a half-resolution offscreen, composited
  * additively with a ~4px blur pass (sheets, not strands, no banding).
+ * A 5th narrow "edge" band was tried in run-7 iter 5 to give the
+ * desktop pair a trackable leading edge (parallel, then counter-
+ * diagonal) and reverted after two fresh strict critics failed it —
+ * see the DESKTOP_RIBBONS comment. The rail guard in energy() is the
+ * shipped part of that iteration.
  * Motion v2 params: phase-travel periods 9–14s, wobble 34–52px /
  * 18–26px, lateral drift ±60–90px on 11.5–14s cycles, vertical glide
  * ±20–30px, brightness breathing ±16–20% on 7.3–8.6s cycles — fast
@@ -176,6 +181,27 @@ const NARROW_RIBBONS: ReadonlyArray<RibbonDef> = [  {
  * ×1.15, in-column energy 0.34 → 0.50, halo 0.40 → 0.30. Same four
  * bands, same hue family, same soft look — no 5th low band on
  * desktop (its problem is faintness, not coverage).
+ *
+ * Desktop edge band — ATTEMPTED AND REVERTED in run-7 iter 5
+ * (RUN7-MOTION-EDGE): a 5th narrow bright band was added to give
+ * the desktop pair a trackable leading edge, first parallel to the
+ * others (y0 0.18, slope +0.24), then counter-diagonal (y0 0.42,
+ * slope −0.20) with a sharper sprite — and BOTH versions failed a
+ * fresh strict critic at a glance (the band blends into the other
+ * diffuse sheets; displacement in 3s is small vs band width, so old
+ * and new positions overlap; the pair reads as brightness breathing,
+ * pixel diff spread across the whole top half, mean |Δ| 7.3/255).
+ * The band was reverted rather than shipped on a failed gate; the
+ * rail guard in energy() (the one clear fix from the same iteration)
+ * stays. The item remains open with the refined diagnosis: a
+ * trackable object needs to be distinguishable AS an object —
+ * sharper edge, clearly higher contrast than the parallel sheets,
+ * and enough 3s displacement that old/new positions don't overlap —
+ * without becoming a neon streak. That is a bigger redesign than a
+ * parameter tweak, for a later iteration. The first version also
+ * washed out the left-rail "Home" label when its bright core drifted
+ * over the nav column (legibility critic, 3× crop confirmed) — which
+ * is what the rail guard fixes.
  */
 const DESKTOP_RIBBONS: ReadonlyArray<RibbonDef> = [
   {
@@ -412,6 +438,17 @@ export function LightRibbons() {
       if (x < colL) sx = minS + (1 - minS) * smooth(0, F, colL - x);
       else if (x > colR) sx = minS + (1 - minS) * smooth(0, F, x - colR);
       else sx = minS;
+      // Rail guard (desktop only, run-7 iter 5 in-iteration tuning):
+      // the left rail's small muted labels (x ≈ 8–110) washed out when
+      // the bright edge band's core drifted over them (legibility critic,
+      // 3× crop: "Home" pale-on-pale in v7iter5-desktop-about). Cap the
+      // ribbon energy over that strip — ~0.30 at the text, feathering to
+      // full by x ≈ 260 — so even the brightest band stays legible there.
+      // Inside the column the cap never binds (minS 0.50 is lower), and
+      // the top glow is painted separately, unaffected.
+      if (W >= 700 && x < 260) {
+        sx = Math.min(sx, 0.3 + 0.7 * smooth(0, 260, x));
+      }
       const vf = 1 - 0.5 * smooth(H * 0.12, H * 0.85, y);
       return sx * vf;
     };
