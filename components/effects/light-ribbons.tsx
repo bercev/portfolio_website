@@ -134,6 +134,22 @@ import { BLUE_NOISE_128 } from "@/lib/blue-noise";
  *   rail guard, halo) is untouched; reduced motion = static
  *   (velocity never sampled, no rAF loop).
  *
+ * - Time-of-day light sets (run-7 iter 20, RUN7-EXP-DAYLIGHT): the
+ *   ribbon layer gets four sets keyed to the visitor's LOCAL hour
+ *   (morning/day/dusk/night, after Bruno Simon's rebuilt portfolio,
+ *   which defines a colour set per time of day and fades gradually
+ *   between phases). The sets stay inside the cyan family + live
+ *   theme tokens — same hues, shifting only lightness/energy/role-
+ *   mix (day = brighter pale ribbons + higher alpha, night = deeper
+ *   blues + dimmer ambient + stronger flare contrast) — so the 2+1
+ *   discipline holds and no new hue enters. The set lerps gradually
+ *   on mount (identity → active set, ~0.6/s chase) and at hour
+ *   boundaries; reduced motion = static frame of the active set
+ *   (the repaint snaps to the target, no animation). DISTINCT from
+ *   chapters (scroll position), scrub/velocity (scroll coupling):
+ *   this is the light telling a story about WHEN you visit, and it
+ *   changes even at rest.
+ *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
  *   "active"] — EffectStage uses that claim to keep the loud Neural Ink
@@ -624,6 +640,106 @@ export function velocityEnvelopeStep(
 }
 
 /**
+ * Time-of-day light sets (run-7 iter 20, RUN7-EXP-DAYLIGHT): four sets
+ * keyed to the visitor's LOCAL hour, after Bruno Simon's rebuilt
+ * portfolio (rickcreates.com case-study writeup, read in full in
+ * run-7 iter 18) — he defines a colour set per time of day (day peach
+ * #FFD2C2 / purple shadows #6D3FFF, dusk coral #FF8181, dawn orange
+ * #FFA882 / magenta #DB004F, night deep blue #3240FF 3x brighter with
+ * lantern glow strongest) and fades gradually between phases over a
+ * 4-minute day-night cycle. Ours keeps his STRUCTURE (a set per time
+ * of day, gradual fade) but not his hues: the sets shift only
+ * lightness/energy/role-mix inside the live cyan family + theme
+ * tokens — day is brighter pale light at higher alpha, night is
+ * deeper blues at dimmer ambient with a stronger flare contrast — so
+ * the 2+1 discipline holds and no new hue enters. A set is a small
+ * multiplier set over the base ribbon profile, the same shape as a
+ * chapter profile's role mix, and it composes with chapters (daylight
+ * x chapter) rather than replacing them.
+ */
+export type DaylightSetName = "morning" | "day" | "dusk" | "night";
+
+export interface DaylightProfile {
+  /** Overall ribbon alpha multiplier. */
+  alpha: number;
+  /** Pale-role alpha multiplier (the bright daylight wash). */
+  pale: number;
+  /** Deep-role alpha multiplier (the night blues). */
+  deep: number;
+  /** Bright-role alpha multiplier (the peak carrier band). */
+  bright: number;
+  /** Flare head/tail alpha multiplier (night contrast). */
+  flare: number;
+}
+
+/** The identity set: the approved reference look, before any set applies. */
+export const DAYLIGHT_IDENTITY: DaylightProfile = {
+  alpha: 1,
+  pale: 1,
+  deep: 1,
+  bright: 1,
+  flare: 1,
+};
+
+export const DAYLIGHT_PROFILES: Record<DaylightSetName, DaylightProfile> = {
+  // Set spacing (run-7 iter 20 in-iteration tuning): the first values
+  // (day 1.15 / night 0.80, a 1.44x gap) FAILED a fresh critic — the
+  // day/night difference was invisible at a glance. The diagnosis:
+  // brightness breathing is ±16–20% per band, so day-min (1.15×0.80
+  // = 0.92) and night-max (0.80×1.20 = 0.96) OVERLAP — any two frames
+  // differ by breathing as much as by set, and the rendered luma only
+  // moved ~10% (130.2 vs 118.7). The gap has to exceed the breathing
+  // range: day 1.40 / night 0.70 is a 2.0x gap (day-min 1.12 vs
+  // night-max 0.84 — separated), with the role mix widened the same
+  // way (day pale 1.40, night deep 1.40). If a fresh critic still
+  // cannot tell them apart at a glance, the effect is unfixable
+  // inside the cyan-family/2+1 constraints and the build reverts.
+  // Dawn/morning: soft fresh light — a gentle pale lift, everything
+  // else near identity.
+  morning: { alpha: 1.1, pale: 1.25, deep: 1.0, bright: 1.05, flare: 1.0 },
+  // Midday: the brightest set — brighter pale ribbons, higher alpha,
+  // the flare slightly tamed (it needs less help against bright sheets).
+  day: { alpha: 1.4, pale: 1.4, deep: 0.9, bright: 1.1, flare: 0.85 },
+  // Dusk: dimmer ambient, deeper blues starting to lead, flare
+  // contrast rising as the sheets dim.
+  dusk: { alpha: 0.85, pale: 0.9, deep: 1.3, bright: 1.15, flare: 1.3 },
+  // Night: the dimmest ambient, deepest blues, strongest flare
+  // contrast — the flare is the lantern glow in the dark.
+  night: { alpha: 0.7, pale: 0.85, deep: 1.4, bright: 1.1, flare: 1.5 },
+};
+
+/** Chase rate for the set crossfade (per second): ~1.7s time constant,
+ * settled in ~5s — gradual on mount and at hour boundaries, never a
+ * snap, and fast enough that a verification pass can watch it land. */
+export const DAYLIGHT_CHASE_RATE = 0.6;
+
+/** The set for a local hour (0–23). Boundaries: morning 05–11, day
+ * 11–17, dusk 17–20, night 20–05. A non-finite hour falls back to day
+ * (the brightest, safest read); out-of-range hours wrap mod 24. */
+export function daylightSetForHour(hour: number): DaylightSetName {
+  if (!Number.isFinite(hour)) return "day";
+  const h = ((Math.floor(hour) % 24) + 24) % 24;
+  if (h >= 5 && h < 11) return "morning";
+  if (h >= 11 && h < 17) return "day";
+  if (h >= 17 && h < 20) return "dusk";
+  return "night";
+}
+
+export function lerpDaylightProfile(
+  a: DaylightProfile,
+  b: DaylightProfile,
+  k: number,
+): DaylightProfile {
+  return {
+    alpha: a.alpha + (b.alpha - a.alpha) * k,
+    pale: a.pale + (b.pale - a.pale) * k,
+    deep: a.deep + (b.deep - a.deep) * k,
+    bright: a.bright + (b.bright - a.bright) * k,
+    flare: a.flare + (b.flare - a.flare) * k,
+  };
+}
+
+/**
  * A band's centerline height at x, pure in its inputs so the scrub
  * math is unit-testable. `ct` is the chapter clock (ms); `scrubPhase`
  * is the scroll-derived phase offset in radians, added to the two
@@ -817,6 +933,17 @@ export function LightRibbons() {
     let lastVelT = -1;
     let lastVelProbe = "";
 
+    // Daylight (RUN7-EXP-DAYLIGHT): the time-of-day set currently
+    // rendered, chased toward the set for the visitor's local hour.
+    // Starts at identity so the mount crossfades in gradually; the
+    // target is re-resolved every frame, so an hour boundary
+    // crossfades instead of snapping. Reduced motion snaps (no loop
+    // to chase in — the static repaint takes the target directly).
+    let daylightCur: DaylightProfile = { ...DAYLIGHT_IDENTITY };
+    let daylightTarget: DaylightProfile = { ...DAYLIGHT_IDENTITY };
+    let daylightSetName: DaylightSetName | null = null;
+    let lastDaylightProbe = "";
+
     /** Resolve the section owning the viewport center (cheap: rects
      * are re-read only when the scroll position or height changed). */
     const updateChapter = (now: number) => {
@@ -979,6 +1106,33 @@ export function LightRibbons() {
       lastT = t;
       updateChapter(t);
       stepChapter(t);
+      // Daylight (RUN7-EXP-DAYLIGHT): resolve the set from the
+      // visitor's local hour every frame and chase toward it — the
+      // mount crossfades in from identity and an hour boundary
+      // crossfades instead of snapping. Reduced motion snaps to the
+      // target (the static repaint has no loop to chase in). The
+      // probe hook reports the set name + the lerped alpha for
+      // verification (a mocked hour in tests reads here).
+      const setName = daylightSetForHour(new Date().getHours());
+      if (setName !== daylightSetName) {
+        daylightSetName = setName;
+        daylightTarget = DAYLIGHT_PROFILES[setName];
+        canvas.dataset.daylightSet = setName;
+      }
+      if (reduced) {
+        daylightCur = { ...daylightTarget };
+      } else {
+        daylightCur = lerpDaylightProfile(
+          daylightCur,
+          daylightTarget,
+          1 - Math.exp(-DAYLIGHT_CHASE_RATE * (dt / 1000)),
+        );
+      }
+      const dlProbe = daylightCur.alpha.toFixed(2);
+      if (dlProbe !== lastDaylightProbe) {
+        lastDaylightProbe = dlProbe;
+        canvas.dataset.daylightAlpha = dlProbe;
+      }
       // Scroll velocity (RUN7-EXP-SCROLL-VELOCITY): sample the scroll
       // position every frame and step the envelope toward the target
       // for the measured velocity — fast attack while scrolling, slow
@@ -1070,11 +1224,25 @@ export function LightRibbons() {
               : r.role === "deep"
                 ? chapterCur.deep
                 : 1;
+        // Daylight (RUN7-EXP-DAYLIGHT): the set shifts the pale/deep/
+        // bright balance inside the live cyan family, the same shape
+        // as the chapter role mix — it composes (daylight x chapter),
+        // never a new hue.
+        const daylightRoleScale =
+          r.role === "bright"
+            ? daylightCur.bright
+            : r.role === "pale"
+              ? daylightCur.pale
+              : r.role === "deep"
+                ? daylightCur.deep
+                : 1;
         const ba =
           r.alpha *
           alphaScale *
           chapterCur.alpha *
+          daylightCur.alpha *
           roleScale *
+          daylightRoleScale *
           (1 + r.bd * Math.sin((tChapter * 6.2832) / r.bp + r.bph));
         for (let ox = 0; ox < off.width; ox += step) {
           const xCss = (ox + step / 2) / S;
@@ -1206,13 +1374,17 @@ export function LightRibbons() {
             for (let k = 5; k >= 1; k--) {
               const tx = headX - k * spacing;
               const ty = centerY(host, tx, tChapter);
-              const a = env * 0.5 * (1 - k / 6) * energy(tx, ty);
+              const a =
+                env * 0.5 * (1 - k / 6) * energy(tx, ty) * daylightCur.flare;
               if (a < 0.004) continue;
               const d = headR * (1 - k / 8) * 2;
               ctx.globalAlpha = Math.min(1, a);
               ctx.drawImage(flareSprite, tx - d / 2, ty - d / 2, d, d);
             }
-            const ha = env * 1.0 * energy(headX, headY);
+            // Daylight (RUN7-EXP-DAYLIGHT): the flare is the night
+            // set's lantern glow — its contrast rises as the sheets
+            // dim, and is slightly tamed at midday.
+            const ha = env * 1.0 * energy(headX, headY) * daylightCur.flare;
             if (ha >= 0.004) {
               const d = headR * 2;
               ctx.globalAlpha = Math.min(1, ha);

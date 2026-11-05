@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   CHAPTER_PROFILES,
+  DAYLIGHT_CHASE_RATE,
+  DAYLIGHT_IDENTITY,
+  DAYLIGHT_PROFILES,
   DITHER_SEAM_HEIGHT,
   SCRUB_CHASE_RATE,
   SCRUB_CYCLES,
@@ -11,10 +14,12 @@ import {
   VELOCITY_FULL_SPEED,
   VELOCITY_SPEED_BOOST,
   chaseValue,
+  daylightSetForHour,
   dissolveLevelAt,
   ditherSeamPasses,
   getChapterProfile,
   lerpChapterProfile,
+  lerpDaylightProfile,
   measureScrollVelocity,
   resolveActiveChapter,
   ribbonCenterY,
@@ -396,5 +401,110 @@ describe("scroll velocity", () => {
     // wider mid-fling.
     const boosted = ribbonCenterY(band, 720, 1000, 0, 800, 0, 1.5);
     expect(Math.abs(boosted - rest)).toBeGreaterThan(1);
+  });
+});
+
+describe("daylight sets", () => {
+  it("maps local hours to the four sets at the documented boundaries", () => {
+    // Night 20–05, morning 05–11, day 11–17, dusk 17–20.
+    expect(daylightSetForHour(0)).toBe("night");
+    expect(daylightSetForHour(4)).toBe("night");
+    expect(daylightSetForHour(5)).toBe("morning");
+    expect(daylightSetForHour(10)).toBe("morning");
+    expect(daylightSetForHour(11)).toBe("day");
+    expect(daylightSetForHour(16)).toBe("day");
+    expect(daylightSetForHour(17)).toBe("dusk");
+    expect(daylightSetForHour(19)).toBe("dusk");
+    expect(daylightSetForHour(20)).toBe("night");
+    expect(daylightSetForHour(23)).toBe("night");
+    // Fractional hours floor to the hour; out-of-range wraps mod 24.
+    expect(daylightSetForHour(10.9)).toBe("morning");
+    expect(daylightSetForHour(24)).toBe("night");
+    expect(daylightSetForHour(29)).toBe("morning");
+  });
+
+  it("falls back to the brightest set for a non-finite hour", () => {
+    expect(daylightSetForHour(Number.NaN)).toBe("day");
+    expect(daylightSetForHour(Number.POSITIVE_INFINITY)).toBe("day");
+  });
+
+  it("keeps every set a modest multiplier inside the cyan family — no new hue, no washout", () => {
+    // All multipliers stay in [0.7, 1.5]: a set rebalances the light,
+    // it never doubles it or kills it. The 1.5 cap is the night flare
+    // (the lantern glow); the 2.0x day/night alpha gap is deliberate
+    // (in-iteration tuning — a 1.44x gap was invisible against the
+    // ±20% brightness breathing, so the gap has to exceed it).
+    for (const profile of Object.values(DAYLIGHT_PROFILES)) {
+      for (const v of Object.values(profile)) {
+        expect(v).toBeGreaterThanOrEqual(0.7);
+        expect(v).toBeLessThanOrEqual(1.5);
+      }
+    }
+    // The identity set is the approved reference look.
+    expect(DAYLIGHT_IDENTITY).toEqual({
+      alpha: 1,
+      pale: 1,
+      deep: 1,
+      bright: 1,
+      flare: 1,
+    });
+  });
+
+  it("orders the sets by energy: day brightest, night dimmest with the strongest flare", () => {
+    expect(DAYLIGHT_PROFILES.day.alpha).toBeGreaterThan(
+      DAYLIGHT_PROFILES.morning.alpha,
+    );
+    expect(DAYLIGHT_PROFILES.morning.alpha).toBeGreaterThan(
+      DAYLIGHT_PROFILES.dusk.alpha,
+    );
+    expect(DAYLIGHT_PROFILES.dusk.alpha).toBeGreaterThan(
+      DAYLIGHT_PROFILES.night.alpha,
+    );
+    // Day lifts the pale wash most; night lifts the deep blues most.
+    expect(DAYLIGHT_PROFILES.day.pale).toBeGreaterThan(
+      DAYLIGHT_PROFILES.night.pale,
+    );
+    expect(DAYLIGHT_PROFILES.night.deep).toBeGreaterThan(
+      DAYLIGHT_PROFILES.day.deep,
+    );
+    // Night is the lantern set: strongest flare contrast; day tames it.
+    expect(DAYLIGHT_PROFILES.night.flare).toBeGreaterThan(
+      DAYLIGHT_PROFILES.dusk.flare,
+    );
+    expect(DAYLIGHT_PROFILES.dusk.flare).toBeGreaterThan(
+      DAYLIGHT_PROFILES.day.flare,
+    );
+  });
+
+  it("interpolates sets linearly, endpoints exact", () => {
+    const mid = lerpDaylightProfile(
+      DAYLIGHT_PROFILES.day,
+      DAYLIGHT_PROFILES.night,
+      0.5,
+    );
+    expect(mid.alpha).toBeCloseTo(
+      (DAYLIGHT_PROFILES.day.alpha + DAYLIGHT_PROFILES.night.alpha) / 2,
+    );
+    expect(mid.flare).toBeCloseTo(
+      (DAYLIGHT_PROFILES.day.flare + DAYLIGHT_PROFILES.night.flare) / 2,
+    );
+    expect(
+      lerpDaylightProfile(DAYLIGHT_IDENTITY, DAYLIGHT_PROFILES.dusk, 0),
+    ).toEqual(DAYLIGHT_IDENTITY);
+    expect(
+      lerpDaylightProfile(DAYLIGHT_IDENTITY, DAYLIGHT_PROFILES.dusk, 1),
+    ).toEqual(DAYLIGHT_PROFILES.dusk);
+  });
+
+  it("keeps the mount crossfade gradual: ~0.6/s settles in about 5s", () => {
+    expect(DAYLIGHT_CHASE_RATE).toBe(0.6);
+    // One second of chasing from identity toward night covers
+    // 1 - e^-0.6 of the gap — visibly moving, not snapped.
+    const after1s = chaseValue(1, 0.7, DAYLIGHT_CHASE_RATE, 1);
+    expect(after1s).toBeCloseTo(1 - 0.3 * (1 - Math.exp(-0.6)), 6);
+    expect(after1s).toBeGreaterThan(0.85);
+    // Five seconds is ~95% settled.
+    const after5s = chaseValue(1, 0.7, DAYLIGHT_CHASE_RATE, 5);
+    expect(after5s).toBeCloseTo(0.71, 2);
   });
 });
