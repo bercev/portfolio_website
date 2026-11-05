@@ -26,6 +26,24 @@ import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
  * 18–26px, lateral drift ±60–90px on 11.5–14s cycles, vertical glide
  * ±20–30px, brightness breathing ±16–20% on 7.3–8.6s cycles — fast
  * enough that two hero frames 3s apart show obvious ribbon travel.
+ * Run-7 iter 7 adds ONE traveling flare (RUN7-MOTION-FLARE) riding
+ * the central "bright" band's centerline — a compact bright head +
+ * short fading tail, the trackable object the two reverted edge bands
+ * (iter 5) failed to be: ~180px/s desktop so it moves ~540px in 3s
+ * with zero overlap between old/new positions, one crossing every
+ * ~12s with a 3s pause and fade in/out at the ends, never a permanent
+ * neon line. Narrow screens run the head SLOWER (~90px/s, bigger head,
+ * tighter tail — in-iteration tuning after the strict critic failed
+ * the mobile pair: at 140px/s the head crossed the whole 390px
+ * viewport between the pair's frames, so no 3s-apart pair could ever
+ * show it twice; at 90px/s it stays on-screen across the pair and
+ * still moves ~270px in 3s).
+ * The head is drawn SHARP on the main canvas (unblurred, over the
+ * blurred sheets — the Codrops sharp-core-over-blurred-glow lesson),
+ * AFTER the column halo (the halo dimmed the first version's head to
+ * +38 luma — invisible at a glance), in the live accent family, with
+ * the same energy() suppression (column + rail guard) as the bands;
+ * reduced motion = absent.
  * Narrow screens (W < 700) run the faster NARROW_RIBBONS profile
  * (run-7 iter 2, RUN7-MOTION-VIS) — see its comment below. Desktop
  * runs DESKTOP_RIBBONS (same iteration, in-iteration tuning after
@@ -296,6 +314,28 @@ function makeSprite(rgb: Rgb): HTMLCanvasElement {
   return c;
 }
 
+/**
+ * Flare head sprite (run-7 iter 7, RUN7-MOTION-FLARE): a compact
+ * radial glow — near-white core, bright mid, accent falloff — drawn
+ * sharp on the main canvas, never through the blur pass, so the head
+ * reads as a distinct object against the soft sheets.
+ */
+function makeFlareSprite(bright: Rgb, accent: Rgb): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = 96;
+  c.height = 96;
+  const g = c.getContext("2d");
+  if (!g) return c;
+  const grad = g.createRadialGradient(48, 48, 0, 48, 48, 48);
+  grad.addColorStop(0.0, rgba(mix(bright, WHITE, 0.45), 1));
+  grad.addColorStop(0.28, rgba(bright, 0.95));
+  grad.addColorStop(0.5, rgba(accent, 0.35));
+  grad.addColorStop(1.0, rgba(accent, 0));
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 96, 96);
+  return c;
+}
+
 const smooth = (a: number, b: number, x: number): number => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -306,6 +346,7 @@ export function LightRibbons() {
   const spritesRef = useRef<Record<RibbonRole, HTMLCanvasElement> | null>(
     null,
   );
+  const flareSpriteRef = useRef<HTMLCanvasElement | null>(null);
   const bgRef = useRef<Rgb>({ r: 5, g: 7, b: 12 });
   const accentRef = useRef<Rgb>({ r: 125, g: 211, b: 252 });
   // Under reduced motion there is no loop to pick up rebuilt sprites, so
@@ -348,6 +389,7 @@ export function LightRibbons() {
       pale: makeSprite(colors.pale),
       accent: makeSprite(colors.accent),
     };
+    flareSpriteRef.current = makeFlareSprite(colors.bright, colors.accent);
     repaintStaticRef.current?.();
   }, []);
 
@@ -560,6 +602,81 @@ export function LightRibbons() {
       halo.addColorStop(1, rgba(bg, 0));
       ctx.fillStyle = halo;
       ctx.fillRect(0, 0, W, H);
+
+      // Traveling flare (run-7 iter 7, RUN7-MOTION-FLARE): one compact
+      // bright head + short fading tail riding the central "bright"
+      // band's centerline. The head moves ~180px/s desktop (~90 narrow
+      // — see the header note: at 140px/s the narrow head crossed the
+      // whole 390px viewport between the pair's frames, so no 3s-apart
+      // pair could show it twice), so in 3s it travels ~540px desktop
+      // (~270 narrow) — old and new positions do not overlap, which is
+      // what the two reverted edge bands failed (their 3s displacement
+      // was small vs band width). One crossing every ~12s (desktop) with
+      // a 3s pause and fade in/out at the ends — intermittent, never a
+      // permanent neon line. Drawn SHARP
+      // on the main canvas after the blur pass (Codrops sharp core over
+      // blurred glow), additive in dark mode. energy() applies, so the
+      // column suppression and rail guard cap the flare exactly as they
+      // cap the bands. It is drawn AFTER the halo on purpose (in-
+      // iteration tuning): the first version drew it before the halo and
+      // the 0.30 column halo dimmed the head to +38 luma over the band
+      // (152 vs 114) — invisible at a glance. After the halo the head
+      // reads ~210 luma in the column; it stays behind the DOM text and
+      // crosses any given word in ~0.3s, so legibility is verified on
+      // the about frames, not assumed. Second desktop tuning (same
+      // iteration): two fresh strict critics SPLIT on desktop — one
+      // PASSED the head as a trackable knot, the other FAILED frame A
+      // as a diffuse elongated glow (head near the left edge merges
+      // with the band + half-off-screen tail) with a competing bright
+      // speck that is actually the nav's active-item marker (stationary
+      // DOM chrome, misread). A 1–1 split on a borderline frame is not
+      // a robust pass, so the desktop head got bigger (34 → 44px
+      // radius), the tail tighter (34 → 26px spacing) and the sprite's
+      // bright core wider (0.18 → 0.28 stop) — the same prescription
+      // the mobile FAIL drew. Under reduced motion the flare
+      // is ABSENT — the static frame shows only the sheets.
+      if (!reduced) {
+        const flareSprite = flareSpriteRef.current;
+        const host = list.find((b) => b.role === "bright") ?? list[0];
+        if (flareSprite && host) {
+          const narrow = W < 700;
+          const speed = narrow ? 90 : 180; // css px per second
+          const dist = W + 300;
+          const crossMs = (dist / speed) * 1000;
+          const pauseMs = 3000;
+          const cycle = crossMs + pauseMs;
+          // t is the rAF timestamp (same clock as performance.now()), so
+          // the flare phase is deterministic from page load.
+          const ph = t % cycle;
+          if (ph < crossMs) {
+            const s = ph / crossMs;
+            const env = smooth(0, 0.12, s) * (1 - smooth(0.88, 1, s));
+            const headX = -150 + s * dist;
+            const headY = centerY(host, headX, t);
+            const headR = narrow ? 30 : 44;
+            const spacing = narrow ? 20 : 26;
+            ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
+            // Tail first: fading ghosts behind the head along the band.
+            for (let k = 5; k >= 1; k--) {
+              const tx = headX - k * spacing;
+              const ty = centerY(host, tx, t);
+              const a = env * 0.5 * (1 - k / 6) * energy(tx, ty);
+              if (a < 0.004) continue;
+              const d = headR * (1 - k / 8) * 2;
+              ctx.globalAlpha = Math.min(1, a);
+              ctx.drawImage(flareSprite, tx - d / 2, ty - d / 2, d, d);
+            }
+            const ha = env * 1.0 * energy(headX, headY);
+            if (ha >= 0.004) {
+              const d = headR * 2;
+              ctx.globalAlpha = Math.min(1, ha);
+              ctx.drawImage(flareSprite, headX - d / 2, headY - d / 2, d, d);
+            }
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = "source-over";
+          }
+        }
+      }
     };
 
     const loop = (now: number) => {
