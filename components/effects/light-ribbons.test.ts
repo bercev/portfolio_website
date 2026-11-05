@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   CHAPTER_PROFILES,
+  DITHER_SEAM_HEIGHT,
+  dissolveLevelAt,
+  ditherSeamPasses,
   getChapterProfile,
   lerpChapterProfile,
   resolveActiveChapter,
+  seamDrawY,
 } from "./light-ribbons";
 
 describe("light-ribbon chapters", () => {
@@ -141,5 +145,69 @@ describe("light-ribbon chapters", () => {
     expect(resolveActiveChapter(rects, 400, true)).toBe("epilogue");
     expect(resolveActiveChapter(rects, 400, false)).toBe("contact");
     expect(resolveActiveChapter(rects, 650, false)).toBe("epilogue");
+  });
+});
+
+describe("dither seam", () => {
+  it("keeps the seam band at 96px", () => {
+    expect(DITHER_SEAM_HEIGHT).toBe(96);
+  });
+
+  it("ramps the dissolve level 0 → 1 → 0 across the band, clamped outside", () => {
+    // Symmetric: the level peaks at the band center (the hero edge)
+    // and returns to 0 at both ends, so neither side has a hard edge.
+    expect(dissolveLevelAt(0, 0, 96)).toBe(0);
+    expect(dissolveLevelAt(96, 0, 96)).toBe(0);
+    expect(dissolveLevelAt(48, 0, 96)).toBe(1);
+    expect(dissolveLevelAt(24, 0, 96)).toBeCloseTo(0.5);
+    expect(dissolveLevelAt(72, 0, 96)).toBeCloseTo(0.5);
+    expect(dissolveLevelAt(-10, 0, 96)).toBe(0);
+    expect(dissolveLevelAt(200, 0, 96)).toBe(0);
+  });
+
+  it("passes no pixels at level 0 and every pixel at level 1", () => {
+    let none = 0;
+    let all = 0;
+    for (let y = 0; y < 128; y++) {
+      for (let x = 0; x < 128; x++) {
+        if (ditherSeamPasses(x, y, 0)) none++;
+        if (ditherSeamPasses(x, y, 1)) all++;
+      }
+    }
+    expect(none).toBe(0);
+    expect(all).toBe(128 * 128);
+  });
+
+  it("passes exactly half the tile at level 0.5 (flat blue-noise histogram)", () => {
+    // lib/blue-noise.ts: each value 0..255 occurs exactly 64 times, so
+    // values < 128 number 128 * 64 = 8192 — the sweep is uniform.
+    let count = 0;
+    for (let y = 0; y < 128; y++) {
+      for (let x = 0; x < 128; x++) {
+        if (ditherSeamPasses(x, y, 0.5)) count++;
+      }
+    }
+    expect(count).toBe(8192);
+  });
+
+  it("wraps the threshold tile toroidally past 128px", () => {
+    expect(ditherSeamPasses(0, 0, 0.5)).toBe(
+      ditherSeamPasses(128, 128, 0.5),
+    );
+    expect(ditherSeamPasses(200, 300, 0.5)).toBe(
+      ditherSeamPasses(200 - 128, 300 - 256, 0.5),
+    );
+  });
+
+  it("centers the band on the hero edge and hides it off-screen", () => {
+    // Hero bottom at the viewport bottom: the band straddles the fold.
+    expect(seamDrawY(800, 800)).toBe(800 - 48);
+    // Hero bottom mid-viewport: the whole band is visible.
+    expect(seamDrawY(400, 800)).toBe(352);
+    // Hero bottom just above the viewport: the band's tail still shows.
+    expect(seamDrawY(0, 800)).toBe(-48);
+    // Fully scrolled past, or not yet reached: no seam.
+    expect(seamDrawY(-200, 800)).toBeNull();
+    expect(seamDrawY(1000, 800)).toBeNull();
   });
 });

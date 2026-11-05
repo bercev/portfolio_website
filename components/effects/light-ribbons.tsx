@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
+import { BLUE_NOISE_128 } from "@/lib/blue-noise";
 
 /**
  * LightRibbons — run 7: the user-approved Waylume-style animated light
@@ -88,6 +89,19 @@ import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
  *   cancellation), exactly reversible on scroll-up since detection is
  *   positional. Reduced motion repaints one static frame of the active
  *   chapter on scroll (discrete switch, no animation).
+ * - Dither seam (run-7 iter 10, RUN7-EXP-DITHER): a blue-noise
+ *   dissolve at the hero's lower edge — the ribbon light halftones
+ *   out across a 96px band centered on the hero's bottom edge, so the
+ *   page crosses from hero into about through a printed dissolve
+ *   instead of a hard light cut; the level is symmetric (1 at the
+ *   edge, 0 at both band ends) so the next section's light fades back
+ *   in with no hard edge. One bounded seam, not scattered
+ *   texture: it uses the site's own 128x128 blue-noise threshold tile
+ *   (lib/blue-noise.ts — the same grammar as the glyph field's object
+ *   dissolves, isotropic grain, no Bayer cross-hatch), dots are the
+ *   probed background color (theme tokens only), and the strip rides
+ *   the hero edge as you scroll. The dots sit behind the DOM and can
+ *   only dim the light behind text, never cover it.
  *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
@@ -437,6 +451,48 @@ const smooth = (a: number, b: number, x: number): number => {
   return t * t * (3 - 2 * t);
 };
 
+/**
+ * Dither seam (run-7 iter 10, RUN7-EXP-DITHER): the ribbon light
+ * dissolves into background-colored dots across a band centered on
+ * the hero's bottom edge. The level is SYMMETRIC — it rises to 1 at
+ * the band center (the hero edge itself) and falls back to 0 — so
+ * the light fades into dither at the edge and the next section's
+ * light fades back in, with no hard edge on either side. (The first
+ * version ramped 0 → 1 one-sidedly; the canvas profile proved the
+ * light resumed below the band in a hard step — desktop 24 → 97.6,
+ * mobile 24 → 197.8 within 8px — a stripe with a cliff, not a
+ * dissolve; the symmetric ramp is the fix.) A pixel is a dot when
+ * its blue-noise threshold is below the level — the site's 128x128
+ * tile has a perfectly flat histogram (each value 0..255 occurs
+ * exactly 64 times), so level 0.5 passes exactly half the tile and
+ * the sweep is uniform, with isotropic grain instead of Bayer
+ * cross-hatch.
+ */
+export const DITHER_SEAM_HEIGHT = 96;
+
+export function dissolveLevelAt(y: number, top: number, height: number): number {
+  const t = Math.min(1, Math.max(0, (y - top) / height));
+  return smooth(0, 0.5, t) * (1 - smooth(0.5, 1, t));
+}
+
+export function ditherSeamPasses(x: number, y: number, level: number): boolean {
+  return BLUE_NOISE_128[((y & 127) << 7) | (x & 127)] < level * 256;
+}
+
+/** Top y (viewport coords) to draw the seam strip at, or null when
+ * the band is fully outside the viewport. The band is centered on
+ * the hero's bottom edge, so at scroll 0 — hero is min-100dvh — it
+ * reads as a dithered fringe at the fold. */
+export function seamDrawY(
+  heroBottom: number,
+  viewportH: number,
+  bandH: number = DITHER_SEAM_HEIGHT,
+): number | null {
+  const y = heroBottom - bandH / 2;
+  if (y + bandH < 0 || y > viewportH) return null;
+  return y;
+}
+
 export function LightRibbons() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const spritesRef = useRef<Record<RibbonRole, HTMLCanvasElement> | null>(
@@ -525,6 +581,47 @@ export function LightRibbons() {
     let colL = 0;
     let colR = 0;
 
+    // Dither seam (RUN7-EXP-DITHER): the pre-rendered dissolve strip,
+    // rebuilt whenever the viewport width or probed background changes
+    // (the key check in draw() makes the rebuild lazy — one ImageData
+    // pass per theme/resize change, one drawImage per frame).
+    let seamStrip: HTMLCanvasElement | null = null;
+    let seamStripKey = "";
+    // Hero bottom edge in viewport coords, cached alongside the
+    // chapter rects (updateChapter re-reads only on scroll/height
+    // change, so this never forces a layout per frame).
+    let heroBottom = Number.NEGATIVE_INFINITY;
+
+    /** Build (or reuse) the seam strip for the current width + bg. */
+    const buildSeamStrip = (): HTMLCanvasElement => {
+      const bg = bgRef.current;
+      const key = `${W}x${bg.r},${bg.g},${bg.b}`;
+      if (seamStrip && seamStripKey === key) return seamStrip;
+      const strip = document.createElement("canvas");
+      strip.width = Math.max(2, W);
+      strip.height = DITHER_SEAM_HEIGHT;
+      const g = strip.getContext("2d");
+      if (g) {
+        const img = g.createImageData(strip.width, strip.height);
+        for (let y = 0; y < strip.height; y++) {
+          const cut = dissolveLevelAt(y, 0, strip.height) * 256;
+          for (let x = 0; x < strip.width; x++) {
+            if (BLUE_NOISE_128[((y & 127) << 7) | (x & 127)] < cut) {
+              const i = (y * strip.width + x) * 4;
+              img.data[i] = bg.r;
+              img.data[i + 1] = bg.g;
+              img.data[i + 2] = bg.b;
+              img.data[i + 3] = 255;
+            }
+          }
+        }
+        g.putImageData(img, 0, 0);
+      }
+      seamStrip = strip;
+      seamStripKey = key;
+      return strip;
+    };
+
     // Chapter state (RUN7-EXP-CHAPTER-LIGHT): the profile currently
     // rendered, the one it is lerping from/to, and the tween start.
     // A chapter change re-bases `from` on the CURRENT interpolated
@@ -566,6 +663,12 @@ export function LightRibbons() {
         window.scrollY + window.innerHeight >=
           document.documentElement.scrollHeight - 2,
       );
+      // Dither seam anchor: the hero's bottom edge rides the scroll,
+      // so the seam travels with the hero/about boundary.
+      const heroEl = document.querySelector('[data-light-chapter="home"]');
+      heroBottom = heroEl
+        ? heroEl.getBoundingClientRect().bottom
+        : Number.NEGATIVE_INFINITY;
       if (!active || active === chapterActive) return;
       chapterActive = active;
       chapterFrom = { ...chapterCur };
@@ -786,6 +889,28 @@ export function LightRibbons() {
       halo.addColorStop(1, rgba(bg, 0));
       ctx.fillStyle = halo;
       ctx.fillRect(0, 0, W, H);
+
+      // Dither seam (run-7 iter 10, RUN7-EXP-DITHER): the blue-noise
+      // dissolve anchored to the hero's bottom edge — the ribbon light
+      // halftones out toward the edge and the next section's light
+      // fades back in across the 96px band, so the page crosses from
+      // hero into about through a printed dissolve instead of a hard
+      // light cut. The strip is pre-rendered (per width + probed
+      // background) and drawn as one image per frame; it rides the
+      // hero edge as you scroll, so at scroll 0 it reads as a
+      // dithered fringe at the fold. Drawn AFTER the halo (so the
+      // halo's column wash dissolves too) and BEFORE the flare (the
+      // head stays bright over the seam). The dots are the probed
+      // background color and sit behind the DOM — they can only dim
+      // the light behind text, never cover it. Under reduced motion
+      // the static frame includes the seam at the current scroll
+      // position (the repaint on scroll repositions it).
+      const sy = seamDrawY(heroBottom, H);
+      if (sy !== null) {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.globalAlpha = 1;
+        ctx.drawImage(buildSeamStrip(), 0, sy);
+      }
 
       // Traveling flare (run-7 iter 7, RUN7-MOTION-FLARE): one compact
       // bright head + short fading tail riding the central "bright"
