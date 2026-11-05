@@ -102,6 +102,18 @@ import { BLUE_NOISE_128 } from "@/lib/blue-noise";
  *   probed background color (theme tokens only), and the strip rides
  *   the hero edge as you scroll. The dots sit behind the DOM and can
  *   only dim the light behind text, never cover it.
+ * - Scroll scrub (run-7 iter 14, RUN7-EXP-SCROLL-SCRUB): scroll
+ *   position scrubs the ribbon phase — a scroll-progress offset
+ *   t in [0,1] (pure function of scrollY / maxScroll, exponential-
+ *   chase smoothed like Talreja's UniverseClock, reversible on
+ *   scroll-up so the light rewinds) added to the ambient wall-clock
+ *   phase, so scrolling the page visibly advances/rewinds the light
+ *   while ambient motion continues at rest; a full-page scroll is
+ *   1.25 phase cycles. Phase only — no color, alpha or energy change,
+ *   so the 2+1 discipline and the legibility envelope are untouched;
+ *   reduced motion = static (scrub disabled, the reduced repaint
+ *   already repositions on scroll). The flare rides the scrubbed
+ *   band's centerline, so it stays on its band while scrolling.
  *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
@@ -128,7 +140,7 @@ interface Rgb {
 
 type RibbonRole = "deep" | "bright" | "pale" | "accent";
 
-interface RibbonDef {
+export interface RibbonDef {
   y0: number;
   slope: number;
   th: number;
@@ -493,6 +505,75 @@ export function seamDrawY(
   return y;
 }
 
+/**
+ * Scroll scrub (run-7 iter 14, RUN7-EXP-SCROLL-SCRUB): scroll position
+ * scrubs the ribbon phase. A full-page scroll advances every band
+ * 1.25 phase cycles — enough that scrolling visibly reconfigures the
+ * light, small enough that the bands never jump. The offset is added
+ * to the phase-travel terms only (drift and glide stay wall-clock
+ * ambient motion); a 2π offset is exactly one phase-travel cycle for
+ * every band, so the scrub is a pure phase advance that returns the
+ * bands to their ambient positions after one full cycle.
+ */
+export const SCRUB_CYCLES = 1.25;
+/** Exponential-chase rate for the scrub offset (per second) — ~250ms
+ * time constant: fast enough to feel connected to the scroll, slow
+ * enough to smooth Lenis jumps instead of snapping the light. */
+export const SCRUB_CHASE_RATE = 4;
+
+/** Scroll progress t in [0,1]: scrollY over the scrollable range. */
+export function scrollProgress(scrollY: number, maxScroll: number): number {
+  if (!(maxScroll > 0)) return 0;
+  return Math.min(1, Math.max(0, scrollY / maxScroll));
+}
+
+/** Phase offset (radians) for a scroll progress: 1.25 cycles over the
+ * full page. */
+export function scrubPhaseOffset(progress: number): number {
+  const p = Math.min(1, Math.max(0, progress));
+  return p * SCRUB_CYCLES * 2 * Math.PI;
+}
+
+/** Exponential chase (Talreja's UniverseClock): move `cur` toward
+ * `target` by the frame-rate-independent factor 1 - exp(-rate * dt).
+ * Never overshoots — the result always stays between cur and target. */
+export function chaseValue(
+  cur: number,
+  target: number,
+  rate: number,
+  dtSeconds: number,
+): number {
+  if (!(rate > 0) || !(dtSeconds > 0)) return cur;
+  return cur + (target - cur) * (1 - Math.exp(-rate * dtSeconds));
+}
+
+/**
+ * A band's centerline height at x, pure in its inputs so the scrub
+ * math is unit-testable. `ct` is the chapter clock (ms); `scrubPhase`
+ * is the scroll-derived phase offset in radians, added to the two
+ * phase-travel terms in their own sign direction so both wobbles
+ * advance with the scroll. Drift and glide stay wall-clock: they are
+ * slow ambient motion, not phase.
+ */
+export function ribbonCenterY(
+  r: RibbonDef,
+  x: number,
+  ct: number,
+  chapterSlope: number,
+  H: number,
+  scrubPhase = 0,
+): number {
+  const ph = r.drift * Math.sin((ct * 6.2832) / r.dp);
+  return (
+    r.y0 * H +
+    (r.slope + chapterSlope) * x +
+    r.ga * Math.sin((ct * 6.2832) / r.gp + r.gph) +
+    r.a1 * Math.sin((x + ph) * r.f1 + (ct * 6.2832) / r.p1 + scrubPhase) +
+    r.a2 *
+      Math.sin((x - ph * 0.6) * r.f2 - ((ct * 6.2832) / r.p2 + scrubPhase))
+  );
+}
+
 export function LightRibbons() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const spritesRef = useRef<Record<RibbonRole, HTMLCanvasElement> | null>(
@@ -640,6 +721,13 @@ export function LightRibbons() {
     let lastT = 0;
     let lastScrollY = -1;
     let lastH = -1;
+    // Scroll scrub (RUN7-EXP-SCROLL-SCRUB): the scroll-derived phase
+    // offset, chased toward its target each frame so the light follows
+    // the scroll smoothly instead of snapping. Reduced motion never
+    // sets the target, so scrubCur stays 0 there by construction.
+    let scrubCur = 0;
+    let scrubTarget = 0;
+    let lastScrubProbe = "";
 
     /** Resolve the section owning the viewport center (cheap: rects
      * are re-read only when the scroll position or height changed). */
@@ -669,6 +757,19 @@ export function LightRibbons() {
       heroBottom = heroEl
         ? heroEl.getBoundingClientRect().bottom
         : Number.NEGATIVE_INFINITY;
+      // Scroll scrub target: pure function of scroll progress, so
+      // scrolling back rewinds the light exactly. updateChapter only
+      // runs on scroll/height change, which is exactly when the
+      // target can move; the chase itself runs every frame in draw().
+      if (!reduced) {
+        const maxScroll = Math.max(
+          1,
+          document.documentElement.scrollHeight - window.innerHeight,
+        );
+        scrubTarget = scrubPhaseOffset(
+          scrollProgress(window.scrollY, maxScroll),
+        );
+      }
       if (!active || active === chapterActive) return;
       chapterActive = active;
       chapterFrom = { ...chapterCur };
@@ -759,16 +860,8 @@ export function LightRibbons() {
       return sx * vf;
     };
 
-    const centerY = (r: RibbonDef, x: number, ct: number): number => {
-      const ph = r.drift * Math.sin((ct * 6.2832) / r.dp);
-      return (
-        r.y0 * H +
-        (r.slope + chapterCur.slope) * x +
-        r.ga * Math.sin((ct * 6.2832) / r.gp + r.gph) +
-        r.a1 * Math.sin((x + ph) * r.f1 + (ct * 6.2832) / r.p1) +
-        r.a2 * Math.sin((x - ph * 0.6) * r.f2 - (ct * 6.2832) / r.p2)
-      );
-    };
+    const centerY = (r: RibbonDef, x: number, ct: number): number =>
+      ribbonCenterY(r, x, ct, chapterCur.slope, H, scrubCur);
 
     const thick = (r: RibbonDef, x: number, ct: number): number =>
       r.th *
@@ -791,6 +884,19 @@ export function LightRibbons() {
       updateChapter(t);
       stepChapter(t);
       tChapter += dt * chapterCur.speed;
+      // Scroll scrub (RUN7-EXP-SCROLL-SCRUB): chase the scroll-derived
+      // phase offset toward its target with the same clamped dt, so
+      // the light follows the scroll at a frame-rate-independent rate
+      // and rewinds exactly on scroll-up. The probe hook reports the
+      // live offset (rounded, only on change) for verification.
+      if (!reduced) {
+        scrubCur = chaseValue(scrubCur, scrubTarget, SCRUB_CHASE_RATE, dt / 1000);
+        const probe = scrubCur.toFixed(2);
+        if (probe !== lastScrubProbe) {
+          lastScrubProbe = probe;
+          canvas.dataset.scrubPhase = probe;
+        }
+      }
       const bg = bgRef.current;
       const accent = accentRef.current;
       // Composite off the PROBED background luminance, not the theme

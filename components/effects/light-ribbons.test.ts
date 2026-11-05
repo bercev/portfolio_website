@@ -3,11 +3,17 @@ import { describe, expect, it } from "vitest";
 import {
   CHAPTER_PROFILES,
   DITHER_SEAM_HEIGHT,
+  SCRUB_CHASE_RATE,
+  SCRUB_CYCLES,
+  chaseValue,
   dissolveLevelAt,
   ditherSeamPasses,
   getChapterProfile,
   lerpChapterProfile,
   resolveActiveChapter,
+  ribbonCenterY,
+  scrubPhaseOffset,
+  scrollProgress,
   seamDrawY,
 } from "./light-ribbons";
 
@@ -209,5 +215,91 @@ describe("dither seam", () => {
     // Fully scrolled past, or not yet reached: no seam.
     expect(seamDrawY(-200, 800)).toBeNull();
     expect(seamDrawY(1000, 800)).toBeNull();
+  });
+});
+
+describe("scroll scrub", () => {
+  it("keeps the scrub at 1.25 phase cycles over a full page", () => {
+    expect(SCRUB_CYCLES).toBe(1.25);
+    expect(SCRUB_CHASE_RATE).toBe(4);
+  });
+
+  it("maps scroll position to progress in [0,1], clamped", () => {
+    expect(scrollProgress(0, 1000)).toBe(0);
+    expect(scrollProgress(500, 1000)).toBe(0.5);
+    expect(scrollProgress(1000, 1000)).toBe(1);
+    expect(scrollProgress(1500, 1000)).toBe(1);
+    expect(scrollProgress(-50, 1000)).toBe(0);
+    expect(scrollProgress(500, 0)).toBe(0);
+    expect(scrollProgress(500, -100)).toBe(0);
+  });
+
+  it("turns progress into a phase offset of 1.25 cycles at the bottom", () => {
+    expect(scrubPhaseOffset(0)).toBe(0);
+    expect(scrubPhaseOffset(0.5)).toBeCloseTo(0.625 * 2 * Math.PI);
+    expect(scrubPhaseOffset(1)).toBeCloseTo(1.25 * 2 * Math.PI);
+    expect(scrubPhaseOffset(2)).toBeCloseTo(1.25 * 2 * Math.PI);
+    expect(scrubPhaseOffset(-1)).toBe(0);
+  });
+
+  it("chases toward the target without overshooting, frame-rate independent", () => {
+    // No time elapsed, or no rate: no movement.
+    expect(chaseValue(3, 10, 4, 0)).toBe(3);
+    expect(chaseValue(3, 10, 0, 1)).toBe(3);
+    // One quarter-second at rate 4 covers 1 - e^-1 of the gap.
+    expect(chaseValue(0, 10, 4, 0.25)).toBeCloseTo(10 * (1 - Math.exp(-1)), 6);
+    // Two seconds at rate 4 is 99.97% of the way there, never past it.
+    const settled = chaseValue(0, 10, 4, 2);
+    expect(settled).toBeGreaterThan(9.99);
+    expect(settled).toBeLessThanOrEqual(10);
+    // Chasing down stays inside the gap too.
+    const down = chaseValue(10, 0, 4, 0.25);
+    expect(down).toBeGreaterThanOrEqual(0);
+    expect(down).toBeLessThan(10);
+  });
+
+  // One narrow-screen band, values verbatim from NARROW_RIBBONS[0].
+  const band = {
+    y0: -0.04,
+    slope: 0.14,
+    th: 205,
+    alpha: 0.48,
+    role: "deep" as const,
+    a1: 50,
+    f1: 0.0042,
+    p1: 6050,
+    a2: 25,
+    f2: 0.0095,
+    p2: 7425,
+    drift: 105,
+    dp: 7150,
+    ga: 31,
+    gp: 7350,
+    gph: 0.0,
+    bd: 0.22,
+    bp: 5670,
+    bph: 0.0,
+  };
+
+  it("returns the band to its ambient position after one full scrub cycle", () => {
+    // A 2π offset is exactly one phase-travel cycle for every band, so
+    // the centerline must be identical — the scrub is a pure phase
+    // advance, and scrolling to the bottom and back leaves the light
+    // where it was (modulo wall-clock drift).
+    const ambient = ribbonCenterY(band, 0, 1000, 0, 800, 0);
+    expect(ribbonCenterY(band, 0, 1000, 0, 800, 2 * Math.PI)).toBeCloseTo(
+      ambient,
+      6,
+    );
+    expect(ribbonCenterY(band, 720, 3500, 0.05, 800, 2 * Math.PI)).toBeCloseTo(
+      ribbonCenterY(band, 720, 3500, 0.05, 800, 0),
+      6,
+    );
+  });
+
+  it("moves the band measurably at half a scrub cycle", () => {
+    const ambient = ribbonCenterY(band, 0, 1000, 0, 800, 0);
+    const scrubbed = ribbonCenterY(band, 0, 1000, 0, 800, Math.PI);
+    expect(Math.abs(scrubbed - ambient)).toBeGreaterThan(10);
   });
 });
