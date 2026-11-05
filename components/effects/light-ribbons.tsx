@@ -150,6 +150,38 @@ import { BLUE_NOISE_128 } from "@/lib/blue-noise";
  *   this is the light telling a story about WHEN you visit, and it
  *   changes even at rest.
  *
+ * - Opening ring-of-light reveal (run-7 iter 22, RUN7-EXP-REVEAL):
+ *   on first mount a soft radial ring expands from the hero center
+ *   across the canvas over ~2s — after Bruno Simon's rebuilt
+ *   portfolio, which opens with "a thin glowing ring pushing
+ *   outward, lighting the island bit by bit over ~2s". The ribbons
+ *   fade in BEHIND the ring's edge (a per-slice reveal factor), so
+ *   the light is born at the hero center and blooms outward instead
+ *   of snapping on; the ring then dissolves and the reveal is done
+ *   for the life of the mount (a theme change remounts the effect
+ *   and replays the entrance — a deliberate encore, not a bug).
+ *   Background-layer only, one-shot, no new copy, no gated
+ *   interaction. The ring is drawn BEFORE the column halo (unlike
+ *   the flare, which sits after it): the halo softens the wavefront
+ *   over the text column so it never washes BERAT or the rail
+ *   labels, while the margins and edges carry the full ring. It does
+ *   NOT fight the BERAT decode intro — the ring lives under the
+ *   text, and the decode is DOM text the canvas never touches.
+ *   Reduced motion = no ring, static frame as now. BOOT INTERACTION
+ *   (verified in-iteration): on a desktop FIRST visit the BIOS boot
+ *   overlay (components/effects/boot-sequence.tsx) covers the hero
+ *   with an opaque panel for 2.6s + 0.45s fade — the whole 2s reveal
+ *   would play behind it and no visitor would ever see the ring
+ *   bloom. So when a boot is expected (fine pointer, wide viewport,
+ *   no `bercev-has-booted` flag — the boot's own conditions), the
+ *   reveal clock does not start until the overlay has been seen in
+ *   the DOM and then left it (click-to-skip unmounts early, so the
+ *   reveal follows the skip), or 3.5s after mount as a safety cap.
+ *   On repeat visits and phones the boot never plays and the reveal
+ *   starts on mount; as a side benefit the reveal now starts AFTER
+ *   the BERAT decode intro on desktop first visits instead of racing
+ *   it.
+ *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
  *   "active"] — EffectStage uses that claim to keep the loud Neural Ink
@@ -740,6 +772,98 @@ export function lerpDaylightProfile(
 }
 
 /**
+ * Opening ring-of-light reveal (run-7 iter 22, RUN7-EXP-REVEAL).
+ * Pure helpers, unit-tested below; the draw loop composes them.
+ */
+export const REVEAL_DURATION_MS = 2000;
+/** Half-width of the wavefront transition: points within this of the
+ * ring front are partially revealed. */
+export const REVEAL_FEATHER_PX = 120;
+/** Half-thickness of the drawn ring band (px). */
+export const REVEAL_RING_THICKNESS_PX = 34;
+/** Peak ring alpha (additive in dark mode) — soft, not a neon circle. */
+export const REVEAL_RING_ALPHA = 0.6;
+
+/** Eased ring-radius progress 0→1 over the reveal (ease-out cubic:
+ * the wavefront moves fast early, then settles — the light arrives
+ * quickly and the dissolve has time to read). Clamped. */
+export function revealRadiusProgress(
+  elapsedMs: number,
+  durationMs: number = REVEAL_DURATION_MS,
+): number {
+  if (!(durationMs > 0)) return 1;
+  const t = Math.min(1, Math.max(0, elapsedMs / durationMs));
+  return 1 - Math.pow(1 - t, 3);
+}
+
+/** Ring alpha envelope 0→1→0 over the reveal: fades in over the first
+ * 12% (the ring is born, not snapped), holds, fades out over the last
+ * 25% (it dissolves as the light settles). 0 outside the window. */
+export function revealRingAlpha(
+  elapsedMs: number,
+  durationMs: number = REVEAL_DURATION_MS,
+): number {
+  if (!(durationMs > 0) || elapsedMs <= 0 || elapsedMs >= durationMs)
+    return 0;
+  const t = elapsedMs / durationMs;
+  return smooth(0, 0.12, t) * (1 - smooth(0.75, 1, t));
+}
+
+/** Reveal factor for one point: 1 well inside the ring front, 0 well
+ * outside it, smooth across the feather band. The front sits at ringR;
+ * the transition spans ringR ± feather. */
+export function revealAt(
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  ringR: number,
+  feather: number = REVEAL_FEATHER_PX,
+): number {
+  const d = Math.hypot(x - cx, y - cy);
+  const f = Math.max(1, feather);
+  return 1 - smooth(0, 1, (d - (ringR - f)) / (2 * f));
+}
+
+/** Distance from the ring center to the farthest viewport corner —
+ * the radius at which the wavefront has covered the whole canvas. */
+export function revealMaxRadius(
+  W: number,
+  H: number,
+  cx: number,
+  cy: number,
+): number {
+  return Math.max(
+    Math.hypot(cx, cy),
+    Math.hypot(W - cx, cy),
+    Math.hypot(cx, H - cy),
+    Math.hypot(W - cx, H - cy),
+  );
+}
+
+/** The boot overlay's DOM marker (components/effects/boot-sequence.tsx). */
+export const BOOT_OVERLAY_SELECTOR = '[aria-label="System boot sequence"]';
+/** Safety cap for the boot wait (ms): the overlay unmounts at 3.05s in
+ * the normal path, so a wait past this means it never appeared. */
+export const BOOT_WAIT_CAP_MS = 3500;
+
+/** Whether a boot overlay is expected on this mount — the boot's own
+ * shouldBoot conditions, minus reduced motion (handled by the caller):
+ * fine pointer, wide viewport, and no `bercev-has-booted` flag. A null
+ * flag (storage unavailable) falls back to expecting the boot, matching
+ * the boot's own fallback (it mounts the overlay when storage fails).
+ * Pure in its inputs so the gate is unit-testable. */
+export function bootExpected(
+  finePointer: boolean,
+  viewportWidth: number,
+  hasBootedFlag: boolean | null,
+): boolean {
+  if (!finePointer) return false;
+  if (!(viewportWidth > 640)) return false;
+  return hasBootedFlag !== true;
+}
+
+/**
  * A band's centerline height at x, pure in its inputs so the scrub
  * math is unit-testable. `ct` is the chapter clock (ms); `scrubPhase`
  * is the scroll-derived phase offset in radians, added to the two
@@ -944,6 +1068,33 @@ export function LightRibbons() {
     let daylightSetName: DaylightSetName | null = null;
     let lastDaylightProbe = "";
 
+    // Opening reveal (RUN7-EXP-REVEAL): the rAF timestamp of the
+    // first animated frame — the reveal clock starts there, so the
+    // 2s window is wall-clock time, not frame count (slow headless
+    // rAF still blooms on schedule). -1 until the first frame.
+    let revealStartT = -1;
+    let lastRevealProbe = "";
+
+    // Opening reveal vs the boot overlay (RUN7-EXP-REVEAL, see the
+    // header note): when a boot is expected, the reveal clock does
+    // not start until the overlay has been seen in the DOM and then
+    // left it, or the safety cap elapses. The gate itself lives in
+    // draw(), next to the reveal clock; these are its inputs.
+    const bootExpectedNow = bootExpected(
+      window.matchMedia("(pointer: fine)").matches,
+      window.innerWidth,
+      (() => {
+        try {
+          return window.localStorage.getItem("bercev-has-booted") === "1";
+        } catch {
+          return null;
+        }
+      })(),
+    );
+    let bootSeen = false;
+    let bootCleared = !bootExpectedNow;
+    const bootWaitStart = performance.now();
+
     /** Resolve the section owning the viewport center (cheap: rects
      * are re-read only when the scroll position or height changed). */
     const updateChapter = (now: number) => {
@@ -1106,6 +1257,67 @@ export function LightRibbons() {
       lastT = t;
       updateChapter(t);
       stepChapter(t);
+      // Opening ring-of-light reveal (RUN7-EXP-REVEAL): on first
+      // mount the light blooms outward from the hero center behind
+      // an expanding ring (~2s), then the ring dissolves and the
+      // reveal is done for the life of this mount. The ribbon slices,
+      // top glow, seam and flare all read the same reveal state
+      // below, so the whole light layer blooms as one. The center is
+      // the hero's center (its bottom edge rides the scroll via
+      // updateChapter, clamped into the viewport for a mid-scroll
+      // remount). Reduced motion never enters this block: the static
+      // frame is the fully revealed look, and dataset.reveal reads
+      // "done" from the start. A hidden-tab gap jumps the clock past
+      // the window, so the reveal simply completes while hidden —
+      // correct behavior, no visible jump.
+      let revealDone = reduced;
+      let revealGlobal = reduced ? 1 : 0;
+      let revealCx = W / 2;
+      let revealCy = H / 2;
+      let revealRingR = 0;
+      let revealRingA = 0;
+      const revealFactorAt = (x: number, y: number): number =>
+        revealDone ? 1 : revealAt(x, y, revealCx, revealCy, revealRingR);
+      if (!reduced) {
+        // Boot gate (see the setup comment): hold the reveal until
+        // the boot overlay has been seen and left, or the cap elapses.
+        // While held, revealGlobal stays 0 — the canvas shows the bare
+        // background behind the opaque overlay, and the light blooms
+        // only once the hero is actually visible.
+        if (!bootCleared) {
+          if (document.querySelector(BOOT_OVERLAY_SELECTOR)) {
+            bootSeen = true;
+          } else if (
+            bootSeen ||
+            performance.now() - bootWaitStart > BOOT_WAIT_CAP_MS
+          ) {
+            bootCleared = true;
+          }
+        }
+        if (bootCleared) {
+          if (revealStartT < 0) revealStartT = t;
+          const elapsed = t - revealStartT;
+          const progress = revealRadiusProgress(elapsed);
+          revealGlobal = progress;
+          if (elapsed < REVEAL_DURATION_MS) {
+            const hb = Number.isFinite(heroBottom) ? heroBottom : H;
+            revealCy = Math.min(Math.max(hb / 2, 0), H);
+            revealRingR =
+              progress * revealMaxRadius(W, H, revealCx, revealCy);
+            revealRingA = REVEAL_RING_ALPHA * revealRingAlpha(elapsed);
+          } else {
+            revealDone = true;
+          }
+          const probe = revealDone ? "done" : progress.toFixed(2);
+          if (probe !== lastRevealProbe) {
+            lastRevealProbe = probe;
+            canvas.dataset.reveal = probe;
+          }
+        }
+      } else if (lastRevealProbe !== "done") {
+        lastRevealProbe = "done";
+        canvas.dataset.reveal = "done";
+      }
       // Daylight (RUN7-EXP-DAYLIGHT): resolve the set from the
       // visitor's local hour every frame and chase toward it — the
       // mount crossfades in from identity and an hour boundary
@@ -1198,9 +1410,11 @@ export function LightRibbons() {
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
       ctx.clearRect(0, 0, W, H);
-      // A whisper of top glow, in the live accent.
+      // A whisper of top glow, in the live accent — gated by the
+      // reveal so the whole light layer blooms as one (0 before the
+      // ring starts, full once it has dissolved).
       const top = ctx.createLinearGradient(0, 0, 0, H * 0.5);
-      top.addColorStop(0, rgba(accent, dark ? 0.12 : 0.06));
+      top.addColorStop(0, rgba(accent, (dark ? 0.12 : 0.06) * revealGlobal));
       top.addColorStop(1, rgba(accent, 0));
       ctx.fillStyle = top;
       ctx.fillRect(0, 0, W, H * 0.5);
@@ -1247,7 +1461,11 @@ export function LightRibbons() {
         for (let ox = 0; ox < off.width; ox += step) {
           const xCss = (ox + step / 2) / S;
           const cCss = centerY(r, xCss, tChapter);
-          const a = ba * energy(xCss, cCss);
+          // Opening reveal (RUN7-EXP-REVEAL): each slice fades in
+          // as the ring front passes it — the light blooms outward
+          // from the hero center instead of snapping on. Identity
+          // (factor 1) once the reveal is done.
+          const a = ba * energy(xCss, cCss) * revealFactorAt(xCss, cCss);
           if (a < 0.004) continue;
           const thPx = thick(r, xCss, tChapter) * S;
           octx.globalAlpha = Math.min(1, a);
@@ -1275,6 +1493,35 @@ export function LightRibbons() {
         } catch {
           /* ignore */
         }
+      }
+
+      // Opening ring-of-light reveal (RUN7-EXP-REVEAL): the wavefront
+      // itself — a soft radial ring drawn with a per-frame gradient
+      // (constant px thickness at every radius, unlike a scaled
+      // sprite whose annulus would thin to nothing at small radii).
+      // Drawn AFTER the blur pass but BEFORE the halo on purpose:
+      // the column halo softens the ring over the text column (it
+      // never washes BERAT or the rail labels) while the margins and
+      // edges carry the full ring. Bright core + accent falloff, same
+      // family as the flare head; additive in dark mode.
+      if (!revealDone && revealRingA > 0.004) {
+        const bright = mix(accent, WHITE, 0.28);
+        const core = mix(bright, WHITE, 0.45);
+        const r0 = Math.max(0, revealRingR - REVEAL_RING_THICKNESS_PX);
+        const r1 = revealRingR + REVEAL_RING_THICKNESS_PX;
+        const ring = ctx.createRadialGradient(
+          revealCx, revealCy, r0, revealCx, revealCy, r1,
+        );
+        ring.addColorStop(0, rgba(bright, 0));
+        ring.addColorStop(0.35, rgba(bright, 0.6 * revealRingA));
+        ring.addColorStop(0.5, rgba(core, 0.9 * revealRingA));
+        ring.addColorStop(0.65, rgba(accent, 0.45 * revealRingA));
+        ring.addColorStop(1, rgba(accent, 0));
+        ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = ring;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = "source-over";
       }
 
       // Soft dark halo over the content column: text stays crisp anywhere.
@@ -1313,8 +1560,11 @@ export function LightRibbons() {
       const sy = seamDrawY(heroBottom, H);
       if (sy !== null) {
         ctx.globalCompositeOperation = "source-over";
-        ctx.globalAlpha = 1;
+        // Opening reveal (RUN7-EXP-REVEAL): the seam fades in with
+        // the reveal so no pre-revealed light shows at the fold.
+        ctx.globalAlpha = revealGlobal;
         ctx.drawImage(buildSeamStrip(), 0, sy);
+        ctx.globalAlpha = 1;
       }
 
       // Traveling flare (run-7 iter 7, RUN7-MOTION-FLARE): one compact
@@ -1375,7 +1625,10 @@ export function LightRibbons() {
               const tx = headX - k * spacing;
               const ty = centerY(host, tx, tChapter);
               const a =
-                env * 0.5 * (1 - k / 6) * energy(tx, ty) * daylightCur.flare;
+                env * 0.5 * (1 - k / 6) * energy(tx, ty) * daylightCur.flare *
+                // Opening reveal (RUN7-EXP-REVEAL): the tail only
+                // shows where the light has been revealed.
+                revealFactorAt(tx, ty);
               if (a < 0.004) continue;
               const d = headR * (1 - k / 8) * 2;
               ctx.globalAlpha = Math.min(1, a);
@@ -1384,7 +1637,11 @@ export function LightRibbons() {
             // Daylight (RUN7-EXP-DAYLIGHT): the flare is the night
             // set's lantern glow — its contrast rises as the sheets
             // dim, and is slightly tamed at midday.
-            const ha = env * 1.0 * energy(headX, headY) * daylightCur.flare;
+            const ha =
+              env * 1.0 * energy(headX, headY) * daylightCur.flare *
+              // Opening reveal (RUN7-EXP-REVEAL): the head only shows
+              // where the light has been revealed.
+              revealFactorAt(headX, headY);
             if (ha >= 0.004) {
               const d = headR * 2;
               ctx.globalAlpha = Math.min(1, ha);

@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BOOT_OVERLAY_SELECTOR,
+  BOOT_WAIT_CAP_MS,
   CHAPTER_PROFILES,
   DAYLIGHT_CHASE_RATE,
   DAYLIGHT_IDENTITY,
   DAYLIGHT_PROFILES,
   DITHER_SEAM_HEIGHT,
+  REVEAL_DURATION_MS,
+  REVEAL_FEATHER_PX,
+  REVEAL_RING_THICKNESS_PX,
   SCRUB_CHASE_RATE,
   SCRUB_CYCLES,
   VELOCITY_ATTACK_RATE,
@@ -13,6 +18,7 @@ import {
   VELOCITY_DRIFT_BOOST,
   VELOCITY_FULL_SPEED,
   VELOCITY_SPEED_BOOST,
+  bootExpected,
   chaseValue,
   daylightSetForHour,
   dissolveLevelAt,
@@ -22,6 +28,10 @@ import {
   lerpDaylightProfile,
   measureScrollVelocity,
   resolveActiveChapter,
+  revealAt,
+  revealMaxRadius,
+  revealRadiusProgress,
+  revealRingAlpha,
   ribbonCenterY,
   scrubPhaseOffset,
   scrollProgress,
@@ -506,5 +516,83 @@ describe("daylight sets", () => {
     // Five seconds is ~95% settled.
     const after5s = chaseValue(1, 0.7, DAYLIGHT_CHASE_RATE, 5);
     expect(after5s).toBeCloseTo(0.71, 2);
+  });
+});
+
+describe("opening ring-of-light reveal", () => {
+  it("runs the radius 0 → 1 over the 2s window, clamped", () => {
+    expect(REVEAL_DURATION_MS).toBe(2000);
+    expect(revealRadiusProgress(0)).toBe(0);
+    expect(revealRadiusProgress(REVEAL_DURATION_MS)).toBe(1);
+    expect(revealRadiusProgress(REVEAL_DURATION_MS + 5000)).toBe(1);
+    expect(revealRadiusProgress(-100)).toBe(0);
+  });
+
+  it("eases out — the wavefront moves fast early, then settles", () => {
+    const mid = revealRadiusProgress(REVEAL_DURATION_MS / 2);
+    expect(mid).toBeGreaterThan(0.5);
+    expect(mid).toBeLessThan(1);
+    expect(revealRadiusProgress(250)).toBeGreaterThan(0.1);
+    // Monotone: later is never smaller.
+    expect(revealRadiusProgress(1500)).toBeGreaterThan(
+      revealRadiusProgress(500),
+    );
+  });
+
+  it("runs the ring alpha envelope 0 → peak → 0", () => {
+    expect(revealRingAlpha(0)).toBe(0);
+    expect(revealRingAlpha(REVEAL_DURATION_MS)).toBe(0);
+    expect(revealRingAlpha(REVEAL_DURATION_MS + 1000)).toBe(0);
+    const mid = revealRingAlpha(REVEAL_DURATION_MS / 2);
+    expect(mid).toBeGreaterThan(0.8);
+    // Fading in at 100ms (5% in, fade-in spans the first 12%) and
+    // fading out at 1900ms (95% in, fade-out spans the last 25%).
+    expect(revealRingAlpha(100)).toBeLessThan(mid);
+    expect(revealRingAlpha(1900)).toBeLessThan(mid);
+  });
+
+  it("reveals points inside the front and hides points outside it", () => {
+    const cx = 720;
+    const cy = 400;
+    const ringR = 300;
+    expect(revealAt(cx, cy, cx, cy, ringR)).toBe(1);
+    expect(
+      revealAt(cx + ringR - 2 * REVEAL_FEATHER_PX, cy, cx, cy, ringR),
+    ).toBe(1);
+    expect(
+      revealAt(cx + ringR + 2 * REVEAL_FEATHER_PX, cy, cx, cy, ringR),
+    ).toBe(0);
+    // Exactly on the front, half revealed.
+    const atFront = revealAt(cx + ringR, cy, cx, cy, ringR);
+    expect(atFront).toBeGreaterThan(0.4);
+    expect(atFront).toBeLessThan(0.6);
+  });
+
+  it("covers the viewport at the farthest corner", () => {
+    expect(revealMaxRadius(1440, 800, 720, 400)).toBeCloseTo(
+      Math.hypot(720, 400),
+    );
+    expect(revealMaxRadius(1440, 800, 0, 0)).toBeCloseTo(
+      Math.hypot(1440, 800),
+    );
+    expect(REVEAL_RING_THICKNESS_PX).toBeGreaterThan(0);
+  });
+
+  it("waits for the boot overlay only when a boot is expected", () => {
+    // Desktop first visit: fine pointer, wide viewport, no flag.
+    expect(bootExpected(true, 1440, false)).toBe(true);
+    // Repeat visit: the flag is set, no boot, reveal starts on mount.
+    expect(bootExpected(true, 1440, true)).toBe(false);
+    // Phones skip the boot (coarse pointer / narrow viewport).
+    expect(bootExpected(false, 1440, false)).toBe(false);
+    expect(bootExpected(true, 390, false)).toBe(false);
+    expect(bootExpected(true, 640, false)).toBe(false);
+    expect(bootExpected(true, 641, false)).toBe(true);
+    // Storage unavailable (null flag): expect the boot, matching the
+    // boot's own fallback.
+    expect(bootExpected(true, 1440, null)).toBe(true);
+    // The cap bounds the wait past the boot's 3.05s unmount.
+    expect(BOOT_WAIT_CAP_MS).toBeGreaterThan(3050);
+    expect(BOOT_OVERLAY_SELECTOR).toContain("System boot sequence");
   });
 });
