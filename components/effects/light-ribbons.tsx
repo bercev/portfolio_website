@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
 import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
@@ -38,7 +38,11 @@ import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
  *   every accent to ocean #7dd3fc and the background to dark — so in
  *   motion mode the ribbons always read ocean-on-dark, whatever palette
  *   or light/dark setting the visitor chose, because the probe reads the
- *   remapped tokens. Palettes genuinely apply only under reduced motion
+ *   remapped tokens — including at mount: the probe re-runs after the
+ *   canvas effect claims data-ascii (RUN7-LIGHT-PROBE, run-7 iter 4),
+ *   since the mount-order probe runs before the claim and would
+ *   otherwise read pre-remap tokens (light #f3f7fc background, dark
+ *   slate glow, un-collapsed palette accent). Palettes genuinely apply only under reduced motion
  *   (where the remap is off and the controls unlock); the static frame
  *   repaints on palette change so it follows them there. Light mode
  *   draws the same ribbons with normal compositing at halved alpha
@@ -285,12 +289,25 @@ export function LightRibbons() {
   const { resolvedTheme } = useTheme();
   const { palette } = usePalette();
 
-  // Re-probe theme colors and rebuild sprites whenever theme or palette
-  // changes. The draw loop reads these refs, so a palette switch takes
-  // effect on the next frame without remounting the canvas; under
-  // reduced motion the static frame is repainted explicitly.
-  useEffect(() => {
-    if (!resolvedTheme) return;
+  // Probe the live theme tokens and rebuild the ribbon sprites. The
+  // draw loop reads these refs, so a palette switch takes effect on the
+  // next frame without remounting the canvas; under reduced motion the
+  // static frame is repainted explicitly.
+  //
+  // RUN7-LIGHT-PROBE (run-7 iter 4): this MUST also run AFTER the
+  // canvas effect sets data-ascii="active" (see the call site there).
+  // The FROST remap only applies while that attribute is set, so a
+  // probe taken before the claim reads PRE-remap tokens: in light mode
+  // --background is #f3f7fc instead of the remapped #05070c (the halo
+  // then painted a light wash over the dark page and ribbons fell back
+  // to source-over at halved alpha), --effect-glow is #3f4856 instead
+  // of pale cyan, and a non-default palette's accent is un-collapsed.
+  // The probe effect below runs before the canvas effect on mount
+  // (declaration order), so without the post-claim re-probe the first
+  // frames — and every frame until a theme/palette change — used stale
+  // tokens. Re-probing after the claim makes mount-time values match
+  // what later theme changes already read.
+  const probeThemeTokens = useCallback(() => {
     const accent =
       probeTokenColor("--accent-neon") ?? { r: 125, g: 211, b: 252 };
     const glow =
@@ -306,7 +323,14 @@ export function LightRibbons() {
       accent: makeSprite(colors.accent),
     };
     repaintStaticRef.current?.();
-  }, [resolvedTheme, palette]);
+  }, []);
+
+  // Re-probe theme colors and rebuild sprites whenever theme or palette
+  // changes.
+  useEffect(() => {
+    if (!resolvedTheme) return;
+    probeThemeTokens();
+  }, [resolvedTheme, palette, probeThemeTokens]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -540,6 +564,12 @@ export function LightRibbons() {
       };
     } else {
       root.setAttribute("data-ascii", "active");
+      // RUN7-LIGHT-PROBE: re-probe NOW, after the claim — the remap
+      // applies from this line on, so this is the first probe that
+      // reads the remapped tokens. Runs synchronously before the first
+      // rAF draw, so no frame ever paints with stale tokens. The draw
+      // loop reads bgRef/spritesRef per frame, so no remount is needed.
+      probeThemeTokens();
       document.addEventListener("visibilitychange", onVisibility);
       raf = requestAnimationFrame(loop);
     }
@@ -558,7 +588,7 @@ export function LightRibbons() {
         delete root.dataset.journey;
       }
     };
-  }, [resolvedTheme]);
+  }, [resolvedTheme, probeThemeTokens]);
 
   return (
     <canvas
