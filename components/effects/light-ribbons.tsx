@@ -21,6 +21,12 @@ import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
  * 18–26px, lateral drift ±60–90px on 11.5–14s cycles, vertical glide
  * ±20–30px, brightness breathing ±16–20% on 7.3–8.6s cycles — fast
  * enough that two hero frames 3s apart show obvious ribbon travel.
+ * Narrow screens (W < 700) run the faster NARROW_RIBBONS profile
+ * (run-7 iter 2, RUN7-MOTION-VIS) — see its comment below. Desktop
+ * runs DESKTOP_RIBBONS (same iteration, in-iteration tuning after
+ * the strict motion critic failed the desktop pair narrowly while
+ * passing mobile: periods ×0.75, drift ×1.3, amplitudes ×1.2,
+ * alpha ×1.15, in-column energy 0.34 → 0.50, halo 0.40 → 0.30).
  *
  * Live-site adaptations (the variant is a standalone FROST page):
  * - Colors come from the LIVE theme tokens, never hardcoded hexes:
@@ -94,31 +100,99 @@ interface RibbonDef {
 }
 
 /**
- * Ribbon geometry/motion, verbatim from the approved variant (motion v2).
- * y0: centre height at x=0 (fraction of H). slope: px drop per px across.
- * p1/p2 are phase-travel periods; drift/dp a slow lateral pattern shift;
+ * Ribbon field glossary (shared by both profiles below). y0: centre
+ * height at x=0 (fraction of H). slope: px drop per px across. p1/p2
+ * are phase-travel periods; drift/dp a slow lateral pattern shift;
  * ga/gp glide the whole band up/down; bd/bp breathe brightness.
+ * Base geometry is verbatim from the approved variant (motion v2);
+ * both live profiles are scaled from it (see their comments).
  */
-const RIBBONS: ReadonlyArray<RibbonDef> = [
-  {
-    y0: -0.04, slope: 0.14, th: 205, alpha: 0.44, role: "deep",
-    a1: 40, f1: 0.0042, p1: 11000, a2: 20, f2: 0.0095, p2: 13500,
-    drift: 70, dp: 13000, ga: 24, gp: 10500, gph: 0.0, bd: 0.18, bp: 8100, bph: 0.0,
+
+/**
+ * Narrow-screen profile (W < 700, run-7 iter 2, RUN7-MOTION-VIS): the
+ * iter-1 port passed the motion pair on desktop (narrowly) but failed
+ * at 390px — critics: "pixel-diff-detectable, not obvious", margin
+ * change only 6.4%, zero change below ~60% of the hero frame. The
+ * failure is structural, not a parameter rounding error: on a 390px
+ * viewport the content column spans the whole width, so the only
+ * full-energy margins are ~20px slivers, the column sat at minS 0.6
+ * under a 0.25 halo, and all four bands live in the top ~40% of the
+ * frame. This profile is a SUBSTANTIAL narrow-screen change, not a
+ * marginal tweak: phase-travel periods ×0.55 (faster), drift ×1.5,
+ * wobble/glide amplitudes ×1.25–1.3, brightness swing up, alpha ×1.1,
+ * plus a FIFTH low band (y0 0.62) so the lower hero moves too. Desktop
+ * got its own milder boost in the same iteration (DESKTOP_RIBBONS
+ * below) after the strict critic failed the desktop pair narrowly.
+ * Column suppression stays (minS
+ * 0.78, halo 0.15): the column is where the pixels are on a phone, so
+ * the bands must be visible THERE, with the halo still keeping text
+ * crisp. Same hue family, same soft look — no global brightness lift,
+ * loudness discipline holds (2 soft + 1 loud).
+ */
+const NARROW_RIBBONS: ReadonlyArray<RibbonDef> = [  {
+    y0: -0.04, slope: 0.14, th: 205, alpha: 0.48, role: "deep",
+    a1: 50, f1: 0.0042, p1: 6050, a2: 25, f2: 0.0095, p2: 7425,
+    drift: 105, dp: 7150, ga: 31, gp: 7350, gph: 0.0, bd: 0.22, bp: 5670, bph: 0.0,
   },
   {
-    y0: 0.10, slope: 0.20, th: 145, alpha: 0.40, role: "bright",
-    a1: 46, f1: 0.0036, p1: 9000, a2: 22, f2: 0.0082, p2: 12000,
-    drift: 90, dp: 11500, ga: 28, gp: 12000, gph: 2.1, bd: 0.20, bp: 7300, bph: 1.7,
+    y0: 0.10, slope: 0.20, th: 145, alpha: 0.44, role: "bright",
+    a1: 58, f1: 0.0036, p1: 4950, a2: 28, f2: 0.0082, p2: 6600,
+    drift: 135, dp: 6325, ga: 36, gp: 8400, gph: 2.1, bd: 0.24, bp: 5110, bph: 1.7,
   },
   {
-    y0: 0.03, slope: -0.11, th: 120, alpha: 0.34, role: "pale",
-    a1: 34, f1: 0.0051, p1: 12500, a2: 18, f2: 0.011, p2: 9800,
-    drift: 60, dp: 14000, ga: 20, gp: 9500, gph: 4.2, bd: 0.16, bp: 8600, bph: 3.4,
+    y0: 0.03, slope: -0.11, th: 120, alpha: 0.37, role: "pale",
+    a1: 43, f1: 0.0051, p1: 6875, a2: 23, f2: 0.011, p2: 5390,
+    drift: 90, dp: 7700, ga: 26, gp: 6650, gph: 4.2, bd: 0.20, bp: 6020, bph: 3.4,
   },
   {
-    y0: 0.36, slope: 0.28, th: 225, alpha: 0.27, role: "accent",
-    a1: 52, f1: 0.0031, p1: 14000, a2: 26, f2: 0.007, p2: 10800,
-    drift: 80, dp: 12500, ga: 30, gp: 13500, gph: 1.2, bd: 0.19, bp: 7800, bph: 5.1,
+    y0: 0.36, slope: 0.28, th: 225, alpha: 0.30, role: "accent",
+    a1: 65, f1: 0.0031, p1: 7700, a2: 33, f2: 0.007, p2: 5940,
+    drift: 120, dp: 6875, ga: 39, gp: 9450, gph: 1.2, bd: 0.23, bp: 5460, bph: 5.1,
+  },
+  {
+    y0: 0.62, slope: -0.16, th: 170, alpha: 0.32, role: "pale",
+    a1: 44, f1: 0.0045, p1: 6200, a2: 20, f2: 0.009, p2: 7000,
+    drift: 100, dp: 6800, ga: 26, gp: 7800, gph: 3.0, bd: 0.22, bp: 5400, bph: 2.2,
+  },
+];
+
+/**
+ * Desktop boost (W >= 700, run-7 iter 2 in-iteration tuning): the
+ * strict motion critic PASSED mobile but FAILED the desktop pair
+ * narrowly — at a glance the two desktop frames looked identical,
+ * movement confined to faint wisps in the corners (top-left streak,
+ * band crossing the ASCII bust), while the canvas metric claimed
+ * 39.4% margin / 51.7% column change. Lesson recorded as a sign:
+ * the canvas sampler measures raw canvas pixels, but the final
+ * frame dims them (0.40 halo over the column + minS 0.34), so a big
+ * canvas diff can still read as near-static to the eye — the eye
+ * verdict governs, the metric is supporting evidence only. The
+ * boost is the same treatment mobile got, milder: periods ×0.75,
+ * drift ×1.3, wobble/glide ×1.2, brightness swing +0.04, alpha
+ * ×1.15, in-column energy 0.34 → 0.50, halo 0.40 → 0.30. Same four
+ * bands, same hue family, same soft look — no 5th low band on
+ * desktop (its problem is faintness, not coverage).
+ */
+const DESKTOP_RIBBONS: ReadonlyArray<RibbonDef> = [
+  {
+    y0: -0.04, slope: 0.14, th: 205, alpha: 0.51, role: "deep",
+    a1: 48, f1: 0.0042, p1: 8250, a2: 24, f2: 0.0095, p2: 10125,
+    drift: 91, dp: 9750, ga: 29, gp: 7875, gph: 0.0, bd: 0.22, bp: 6075, bph: 0.0,
+  },
+  {
+    y0: 0.10, slope: 0.20, th: 145, alpha: 0.46, role: "bright",
+    a1: 55, f1: 0.0036, p1: 6750, a2: 26, f2: 0.0082, p2: 9000,
+    drift: 117, dp: 8625, ga: 34, gp: 9000, gph: 2.1, bd: 0.24, bp: 5475, bph: 1.7,
+  },
+  {
+    y0: 0.03, slope: -0.11, th: 120, alpha: 0.39, role: "pale",
+    a1: 41, f1: 0.0051, p1: 9375, a2: 22, f2: 0.011, p2: 7350,
+    drift: 78, dp: 10500, ga: 24, gp: 7125, gph: 4.2, bd: 0.20, bp: 6450, bph: 3.4,
+  },
+  {
+    y0: 0.36, slope: 0.28, th: 225, alpha: 0.31, role: "accent",
+    a1: 62, f1: 0.0031, p1: 10500, a2: 31, f2: 0.007, p2: 8100,
+    drift: 104, dp: 9375, ga: 36, gp: 10125, gph: 1.2, bd: 0.23, bp: 5850, bph: 5.1,
   },
 ];
 
@@ -304,8 +378,12 @@ export function LightRibbons() {
     const energy = (x: number, y: number): number => {
       const F = 150;
       // Narrow screens: less suppression inside the column — the text is
-      // large there and the bands need to stay visible at phone scale.
-      const minS = W < 700 ? 0.6 : 0.34;
+      // large there and the bands need to stay visible at phone scale
+      // (RUN7-MOTION-VIS: 0.6 left the column a faint haze; 0.78 puts
+      // real light where the pixels are, halo still guards legibility).
+      // Desktop: 0.50 after the strict critic failed the desktop pair
+      // (in-iteration tuning — the 0.34 column read as near-static).
+      const minS = W < 700 ? 0.78 : 0.5;
       let sx: number;
       if (x < colL) sx = minS + (1 - minS) * smooth(0, F, colL - x);
       else if (x > colR) sx = minS + (1 - minS) * smooth(0, F, x - colR);
@@ -326,7 +404,12 @@ export function LightRibbons() {
     };
 
     const thick = (r: RibbonDef, x: number, t: number): number =>
-      r.th * (0.78 + 0.22 * Math.sin(x * 0.0021 + (t * 6.2832) / 12500));
+      r.th *
+      (0.78 +
+        0.22 *
+          Math.sin(
+            x * 0.0021 + (t * 6.2832) / (W < 700 ? 6900 : 9375),
+          ));
 
     const draw = (t: number) => {
       const sprites = spritesRef.current;
@@ -355,11 +438,14 @@ export function LightRibbons() {
       ctx.fillRect(0, 0, W, H * 0.5);
 
       // Ribbons on the half-res offscreen, additive in dark mode.
+      // Narrow screens use the faster, wider-travel profile (+ low band);
+      // desktop uses the boosted profile (in-iteration tuning, iter 2).
+      const list = W < 700 ? NARROW_RIBBONS : DESKTOP_RIBBONS;
       octx.clearRect(0, 0, off.width, off.height);
       octx.globalCompositeOperation = dark ? "lighter" : "source-over";
       const step = 1; // offscreen px (~2 css px) — dense slices, no striping
-      for (let ri = 0; ri < RIBBONS.length; ri++) {
-        const r = RIBBONS[ri];
+      for (let ri = 0; ri < list.length; ri++) {
+        const r = list[ri];
         // Brightness breathing: gentle intensity swell, ±16–20% over ~7–9s.
         const ba =
           r.alpha * alphaScale * (1 + r.bd * Math.sin((t * 6.2832) / r.bp + r.bph));
@@ -398,8 +484,11 @@ export function LightRibbons() {
 
       // Soft dark halo over the content column: text stays crisp anywhere.
       // Lighter on narrow screens, where it would otherwise dim the whole
-      // viewport (the column spans it) and hide the bands at phone scale.
-      const haloA = W < 700 ? 0.25 : 0.4;
+      // viewport (the column spans it) and hide the bands at phone scale
+      // (RUN7-MOTION-VIS: 0.25 → 0.15 so the faster bands read through).
+      // Desktop 0.40 → 0.30 (in-iteration tuning: the 0.40 halo dimmed
+      // the column bands to near-invisible in the final frame).
+      const haloA = W < 700 ? 0.15 : 0.3;
       const F2 = 150;
       const colW = Math.max(1, colR - colL);
       const GL = colW + 2 * F2;
