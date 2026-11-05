@@ -977,6 +977,19 @@ html:not(.dark) .crt-texture {
 
 /* ---------- Immersive 3D Journey ---------- */
 
+/* Light ribbons — the Waylume-style animated light background (run 7),
+   replacing the floating glyph field as the site background. Same
+   z-layer the glyph field used. */
+.light-ribbons {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-journey-scene);
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 /* Floating glyph field — replaced the 3D journey scene as the site
    background on 2026-10-22 (user direction: simplify; the scene read as
    a washed ribbon / blurry bands). Same z-layer the scene used. */
