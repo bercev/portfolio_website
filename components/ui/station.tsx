@@ -21,6 +21,7 @@ export function Station({
     <section
       id={id}
       data-journey-station
+      data-light-chapter={id}
       aria-labelledby={`${id}-heading`}
       className={cn(
         "relative scroll-mt-[calc(4rem+env(safe-area-inset-top))]",

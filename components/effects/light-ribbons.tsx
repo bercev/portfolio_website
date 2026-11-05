@@ -78,6 +78,16 @@ import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
  *   soft background-colored halo over the column — margins and edges
  *   carry the light, text zones stay dark and crisp.
  * - Pauses when the tab hides; one static frame under reduced motion.
+ * - Per-section light chapters (run-7 iter 8, RUN7-EXP-CHAPTER-LIGHT):
+ *   each section declares its ribbon character via data-light-chapter;
+ *   the loop lerps the ribbon profile (angle/thickness/intensity/speed
+ *   + pale/deep role mix, all multipliers inside the live cyan family)
+ *   toward the profile of the section owning the viewport center —
+ *   a discrete toggle with a ~600ms crossfade, re-based on the current
+ *   values when the chapter changes again mid-tween (stale-tween
+ *   cancellation), exactly reversible on scroll-up since detection is
+ *   positional. Reduced motion repaints one static frame of the active
+ *   chapter on scroll (discrete switch, no animation).
  *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
@@ -245,6 +255,92 @@ const DESKTOP_RIBBONS: ReadonlyArray<RibbonDef> = [
 ];
 
 const WHITE: Rgb = { r: 255, g: 255, b: 255 };
+
+/**
+ * Per-section light chapters (run-7 iter 8, RUN7-EXP-CHAPTER-LIGHT).
+ * A chapter is a small multiplier set over the base ribbon profile —
+ * never new colors: slope/thickness/alpha/speed shift the geometry and
+ * energy, pale/deep shift the role mix inside the live cyan family
+ * (the roles themselves already derive from the theme tokens, so every
+ * palette keeps working). The bright role is the peak carrier: a bright
+ * lift raises the brightest band's peak — what the eye ranks chapters
+ * by in a still — where a plain alpha lift only raises the mean.
+ * Projects carries bright 1.5 after two mobile critics read it mid-pack
+ * at 390px despite leading the canvas mean luma in every run. Ranges
+ * are deliberately modest: the chapter should read as a change of light
+ * as you move through the page, not as a new background per section.
+ * Hero is the identity (the approved reference look); contact/epilogue
+ * dim to close the journey.
+ */
+export interface ChapterProfile {
+  /** Added to every band's slope (px drop per px across). */
+  slope: number;
+  /** Band thickness multiplier. */
+  thick: number;
+  /** Band alpha multiplier. */
+  alpha: number;
+  /** Phase-travel speed multiplier (accumulated, never a phase jump). */
+  speed: number;
+  /** Pale-role alpha multiplier (hue-family shift within the cyan). */
+  pale: number;
+  /** Deep-role alpha multiplier. */
+  deep: number;
+  /** Bright-role alpha multiplier — lifts the peak carrier band. */
+  bright: number;
+}
+
+export const CHAPTER_PROFILES: Record<string, ChapterProfile> = {
+  hero: { slope: 0, thick: 1, alpha: 1, speed: 1, pale: 1, deep: 1, bright: 1 },
+  about: { slope: -0.04, thick: 0.9, alpha: 0.85, speed: 0.8, pale: 1.1, deep: 1, bright: 1 },
+  publications: { slope: 0.05, thick: 1.1, alpha: 1, speed: 0.9, pale: 1.25, deep: 0.9, bright: 1 },
+  experience: { slope: -0.03, thick: 1, alpha: 0.9, speed: 1, pale: 1, deep: 1.1, bright: 1 },
+  projects: { slope: 0.06, thick: 1.15, alpha: 1.25, speed: 1.15, pale: 1, deep: 0.9, bright: 1.5 },
+  skills: { slope: 0, thick: 0.85, alpha: 0.8, speed: 0.9, pale: 1, deep: 1, bright: 1 },
+  contact: { slope: -0.05, thick: 0.9, alpha: 0.7, speed: 0.7, pale: 1.1, deep: 1, bright: 1 },
+  epilogue: { slope: -0.05, thick: 0.9, alpha: 0.65, speed: 0.7, pale: 1.1, deep: 1, bright: 1 },
+};
+
+export function getChapterProfile(name: string | null): ChapterProfile {
+  return CHAPTER_PROFILES[name ?? ""] ?? CHAPTER_PROFILES.hero;
+}
+
+export function lerpChapterProfile(
+  a: ChapterProfile,
+  b: ChapterProfile,
+  k: number,
+): ChapterProfile {
+  return {
+    slope: a.slope + (b.slope - a.slope) * k,
+    thick: a.thick + (b.thick - a.thick) * k,
+    alpha: a.alpha + (b.alpha - a.alpha) * k,
+    speed: a.speed + (b.speed - a.speed) * k,
+    pale: a.pale + (b.pale - a.pale) * k,
+    deep: a.deep + (b.deep - a.deep) * k,
+    bright: a.bright + (b.bright - a.bright) * k,
+  };
+}
+
+/** The section owning the viewport center, from measured rects. */
+export function resolveActiveChapter(
+  rects: ReadonlyArray<{ name: string; top: number; bottom: number }>,
+  centerY: number,
+  atBottom = false,
+): string | null {
+  // At the very bottom of the page the last chapter owns the viewport:
+  // the epilogue footer is shorter than half the viewport, so the
+  // center can never fall inside it — without this its profile would
+  // be unreachable.
+  if (atBottom && rects.length > 0) return rects[rects.length - 1].name;
+  let fallback: string | null = null;
+  for (const rect of rects) {
+    if (rect.top <= centerY && rect.bottom >= centerY) return rect.name;
+    if (rect.top <= centerY) fallback = rect.name;
+  }
+  // In a gap between sections, keep the last one scrolled past; above
+  // the first section, the first section owns the center.
+  return fallback ?? rects[0]?.name ?? null;
+}
+
 
 function probeTokenColor(token: string): Rgb | null {
   const probe = document.createElement("span");
@@ -429,6 +525,71 @@ export function LightRibbons() {
     let colL = 0;
     let colR = 0;
 
+    // Chapter state (RUN7-EXP-CHAPTER-LIGHT): the profile currently
+    // rendered, the one it is lerping from/to, and the tween start.
+    // A chapter change re-bases `from` on the CURRENT interpolated
+    // values, so a mid-tween re-target cancels the stale tween instead
+    // of queueing behind it; scrolling back re-targets the earlier
+    // chapter, so the whole system is exactly reversible.
+    let chapterCur: ChapterProfile = { ...CHAPTER_PROFILES.hero };
+    let chapterFrom: ChapterProfile = chapterCur;
+    let chapterTarget: ChapterProfile = chapterCur;
+    let chapterTweenStart = 0;
+    let chapterActive = "hero";
+    // Chapter time: the ribbon phase clock. It accumulates wall time
+    // scaled by the current chapter's speed, so a speed change bends
+    // the phase rate instead of jumping the phase.
+    let tChapter = 12000;
+    let lastT = 0;
+    let lastScrollY = -1;
+    let lastH = -1;
+
+    /** Resolve the section owning the viewport center (cheap: rects
+     * are re-read only when the scroll position or height changed). */
+    const updateChapter = (now: number) => {
+      if (window.scrollY === lastScrollY && H === lastH) return;
+      lastScrollY = window.scrollY;
+      lastH = H;
+      const rects = Array.from(
+        document.querySelectorAll("[data-light-chapter]"),
+      ).map((el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          name: el.getAttribute("data-light-chapter") ?? "hero",
+          top: r.top,
+          bottom: r.bottom,
+        };
+      });
+      const active = resolveActiveChapter(
+        rects,
+        window.innerHeight / 2,
+        window.scrollY + window.innerHeight >=
+          document.documentElement.scrollHeight - 2,
+      );
+      if (!active || active === chapterActive) return;
+      chapterActive = active;
+      chapterFrom = { ...chapterCur };
+      chapterTarget = getChapterProfile(active);
+      chapterTweenStart = now;
+      // Probe hook for verification (and for any future chapter-aware
+      // chrome): the canvas always names its active chapter.
+      canvas.dataset.activeChapter = active;
+      // Reduced motion has no tween: the static frame snaps to the
+      // active chapter's profile immediately. `from` snaps too, so the
+      // stepChapter lerp below (k = 0 on this frame) cannot pull the
+      // rendered profile back to the previous chapter.
+      if (reduced) {
+        chapterCur = { ...chapterTarget };
+        chapterFrom = { ...chapterTarget };
+      }
+    };
+
+    /** Advance the ~600ms crossfade toward the active chapter. */
+    const stepChapter = (now: number) => {
+      const k = Math.min(1, (now - chapterTweenStart) / 600);
+      chapterCur = lerpChapterProfile(chapterFrom, chapterTarget, smooth(0, 1, k));
+    };
+
     /** Content column: the hero editorial measure every section shares.
      * Inset by the element's inline padding so the TEXT zone (not the
      * padded box) defines suppression — on a 390px viewport the box
@@ -495,28 +656,38 @@ export function LightRibbons() {
       return sx * vf;
     };
 
-    const centerY = (r: RibbonDef, x: number, t: number): number => {
-      const ph = r.drift * Math.sin((t * 6.2832) / r.dp);
+    const centerY = (r: RibbonDef, x: number, ct: number): number => {
+      const ph = r.drift * Math.sin((ct * 6.2832) / r.dp);
       return (
         r.y0 * H +
-        r.slope * x +
-        r.ga * Math.sin((t * 6.2832) / r.gp + r.gph) +
-        r.a1 * Math.sin((x + ph) * r.f1 + (t * 6.2832) / r.p1) +
-        r.a2 * Math.sin((x - ph * 0.6) * r.f2 - (t * 6.2832) / r.p2)
+        (r.slope + chapterCur.slope) * x +
+        r.ga * Math.sin((ct * 6.2832) / r.gp + r.gph) +
+        r.a1 * Math.sin((x + ph) * r.f1 + (ct * 6.2832) / r.p1) +
+        r.a2 * Math.sin((x - ph * 0.6) * r.f2 - (ct * 6.2832) / r.p2)
       );
     };
 
-    const thick = (r: RibbonDef, x: number, t: number): number =>
+    const thick = (r: RibbonDef, x: number, ct: number): number =>
       r.th *
+      chapterCur.thick *
       (0.78 +
         0.22 *
           Math.sin(
-            x * 0.0021 + (t * 6.2832) / (W < 700 ? 6900 : 9375),
+            x * 0.0021 + (ct * 6.2832) / (W < 700 ? 6900 : 9375),
           ));
 
     const draw = (t: number) => {
       const sprites = spritesRef.current;
       if (!sprites) return;
+      // Chapter clock: advance the ribbon phase at the current
+      // chapter's speed, and crossfade toward the active chapter's
+      // profile. dt is clamped so a hidden-tab gap never jumps the
+      // phase (the loop also pauses on visibilitychange).
+      const dt = lastT > 0 ? Math.min(100, Math.max(0, t - lastT)) : 0;
+      lastT = t;
+      updateChapter(t);
+      stepChapter(t);
+      tChapter += dt * chapterCur.speed;
       const bg = bgRef.current;
       const accent = accentRef.current;
       // Composite off the PROBED background luminance, not the theme
@@ -550,14 +721,27 @@ export function LightRibbons() {
       for (let ri = 0; ri < list.length; ri++) {
         const r = list[ri];
         // Brightness breathing: gentle intensity swell, ±16–20% over ~7–9s.
+        // Chapter multipliers: overall alpha + the pale/deep role mix.
+        const roleScale =
+          r.role === "bright"
+            ? chapterCur.bright
+            : r.role === "pale"
+              ? chapterCur.pale
+              : r.role === "deep"
+                ? chapterCur.deep
+                : 1;
         const ba =
-          r.alpha * alphaScale * (1 + r.bd * Math.sin((t * 6.2832) / r.bp + r.bph));
+          r.alpha *
+          alphaScale *
+          chapterCur.alpha *
+          roleScale *
+          (1 + r.bd * Math.sin((tChapter * 6.2832) / r.bp + r.bph));
         for (let ox = 0; ox < off.width; ox += step) {
           const xCss = (ox + step / 2) / S;
-          const cCss = centerY(r, xCss, t);
+          const cCss = centerY(r, xCss, tChapter);
           const a = ba * energy(xCss, cCss);
           if (a < 0.004) continue;
-          const thPx = thick(r, xCss, t) * S;
+          const thPx = thick(r, xCss, tChapter) * S;
           octx.globalAlpha = Math.min(1, a);
           octx.drawImage(
             sprites[r.role],
@@ -652,14 +836,14 @@ export function LightRibbons() {
             const s = ph / crossMs;
             const env = smooth(0, 0.12, s) * (1 - smooth(0.88, 1, s));
             const headX = -150 + s * dist;
-            const headY = centerY(host, headX, t);
+            const headY = centerY(host, headX, tChapter);
             const headR = narrow ? 30 : 44;
             const spacing = narrow ? 20 : 26;
             ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
             // Tail first: fading ghosts behind the head along the band.
             for (let k = 5; k >= 1; k--) {
               const tx = headX - k * spacing;
-              const ty = centerY(host, tx, t);
+              const ty = centerY(host, tx, tChapter);
               const a = env * 0.5 * (1 - k / 6) * energy(tx, ty);
               if (a < 0.004) continue;
               const d = headR * (1 - k / 8) * 2;
@@ -707,6 +891,18 @@ export function LightRibbons() {
     };
 
     resize();
+    // Reduced motion: the static frame follows the active chapter —
+    // a discrete repaint on scroll (debounced, only when the chapter
+    // actually changes — updateChapter snaps chapterCur to the new
+    // target), never an animation.
+    let reducedScrollTimer = 0;
+    const onReducedScroll = () => {
+      window.clearTimeout(reducedScrollTimer);
+      reducedScrollTimer = window.setTimeout(() => {
+        if (disposed) return;
+        draw(12000);
+      }, 150);
+    };
     if (reduced) {
       draw(12000); // one deliberate still frame; bust stays absent by design
       // Palette/theme changes under reduced motion repaint the static
@@ -716,6 +912,7 @@ export function LightRibbons() {
         resize();
         draw(12000);
       };
+      window.addEventListener("scroll", onReducedScroll, { passive: true });
     } else {
       root.setAttribute("data-ascii", "active");
       // RUN7-LIGHT-PROBE: re-probe NOW, after the claim — the remap
@@ -732,8 +929,10 @@ export function LightRibbons() {
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
+      window.clearTimeout(reducedScrollTimer);
       repaintStaticRef.current = null;
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onReducedScroll);
       document.removeEventListener("visibilitychange", onVisibility);
       if (root.getAttribute("data-ascii") === "active") {
         root.removeAttribute("data-ascii");

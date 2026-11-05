@@ -15,6 +15,7 @@ export function JourneyEpilogue() {
   return (
     <footer
       data-journey-epilogue
+      data-light-chapter="epilogue"
       aria-label="End of the journey"
       className="journey-epilogue"
     >

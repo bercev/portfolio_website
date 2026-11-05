@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
+import { useTheme } from "next-themes";
 
 import ASCIIText from "@/components/effects/react-bits-ascii-text";
 import { useMotionPreference } from "@/components/providers/motion-provider";
@@ -17,10 +18,40 @@ export function Hero({ content }: { content: HeroContent }) {
   const { forced } = useMotionPreference();
   const osReduce = useReducedMotion();
   const reduceMotion = Boolean(forced) || osReduce;
+  const { resolvedTheme } = useTheme();
+  const isLight = resolvedTheme === "light";
+  // Light-mode BERAT colors (run-7 iter 8, round-3 fix): in light mode
+  // the page is near-white and the shader's brightness boost pushes any
+  // bright tint to near-white, so the white/cyan gradient vanishes —
+  // the R and A read as pure white glyphs on a near-white page. The
+  // component's built-in light theme is NOT the fix: its inversion
+  // turns the cyan palette red. So the theme prop stays "dark" (no
+  // inversion) and light mode gets dark-navy colors that survive the
+  // boost and read as the deep end of the cyan family on white.
+  // ROUND-4 FIX (this fire): the navy set is gated on the EFFECTIVE
+  // background, not the theme alone. Under real motion the light
+  // ribbons claim data-ascii="active" and the FROST remap forces the
+  // page dark even when the theme is light — the round-3 set rendered
+  // dark navy on dark and BERAT vanished (v7iter8 light-motion hero).
+  // The page is genuinely light only when the theme is light AND
+  // motion is reduced (no data-ascii claim, no remap), so the navy
+  // set applies only then; every other mode keeps the bright cyan.
+  // ROUND-5 ATTEMPT (this fire) REVERTED: near-black navy
+  // ["#000000", "#000408", "#000a12"] moved glyph cores only 139→125
+  // luminance (ratio 1.77→1.97) and read as neutral mid-grey, not navy
+  // — the shader's glyph-alpha blend over white is the limiter, and
+  // the near-black set loses the cyan identity for a hair of darkness.
+  // A fresh mini-critic judged it "about the same for legibility" and
+  // voted REVERT. The round-4 slate-blue set stays: all five letters
+  // readable, faint blue identity kept. A real fix needs a shader-level
+  // glyph-alpha change in the shared ASCIIText component — out of
+  // run-7's background-only scope; filed as RUN7-LIGHT-BERAT-SOFT.
+  const lightBerat = isLight && reduceMotion;
 
   return (
     <section
       id="home"
+      data-light-chapter="home"
       aria-labelledby="home-heading"
       className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] flex-col"
     >
@@ -43,7 +74,11 @@ export function Hero({ content }: { content: HeroContent }) {
             fontFamily="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
             fontWeight={700}
             textColor="#ffffff"
-            colors={["#ffffff", "#00e5ff", "#0090ff"]}
+            colors={
+              lightBerat
+                ? ["#000d17", "#001320", "#001a2b"]
+                : ["#ffffff", "#00e5ff", "#0090ff"]
+            }
             textScale={2.3}
             letterSpacing={0.07}
             blocks={0}
