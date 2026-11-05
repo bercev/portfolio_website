@@ -114,6 +114,25 @@ import { BLUE_NOISE_128 } from "@/lib/blue-noise";
  *   reduced motion = static (scrub disabled, the reduced repaint
  *   already repositions on scroll). The flare rides the scrubbed
  *   band's centerline, so it stays on its band while scrolling.
+ * - Scroll velocity (run-7 iter 16, RUN7-EXP-SCROLL-VELOCITY):
+ *   the ribbons answer the SCROLL ITSELF, not just the position —
+ *   while the page is moving, the phase-travel rate surges (up to
+ *   7x at full envelope) and the drift amplitude grows (up to 3x),
+ *   then both settle back to ambient at rest (fast attack ~8/s,
+ *   slow decay ~1.2/s). DISTINCT from scrub (a positional phase
+ *   offset that persists at a scroll position) and from chapters (a
+ *   discrete profile toggle): this is a transient RATE effect that
+ *   exists only while scrolling and decays to zero at rest. The
+ *   velocity is measured against wall-clock frame time, not the
+ *   clamped frame dt — the clamp would over-read velocity on slow
+ *   frames and pin the envelope at 1 for any scroll. The boost is
+ *   deliberately LARGE (in-iteration tuning: at +2x the A/B rate was
+ *   only 1.29-1.34x and two fresh strict critics could not tell the
+ *   new build from the old in stills — a rate change has to be big
+ *   to read as a response, not a shimmer). Rate only — no alpha or
+ *   energy change, so the legibility envelope (column suppression,
+ *   rail guard, halo) is untouched; reduced motion = static
+ *   (velocity never sampled, no rAF loop).
  *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
@@ -548,12 +567,72 @@ export function chaseValue(
 }
 
 /**
+ * Scroll velocity (run-7 iter 16, RUN7-EXP-SCROLL-VELOCITY): a
+ * transient envelope in [0,1] driven by |scroll velocity|. Fast
+ * attack (8/s — the light answers the fling within ~125ms) and slow
+ * decay (1.2/s — it settles back to ambient over ~1s at rest), so a
+ * scroll burst visibly quickens the ribbons without a snap. The
+ * envelope multiplies the phase-travel rate (up to +6x, i.e. 7x
+ * total) and the drift amplitude (up to +2x) — rate only, never
+ * alpha or energy, so the legibility envelope is untouched. The
+ * envelope is a pure function of the measured velocity, so it is
+ * unit-testable; the draw loop below samples scrollY per frame.
+ */
+export const VELOCITY_FULL_SPEED = 1500; // px/s at which the envelope saturates
+export const VELOCITY_ATTACK_RATE = 8; // per second — fast attack
+export const VELOCITY_DECAY_RATE = 1.2; // per second — slow decay
+export const VELOCITY_SPEED_BOOST = 6.0; // extra phase rate at full envelope
+export const VELOCITY_DRIFT_BOOST = 2.0; // extra drift amplitude at full envelope
+
+/** Envelope target for an absolute scroll velocity (px/s), in [0,1]. */
+export function velocityEnvelopeTarget(absVelocityPxPerSec: number): number {
+  if (!Number.isFinite(absVelocityPxPerSec) || absVelocityPxPerSec <= 0) {
+    return 0;
+  }
+  return Math.min(1, absVelocityPxPerSec / VELOCITY_FULL_SPEED);
+}
+
+/** True scroll velocity (px/s) from two scroll samples and their
+ * rAF timestamps — measured against WALL-CLOCK time, not the clamped
+ * frame dt: on slow frames (headless swiftshader, low-end hardware)
+ * the clamped dt (100ms) over-reads velocity up to 10x and pins the
+ * envelope at 1 for any scroll, defeating the proportional design
+ * (iter 16c: fast and slow scrolls both peaked at 0.8–0.85 envelope
+ * under the clamped read). Returns null when the interval is not
+ * positive (first frame, or a rewound clock). The phase advance
+ * itself stays on the clamped dt — only the measurement uses wall
+ * time, since velocity is a physical rate in px per real second. */
+export function measureScrollVelocity(
+  prevScrollY: number,
+  scrollY: number,
+  prevT: number,
+  t: number,
+): number | null {
+  const dtMs = t - prevT;
+  if (!(dtMs > 0)) return null;
+  return Math.abs(scrollY - prevScrollY) / (dtMs / 1000);
+}
+
+/** Step the envelope toward its target: fast attack, slow decay. */
+export function velocityEnvelopeStep(
+  cur: number,
+  target: number,
+  dtSeconds: number,
+): number {
+  const rate = target > cur ? VELOCITY_ATTACK_RATE : VELOCITY_DECAY_RATE;
+  return chaseValue(cur, target, rate, dtSeconds);
+}
+
+/**
  * A band's centerline height at x, pure in its inputs so the scrub
  * math is unit-testable. `ct` is the chapter clock (ms); `scrubPhase`
  * is the scroll-derived phase offset in radians, added to the two
  * phase-travel terms in their own sign direction so both wobbles
  * advance with the scroll. Drift and glide stay wall-clock: they are
- * slow ambient motion, not phase.
+ * slow ambient motion, not phase. `driftScale` (run-7 iter 16,
+ * RUN7-EXP-SCROLL-VELOCITY) scales the lateral drift amplitude while
+ * the page is scrolling — 1 at rest, up to 3 at full scroll
+ * velocity — so the bands swing wider mid-fling and settle back.
  */
 export function ribbonCenterY(
   r: RibbonDef,
@@ -562,8 +641,9 @@ export function ribbonCenterY(
   chapterSlope: number,
   H: number,
   scrubPhase = 0,
+  driftScale = 1,
 ): number {
-  const ph = r.drift * Math.sin((ct * 6.2832) / r.dp);
+  const ph = r.drift * driftScale * Math.sin((ct * 6.2832) / r.dp);
   return (
     r.y0 * H +
     (r.slope + chapterSlope) * x +
@@ -728,6 +808,14 @@ export function LightRibbons() {
     let scrubCur = 0;
     let scrubTarget = 0;
     let lastScrubProbe = "";
+    // Scroll velocity (RUN7-EXP-SCROLL-VELOCITY): the transient
+    // envelope in [0,1] — 0 at rest, surging toward 1 while the page
+    // moves. Sampled per frame from scrollY; reduced motion never
+    // samples it (no rAF loop), so it stays 0 there by construction.
+    let velEnv = 0;
+    let lastVelScrollY = -1;
+    let lastVelT = -1;
+    let lastVelProbe = "";
 
     /** Resolve the section owning the viewport center (cheap: rects
      * are re-read only when the scroll position or height changed). */
@@ -861,7 +949,15 @@ export function LightRibbons() {
     };
 
     const centerY = (r: RibbonDef, x: number, ct: number): number =>
-      ribbonCenterY(r, x, ct, chapterCur.slope, H, scrubCur);
+      ribbonCenterY(
+        r,
+        x,
+        ct,
+        chapterCur.slope,
+        H,
+        scrubCur,
+        1 + velEnv * VELOCITY_DRIFT_BOOST,
+      );
 
     const thick = (r: RibbonDef, x: number, ct: number): number =>
       r.th *
@@ -883,7 +979,42 @@ export function LightRibbons() {
       lastT = t;
       updateChapter(t);
       stepChapter(t);
-      tChapter += dt * chapterCur.speed;
+      // Scroll velocity (RUN7-EXP-SCROLL-VELOCITY): sample the scroll
+      // position every frame and step the envelope toward the target
+      // for the measured velocity — fast attack while scrolling, slow
+      // decay at rest. The velocity is measured against WALL-CLOCK
+      // frame time (measureScrollVelocity): the clamped dt below
+      // (100ms) over-reads velocity up to 10x on slow frames and
+      // would pin the envelope at 1 for any scroll. The envelope
+      // chase uses the same wall-clock interval, so attack/decay run
+      // at their designed per-real-second rates; the PHASE advance
+      // below stays on the clamped dt so a hidden-tab gap never
+      // jumps the phase. The envelope multiplies the phase rate
+      // (up to 3x) and the drift amplitude in centerY (up to 1.5x)
+      // — rate only, never alpha or energy.
+      if (!reduced) {
+        const sy = window.scrollY;
+        if (lastVelScrollY >= 0) {
+          const v = measureScrollVelocity(lastVelScrollY, sy, lastVelT, t);
+          if (v !== null) {
+            const velDt = Math.min(1000, Math.max(0, t - lastVelT)) / 1000;
+            velEnv = velocityEnvelopeStep(
+              velEnv,
+              velocityEnvelopeTarget(v),
+              velDt,
+            );
+          }
+        }
+        lastVelScrollY = sy;
+        lastVelT = t;
+        const vProbe = velEnv.toFixed(2);
+        if (vProbe !== lastVelProbe) {
+          lastVelProbe = vProbe;
+          canvas.dataset.scrollVelocity = vProbe;
+        }
+      }
+      tChapter +=
+        dt * chapterCur.speed * (1 + velEnv * VELOCITY_SPEED_BOOST);
       // Scroll scrub (RUN7-EXP-SCROLL-SCRUB): chase the scroll-derived
       // phase offset toward its target with the same clamped dt, so
       // the light follows the scroll at a frame-rate-independent rate

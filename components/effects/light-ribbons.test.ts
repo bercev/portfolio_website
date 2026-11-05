@@ -5,16 +5,24 @@ import {
   DITHER_SEAM_HEIGHT,
   SCRUB_CHASE_RATE,
   SCRUB_CYCLES,
+  VELOCITY_ATTACK_RATE,
+  VELOCITY_DECAY_RATE,
+  VELOCITY_DRIFT_BOOST,
+  VELOCITY_FULL_SPEED,
+  VELOCITY_SPEED_BOOST,
   chaseValue,
   dissolveLevelAt,
   ditherSeamPasses,
   getChapterProfile,
   lerpChapterProfile,
+  measureScrollVelocity,
   resolveActiveChapter,
   ribbonCenterY,
   scrubPhaseOffset,
   scrollProgress,
   seamDrawY,
+  velocityEnvelopeStep,
+  velocityEnvelopeTarget,
 } from "./light-ribbons";
 
 describe("light-ribbon chapters", () => {
@@ -301,5 +309,92 @@ describe("scroll scrub", () => {
     const ambient = ribbonCenterY(band, 0, 1000, 0, 800, 0);
     const scrubbed = ribbonCenterY(band, 0, 1000, 0, 800, Math.PI);
     expect(Math.abs(scrubbed - ambient)).toBeGreaterThan(10);
+  });
+});
+
+describe("scroll velocity", () => {
+  it("keeps the velocity constants at their designed values", () => {
+    expect(VELOCITY_FULL_SPEED).toBe(1500);
+    expect(VELOCITY_ATTACK_RATE).toBe(8);
+    expect(VELOCITY_DECAY_RATE).toBe(1.2);
+    // Large by design (in-iteration tuning): at +2x phase / +0.5x
+    // drift the A/B canvas rate was only 1.29-1.34x and two fresh
+    // strict critics could not tell the new build from the old in
+    // stills — a rate change has to be big to read as a response.
+    expect(VELOCITY_SPEED_BOOST).toBe(6.0);
+    expect(VELOCITY_DRIFT_BOOST).toBe(2.0);
+    // Fast attack, slow decay — the light answers the fling quickly
+    // and settles back over about a second at rest.
+    expect(VELOCITY_ATTACK_RATE).toBeGreaterThan(VELOCITY_DECAY_RATE);
+  });
+
+  it("maps absolute scroll velocity to an envelope target in [0,1]", () => {
+    expect(velocityEnvelopeTarget(0)).toBe(0);
+    expect(velocityEnvelopeTarget(750)).toBe(0.5);
+    expect(velocityEnvelopeTarget(1500)).toBe(1);
+    expect(velocityEnvelopeTarget(3000)).toBe(1);
+    expect(velocityEnvelopeTarget(-100)).toBe(0);
+    expect(velocityEnvelopeTarget(Number.NaN)).toBe(0);
+  });
+
+  it("attacks fast and decays slow, never overshooting", () => {
+    // A quarter-second of full-velocity scrolling at attack rate 8
+    // covers 1 - e^-2 of the gap — the envelope is mostly engaged.
+    const attacked = velocityEnvelopeStep(0, 1, 0.25);
+    expect(attacked).toBeCloseTo(1 - Math.exp(-2), 6);
+    expect(attacked).toBeLessThanOrEqual(1);
+    // The same quarter-second at rest only decays 1 - e^-0.3 — the
+    // envelope lingers, settling back over about a second.
+    const decayed = velocityEnvelopeStep(1, 0, 0.25);
+    expect(decayed).toBeCloseTo(Math.exp(-0.3), 6);
+    expect(decayed).toBeGreaterThan(0.5);
+    expect(decayed).toBeLessThan(1);
+    // No time elapsed: no movement either way.
+    expect(velocityEnvelopeStep(0.4, 1, 0)).toBe(0.4);
+    expect(velocityEnvelopeStep(0.4, 0, 0)).toBe(0.4);
+  });
+
+  it("measures true scroll velocity against wall-clock time", () => {
+    // 100px in 100ms is 1000px/s; 100px in 1s is 100px/s — the rate
+    // is px per REAL second, so a slow frame interval does not
+    // inflate it (the clamped-dt read did: iter 16c).
+    expect(measureScrollVelocity(0, 100, 0, 100)).toBe(1000);
+    expect(measureScrollVelocity(0, 100, 0, 1000)).toBe(100);
+    expect(measureScrollVelocity(500, 500, 0, 100)).toBe(0);
+    expect(measureScrollVelocity(0, 100, 100, 0)).toBeNull();
+    expect(measureScrollVelocity(0, 100, 100, 100)).toBeNull();
+    // Scrolling up measures the same magnitude.
+    expect(measureScrollVelocity(1000, 900, 0, 100)).toBe(1000);
+  });
+
+  it("widens the drift swing at full envelope and is a no-op at rest", () => {
+    const band = {
+      y0: -0.04,
+      slope: 0.14,
+      th: 205,
+      alpha: 0.48,
+      role: "deep" as const,
+      a1: 50,
+      f1: 0.0042,
+      p1: 6050,
+      a2: 25,
+      f2: 0.0095,
+      p2: 7425,
+      drift: 105,
+      dp: 7150,
+      ga: 31,
+      gp: 7350,
+      gph: 0.0,
+      bd: 0.22,
+      bp: 5670,
+      bph: 0.0,
+    };
+    // driftScale defaults to 1: identical to the explicit 1.0 call.
+    const rest = ribbonCenterY(band, 720, 1000, 0, 800, 0);
+    expect(ribbonCenterY(band, 720, 1000, 0, 800, 0, 1)).toBe(rest);
+    // At 1.5x drift the centerline moves measurably — the bands swing
+    // wider mid-fling.
+    const boosted = ribbonCenterY(band, 720, 1000, 0, 800, 0, 1.5);
+    expect(Math.abs(boosted - rest)).toBeGreaterThan(1);
   });
 });
