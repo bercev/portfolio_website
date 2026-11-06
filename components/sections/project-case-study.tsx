@@ -17,6 +17,7 @@ import { flushSync } from "react-dom";
 import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
 import { TechPills } from "@/components/ui/tech-pills";
+import { useDitherReveal } from "@/components/effects/use-dither-reveal";
 import type { Project } from "@/data/content";
 import { isProjectHash, projectAnchorId } from "@/lib/project-anchor";
 import {
@@ -242,6 +243,9 @@ export function CaseStudyRow({
   const [printOpen, setPrintOpen] = useState(false);
   const panelId = useId();
   const shouldReduceMotion = useReducedMotion();
+  // RUN8-STYLE-DITHER: the row dissolves in through the blue-noise tile
+  // on first scroll into view (reel-4 rule 16, masks for reveals).
+  const revealRef = useDitherReveal<HTMLElement>();
   const preview = projectPreviews[project.title];
   const rowId = projectAnchorId(project.title);
 
@@ -337,6 +341,8 @@ export function CaseStudyRow({
   return (
     <article
       id={rowId}
+      ref={revealRef}
+      data-dither-reveal
       className={
         featured
           ? "journey-project-featured scroll-mt-[calc(4rem+env(safe-area-inset-top))]"

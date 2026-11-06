@@ -6,6 +6,7 @@ import type { PortfolioContent, Publication } from "@/data/content";
 
 import { paperAnchorId } from "@/lib/paper-anchor";
 import { HoverPreview } from "@/components/ui/hover-preview";
+import { useDitherReveal } from "@/components/effects/use-dither-reveal";
 import { Station } from "@/components/ui/station";
 
 type PublicationsProps = {
@@ -72,6 +73,61 @@ function scholarlyArticleJsonLd(
   };
 }
 
+function PublicationRow({
+  publication,
+  index,
+}: {
+  readonly publication: Publication;
+  readonly index: number;
+}) {
+  // RUN8-STYLE-DITHER: the row dissolves in through the blue-noise tile
+  // on first scroll into view (reel-4 rule 16, masks for reveals).
+  const revealRef = useDitherReveal<HTMLElement>();
+  return (
+    <article
+      key={publication.href}
+      id={paperAnchorId(publication.slug)}
+      ref={revealRef}
+      data-dither-reveal
+      data-publication-row
+      data-publication-lead={index === 0 ? "true" : undefined}
+      className={
+        index === 0
+          ? "journey-pub-row journey-pub-row--lead scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+          : "journey-pub-row scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+      }
+    >
+      <p className="journey-pub-index" aria-hidden="true">
+        {index + 1}
+      </p>
+      <div className="journey-pub-main">
+        <HoverPreview
+          title={publication.title}
+          href={publication.href}
+          pdfUrl={publication.pdfUrl}
+          headingClassName={
+            index === 0
+              ? "journey-pub-title journey-pub-title--lead"
+              : "journey-pub-title"
+          }
+          linkClassName="decoration-portfolio-accent"
+          linkIconSize={24}
+          previewClassName="journey-pub-preview"
+        />
+        <p className="journey-pub-gloss">{publication.gloss}</p>
+      </div>
+      <aside
+        className="journey-pub-marginalia"
+        aria-label="Venue and date"
+      >
+        <span className="journey-pub-venue">{publication.venue}</span>
+        <span className="journey-pub-date">{publication.date}</span>
+        <CiteButton publication={publication} />
+      </aside>
+    </article>
+  );
+}
+
 export function Publications({ content, heading }: PublicationsProps) {
   return (
     <Station
@@ -90,45 +146,11 @@ export function Publications({ content, heading }: PublicationsProps) {
       />
       <div className="journey-pub-list journey-ledger">
         {content.map((publication, index) => (
-          <article
+          <PublicationRow
             key={publication.href}
-            id={paperAnchorId(publication.slug)}
-            data-publication-row
-            data-publication-lead={index === 0 ? "true" : undefined}
-            className={
-              index === 0
-                ? "journey-pub-row journey-pub-row--lead scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
-                : "journey-pub-row scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
-            }
-          >
-            <p className="journey-pub-index" aria-hidden="true">
-              {index + 1}
-            </p>
-            <div className="journey-pub-main">
-              <HoverPreview
-                title={publication.title}
-                href={publication.href}
-                pdfUrl={publication.pdfUrl}
-                headingClassName={
-                  index === 0
-                    ? "journey-pub-title journey-pub-title--lead"
-                    : "journey-pub-title"
-                }
-                linkClassName="decoration-portfolio-accent"
-                linkIconSize={24}
-                previewClassName="journey-pub-preview"
-              />
-              <p className="journey-pub-gloss">{publication.gloss}</p>
-            </div>
-            <aside
-              className="journey-pub-marginalia"
-              aria-label="Venue and date"
-            >
-              <span className="journey-pub-venue">{publication.venue}</span>
-              <span className="journey-pub-date">{publication.date}</span>
-              <CiteButton publication={publication} />
-            </aside>
-          </article>
+            publication={publication}
+            index={index}
+          />
         ))}
       </div>
     </Station>

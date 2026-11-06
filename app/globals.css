@@ -3278,6 +3278,17 @@ html.dark .plain-backdrop {
   scrollbar-width: thin;
 }
 
+/* Dither reveal (run-8 RUN8-STYLE-DITHER): the mask tile repeats at its
+   native 128px so the blue-noise grain stays seamless across the row. The
+   mask-image itself is set inline by use-dither-reveal.ts; print clears it
+   in the @media print block below. */
+[data-dither-reveal] {
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  -webkit-mask-size: 128px 128px;
+  mask-size: 128px 128px;
+}
+
 /* Print record (run-3 iter 12): a recruiter printing the page to PDF gets a
    clean single-column paper record instead of the dark canvas-heavy screen.
    Screen styles are untouched — every rule below lives inside @media print.
@@ -3287,6 +3298,13 @@ html.dark .plain-backdrop {
   @page {
     size: A4;
     margin: 2cm;
+  }
+
+  /* Dither reveal (run-8 RUN8-STYLE-DITHER): a row caught mid-dissolve
+     must still print whole — !important beats the inline mask. */
+  [data-dither-reveal] {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
   }
 
   *,
