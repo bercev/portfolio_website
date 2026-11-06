@@ -2972,7 +2972,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   opacity: 0.92;
 }
 .journey-contact-form-submit:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 .journey-contact-form-submit:disabled {
   opacity: 0.6;
