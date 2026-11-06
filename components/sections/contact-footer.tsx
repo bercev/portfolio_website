@@ -1,6 +1,7 @@
 import type { PortfolioContent } from "@/data/content";
 
 import { MotionVersionLink } from "@/components/chrome/motion-version-link";
+import { TopoTexture } from "@/components/effects/topo-texture";
 import { TerminalFlyout } from "@/components/terminal/terminal-flyout";
 import { ExternalLink } from "@/components/ui/external-link";
 import { Station } from "@/components/ui/station";
@@ -18,6 +19,7 @@ export function ContactFooter({
       heading={content.heading}
       className="journey-station--connect"
     >
+      <TopoTexture />
       <div className="journey-col-main journey-copy journey-copy--connect">
         <p className="journey-lead text-lg leading-8">{content.message}</p>
         <ContactForm />
