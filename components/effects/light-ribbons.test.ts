@@ -13,12 +13,6 @@ import {
   REVEAL_RING_THICKNESS_PX,
   SCRUB_CHASE_RATE,
   SCRUB_CYCLES,
-  SMEAR_ATTACK_RATE,
-  SMEAR_DECAY_RATE,
-  SMEAR_FULL_SPEED,
-  SMEAR_MAX_LAG_PX,
-  SMEAR_MAX_SKEW_DEG,
-  SMEAR_MAX_STRETCH,
   VELOCITY_ATTACK_RATE,
   VELOCITY_DECAY_RATE,
   VELOCITY_DRIFT_BOOST,
@@ -42,14 +36,6 @@ import {
   scrubPhaseOffset,
   scrollProgress,
   seamDrawY,
-  smearCoverScaleX,
-  smearLagPx,
-  smearPoint,
-  smearSkewRadians,
-  smearStep,
-  smearStretch,
-  smearTargetForVelocity,
-  smearTransform,
   velocityEnvelopeStep,
   velocityEnvelopeTarget,
 } from "./light-ribbons";
@@ -425,115 +411,6 @@ describe("scroll velocity", () => {
     // wider mid-fling.
     const boosted = ribbonCenterY(band, 720, 1000, 0, 800, 0, 1.5);
     expect(Math.abs(boosted - rest)).toBeGreaterThan(1);
-  });
-});
-
-describe("scroll smear", () => {
-  it("keeps the smear constants at their designed values", () => {
-    expect(SMEAR_FULL_SPEED).toBe(1500);
-    expect(SMEAR_MAX_SKEW_DEG).toBe(8);
-    expect(SMEAR_MAX_STRETCH).toBe(0.06);
-    expect(SMEAR_MAX_LAG_PX).toBe(10);
-    expect(SMEAR_ATTACK_RATE).toBe(8);
-    expect(SMEAR_DECAY_RATE).toBe(1.2);
-    // Fast attack, slow decay — the field answers the fling quickly
-    // and elastically settles back over about a second at rest.
-    expect(SMEAR_ATTACK_RATE).toBeGreaterThan(SMEAR_DECAY_RATE);
-  });
-
-  it("maps signed scroll velocity to a signed smear target in [-1, 1]", () => {
-    expect(smearTargetForVelocity(0)).toBe(0);
-    expect(smearTargetForVelocity(750)).toBe(0.5);
-    expect(smearTargetForVelocity(1500)).toBe(1);
-    expect(smearTargetForVelocity(3000)).toBe(1);
-    // Scrolling up flips the sign — the lean is direction-aware.
-    expect(smearTargetForVelocity(-750)).toBe(-0.5);
-    expect(smearTargetForVelocity(-1500)).toBe(-1);
-    expect(smearTargetForVelocity(-3000)).toBe(-1);
-    expect(smearTargetForVelocity(Number.NaN)).toBe(0);
-  });
-
-  it("attacks fast, decays slow, and flips direction without stalling", () => {
-    // A quarter-second of full-velocity scrolling at attack rate 8
-    // covers 1 - e^-2 of the gap — the deformation is mostly engaged.
-    const attacked = smearStep(0, 1, 0.25);
-    expect(attacked).toBeCloseTo(1 - Math.exp(-2), 6);
-    expect(attacked).toBeLessThanOrEqual(1);
-    // The same quarter-second at rest only decays 1 - e^-0.3 — the
-    // field lingers, settling back over about a second.
-    const decayed = smearStep(1, 0, 0.25);
-    expect(decayed).toBeCloseTo(Math.exp(-0.3), 6);
-    expect(decayed).toBeGreaterThan(0.5);
-    expect(decayed).toBeLessThan(1);
-    // A direction flip attacks, not decays: from +0.8 toward -1 the
-    // target pulls away from rest (|−1| > |0.8|), so the fast rate
-    // applies and the value crosses zero within the quarter-second.
-    const flipped = smearStep(0.8, -1, 0.25);
-    expect(flipped).toBeLessThan(0.8);
-    expect(flipped).toBeCloseTo(0.8 + (-1 - 0.8) * (1 - Math.exp(-2)), 6);
-    // No time elapsed: no movement either way.
-    expect(smearStep(0.4, 1, 0)).toBe(0.4);
-    expect(smearStep(0.4, 0, 0)).toBe(0.4);
-  });
-
-  it("derives skew, stretch and lag from one signed value", () => {
-    expect(smearSkewRadians(0)).toBe(0);
-    expect(smearSkewRadians(1)).toBeCloseTo((8 * Math.PI) / 180, 10);
-    expect(smearSkewRadians(-1)).toBeCloseTo((-8 * Math.PI) / 180, 10);
-    // Stretch has no direction: same elongation either way.
-    expect(smearStretch(0)).toBe(1);
-    expect(smearStretch(1)).toBeCloseTo(1.06, 10);
-    expect(smearStretch(-1)).toBeCloseTo(1.06, 10);
-    expect(smearStretch(0.5)).toBeCloseTo(1.03, 10);
-    // Lag trails the scroll: down while scrolling down, up while
-    // scrolling up, zero at rest.
-    expect(smearLagPx(0)).toBe(0);
-    expect(smearLagPx(1)).toBe(10);
-    expect(smearLagPx(-1)).toBe(-10);
-  });
-
-  it("covers the viewport at full shear and is identity at rest", () => {
-    // At rest the cover scale is exactly 1 — no zoom on the field.
-    expect(smearCoverScaleX(0, 1440, 800)).toBe(1);
-    expect(smearCoverScaleX(-0.5, 1440, 800)).toBeGreaterThan(1);
-    // Full smear on a 1440x800 viewport: 1 + tan(8°) * 800/1440.
-    expect(smearCoverScaleX(1, 1440, 800)).toBeCloseTo(
-      1 + Math.tan((8 * Math.PI) / 180) * (800 / 1440),
-      10,
-    );
-    // Degenerate viewports never produce a wild scale.
-    expect(smearCoverScaleX(1, 0, 800)).toBe(1);
-    expect(smearCoverScaleX(1, 1440, 0)).toBe(1);
-  });
-
-  it("builds an identity matrix at rest and a centered shear at full smear", () => {
-    expect(smearTransform(0, 1440, 800)).toEqual([1, 0, 0, 1, 0, 0]);
-    const m = smearTransform(1, 1440, 800);
-    // The viewport center maps to itself, plus the 10px lag down.
-    const [cx, cy] = [720, 400];
-    expect(m[0] * cx + m[2] * cy + m[4]).toBeCloseTo(720, 6);
-    expect(m[1] * cx + m[3] * cy + m[5]).toBeCloseTo(410, 6);
-    // The top edge shifts left and the bottom edge right by
-    // tan(8°) * 400 ≈ 56px — the differential lean itself.
-    const topX = m[0] * 720 + m[2] * 0 + m[4];
-    const botX = m[0] * 720 + m[2] * 800 + m[4];
-    expect(topX).toBeCloseTo(720 - Math.tan((8 * Math.PI) / 180) * 400, 6);
-    expect(botX).toBeCloseTo(720 + Math.tan((8 * Math.PI) / 180) * 400, 6);
-    // Scrolling up mirrors the shear exactly, and the lag flips up.
-    const up = smearTransform(-1, 1440, 800);
-    expect(up[2]).toBeCloseTo(-m[2], 10);
-    // f = cy - sy*cy + lag = 400 - 1.06*400 - 10 = -34.
-    expect(up[5]).toBeCloseTo(-34, 6);
-  });
-
-  it("maps points through the same matrix, identity at rest", () => {
-    expect(smearPoint(0, 1440, 800, 123, 456)).toEqual([123, 456]);
-    const [x, y] = smearPoint(1, 1440, 800, 720, 400);
-    expect(x).toBeCloseTo(720, 6);
-    expect(y).toBeCloseTo(410, 6);
-    // A point at the top edge leans left with the field.
-    const [tx] = smearPoint(1, 1440, 800, 720, 0);
-    expect(tx).toBeCloseTo(720 - Math.tan((8 * Math.PI) / 180) * 400, 6);
   });
 });
 
