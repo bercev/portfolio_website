@@ -423,14 +423,36 @@ export function CaseStudyRow({
             initial={shouldReduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
             animate={
               shouldReduceMotion
-                ? { opacity: 1 }
-                : { height: "auto", opacity: 1 }
+                ? { opacity: 1, transition: { duration: 0 } }
+                : {
+                    height: "auto",
+                    opacity: 1,
+                    // R9: the height growth IS the move, so it eases
+                    // in-out (starts and ends at rest); the opacity fade
+                    // is the entrance, so it keeps the R1 site ease-out.
+                    // Per-property transitions so each rule governs its
+                    // own property (same per-variant pattern as
+                    // hover-preview.tsx, RUN8-PREVIEW).
+                    transition: {
+                      height: { duration: 0.45, ease: [0.65, 0, 0.35, 1] },
+                      opacity: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+                    },
+                  }
             }
-            exit={shouldReduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-            transition={{
-              duration: shouldReduceMotion ? 0 : 0.45,
-              ease: [0.16, 1, 0.3, 1],
-            }}
+            exit={
+              shouldReduceMotion
+                ? { opacity: 0, transition: { duration: 0 } }
+                : {
+                    height: 0,
+                    opacity: 0,
+                    // R14: exit 360ms = 450ms x 0.8, same easing split
+                    // as the entrance.
+                    transition: {
+                      height: { duration: 0.36, ease: [0.65, 0, 0.35, 1] },
+                      opacity: { duration: 0.36, ease: [0.16, 1, 0.3, 1] },
+                    },
+                  }
+            }
             style={{ overflow: "hidden" }}
           >
             <CaseStudyPanel project={project} />
