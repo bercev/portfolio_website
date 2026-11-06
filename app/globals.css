@@ -3307,6 +3307,13 @@ html.dark .plain-backdrop {
     mask-image: none !important;
   }
 
+  /* Kinetic headings (run-8 RUN8-STYLE-KINETIC): a heading below the fold
+     never triggers whileInView in print layout, so its glyphs would print
+     10px low — !important beats the inline transform. */
+  [data-warp-glyph] {
+    transform: none !important;
+  }
+
   *,
   *::before,
   *::after {

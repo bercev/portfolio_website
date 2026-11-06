@@ -1,4 +1,6 @@
 import type { SectionId } from "@/data/content";
+
+import { WarpText } from "@/components/effects/warp-text";
 import { cn } from "@/lib/utils";
 
 type StationProps = {
@@ -31,7 +33,7 @@ export function Station({
       <header className="journey-station-head">
         {note ? <p className="journey-station-note">{note}</p> : null}
         <h2 id={`${id}-heading`} className="journey-station-heading">
-          {heading}
+          <WarpText text={heading} />
         </h2>
       </header>
       {children}
