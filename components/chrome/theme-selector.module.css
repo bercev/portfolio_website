@@ -67,12 +67,30 @@
   transform: translateX(-50%);
 }
 
+/* Menu variant: the fan opens upward from the bottom bubble of the
+   right-edge column. A trigger-centred semicircle would put its middle
+   dots inside the 2.75rem column and its right dots past the viewport,
+   so the semicircle is shifted left until the rightmost dot clears the
+   column: shift −6.2rem puts the rightmost centre at −2.8rem, its right
+   edge 0.275rem clear of the column (run-8 iter 3, RUN8-THEMESEL).
+   The shift alone is NOT the fix for the missing dots — the bubble-menu
+   overlay's overflow clipped anything left of its edge, so the overlay
+   is overflow:visible on tall viewports (see bubble-menu.module.css);
+   the shift only clears the column. */
 .selector[data-placement="up"] .options {
   top: auto;
   bottom: calc(100% + 0.7rem);
-  transform: translateX(calc(-50% - 3.875rem));
+  transform: translateX(calc(-50% - 6.2rem));
 }
 
+/* Run-8 reel-4 rules (R2/R3/R7/R10/R12/R14): the dots fly from the
+   trigger along an arc (keyframes below, 50% bowed off the chord), open
+   200ms site ease-out with a 30ms stagger, close on the same arc in
+   reverse at 160ms (200ms × 0.8) with a 10ms reverse stagger. The
+   keyframe animations own the flight; the 160ms transition below only
+   smooths hover/focus scale changes, and the resting states are
+   byte-identical to the animation end keyframes so the release is a
+   no-op. */
 .option {
   position: absolute;
   top: 0;
@@ -90,9 +108,18 @@
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 0) scale(0.25) rotate(-20deg);
-  transition: opacity 180ms ease-out, transform 280ms cubic-bezier(0.2, 1.45, 0.4, 1);
-  transition-delay: calc(var(--option-index) * 35ms);
+  /* Closed = stacked on the trigger (R11: enter from the trigger),
+     scale 0.95 (R10, was 0.25). --option-start-* is the trigger in
+     container-relative translate coords (down placement: the trigger sits
+     3.225rem above the container top; up placement: 6.2rem right and
+     6.425rem below the container top). */
+  transform: translate(calc(-50% + var(--option-start-x)), var(--option-start-y)) scale(0.95) rotate(-20deg);
+  /* The 160ms transition smooths hover/focus scale changes only — the
+     keyframe animations own the flight (see below). `scale` is in the
+     list because hover grows via the standalone scale property (next
+     rule), not via transform. */
+  transition: opacity 160ms ease-out, transform 160ms cubic-bezier(0.16, 1, 0.3, 1), scale 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: none;
 }
 
 .options[data-open="true"] {
@@ -103,25 +130,77 @@
   opacity: 1;
   pointer-events: auto;
   transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1) rotate(var(--option-rotation));
+  animation: option-arc-in 200ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--option-index) * 30ms) backwards;
 }
 
-/* Equal 45-degree steps around a downward semicircle. */
-.option:nth-child(1) { --option-x: -3.4rem; --option-y: 0rem; --option-rotation: -8deg; }
-.option:nth-child(2) { --option-x: -2.4rem; --option-y: 2.4rem; --option-rotation: 5deg; }
-.option:nth-child(3) { --option-x: 0rem; --option-y: 3.4rem; --option-rotation: -4deg; }
-.option:nth-child(4) { --option-x: 2.4rem; --option-y: 2.4rem; --option-rotation: 6deg; }
-.option:nth-child(5) { --option-x: 3.4rem; --option-y: 0rem; --option-rotation: -5deg; }
+/* Exit: the same arc in reverse. Scoped to data-opened (set on first
+   open) so the animation never plays on first paint — without it the
+   dots would flash at their slots on load. A distinct keyframes name
+   from the open animation guarantees the animation restarts on flip. */
+.options[data-opened="true"][data-open="false"] .option {
+  animation: option-arc-out 160ms cubic-bezier(0.16, 1, 0.3, 1) calc((4 - var(--option-index)) * 10ms) reverse backwards;
+}
 
-.selector[data-placement="up"] .option:nth-child(1) { --option-y: 0rem; }
-.selector[data-placement="up"] .option:nth-child(2) { --option-y: -2.4rem; }
-.selector[data-placement="up"] .option:nth-child(3) { --option-y: -3.4rem; }
-.selector[data-placement="up"] .option:nth-child(4) { --option-y: -2.4rem; }
-.selector[data-placement="up"] .option:nth-child(5) { --option-y: 0rem; }
+/* R7: each dot travels from the trigger (0%) through a midpoint bowed
+   away from the bubble column (50%, per-option --arc-mid-*) to its slot
+   (100%). The two keyframes blocks are intentionally identical — the
+   close animation plays option-arc-out in reverse. */
+@keyframes option-arc-in {
+  0% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--option-start-x)), var(--option-start-y)) scale(0.95) rotate(-20deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--arc-mid-x)), var(--arc-mid-y)) scale(0.98) rotate(calc(var(--option-rotation) * 0.5));
+  }
+  100% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1) rotate(var(--option-rotation));
+  }
+}
 
+@keyframes option-arc-out {
+  0% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--option-start-x)), var(--option-start-y)) scale(0.95) rotate(-20deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--arc-mid-x)), var(--arc-mid-y)) scale(0.98) rotate(calc(var(--option-rotation) * 0.5));
+  }
+  100% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1) rotate(var(--option-rotation));
+  }
+}
+
+/* Equal 45-degree steps around a downward semicircle. --arc-mid-* is the
+   down-placement arc midpoint (bowed down, away from the trigger);
+   --option-start-* is the trigger. Up-placement overrides follow. */
+.option:nth-child(1) { --option-x: -3.4rem; --option-y: 0rem; --option-rotation: -8deg; --arc-mid-x: -1.7rem; --arc-mid-y: -0.125rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
+.option:nth-child(2) { --option-x: -2.4rem; --option-y: 2.4rem; --option-rotation: 5deg; --arc-mid-x: -1.2rem; --arc-mid-y: 1.075rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
+.option:nth-child(3) { --option-x: 0rem; --option-y: 3.4rem; --option-rotation: -4deg; --arc-mid-x: 0rem; --arc-mid-y: 1.575rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
+.option:nth-child(4) { --option-x: 2.4rem; --option-y: 2.4rem; --option-rotation: 6deg; --arc-mid-x: 1.2rem; --arc-mid-y: 1.075rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
+.option:nth-child(5) { --option-x: 3.4rem; --option-y: 0rem; --option-rotation: -5deg; --arc-mid-x: 1.7rem; --arc-mid-y: -0.125rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
+
+.selector[data-placement="up"] .option:nth-child(1) { --option-y: 0rem; --arc-mid-x: 1.4rem; --arc-mid-y: 1.725rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
+.selector[data-placement="up"] .option:nth-child(2) { --option-y: -2.4rem; --arc-mid-x: 1.6rem; --arc-mid-y: 0.525rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
+.selector[data-placement="up"] .option:nth-child(3) { --option-y: -3.4rem; --arc-mid-x: 2.8rem; --arc-mid-y: -0.975rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
+.selector[data-placement="up"] .option:nth-child(4) { --option-y: -2.4rem; --arc-mid-x: 2.6rem; --arc-mid-y: 0.525rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
+.selector[data-placement="up"] .option:nth-child(5) { --option-y: 0rem; --arc-mid-x: 2.8rem; --arc-mid-y: 1.725rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
+
+/* Hover/focus grows the dot via the standalone `scale` property, NOT via
+   transform: the flight keyframes own `transform`, and a transform-based
+   hover (especially !important) would teleport a dot to its slot the
+   moment the cursor — parked on the trigger after the click — touches it
+   mid-flight. `scale` composes with the animated transform instead, so
+   the dot just grows slightly while flying and settles at 1.12 on hover
+   (same pattern as the bubble menu's .link:hover scale). The tilt stays. */
 .option:hover,
 .option:focus-visible {
   border-color: var(--portfolio-accent);
-  transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1.12) rotate(0deg) !important;
+  scale: 1.12;
 }
 
 .check {
@@ -136,5 +215,14 @@
   .trigger,
   .option {
     transition-duration: 0ms;
+  }
+  /* The open/close rules below beat a bare .option selector on
+     animation-delay (0,3,0 vs 0,1,0), so the stagger must be zeroed
+     here at the same specificity — otherwise reduced-motion users still
+     get a 120ms staggered pop-in. */
+  .options[data-open="true"] .option,
+  .options[data-opened="true"][data-open="false"] .option {
+    animation-delay: 0ms;
+    animation-duration: 0ms;
   }
 }

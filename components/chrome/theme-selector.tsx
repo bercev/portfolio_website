@@ -21,6 +21,10 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
   const asciiActive = useAsciiActive();
   const selectedPalette = palette ? THEME_PALETTES[palette] : null;
   const [isOpen, setIsOpen] = useState(false);
+  // Run-8 RUN8-THEMESEL: the close keyframe animation must never play on
+  // first paint (the dots would flash at their slots on load), so it is
+  // scoped to data-opened, set on the first open.
+  const [hasOpened, setHasOpened] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,7 +76,10 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
               }
             : undefined
         }
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => {
+          setHasOpened(true);
+          setIsOpen((open) => !open);
+        }}
       >
         <PaletteIcon className={styles.icon} weight="regular" aria-hidden="true" />
       </button>
@@ -80,6 +87,7 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
         id="theme-palette-options"
         className={styles.options}
         data-open={isOpen}
+        data-opened={hasOpened}
         aria-label="Color theme options"
         aria-hidden={!isOpen}
       >
