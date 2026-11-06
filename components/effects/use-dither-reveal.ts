@@ -25,6 +25,8 @@ const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 const REVEAL_DURATION = 0.65;
+/** Reel-4 rule 3: list rows stagger 30ms apart. */
+export const DITHER_ROW_STAGGER = 0.03;
 /** R1 site ease-out — the dissolve is an entrance. */
 const SITE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 /** Pre-start state: fully hidden (transparent everywhere). */
@@ -48,9 +50,11 @@ function setHidden(el: HTMLElement) {
 /**
  * Attach to a project / publication row element. Returns the ref to spread
  * onto the row (with `data-dither-reveal` for the print guard + tile
- * repeat/size rules in globals.css).
+ * repeat/size rules in globals.css). `delaySeconds` staggers the row's
+ * reveal start (reel-4 rule 3: list rows 30ms apart — callers pass
+ * `index * DITHER_ROW_STAGGER`); the row stays fully hidden until then.
  */
-export function useDitherReveal<T extends HTMLElement>() {
+export function useDitherReveal<T extends HTMLElement>(delaySeconds = 0) {
   const ref = useRef<T>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
   const reduceMotion = useReducedMotion();
@@ -70,6 +74,7 @@ export function useDitherReveal<T extends HTMLElement>() {
     if (!el) return;
     const controls = animate(0, 1, {
       duration: REVEAL_DURATION,
+      delay: delaySeconds,
       ease: SITE_EASE,
       onUpdate: (p) => {
         if (p <= 0) {
@@ -86,7 +91,7 @@ export function useDitherReveal<T extends HTMLElement>() {
       onComplete: () => setMask(el, null),
     });
     return () => controls.stop();
-  }, [inView, reduceMotion]);
+  }, [inView, reduceMotion, delaySeconds]);
 
   return ref;
 }

@@ -22,12 +22,13 @@ export function Projects({ content, heading, skillNames }: ProjectsProps) {
     >
       <div className="journey-project-ledger">
         {featured ? (
-          <CaseStudyRow project={featured} featured skillNames={skillNames} />
+          <CaseStudyRow project={featured} featured index={0} skillNames={skillNames} />
         ) : null}
-        {rest.map((project) => (
+        {rest.map((project, i) => (
           <CaseStudyRow
             key={project.title}
             project={project}
+            index={i + 1}
             skillNames={skillNames}
           />
         ))}

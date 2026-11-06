@@ -17,7 +17,7 @@ import { flushSync } from "react-dom";
 import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
 import { TechPills } from "@/components/ui/tech-pills";
-import { useDitherReveal } from "@/components/effects/use-dither-reveal";
+import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
 import type { Project } from "@/data/content";
 import { isProjectHash, projectAnchorId } from "@/lib/project-anchor";
 import {
@@ -222,10 +222,13 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
 export function CaseStudyRow({
   project,
   featured = false,
+  index = 0,
   skillNames,
 }: {
   readonly project: Project;
   readonly featured?: boolean;
+  /** Position in the project list — staggers the dither reveal (R3). */
+  readonly index?: number;
   /** Ledger skill names, for the reverse-navigation pill links. */
   readonly skillNames: readonly string[];
 }) {
@@ -245,7 +248,8 @@ export function CaseStudyRow({
   const shouldReduceMotion = useReducedMotion();
   // RUN8-STYLE-DITHER: the row dissolves in through the blue-noise tile
   // on first scroll into view (reel-4 rule 16, masks for reveals).
-  const revealRef = useDitherReveal<HTMLElement>();
+  // RUN8-R3-RESIDUAL: rows stagger 30ms apart (reel-4 rule 3).
+  const revealRef = useDitherReveal<HTMLElement>(index * DITHER_ROW_STAGGER);
   const preview = projectPreviews[project.title];
   const rowId = projectAnchorId(project.title);
 

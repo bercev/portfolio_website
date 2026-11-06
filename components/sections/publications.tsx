@@ -6,7 +6,7 @@ import type { PortfolioContent, Publication } from "@/data/content";
 
 import { paperAnchorId } from "@/lib/paper-anchor";
 import { HoverPreview } from "@/components/ui/hover-preview";
-import { useDitherReveal } from "@/components/effects/use-dither-reveal";
+import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
 import { Station } from "@/components/ui/station";
 
 type PublicationsProps = {
@@ -82,7 +82,8 @@ function PublicationRow({
 }) {
   // RUN8-STYLE-DITHER: the row dissolves in through the blue-noise tile
   // on first scroll into view (reel-4 rule 16, masks for reveals).
-  const revealRef = useDitherReveal<HTMLElement>();
+  // RUN8-R3-RESIDUAL: rows stagger 30ms apart (reel-4 rule 3).
+  const revealRef = useDitherReveal<HTMLElement>(index * DITHER_ROW_STAGGER);
   return (
     <article
       key={publication.href}
