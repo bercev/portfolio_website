@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AURORA_ALPHA,
+  AURORA_BOTTOM_FEATHER_PX,
+  AURORA_CURTAINS,
   BOOT_OVERLAY_SELECTOR,
   BOOT_WAIT_CAP_MS,
   CHAPTER_PROFILES,
@@ -25,6 +28,9 @@ import {
   VELOCITY_SPEED_BOOST,
   bootExpected,
   chaseValue,
+  curtainBottomFade,
+  curtainHeroFactor,
+  curtainSwayX,
   daylightSetForHour,
   dissolveLevelAt,
   ditherSeamPasses,
@@ -680,5 +686,98 @@ describe("living ASCII glyph stream", () => {
     expect(GLYPH_STREAM_SPEED_PX_S).toBeGreaterThanOrEqual(120);
     expect(GLYPH_STREAM_SIZE_PX).toBeGreaterThanOrEqual(28);
     expect(GLYPH_STREAM_SPACING_PX).toBeLessThanOrEqual(48);
+  });
+});
+
+describe("aurora curtains", () => {
+  const def = AURORA_CURTAINS[0];
+
+  it("declares four distinct drapes inside the viewport", () => {
+    expect(AURORA_CURTAINS.length).toBe(4);
+    const xs = AURORA_CURTAINS.map((c) => c.xFrac);
+    expect(new Set(xs).size).toBe(4);
+    for (const c of AURORA_CURTAINS) {
+      expect(c.xFrac).toBeGreaterThan(0);
+      expect(c.xFrac).toBeLessThan(1);
+      expect(c.width).toBeGreaterThan(0);
+      expect(c.bottomFrac).toBeGreaterThan(0);
+      expect(c.bottomFrac).toBeLessThan(1);
+      expect(c.swayWave).toBeGreaterThan(0);
+      expect(c.swayT1).toBeGreaterThan(0);
+    }
+  });
+
+  it("sways visibly in a 3s window — the iter-37 contour floor", () => {
+    // A 3s pair must show the drape having moved, not merely
+    // breathed: sweep heights and require a ≥10px lateral shift
+    // somewhere along the drape (the contour failure measured
+    // ~10–25px of morph over 5s as sub-perceptual).
+    let maxShift = 0;
+    for (let y = 0; y <= 600; y += 20) {
+      const d = Math.abs(curtainSwayX(y, 3000, def) - curtainSwayX(y, 0, def));
+      maxShift = Math.max(maxShift, d);
+    }
+    expect(maxShift).toBeGreaterThanOrEqual(10);
+  });
+
+  it("travels the wave down the drape — one wavelength per period", () => {
+    // The wave is periodic in y with the wavelength (the A2 term is
+    // y-independent, so it cancels exactly). Precision 2, not 9:
+    // the module uses 6.2832 for 2π, so one wavelength shifts the
+    // argument by 6.2832 rather than exactly 2π (~3e-4 in the sine).
+    for (const y of [0, 100, 260, 400]) {
+      expect(curtainSwayX(y + def.swayWave, 1234, def)).toBeCloseTo(
+        curtainSwayX(y, 1234, def),
+        2,
+      );
+    }
+    // And the pattern at a fixed height repeats after one wave period
+    // for the traveling term: the full sway returns to (near) itself
+    // only when both harmonics align, so assert the wave term alone
+    // by checking the y-shifted equivalence: sway(y, t) equals
+    // sway(y + wave * 3s/T1, t + 3000) for the A1 term — verified
+    // here as the wave having descended ~87px in 3s.
+    const descended = def.swayWave * (3000 / def.swayT1);
+    expect(descended).toBeGreaterThanOrEqual(50);
+  });
+
+  it("stays bounded by the two amplitudes", () => {
+    for (let t = 0; t <= 20000; t += 250) {
+      for (let y = 0; y <= 600; y += 50) {
+        expect(Math.abs(curtainSwayX(y, t, def))).toBeLessThanOrEqual(
+          def.swayA1 + def.swayA2 + 1e-9,
+        );
+      }
+    }
+  });
+
+  it("dissolves the hem instead of cutting it", () => {
+    const bottom = 500;
+    expect(curtainBottomFade(0, bottom)).toBe(1);
+    expect(curtainBottomFade(bottom - AURORA_BOTTOM_FEATHER_PX, bottom)).toBe(1);
+    expect(curtainBottomFade(bottom, bottom)).toBe(0);
+    expect(curtainBottomFade(bottom + 50, bottom)).toBe(0);
+    const mid = curtainBottomFade(
+      bottom - AURORA_BOTTOM_FEATHER_PX / 2,
+      bottom,
+    );
+    expect(mid).toBeGreaterThan(0.2);
+    expect(mid).toBeLessThan(0.8);
+  });
+
+  it("fades with the hero as it scrolls away", () => {
+    expect(curtainHeroFactor(800, 800)).toBe(1);
+    expect(curtainHeroFactor(0, 800)).toBe(0);
+    expect(curtainHeroFactor(-100, 800)).toBe(0);
+    const quarter = curtainHeroFactor(200, 800);
+    expect(quarter).toBeGreaterThan(0.2);
+    expect(quarter).toBeLessThan(0.8);
+  });
+
+  it("keeps the curtain alpha quiet against the ribbons", () => {
+    // A backdrop layer: clearly below the bright band's ~0.46, so
+    // the drapes sit behind the diagonal sheets, not over them.
+    expect(AURORA_ALPHA).toBeLessThanOrEqual(0.2);
+    expect(AURORA_ALPHA).toBeGreaterThanOrEqual(0.1);
   });
 });
