@@ -194,6 +194,18 @@ import { BLUE_NOISE_128 } from "@/lib/blue-noise";
  *   margin at once) plus ~495px of travel in a 3s pair, so the pair
  *   shows a wholly different constellation.
  *
+ * - Radial light rays (run-7 iter 40, RUN7-EXP-LIGHT-RAYS): 7 uneven
+ *   wedge shafts of pale light radiating from a point source behind
+ *   the hero near the BERAT wordmark — Ember's "Light Rays" layer,
+ *   and the curtain critic's prescription (a genuinely different
+ *   visual language) in concrete form: hard-edged wedges with a
+ *   bright core near the source, drawn sharp after the blur pass,
+ *   not another soft pale-cyan layer. Each shaft drifts slowly
+ *   (~10–20° over tens of seconds) and its brightness breaks up
+ *   along its length, crests traveling outward at 70–95px/s — the
+ *   trackable motion in a 3s pair. Hero-only, energy() + halo caps
+ *   apply, reduced motion = static shafts in the static frame.
+ *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
  *   "active"] — EffectStage uses that claim to keep the loud Neural Ink
@@ -967,6 +979,142 @@ export function glyphStreamX(
 }
 
 /**
+ * Radial light rays (run-7 iter 40, RUN7-EXP-LIGHT-RAYS): uneven wedge
+ * shafts of pale light radiating from a single point source behind the
+ * hero (near the BERAT wordmark) — movin.design Ember's "Light Rays"
+ * layer ("uneven shafts of light spreading from a point, breaking up
+ * as they travel"), and the curtain critic's prescription in concrete
+ * form: a genuinely different visual language from the diagonal sheets
+ * (hard-edged wedges with visible edge contrast and a bright core near
+ * the source, not another soft pale-cyan layer under the existing soft
+ * pale-cyan sheets — the exact failure that reverted RUN7-EXP-AURORA-
+ * CURTAIN in iter 38). Each shaft has its own angular width/length and
+ * a slow angular drift (rotation ~10–20° over tens of seconds) plus a
+ * traveling break-up — brightness modulated along the shaft's length so
+ * it appears to break up as it travels, like light through slats; the
+ * crests move outward at 70–95px/s, so a 3s pair shows ~210–285px of
+ * travel along the shaft — the trackable motion the drift alone (1–2°
+ * in 3s) could never carry. Hero-only (faded by rayHeroFactor as the
+ * hero leaves the viewport); drawn SHARP on the main canvas after the
+ * blur pass and BEFORE the column halo (the reveal ring's precedent:
+ * the halo softens the shafts over the text column while the margins
+ * carry the full wedge), with energy() suppression + rail guard, the
+ * chapter/daylight role mix, and the reveal factor — so the same
+ * legibility envelope caps them as the bands. Reduced motion = static
+ * shafts in the static frame (drawn at the fixed tChapter clock, no
+ * rAF loop). The wedge edges are geometric (annular-sector paths),
+ * sharper than the sheets' 4px blur by construction; the length
+ * falloff + break-up are per-segment alphas, so the shaft reads as
+ * slats of light, not a solid triangle.
+ */
+export interface LightRayDef {
+  /** Center angle at t=0, degrees; 0 = +x (right), positive = clockwise. */
+  angleDeg: number;
+  /** Angular half-width, degrees — uneven per shaft. */
+  halfWidthDeg: number;
+  /** Shaft length at desktop width, css px. */
+  lengthPx: number;
+  /** Angular drift amplitude, degrees. */
+  driftAmpDeg: number;
+  /** Angular drift period, seconds. */
+  driftPeriodS: number;
+  /** Angular drift phase, radians. */
+  driftPhase: number;
+  /** Break-up wavelength along the shaft, css px. */
+  breakWavelengthPx: number;
+  /** Break-up crest speed outward along the shaft, css px/s. */
+  breakSpeedPxS: number;
+}
+
+/** Seven shafts: near-up through near-down on the right side of the
+ * source. No shaft points left toward the rail — the source sits at
+ * the column's left edge and the rail labels (x < 260) must stay
+ * clean; the rightward fan still crosses the whole hero. */
+export const LIGHT_RAYS: ReadonlyArray<LightRayDef> = [
+  { angleDeg: -88, halfWidthDeg: 6, lengthPx: 620, driftAmpDeg: 10, driftPeriodS: 24, driftPhase: 0, breakWavelengthPx: 150, breakSpeedPxS: 80 },
+  { angleDeg: -62, halfWidthDeg: 8, lengthPx: 780, driftAmpDeg: 8, driftPeriodS: 18, driftPhase: 1.1, breakWavelengthPx: 140, breakSpeedPxS: 90 },
+  { angleDeg: -38, halfWidthDeg: 5, lengthPx: 900, driftAmpDeg: 12, driftPeriodS: 28, driftPhase: 2.3, breakWavelengthPx: 160, breakSpeedPxS: 75 },
+  { angleDeg: -12, halfWidthDeg: 7, lengthPx: 700, driftAmpDeg: 9, driftPeriodS: 22, driftPhase: 3.7, breakWavelengthPx: 130, breakSpeedPxS: 85 },
+  { angleDeg: 18, halfWidthDeg: 9, lengthPx: 850, driftAmpDeg: 11, driftPeriodS: 26, driftPhase: 4.9, breakWavelengthPx: 170, breakSpeedPxS: 70 },
+  { angleDeg: 48, halfWidthDeg: 6, lengthPx: 580, driftAmpDeg: 8, driftPeriodS: 20, driftPhase: 0.7, breakWavelengthPx: 145, breakSpeedPxS: 95 },
+  { angleDeg: 78, halfWidthDeg: 8, lengthPx: 760, driftAmpDeg: 10, driftPeriodS: 30, driftPhase: 5.6, breakWavelengthPx: 155, breakSpeedPxS: 80 },
+];
+
+/** Radial segments per shaft — the break-up reads as slats, not a
+ * smooth gradient, so each segment carries its own alpha. */
+export const RAY_SEGMENTS = 12;
+/** Peak shaft alpha at the source (before energy/chapter/daylight). */
+export const RAY_PEAK_ALPHA = 0.5;
+/** Source x: fraction of the content-column width from its left edge. */
+export const RAY_SOURCE_X_FRAC = 0.1;
+/** Source y: fraction of the hero's bottom edge (viewport coords). */
+export const RAY_SOURCE_Y_FRAC = 0.45;
+/** Break-up floor: a shaft never fully vanishes between crests. */
+export const RAY_BREAKUP_FLOOR = 0.35;
+
+/** A shaft's current center angle (radians): base + slow sinusoidal
+ * drift, so the wedge rotates ~10–20° over tens of seconds. */
+export function rayShaftAngle(def: LightRayDef, tSeconds: number): number {
+  const deg =
+    def.angleDeg +
+    def.driftAmpDeg *
+      Math.sin((tSeconds * 6.2832) / def.driftPeriodS + def.driftPhase);
+  return (deg * Math.PI) / 180;
+}
+
+/** Break-up brightness along a shaft at radius r and time tSeconds:
+ * a sine wave traveling outward at breakSpeedPxS, floored so the
+ * wedge never vanishes between crests. A crest at radius r at time t
+ * is at r + speed*dt at time t+dt — the trackable motion. */
+export function rayBreakup(
+  r: number,
+  tSeconds: number,
+  wavelengthPx: number,
+  speedPxS: number,
+): number {
+  const wave =
+    0.5 +
+    0.5 *
+      Math.sin((2 * Math.PI * (r - speedPxS * tSeconds)) / wavelengthPx);
+  return RAY_BREAKUP_FLOOR + (1 - RAY_BREAKUP_FLOOR) * wave;
+}
+
+/** Length falloff: full brightness at the source, fading to 0 at the
+ * tip (smoothstep from 35% to 100% of the length). */
+export function rayLengthFalloff(r: number, length: number): number {
+  if (length <= 0) return 0;
+  const k = Math.min(1, Math.max(0, r / length));
+  return 1 - smooth(0.35, 1, k);
+}
+
+/** Hero gate: 1 while the hero's bottom edge is well inside the
+ * viewport, fading to 0 as it reaches the viewport top. A missing
+ * hero (non-finite bottom) reads as 0 — rays off, never on. */
+export function rayHeroFactor(heroBottom: number, H: number): number {
+  if (!Number.isFinite(heroBottom)) return 0;
+  return smooth(0, H * 0.4, heroBottom);
+}
+
+/** Shaft-length scale by viewport width: full length at desktop,
+ * shorter on phones (the source sits inside the column there, so a
+ * full-length shaft would cross the whole screen twice over). */
+export function rayLengthScale(W: number): number {
+  return Math.min(1, Math.max(0.45, W / 1200));
+}
+
+/** Traveling break-up phase (px along shaft 0) for the probe hook:
+ * advances at breakSpeedPxS, wrapping each wavelength. */
+export function rayBreakPhase(
+  tSeconds: number,
+  wavelengthPx: number,
+  speedPxS: number,
+): number {
+  if (wavelengthPx <= 0) return 0;
+  const raw = (speedPxS * tSeconds) % wavelengthPx;
+  return ((raw % wavelengthPx) + wavelengthPx) % wavelengthPx;
+}
+
+/**
  * A band's centerline height at x, pure in its inputs so the scrub
  * math is unit-testable. `ct` is the chapter clock (ms); `scrubPhase`
  * is the scroll-derived phase offset in radians, added to the two
@@ -1625,6 +1773,91 @@ export function LightRibbons() {
         ctx.fillStyle = ring;
         ctx.fillRect(0, 0, W, H);
         ctx.globalCompositeOperation = "source-over";
+      }
+
+      // Radial light rays (run-7 iter 40, RUN7-EXP-LIGHT-RAYS): wedge
+      // shafts radiating from a point source near the BERAT wordmark.
+      // Drawn SHARP after the blur pass and BEFORE the column halo
+      // (the reveal ring's precedent): the halo softens the shafts
+      // over the text column while the margins carry the full wedge,
+      // and the geometric edges stay sharp through the halo (it dims,
+      // never blurs). Each shaft is RAY_SEGMENTS annular sectors whose
+      // alphas carry the length falloff × the traveling break-up, so
+      // the shaft reads as slats of light breaking up as they travel.
+      // energy() (column suppression + rail guard), the chapter/daylight
+      // bright-role mix, the hero gate, and the reveal factor all
+      // apply per segment. Under reduced motion this same code draws
+      // the static pose at the fixed clock — the rays are part of the
+      // static frame, unlike the flare/stream which are absent there.
+      const colW2 = Math.max(1, colR - colL);
+      const raySx = colL + colW2 * RAY_SOURCE_X_FRAC;
+      const raySy = Number.isFinite(heroBottom)
+        ? Math.min(Math.max(heroBottom * RAY_SOURCE_Y_FRAC, 0), H)
+        : H * RAY_SOURCE_Y_FRAC;
+      const rayHero = rayHeroFactor(heroBottom, H);
+      const rayFill = mix(accent, WHITE, 0.45);
+      const tSeconds = t / 1000;
+      let raysDrawn = 0;
+      if (rayHero > 0.004) {
+        ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
+        const lenScale = rayLengthScale(W);
+        for (const def of LIGHT_RAYS) {
+          const angle = rayShaftAngle(def, tSeconds);
+          const halfW = (def.halfWidthDeg * Math.PI) / 180;
+          const length = def.lengthPx * lenScale;
+          const segLen = length / RAY_SEGMENTS;
+          let drew = false;
+          for (let i = 0; i < RAY_SEGMENTS; i++) {
+            const r0 = i * segLen;
+            const r1 = (i + 1) * segLen;
+            const midR = (r0 + r1) / 2;
+            const mx = raySx + midR * Math.cos(angle);
+            const my = raySy + midR * Math.sin(angle);
+            const a =
+              RAY_PEAK_ALPHA *
+              alphaScale *
+              chapterCur.alpha *
+              daylightCur.alpha *
+              chapterCur.bright *
+              daylightCur.bright *
+              rayLengthFalloff(midR, length) *
+              rayBreakup(
+                midR,
+                tSeconds,
+                def.breakWavelengthPx,
+                def.breakSpeedPxS,
+              ) *
+              rayHero *
+              energy(mx, my) *
+              revealFactorAt(mx, my);
+            if (a < 0.004) continue;
+            ctx.beginPath();
+            ctx.arc(raySx, raySy, r1, angle - halfW, angle + halfW);
+            ctx.arc(raySx, raySy, r0, angle + halfW, angle - halfW, true);
+            ctx.closePath();
+            ctx.globalAlpha = Math.min(1, a);
+            ctx.fillStyle = rgba(rayFill, 1);
+            ctx.fill();
+            drew = true;
+          }
+          if (drew) raysDrawn++;
+        }
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+      }
+      // Probe hooks: shafts drawn this frame + the traveling break-up
+      // phase (px along shaft 0), so verification can measure travel.
+      const raysProbe = String(raysDrawn);
+      if (canvas.dataset.lightRays !== raysProbe) {
+        canvas.dataset.lightRays = raysProbe;
+      }
+      const breakProbe = rayBreakPhase(
+        tSeconds,
+        LIGHT_RAYS[0].breakWavelengthPx,
+        LIGHT_RAYS[0].breakSpeedPxS,
+      ).toFixed(1);
+      if (canvas.dataset.rayBreak !== breakProbe) {
+        canvas.dataset.rayBreak = breakProbe;
       }
 
       // Soft dark halo over the content column: text stays crisp anywhere.

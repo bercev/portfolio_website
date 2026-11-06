@@ -13,6 +13,10 @@ import {
   GLYPH_STREAM_SIZE_PX,
   GLYPH_STREAM_SPACING_PX,
   GLYPH_STREAM_SPEED_PX_S,
+  LIGHT_RAYS,
+  RAY_BREAKUP_FLOOR,
+  RAY_PEAK_ALPHA,
+  RAY_SEGMENTS,
   REVEAL_DURATION_MS,
   REVEAL_FEATHER_PX,
   REVEAL_RING_THICKNESS_PX,
@@ -36,6 +40,12 @@ import {
   lerpChapterProfile,
   lerpDaylightProfile,
   measureScrollVelocity,
+  rayBreakPhase,
+  rayBreakup,
+  rayHeroFactor,
+  rayLengthFalloff,
+  rayLengthScale,
+  rayShaftAngle,
   resolveActiveChapter,
   revealAt,
   revealMaxRadius,
@@ -680,5 +690,123 @@ describe("living ASCII glyph stream", () => {
     expect(GLYPH_STREAM_SPEED_PX_S).toBeGreaterThanOrEqual(120);
     expect(GLYPH_STREAM_SIZE_PX).toBeGreaterThanOrEqual(28);
     expect(GLYPH_STREAM_SPACING_PX).toBeLessThanOrEqual(48);
+  });
+});
+
+describe("radial light rays", () => {
+  it("declares 5–7 shafts with distinct geometry and no leftward ray", () => {
+    // The item's range; distinct angles/widths/lengths per shaft.
+    expect(LIGHT_RAYS.length).toBeGreaterThanOrEqual(5);
+    expect(LIGHT_RAYS.length).toBeLessThanOrEqual(7);
+    const angles = LIGHT_RAYS.map((d) => d.angleDeg);
+    expect(new Set(angles).size).toBe(LIGHT_RAYS.length);
+    // No shaft points left toward the rail (115°..205° is the
+    // leftward band in canvas coords).
+    for (const a of angles) {
+      const norm = ((a % 360) + 360) % 360;
+      expect(norm < 115 || norm > 205).toBe(true);
+    }
+    // Uneven widths/lengths — not a uniform fan.
+    expect(new Set(LIGHT_RAYS.map((d) => d.halfWidthDeg)).size).toBeGreaterThan(1);
+    expect(new Set(LIGHT_RAYS.map((d) => d.lengthPx)).size).toBeGreaterThan(1);
+  });
+
+  it("drifts each shaft slowly and returns to base after one period", () => {
+    for (const def of LIGHT_RAYS) {
+      const base = (def.angleDeg * Math.PI) / 180;
+      // At t=0 the drift term is sin(phase) — bounded by the amplitude.
+      const a0 = rayShaftAngle(def, 0);
+      expect(Math.abs(a0 - base)).toBeLessThanOrEqual(
+        (def.driftAmpDeg * Math.PI) / 180 + 1e-9,
+      );
+      // One full drift period later the angle is identical (to the
+      // module's 6.2832-for-2π precision, ~1e-5 — not 1e-9).
+      expect(rayShaftAngle(def, def.driftPeriodS)).toBeCloseTo(a0, 2);
+      // The drift stays inside ±driftAmp of base at every sample.
+      for (let s = 0; s <= def.driftPeriodS; s += 0.5) {
+        expect(Math.abs(rayShaftAngle(def, s) - base)).toBeLessThanOrEqual(
+          (def.driftAmpDeg * Math.PI) / 180 + 1e-9,
+        );
+      }
+      expect(def.driftAmpDeg).toBeGreaterThanOrEqual(8);
+      expect(def.driftAmpDeg).toBeLessThanOrEqual(12);
+    }
+  });
+
+  it("travels the break-up crests outward at shaft speed", () => {
+    // A crest at radius r at time t is at r + speed*dt at t+dt.
+    const wavelength = 150;
+    const speed = 80;
+    expect(rayBreakup(100, 0, wavelength, speed)).toBeCloseTo(
+      rayBreakup(100 + speed * 3, 3, wavelength, speed),
+      9,
+    );
+    // After one wavelength of travel time (150/80 = 1.875s) the
+    // pattern at a fixed radius repeats exactly.
+    expect(rayBreakup(100, 150 / 80, wavelength, speed)).toBeCloseTo(
+      rayBreakup(100, 0, wavelength, speed),
+      9,
+    );
+    // One wavelength along the shaft is one full cycle.
+    expect(rayBreakup(100 + wavelength, 0, wavelength, speed)).toBeCloseTo(
+      rayBreakup(100, 0, wavelength, speed),
+      9,
+    );
+    // Floored: never vanishes between crests, never exceeds 1.
+    for (let r = 0; r < 600; r += 7) {
+      const v = rayBreakup(r, 1.3, wavelength, speed);
+      expect(v).toBeGreaterThanOrEqual(RAY_BREAKUP_FLOOR);
+      expect(v).toBeLessThanOrEqual(1);
+    }
+    // Crest peaks at 1 where the sine peaks.
+    expect(rayBreakup(wavelength / 4, 0, wavelength, speed)).toBeCloseTo(1, 9);
+  });
+
+  it("fades shafts from full at the source to zero at the tip", () => {
+    expect(rayLengthFalloff(0, 800)).toBe(1);
+    expect(rayLengthFalloff(800, 800)).toBe(0);
+    expect(rayLengthFalloff(1000, 800)).toBe(0);
+    expect(rayLengthFalloff(400, 800)).toBeGreaterThan(0);
+    expect(rayLengthFalloff(400, 800)).toBeLessThan(1);
+    // Monotonic: farther out is never brighter.
+    let prev = 1;
+    for (let r = 0; r <= 800; r += 50) {
+      const v = rayLengthFalloff(r, 800);
+      expect(v).toBeLessThanOrEqual(prev + 1e-9);
+      prev = v;
+    }
+    expect(rayLengthFalloff(100, 0)).toBe(0);
+  });
+
+  it("gates shafts on the hero being in view", () => {
+    expect(rayHeroFactor(800, 800)).toBe(1);
+    expect(rayHeroFactor(320, 800)).toBe(1);
+    expect(rayHeroFactor(0, 800)).toBe(0);
+    expect(rayHeroFactor(-100, 800)).toBe(0);
+    expect(rayHeroFactor(Number.NEGATIVE_INFINITY, 800)).toBe(0);
+    expect(rayHeroFactor(Number.NaN, 800)).toBe(0);
+    const mid = rayHeroFactor(160, 800);
+    expect(mid).toBeGreaterThan(0);
+    expect(mid).toBeLessThan(1);
+  });
+
+  it("shortens shafts on narrow viewports and keeps the peak capped", () => {
+    expect(rayLengthScale(1440)).toBe(1);
+    expect(rayLengthScale(1920)).toBe(1);
+    expect(rayLengthScale(390)).toBeCloseTo(0.45);
+    expect(rayLengthScale(800)).toBeCloseTo(800 / 1200);
+    // The peak stays a quiet light, not a neon streak.
+    expect(RAY_PEAK_ALPHA).toBeLessThanOrEqual(0.6);
+    expect(RAY_SEGMENTS).toBeGreaterThanOrEqual(8);
+  });
+
+  it("advances the break-up probe phase at shaft speed", () => {
+    const wavelength = 150;
+    const speed = 80;
+    expect(rayBreakPhase(0, wavelength, speed)).toBe(0);
+    expect(rayBreakPhase(1, wavelength, speed)).toBeCloseTo(80);
+    // Wraps each wavelength: 3s at 80px/s = 240px = 150 + 90.
+    expect(rayBreakPhase(3, wavelength, speed)).toBeCloseTo(90);
+    expect(rayBreakPhase(-1, wavelength, speed)).toBeCloseTo(70);
   });
 });
