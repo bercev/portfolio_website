@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef } from "react";
 
 import { usePalette } from "@/components/providers/palette-provider";
+import { GLYPHS } from "@/components/effects/floating-glyphs";
 import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128 } from "@/lib/blue-noise";
 
@@ -181,6 +182,17 @@ import { BLUE_NOISE_128 } from "@/lib/blue-noise";
  *   starts on mount; as a side benefit the reveal now starts AFTER
  *   the BERAT decode intro on desktop first visits instead of racing
  *   it.
+ *
+ * - Living ASCII glyph stream (run-7 iter 32, RUN7-EXP-GLYPH-STREAM
+ *   v2): the site's own GLYPHS vocab flows along the bright band's
+ *   centerline at ~165px/s, margins only, desktop only. v1 (iter 29)
+ *   tied glyph alpha to the flare envelope and read as intermittent
+ *   (one phase near-invisible, another 11x) — reverted after two
+ *   strict-motion FAILs. v2 floors the alpha at 0.6, coupled only to
+ *   the band's own ±20% breathing, and answers the 1440px margin
+ *   width with dense 36px spacing (2–3 glyphs in the ~96px right
+ *   margin at once) plus ~495px of travel in a 3s pair, so the pair
+ *   shows a wholly different constellation.
  *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
@@ -861,6 +873,97 @@ export function bootExpected(
   if (!finePointer) return false;
   if (!(viewportWidth > 640)) return false;
   return hasBootedFlag !== true;
+}
+
+/**
+ * Living ASCII glyph stream (run-7 iter 32, RUN7-EXP-GLYPH-STREAM v2):
+ * the site's own GLYPHS vocab flows continuously along the bright
+ * band's centerline at ~165px/s — the flare's speed, not the band's
+ * ~4px/s drift — spaced 36px apart, drawn ONLY in the free page
+ * margins (never over text, never over the rail), desktop only
+ * (mobile has no margins by construction). v1 (run-7 iter 29) tied
+ * the glyph alpha to the FLARE envelope: one phase showed glyphs at
+ * ~2.5x over background (near-invisible) and another at ~11x, so the
+ * stream read as intermittent, not flowing — two strict-motion FAILs
+ * and a revert. v2's redesign is a BRIGHTNESS FLOOR: the glyph alpha
+ * is floored at 0.6 and only gently coupled to the bright band's own
+ * breathing (a ±20% swing, not the flare's 0→1 envelope), so ANY
+ * phase shows margin glyphs at a glance. The margin-width problem
+ * from iter 29 is answered the same way the floor is: dense 36px
+ * spacing puts 2–3 glyphs in the ~96px right margin at 1440px at
+ * once (a readable diagonal trio, not a lone speck), and 165px/s
+ * means a 3s pair shows a wholly different constellation in the
+ * margin (~495px of travel) — the pair test compares WHICH glyphs
+ * are there, not a 12px nudge of the same ones. Reduced motion =
+ * absent (a moving object has no static meaning — same as the flare).
+ */
+export const GLYPH_STREAM_SPEED_PX_S = 165;
+export const GLYPH_STREAM_SPACING_PX = 36;
+export const GLYPH_STREAM_SIZE_PX = 36;
+/** Minimum glyph alpha, independent of band/flare phase. */
+export const GLYPH_STREAM_FLOOR = 0.6;
+/** Minimum usable margin width for the stream (px). */
+export const GLYPH_STREAM_MIN_BAND_PX = 64;
+/** Left-margin start: the rail guard's edge (energy() caps below 260). */
+export const GLYPH_STREAM_RAIL_EDGE_PX = 260;
+
+/** Glyph alpha from the bright band's normalized breathing in [0,1]:
+ * floored at GLYPH_STREAM_FLOOR, rising to 1 at full brightness.
+ * The swing is 0.6→1.0 — a gentle breathe, never a vanishing. */
+export function glyphStreamAlpha(bandFactor: number): number {
+  const f = Math.min(1, Math.max(0, bandFactor));
+  return GLYPH_STREAM_FLOOR + (1 - GLYPH_STREAM_FLOOR) * f;
+}
+
+/** Normalize a band's instantaneous breathing value to [0,1]:
+ * breath = 1 + bd*sin(...) ranges over [1-|bd|, 1+|bd|]. A band with
+ * no breathing (bd = 0) sits at mid-brightness by definition. */
+export function glyphStreamBandFactor(breath: number, bd: number): number {
+  const a = Math.abs(bd);
+  if (a < 1e-6) return 0.5;
+  return Math.min(1, Math.max(0, (breath - (1 - a)) / (2 * a)));
+}
+
+/** The free-margin bands the stream may draw in, as [lo, hi] x-ranges:
+ * left of the content column (starting past the rail) and right of it,
+ * each inset 24px from the column and dropped when narrower than
+ * GLYPH_STREAM_MIN_BAND_PX. At 1440px only the right margin qualifies
+ * (~96px); at 1920px both do; on mobile neither does (the column spans
+ * the viewport), so the stream is absent there by construction. */
+export function glyphStreamMarginBands(
+  width: number,
+  colL: number,
+  colR: number,
+): Array<readonly [number, number]> {
+  if (width < 700) return [];
+  const bands: Array<readonly [number, number]> = [];
+  const left: readonly [number, number] = [
+    GLYPH_STREAM_RAIL_EDGE_PX,
+    colL - 24,
+  ];
+  if (left[1] - left[0] >= GLYPH_STREAM_MIN_BAND_PX) bands.push(left);
+  const right: readonly [number, number] = [colR + 24, width - 24];
+  if (right[1] - right[0] >= GLYPH_STREAM_MIN_BAND_PX) bands.push(right);
+  return bands;
+}
+
+/** A stream glyph's x at time tSeconds: glyphs march +x at the stream
+ * speed, wrapping over [spanMin, spanMax] so the flow is continuous —
+ * a glyph that leaves the right edge re-enters at the left. `index`
+ * is the glyph's slot in the stream; spacing sets the along-band gap. */
+export function glyphStreamX(
+  index: number,
+  tSeconds: number,
+  spacing: number,
+  speed: number,
+  spanMin: number,
+  spanMax: number,
+): number {
+  const span = spanMax - spanMin;
+  if (span <= 0) return spanMin;
+  const raw = index * spacing + speed * tSeconds;
+  const wrapped = ((raw - spanMin) % span + span) % span;
+  return spanMin + wrapped;
 }
 
 /**
@@ -1565,6 +1668,81 @@ export function LightRibbons() {
         ctx.globalAlpha = revealGlobal;
         ctx.drawImage(buildSeamStrip(), 0, sy);
         ctx.globalAlpha = 1;
+      }
+
+      // Living ASCII glyph stream (run-7 iter 32, RUN7-EXP-GLYPH-STREAM
+      // v2): the site's GLYPHS vocab flows along the bright band's
+      // centerline at ~165px/s, drawn ONLY where a free margin band
+      // is wide enough — never over the content column, never over
+      // the rail. Drawn AFTER the seam and BEFORE the flare, so the
+      // flare head stays the brightest object. Glyphs are sharp (no
+      // blur pass) in the live accent mixed toward white; their alpha
+      // is floored (glyphStreamAlpha) so they never vanish with the
+      // band's breathing or the flare's envelope — the v1 failure.
+      // The reveal factor still applies, so the stream blooms in
+      // with the rest of the light. Under reduced motion the stream
+      // is ABSENT (no rAF loop draws it); on mobile the margin bands
+      // are empty, so it is absent there by construction. The probe
+      // hook reports how many glyphs were drawn this frame.
+      if (!reduced) {
+        const host = list.find((b) => b.role === "bright") ?? list[0];
+        const bands = glyphStreamMarginBands(W, colL, colR);
+        if (host && bands.length > 0) {
+          const breath =
+            1 + host.bd * Math.sin((tChapter * 6.2832) / host.bp + host.bph);
+          const baseA = glyphStreamAlpha(
+            glyphStreamBandFactor(breath, host.bd),
+          );
+          const glyphFill = mix(accent, WHITE, 0.6);
+          const spanMin = -100;
+          const spanMax = W + 100;
+          const count = Math.max(
+            1,
+            Math.ceil((spanMax - spanMin) / GLYPH_STREAM_SPACING_PX),
+          );
+          ctx.font = `600 ${GLYPH_STREAM_SIZE_PX}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
+          let drawn = 0;
+          const tSeconds = t / 1000;
+          for (let i = 0; i < count; i++) {
+            const gx = glyphStreamX(
+              i,
+              tSeconds,
+              GLYPH_STREAM_SPACING_PX,
+              GLYPH_STREAM_SPEED_PX_S,
+              spanMin,
+              spanMax,
+            );
+            let inBand = false;
+            for (let b = 0; b < bands.length; b++) {
+              if (gx >= bands[b][0] && gx <= bands[b][1]) {
+                inBand = true;
+                break;
+              }
+            }
+            if (!inBand) continue;
+            const gy = centerY(host, gx, tChapter);
+            const a =
+              baseA * energy(gx, gy) * revealFactorAt(gx, gy);
+            if (a < 0.004) continue;
+            ctx.globalAlpha = Math.min(1, a);
+            ctx.fillStyle = rgba(glyphFill, 1);
+            ctx.fillText(GLYPHS[i % GLYPHS.length], gx, gy);
+            drawn++;
+          }
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = "source-over";
+          const probe = String(drawn);
+          if (canvas.dataset.glyphStream !== probe) {
+            canvas.dataset.glyphStream = probe;
+          }
+        } else if (canvas.dataset.glyphStream !== "0") {
+          canvas.dataset.glyphStream = "0";
+        }
+      } else if (canvas.dataset.glyphStream !== "0") {
+        canvas.dataset.glyphStream = "0";
       }
 
       // Traveling flare (run-7 iter 7, RUN7-MOTION-FLARE): one compact

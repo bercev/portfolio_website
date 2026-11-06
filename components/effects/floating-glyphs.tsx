@@ -37,7 +37,7 @@ import { answerSpinEnvelope, answerWireEnvelope, ANSWER_SPIN_RATE, ANSWER_WIRE_A
  *   profile — audited behavior, iter 26).
  */
 
-const GLYPHS = [
+export const GLYPHS = [
   "@", "#", "%", "&", "*", "+", "×", "=", "<", ">", "/", "|",
   ":", "·", "°", "○", "◇", "△", "□", "§", "~", "^", "0", "1",
   "8", "X", "S", "{", "}", "[", "]",

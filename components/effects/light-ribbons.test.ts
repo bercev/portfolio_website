@@ -8,6 +8,11 @@ import {
   DAYLIGHT_IDENTITY,
   DAYLIGHT_PROFILES,
   DITHER_SEAM_HEIGHT,
+  GLYPH_STREAM_FLOOR,
+  GLYPH_STREAM_MIN_BAND_PX,
+  GLYPH_STREAM_SIZE_PX,
+  GLYPH_STREAM_SPACING_PX,
+  GLYPH_STREAM_SPEED_PX_S,
   REVEAL_DURATION_MS,
   REVEAL_FEATHER_PX,
   REVEAL_RING_THICKNESS_PX,
@@ -24,6 +29,10 @@ import {
   dissolveLevelAt,
   ditherSeamPasses,
   getChapterProfile,
+  glyphStreamAlpha,
+  glyphStreamBandFactor,
+  glyphStreamMarginBands,
+  glyphStreamX,
   lerpChapterProfile,
   lerpDaylightProfile,
   measureScrollVelocity,
@@ -594,5 +603,82 @@ describe("opening ring-of-light reveal", () => {
     // The cap bounds the wait past the boot's 3.05s unmount.
     expect(BOOT_WAIT_CAP_MS).toBeGreaterThan(3050);
     expect(BOOT_OVERLAY_SELECTOR).toContain("System boot sequence");
+  });
+});
+
+describe("living ASCII glyph stream", () => {
+  it("floors the glyph alpha so no phase ever vanishes", () => {
+    // The v1 failure: alpha tied to the flare envelope read ~2.5x
+    // over background in one phase and ~11x in another. The floor
+    // bounds the swing to FLOOR..1.
+    expect(glyphStreamAlpha(0)).toBe(GLYPH_STREAM_FLOOR);
+    expect(glyphStreamAlpha(1)).toBe(1);
+    expect(glyphStreamAlpha(0.5)).toBeCloseTo(
+      GLYPH_STREAM_FLOOR + (1 - GLYPH_STREAM_FLOOR) * 0.5,
+    );
+    expect(glyphStreamAlpha(-1)).toBe(GLYPH_STREAM_FLOOR);
+    expect(glyphStreamAlpha(2)).toBe(1);
+    expect(GLYPH_STREAM_FLOOR).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("normalizes band breathing to [0,1] at the swing extremes", () => {
+    expect(glyphStreamBandFactor(0.76, 0.24)).toBeCloseTo(0);
+    expect(glyphStreamBandFactor(1.24, 0.24)).toBeCloseTo(1);
+    expect(glyphStreamBandFactor(1.0, 0.24)).toBeCloseTo(0.5);
+    expect(glyphStreamBandFactor(1.0, 0)).toBe(0.5);
+    expect(glyphStreamBandFactor(0.5, 0.24)).toBeCloseTo(0);
+    expect(glyphStreamBandFactor(1.5, 0.24)).toBeCloseTo(1);
+  });
+
+  it("draws only in free margins wide enough to read", () => {
+    // 1440px: content column 120..1320 — only the right margin
+    // (~96px) qualifies; the left is the rail strip.
+    expect(glyphStreamMarginBands(1440, 120, 1320)).toEqual([
+      [1344, 1416],
+    ]);
+    // 1920px: both margins qualify.
+    const wide = glyphStreamMarginBands(1920, 360, 1560);
+    expect(wide).toHaveLength(2);
+    expect(wide[0][1] - wide[0][0]).toBeGreaterThanOrEqual(
+      GLYPH_STREAM_MIN_BAND_PX,
+    );
+    expect(wide[1][1] - wide[1][0]).toBeGreaterThanOrEqual(
+      GLYPH_STREAM_MIN_BAND_PX,
+    );
+    // Mobile: no margins by construction.
+    expect(glyphStreamMarginBands(390, 16, 374)).toEqual([]);
+    expect(glyphStreamMarginBands(699, 16, 683)).toEqual([]);
+    // A margin narrower than the minimum is dropped.
+    expect(glyphStreamMarginBands(1440, 120, 1380)).toEqual([]);
+  });
+
+  it("marches glyphs at stream speed and wraps continuously", () => {
+    const x0 = glyphStreamX(0, 0, 36, 165, -100, 1540);
+    expect(x0).toBe(0);
+    // 1s of travel at 165px/s.
+    expect(glyphStreamX(0, 1, 36, 165, -100, 1540)).toBeCloseTo(165);
+    // 3s of travel: ~495px — a wholly different constellation in
+    // the margin, not a nudge of the same glyphs.
+    expect(glyphStreamX(0, 3, 36, 165, -100, 1540)).toBeCloseTo(495);
+    // Spacing is preserved along the stream.
+    expect(
+      glyphStreamX(1, 0, 36, 165, -100, 1540) -
+        glyphStreamX(0, 0, 36, 165, -100, 1540),
+    ).toBe(36);
+    // Wrap: past the right edge re-enters at the left.
+    const wrapped = glyphStreamX(0, 10, 36, 165, -100, 1540);
+    expect(wrapped).toBeGreaterThanOrEqual(-100);
+    expect(wrapped).toBeLessThan(1540);
+    expect(glyphStreamX(0, 10, 36, 165, -100, 1540)).toBeCloseTo(
+      -100 + ((1650 + 100) % 1640),
+    );
+  });
+
+  it("keeps the stream fast and the glyphs large enough to track", () => {
+    // The flare's ~180px/s is the trackable reference; the stream
+    // must be in the same class, not the band's ~4px/s drift.
+    expect(GLYPH_STREAM_SPEED_PX_S).toBeGreaterThanOrEqual(120);
+    expect(GLYPH_STREAM_SIZE_PX).toBeGreaterThanOrEqual(28);
+    expect(GLYPH_STREAM_SPACING_PX).toBeLessThanOrEqual(48);
   });
 });
