@@ -265,7 +265,7 @@ test("renders static, fully visible content for reduced motion", async ({
   await context.close();
 });
 
-test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
+test("keeps cursor-following pointer effects unmounted on any pointer", async ({ browser }) => {
   const fineContext = await browser.newContext({
     viewport: { width: 1280, height: 720 },
   });
@@ -277,9 +277,14 @@ test("mounts pointer effects only for a fine pointer", async ({ browser }) => {
     "data-effect-mode",
     "enhanced",
   );
-  await expect(finePage.locator("[data-target-cursor]")).toHaveCount(1);
+  // TargetCursor / ClickSpark are unmounted dead code (removed from the
+  // effect stage in fbca49f) and PixelTrail is gone entirely (replaced by
+  // the target cursor in c85adb7); reel-8 #19: no cursor-following effect
+  // is live, so no pointer mounts them — the fine/coarse distinction
+  // survives only in data-effect-mode.
+  await expect(finePage.locator("[data-target-cursor]")).toHaveCount(0);
   await expect(finePage.locator("[data-pixel-trail]")).toHaveCount(0);
-  await expect(finePage.locator("[data-click-spark]")).toHaveCount(1);
+  await expect(finePage.locator("[data-click-spark]")).toHaveCount(0);
   fineRuntimeErrors.assertEmpty();
   await fineContext.close();
 

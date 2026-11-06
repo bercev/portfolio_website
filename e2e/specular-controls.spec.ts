@@ -14,7 +14,9 @@ test("activates one shared specular renderer for native buttons", async ({
   const renderer = page.locator("[data-specular-controls]");
   await expect(renderer).toHaveCount(1);
   await expect(renderer.locator("canvas")).toHaveCount(1);
-  await expect(page.locator("[data-click-spark]")).toHaveCount(1);
+  // ClickSpark is unmounted dead code (removed in fbca49f) — the specular
+  // renderer is the only pointer effect still live.
+  await expect(page.locator("[data-click-spark]")).toHaveCount(0);
 
   await page.locator("[data-bubble-menu-trigger]").hover();
   await expect(renderer).toHaveAttribute("data-specular-active", "true");
