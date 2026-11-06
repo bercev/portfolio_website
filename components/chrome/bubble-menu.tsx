@@ -8,8 +8,15 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { gsap } from "gsap";
+import { CustomEase } from "gsap/CustomEase";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+
+// The site's one ease-out family (cubic-bezier .16,1,.3,1 — same curve the
+// CSS transitions use) as a GSAP ease, so the fan shares it instead of
+// overshooting with back.out (run-8 iter 2, RUN8-BUBBLE-FAN, R1/R12).
+gsap.registerPlugin(CustomEase);
+const SITE_EASE_OUT = CustomEase.create("siteEaseOut", "0.16,1,0.3,1");
 
 import type { PortfolioContent } from "@/data/content";
 import { ThemeSelector } from "@/components/chrome/theme-selector";
@@ -28,8 +35,12 @@ type BubbleMenuProps = {
 };
 
 const ITEM_ROTATIONS = [-7, 5, -4, 6, -5] as const;
-const ANIMATION_DURATION = 0.46;
-const STAGGER_DELAY = 0.07;
+// Run-8 reel-4 rules: R2 dropdowns 150–250ms, R3 stagger 30ms, R14 exits
+// 20% shorter than entrances (0.16 = 0.20 × 0.8). The old 0.46s open with
+// back.out(1.5) overshoot and 70ms stagger violated R2/R3/R12.
+const ANIMATION_DURATION = 0.2;
+const CLOSE_DURATION = 0.16;
+const STAGGER_DELAY = 0.03;
 const HOVER_CLOSE_DELAY = 120;
 
 const PROFILE_ICONS = {
@@ -162,8 +173,10 @@ export function BubbleMenu({ links, chapters }: BubbleMenuProps) {
       }
 
       if (isOpen) {
+        // R10: popovers start at 0.95 scale, not 0. R12: no bounce —
+        // SITE_EASE_OUT never overshoots past 1.
         gsap.set(bubbles, {
-          scale: 0,
+          scale: 0.95,
           transformOrigin: "50% 50%",
           opacity: 1,
         });
@@ -172,14 +185,14 @@ export function BubbleMenu({ links, chapters }: BubbleMenuProps) {
           timeline.to(bubble, {
             scale: 1,
             duration: ANIMATION_DURATION,
-            ease: "back.out(1.5)",
+            ease: SITE_EASE_OUT,
           });
 
         });
       } else {
         gsap.to(bubbles, {
           scale: 0,
-          duration: 0.18,
+          duration: CLOSE_DURATION,
           ease: "power3.in",
           onComplete: () => setShowItems(false),
         });
