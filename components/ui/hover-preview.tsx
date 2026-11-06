@@ -142,7 +142,8 @@ export function HoverPreview({
               initial={
                 shouldReduceMotion
                   ? { opacity: 0 }
-                  : { opacity: 0, scale: 0.96, y: 10 }
+                  // R10: popovers start at 0.95 scale (RUN8-R10-RESIDUAL).
+                  : { opacity: 0, scale: 0.95, y: 10 }
               }
               animate={{
                 opacity: 1,
