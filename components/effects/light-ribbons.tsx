@@ -194,24 +194,6 @@ import { BLUE_NOISE_128 } from "@/lib/blue-noise";
  *   margin at once) plus ~495px of travel in a 3s pair, so the pair
  *   shows a wholly different constellation.
  *
- * - Aurora curtains (run-7 iter 38, RUN7-EXP-AURORA-CURTAIN):
- *   3–5 vertical drapes of pale light hanging from the hero's top
- *   edge — the Codrops aurora / Avada Drift language, standing
- *   shapes rather than traveling sheets: vertical where the ribbons
- *   are diagonal, anchored at the top edge where the ribbons cross
- *   the whole page, hero-only where the ribbons run everywhere.
- *   They are drawn on the half-res offscreen BEFORE the ribbon
- *   slices, so the blur pass softens them together and the diagonal
- *   sheets lie over them. The sway is a TRAVELING WAVE down each
- *   drape (not the filed 20–30s in-place oscillation — a wave that
- *   moves ~3–9px in 3s is sub-perceptual, the iter-37 contour
- *   failure): a ~9s wave with a ~260px vertical wavelength shifts
- *   the edge bumps ~87px down in 3s, plus a slower whole-curtain
- *   lateral sway, so a 3s pair shows the drape's wavy edges having
- *   visibly relocated. Bottoms dissolve over ~140px (a hem, not a
- *   cut); the whole layer fades with the hero as it scrolls away.
- *   Reduced motion = the static pose in the static frame.
- *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
  *   "active"] — EffectStage uses that claim to keep the loud Neural Ink
@@ -552,31 +534,6 @@ function makeFlareSprite(bright: Rgb, accent: Rgb): HTMLCanvasElement {
   grad.addColorStop(1.0, rgba(accent, 0));
   g.fillStyle = grad;
   g.fillRect(0, 0, 96, 96);
-  return c;
-}
-
-/**
- * Aurora curtain sprite (run-7 iter 38, RUN7-EXP-AURORA-CURTAIN):
- * the ribbon sprite transposed — a HORIZONTAL gradient (bright
- * center, soft edges left/right) so one drawImage per y-step paints
- * a vertical drape's cross-section. Uniform along y; the drape's
- * vertical shape (sway, hem fade) comes from the per-row placement,
- * not the sprite.
- */
-function makeCurtainSprite(pale: Rgb): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = 128;
-  c.height = 2;
-  const g = c.getContext("2d");
-  if (!g) return c;
-  const grad = g.createLinearGradient(0, 0, 128, 0);
-  grad.addColorStop(0.0, rgba(pale, 0));
-  grad.addColorStop(0.25, rgba(pale, 0.35));
-  grad.addColorStop(0.5, rgba(pale, 0.92));
-  grad.addColorStop(0.75, rgba(pale, 0.35));
-  grad.addColorStop(1.0, rgba(pale, 0));
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 128, 2);
   return c;
 }
 
@@ -1010,84 +967,6 @@ export function glyphStreamX(
 }
 
 /**
- * Aurora curtains (run-7 iter 38, RUN7-EXP-AURORA-CURTAIN): vertical
- * drapes of pale light hanging from the hero's top edge — the
- * Codrops aurora / Avada Drift language. Four drapes, each a
- * standing shape with a TRAVELING WAVE down its length: the first
- * harmonic is a wave of wavelength `swayWave` whose phase travels
- * downward with period `swayT1`, so in 3s the edge bumps shift down
- * by `swayWave * 3s / swayT1` (~87px at the shipped values) — the
- * glance-visible signature. A second, slower harmonic sways the
- * whole drape laterally. (An in-place 20–30s oscillation was the
- * filed design; it moves ~3–9px in 3s, below the perceptual floor
- * the iter-37 contour failure measured — a traveling wave is the
- * same sway made visible.) `bottomFrac` is the drape's hem as a
- * fraction of the viewport height; the hem dissolves over
- * AURORA_BOTTOM_FEATHER_PX. Widths are desktop values — the draw
- * scales them down on narrow viewports so four drapes stay distinct
- * at 390px instead of merging into one wash.
- */
-export interface CurtainDef {
-  xFrac: number;
-  width: number;
-  swayA1: number;
-  swayT1: number;
-  swayWave: number;
-  swayA2: number;
-  swayT2: number;
-  phase: number;
-  bottomFrac: number;
-}
-
-export const AURORA_CURTAINS: ReadonlyArray<CurtainDef> = [
-  { xFrac: 0.1, width: 120, swayA1: 30, swayT1: 9000, swayWave: 260, swayA2: 20, swayT2: 16000, phase: 0.0, bottomFrac: 0.62 },
-  { xFrac: 0.3, width: 150, swayA1: 30, swayT1: 9000, swayWave: 260, swayA2: 20, swayT2: 16000, phase: 1.9, bottomFrac: 0.72 },
-  { xFrac: 0.62, width: 130, swayA1: 30, swayT1: 9000, swayWave: 260, swayA2: 20, swayT2: 16000, phase: 3.7, bottomFrac: 0.58 },
-  { xFrac: 0.85, width: 110, swayA1: 30, swayT1: 9000, swayWave: 260, swayA2: 20, swayT2: 16000, phase: 5.2, bottomFrac: 0.68 },
-];
-
-export const AURORA_ALPHA = 0.14;
-export const AURORA_BOTTOM_FEATHER_PX = 140;
-export const AURORA_ROW_STEP_PX = 4;
-
-/** Lateral offset (css px) of a drape's centerline at height `y`
- * and chapter-clock time `tMs` (ms, same clock as the ribbons):
- * a wave traveling DOWN the drape (phase advances with time and
- * retreats with height, so the bumps visibly descend) plus a slow
- * whole-drape lateral sway. Bounded by |swayA1| + |swayA2|; periodic
- * in y with the wavelength (the A2 term is y-independent). */
-export function curtainSwayX(
-  y: number,
-  tMs: number,
-  def: CurtainDef,
-): number {
-  const w1 =
-    (6.2832 * (y / def.swayWave - tMs / def.swayT1)) + def.phase;
-  const w2 = (6.2832 * tMs) / def.swayT2 + def.phase * 1.7;
-  return def.swayA1 * Math.sin(w1) + def.swayA2 * Math.sin(w2);
-}
-
-/** Hem fade: full strength above the feather zone, dissolving to 0
- * at the drape's bottom edge — a hem, not a cut. */
-export function curtainBottomFade(
-  y: number,
-  bottom: number,
-  featherPx: number = AURORA_BOTTOM_FEATHER_PX,
-): number {
-  return 1 - smooth(Math.max(0, bottom - featherPx), bottom, y);
-}
-
-/** Hero-only gate: the curtains hang from the hero, so they fade
- * out as the hero scrolls away — full while the hero's bottom edge
- * is at least half a viewport down, gone once it leaves the top. */
-export function curtainHeroFactor(
-  heroBottom: number,
-  viewportH: number,
-): number {
-  return smooth(0, viewportH * 0.5, heroBottom);
-}
-
-/**
  * A band's centerline height at x, pure in its inputs so the scrub
  * math is unit-testable. `ct` is the chapter clock (ms); `scrubPhase`
  * is the scroll-derived phase offset in radians, added to the two
@@ -1124,7 +1003,6 @@ export function LightRibbons() {
     null,
   );
   const flareSpriteRef = useRef<HTMLCanvasElement | null>(null);
-  const curtainSpriteRef = useRef<HTMLCanvasElement | null>(null);
   const bgRef = useRef<Rgb>({ r: 5, g: 7, b: 12 });
   const accentRef = useRef<Rgb>({ r: 125, g: 211, b: 252 });
   // Under reduced motion there is no loop to pick up rebuilt sprites, so
@@ -1168,7 +1046,6 @@ export function LightRibbons() {
       accent: makeSprite(colors.accent),
     };
     flareSpriteRef.current = makeFlareSprite(colors.bright, colors.accent);
-    curtainSpriteRef.current = makeCurtainSprite(colors.pale);
     repaintStaticRef.current?.();
   }, []);
 
@@ -1651,77 +1528,6 @@ export function LightRibbons() {
       const list = W < 700 ? NARROW_RIBBONS : DESKTOP_RIBBONS;
       octx.clearRect(0, 0, off.width, off.height);
       octx.globalCompositeOperation = dark ? "lighter" : "source-over";
-
-      // Aurora curtains (run-7 iter 38, RUN7-EXP-AURORA-CURTAIN):
-      // vertical drapes of pale light hanging from the hero's top
-      // edge, drawn on the half-res offscreen BEFORE the ribbon
-      // slices — the blur pass softens them together and the diagonal
-      // sheets lie over them, so they read as soft curtains behind
-      // the light, never as a competing foreground. One drawImage
-      // per 4px row per drape: the sprite is a horizontal gradient,
-      // so each row is one cross-section placed at the wave's lateral
-      // offset for that height. The pale role color comes from the
-      // live tokens (same sprite as the pale ribbons' family).
-      // energy() caps each row exactly as it caps the bands (column
-      // suppression + rail guard); the hem fades over the last
-      // 140px; the hero gate fades the whole layer as the hero
-      // scrolls away; the reveal factor blooms it in with the rest
-      // of the light. Widths scale down on narrow viewports so four
-      // drapes stay distinct at 390px. Under reduced motion the
-      // chapter clock is frozen at 12000, so this draws the static
-      // pose in the static frame. Probe hook reports the first
-      // drape's sway at 30% viewport height for verification.
-      const heroF = curtainHeroFactor(heroBottom, H);
-      const curtainSprite = curtainSpriteRef.current;
-      if (heroF > 0.004 && curtainSprite) {
-        const wScale = Math.min(1, W / 1100);
-        const stepCss = AURORA_ROW_STEP_PX;
-        for (const c of AURORA_CURTAINS) {
-          const cx0 = c.xFrac * W;
-          const cw = c.width * wScale;
-          const bottom = c.bottomFrac * H;
-          for (let yCss = 0; yCss < bottom; yCss += stepCss) {
-            const yMid = yCss + stepCss / 2;
-            const sway = curtainSwayX(yMid, tChapter, c);
-            const fade = curtainBottomFade(yMid, bottom);
-            if (fade <= 0.004) continue;
-            const a =
-              AURORA_ALPHA *
-              alphaScale *
-              chapterCur.alpha *
-              daylightCur.alpha *
-              energy(cx0 + sway, yMid) *
-              fade *
-              heroF *
-              revealFactorAt(cx0 + sway, yMid);
-            if (a < 0.004) continue;
-            octx.globalAlpha = Math.min(1, a);
-            octx.drawImage(
-              curtainSprite,
-              0,
-              0,
-              128,
-              2,
-              (cx0 + sway - cw / 2) * S,
-              yCss * S,
-              cw * S,
-              stepCss * S,
-            );
-          }
-        }
-        octx.globalAlpha = 1;
-        const swayProbe = curtainSwayX(
-          H * 0.3,
-          tChapter,
-          AURORA_CURTAINS[0],
-        ).toFixed(1);
-        if (canvas.dataset.curtainSway !== swayProbe) {
-          canvas.dataset.curtainSway = swayProbe;
-        }
-      } else if (canvas.dataset.curtainSway !== "off") {
-        canvas.dataset.curtainSway = "off";
-      }
-
       const step = 1; // offscreen px (~2 css px) — dense slices, no striping
       for (let ri = 0; ri < list.length; ri++) {
         const r = list[ri];
