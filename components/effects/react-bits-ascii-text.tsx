@@ -243,6 +243,16 @@ const drawGlyphs = (charset: string, fontFamily: string) => {
   return canvas;
 };
 
+// Key for the shader's visual settings — the ones that reach the canvas
+// WITHOUT a rebuild (theme -> uLight, colors -> uColors, both uploaded
+// only inside frame()). A change here must wake the sleeping rAF loop or
+// the canvas keeps showing pre-change colors (run-8 iter 29,
+// RUN8-PLAIN-BERAT-STALE: BERAT stayed navy after a theme flip on /plain
+// under reduced motion). textColor is deliberately NOT in the key: it
+// rebuilds the text texture via buildRef, which already wakes the loop.
+export const asciiVisualKey = (theme: 'dark' | 'light', colors: readonly string[]) =>
+  `${theme}|${colors.join(',')}`;
+
 export default function ASCIIText({
   text = 'Hey!',
   asciiFontSize = 8,
@@ -271,6 +281,10 @@ export default function ASCIIText({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const buildRef = useRef<Build | null>(null);
+  // Exposes the mount effect's wake() to the settings-change effect below:
+  // wake() itself lives inside the mount effect's closure (rAF handle,
+  // alive flag, visibility state), so it is handed out through this ref.
+  const wakeRef = useRef<(() => void) | null>(null);
   const [fallback, setFallback] = useState(false);
   const glyphs = Array.from(charset).length > 1 ? charset : CHARSET;
   const palette = (colors?.length ? colors : ['#ffffff']).slice(0, 3);
@@ -296,6 +310,20 @@ export default function ASCIIText({
   useEffect(() => {
     settingsRef.current = settings;
   });
+
+  // Wake the rAF loop when the shader's visual settings change. frame()
+  // reads settingsRef and uploads uColors/uLight, but the loop sleeps when
+  // idle (needsFrames gate) — without this wake, a theme flip on /plain
+  // under reduced motion leaves BERAT in pre-flip colors until pointer
+  // movement re-arms the loop. One frame repaints with the new settings;
+  // under reduced motion the loop then sleeps again, which is correct.
+  // Declared after the settingsRef sync above so settingsRef is already
+  // current when the woken frame runs. On mount wakeRef is still null
+  // (the mount effect below has not run) — the mount effect wakes itself.
+  const visualKey = asciiVisualKey(theme, settings.colors);
+  useEffect(() => {
+    wakeRef.current?.();
+  }, [visualKey]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -563,6 +591,7 @@ export default function ASCIIText({
       last = performance.now();
       raf = requestAnimationFrame(frame);
     };
+    wakeRef.current = wake;
 
     buildRef.current = (value: string, family: string, weight: number | string, color: string, characters: string) => {
       build(value, family, weight, color, characters, true);
@@ -615,6 +644,7 @@ export default function ASCIIText({
       alive = false;
       cancelAnimationFrame(raf);
       buildRef.current = null;
+      wakeRef.current = null;
       resizeObserver.disconnect();
       visibility.disconnect();
       container.removeEventListener('pointermove', onMove);
