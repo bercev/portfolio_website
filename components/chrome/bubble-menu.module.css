@@ -55,7 +55,7 @@
 }
 
 .trigger:active {
-  transform: scale(0.94);
+  transform: scale(0.97);
 }
 
 .icon {
@@ -183,7 +183,7 @@
 }
 
 .chapterLink:active {
-  scale: 0.98;
+  scale: 0.97;
 }
 
 .item {
@@ -259,7 +259,7 @@
 }
 
 .link:active {
-  scale: 0.95;
+  scale: 0.97;
 }
 
 .itemIcon {
