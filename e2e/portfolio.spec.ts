@@ -39,11 +39,11 @@ test("renders exact publications and their canonical destinations", async ({
   const papers = [
     {
       title:
-        "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision.",
+        "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision",
       href: "https://openreview.net/forum?id=nZYF0aPAMP",
     },
     {
-      title: "@GrokSet: Multi-party Human-LLM Interactions in Social Media.",
+      title: "@GrokSet: Multi-party Human-LLM Interactions in Social Media",
       href: "https://arxiv.org/abs/2602.21236",
     },
   ] as const;

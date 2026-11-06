@@ -210,7 +210,7 @@ export const portfolio = {
     {
       slug: "skilloptimizer",
       title:
-        "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision.",
+        "SkillOptimizer: Agent Skill Optimization Through Subskills Without Task Supervision",
       gloss:
         "How an agent can get measurably better at a skill by decomposing it into subskills, with no task-level supervision to learn from.",
       venue: "ICML 2026 AIWILD Workshop",
@@ -245,7 +245,7 @@ export const portfolio = {
     },
     {
       slug: "grokset",
-      title: "@GrokSet: Multi-party Human-LLM Interactions in Social Media.",
+      title: "@GrokSet: Multi-party Human-LLM Interactions in Social Media",
       gloss:
         "A dataset and analysis of 1M+ public Grok conversations: what changes when people talk to an LLM in front of an audience instead of alone.",
       venue: "arXiv:2602.21236",
