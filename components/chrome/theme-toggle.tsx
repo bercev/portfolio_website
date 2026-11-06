@@ -1,6 +1,7 @@
 "use client";
 
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
@@ -27,6 +28,9 @@ export function ThemeToggle({
   // the reason, instead of a clickable control that changes nothing.
   const asciiActive = useAsciiActive();
   const resolvedClassName = className ?? toggleClassName;
+  // R17: crossfade the Sun/Moon icons with a slight blur instead of a
+  // hard swap. Reduced motion = instant swap (duration 0, no blur).
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     // Intentional mount guard (standard next-themes pattern): avoids hydration
@@ -69,7 +73,41 @@ export function ThemeToggle({
       data-bubble-menu-item={menuItem ? "" : undefined}
       onClick={() => setTheme(nextTheme)}
     >
-      <Icon className="size-5" weight="regular" aria-hidden="true" />
+      <span className="relative size-5" aria-hidden="true">
+        <AnimatePresence initial={false}>
+          <motion.span
+            key={isDark ? "sun" : "moon"}
+            className="absolute inset-0 flex items-center justify-center"
+            initial={
+              shouldReduceMotion
+                ? { opacity: 0 }
+                : { opacity: 0, filter: "blur(2px)" }
+            }
+            animate={{
+              opacity: 1,
+              filter: "blur(0px)",
+              transition: {
+                duration: shouldReduceMotion ? 0 : 0.18,
+                ease: [0.16, 1, 0.3, 1],
+              },
+            }}
+            exit={
+              shouldReduceMotion
+                ? { opacity: 0, transition: { duration: 0 } }
+                : {
+                    opacity: 0,
+                    filter: "blur(2px)",
+                    transition: {
+                      duration: 0.18,
+                      ease: [0.16, 1, 0.3, 1],
+                    },
+                  }
+            }
+          >
+            <Icon className="size-5" weight="regular" aria-hidden="true" />
+          </motion.span>
+        </AnimatePresence>
+      </span>
       {showLabel ? <span>{isDark ? "Light mode" : "Dark mode"}</span> : null}
     </button>
   );
