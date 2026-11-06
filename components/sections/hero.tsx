@@ -55,19 +55,28 @@ export function Hero({ content }: { content: HeroContent }) {
       aria-labelledby="home-heading"
       className="relative flex min-h-[100dvh] scroll-mt-[calc(4rem+env(safe-area-inset-top))] flex-col"
     >
-      <motion.div
+      {/* R6 (run-8 iter 8, RUN8-RULE6): the editorial block used to enter as
+          one 0.95s fade-rise. Its details now stagger ~30ms apart in reading
+          order — glyph band first, then meta / tagline / CTA / signals —
+          same 0.95s duration and site ease-out per element. The glyph band
+          keeps the exact old timing (delay 0.12s), so the BERAT entrance is
+          unchanged. Reduced motion renders everything instantly. */}
+      <div
         data-hero-editorial
         className="flex w-full flex-1 flex-col"
-        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
       >
         <h1 id="home-heading" aria-label={identity.name} className="sr-only">
           {identity.name}
         </h1>
 
         {/* BERAT as React Bits ASCIIText (MIT) — real canvas-sampled ASCII art. */}
-        <div data-hero-glyph-band aria-hidden="true">
+        <motion.div
+          data-hero-glyph-band
+          aria-hidden="true"
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+        >
           <ASCIIText
             text="BERAT"
             asciiFontSize={5}
@@ -94,27 +103,53 @@ export function Hero({ content }: { content: HeroContent }) {
             theme="dark"
             style={{ pointerEvents: "auto" }}
           />
-        </div>
+        </motion.div>
 
         {/* Role / location / tagline / scroll — always below the glyph band. */}
         <div data-hero-below>
           <div data-hero-lede>
-            <div data-hero-meta>
+            <motion.div
+              data-hero-meta
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+            >
               <span>Based in Santa Cruz, California.</span>
-            </div>
+            </motion.div>
 
-            {hero.tagline ? <p data-hero-tagline>{hero.tagline}</p> : null}
+            {hero.tagline ? (
+              <motion.p
+                data-hero-tagline
+                initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
+              >
+                {hero.tagline}
+              </motion.p>
+            ) : null}
 
             {/* One calm call to action: subtle magnetic drift + spring return (Aceternity
                 MagneticButton), held still under reduced motion. */}
-            <MagneticButton strength={reduceMotion ? 0 : 0.22} maxDistance={36}>
-              <a href="#projects" className="cursor-target" data-hero-cta>
-                See my work <span aria-hidden="true">↓</span>
-              </a>
-            </MagneticButton>
+            <motion.div
+              data-hero-cta-wrap
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.21 }}
+            >
+              <MagneticButton strength={reduceMotion ? 0 : 0.22} maxDistance={36}>
+                <a href="#projects" className="cursor-target" data-hero-cta>
+                  See my work <span aria-hidden="true">↓</span>
+                </a>
+              </MagneticButton>
+            </motion.div>
           </div>
 
-          <dl data-hero-signals>
+          <motion.dl
+            data-hero-signals
+            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.24 }}
+          >
             {hero.signals.map((signal) => (
               <div key={signal.label} data-hero-signal>
                 <dt>{signal.label}</dt>
@@ -129,9 +164,9 @@ export function Hero({ content }: { content: HeroContent }) {
                 </dd>
               </div>
             ))}
-          </dl>
+          </motion.dl>
         </div>
-      </motion.div>
+      </div>
     </section>
   )
 }

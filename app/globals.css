@@ -2631,7 +2631,14 @@ html[data-journey="active"] [data-hero-name-fallback] {
 
 @media (max-width: 767px) {
   /* Motion's initial opacity:0 can stick on phones before the enter tween. */
-  [data-hero-editorial] {
+  /* R6 (run-8 iter 8): the stagger lives on the hero's children now, so the
+     guard covers them too — the mobile hero stays instant, as before. */
+  [data-hero-editorial],
+  [data-hero-glyph-band],
+  [data-hero-meta],
+  [data-hero-tagline],
+  [data-hero-cta-wrap],
+  [data-hero-signals] {
     opacity: 1 !important;
     transform: none !important;
   }
@@ -2996,7 +3003,15 @@ html[data-journey="active"] [data-hero-name-fallback] {
     display: none;
   }
 
-  [data-hero-editorial] {
+  /* R6 (run-8 iter 8): the stagger lives on the hero's children now — the
+     reduced-motion guard covers them too (motion's initial={false} is the
+     primary path; this is belt-and-braces, as for the outer element). */
+  [data-hero-editorial],
+  [data-hero-glyph-band],
+  [data-hero-meta],
+  [data-hero-tagline],
+  [data-hero-cta-wrap],
+  [data-hero-signals] {
     opacity: 1 !important;
     transform: none !important;
   }
