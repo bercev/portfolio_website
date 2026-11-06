@@ -144,16 +144,33 @@ export function HoverPreview({
                   ? { opacity: 0 }
                   : { opacity: 0, scale: 0.96, y: 10 }
               }
-              animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                // R2: entrance 220ms, site ease-out. R9 evaluated: the rise IS
+                // the entrance, so R1 (ease-out for entrances) governs it;
+                // ease-in-out is reserved for non-entrance moves
+                // (case-study expand, RUN8-CASESTUDY).
+                transition: {
+                  duration: shouldReduceMotion ? 0 : 0.22,
+                  ease: [0.16, 1, 0.3, 1],
+                },
+              }}
               exit={
                 shouldReduceMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, scale: 0.98, y: 6 }
+                  ? { opacity: 0, transition: { duration: 0 } }
+                  : {
+                      opacity: 0,
+                      scale: 0.98,
+                      y: 6,
+                      // R14: exit 175ms = 220ms x 0.8, same ease-out family.
+                      transition: {
+                        duration: 0.175,
+                        ease: [0.16, 1, 0.3, 1],
+                      },
+                    }
               }
-              transition={{
-                duration: shouldReduceMotion ? 0 : 0.48,
-                ease: [0.16, 1, 0.3, 1],
-              }}
             >
               {isPaper && readerSrc ? (
                 <>
