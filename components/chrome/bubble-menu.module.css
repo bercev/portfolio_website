@@ -65,15 +65,24 @@
 
 .overlay {
   position: fixed;
-  /* The fan is a vertical bubble column below the trigger: the overlay's top
-     edge aligns with the trigger's top, its horizontal center sits on the
-     trigger's center (right edge = anchor right + half trigger − half width),
-     and its height covers the 5-bubble column. */
+  /* The fan is a vertical bubble column below the trigger: the overlay's
+     top edge aligns with the trigger's top and its height covers the
+     5-bubble column.
+     RIGHT EDGE (run-8 iter 41, RUN8-FAN-PILLS-CLIP): the overlay's right
+     edge aligns with the anchor/trigger right edge
+     (max(1.25rem, safe-area)), NOT centered on the trigger. The old
+     centering put the 176px-wide overlay 40px past the viewport on
+     desktop (52px on mobile), so the full-width chapter pills ran
+     straight off-screen with no right rounding — visible in every
+     counted pass's fan frame, filed by the iter-40 desktop critic. The
+     bubble column stays centered on the trigger via .item's left offset
+     (below), so the fan geometry is byte-identical; only the pills move
+     into view. A plain "shift the list left" fix was rejected: it would
+     still clip 12px on mobile and, on <700px-tall viewports where the
+     overlay is a scroll region, the leftward overflow is unreachable in
+     LTR and would cut pill text. */
   top: calc(env(safe-area-inset-top) + 4.5rem);
-  right: calc(
-    max(1.25rem, env(safe-area-inset-right)) + 1.75rem -
-      min(11rem, calc(100vw - 2rem)) / 2
-  );
+  right: max(1.25rem, env(safe-area-inset-right));
   z-index: 1;
   width: min(11rem, calc(100vw - 2rem));
   /* Height wraps the bubble column plus the chapter list below it; the
@@ -188,9 +197,15 @@
 
 .item {
   position: absolute;
-  /* Anchored at the overlay's top (= trigger top); --bubble-y translates down. */
+  /* Anchored at the overlay's top (= trigger top); --bubble-y translates down.
+     Re-centering (run-8 iter 41, RUN8-FAN-PILLS-CLIP): the overlay is no
+     longer centered on the trigger — its right edge sits at the anchor's
+     right edge — so the bubbles are re-centered here: 50% + 3.75rem puts
+     the bubble center on the trigger center (overlay half-width 5.5rem
+     minus trigger half-width 1.75rem). GSAP only tweens scale on these
+     elements, so this layout offset is untouched by the fan animation. */
   top: 0;
-  left: 50%;
+  left: calc(50% + 3.75rem);
   z-index: 2;
   transform: translateX(calc(-50% + var(--bubble-x)))
     translateY(var(--bubble-y)) rotate(var(--bubble-rotation));
@@ -306,15 +321,22 @@
 
   .overlay {
     top: calc(env(safe-area-inset-top) + 1px);
-    right: calc(
-      max(1.25rem, env(safe-area-inset-right)) + 1rem -
-        min(11rem, calc(100vw - 2rem)) / 2
-    );
+    /* Same re-anchor as desktop (run-8 iter 41, RUN8-FAN-PILLS-CLIP):
+       right edge at the anchor's right edge — the old centering put the
+       pills 52px past the viewport on a 390px phone. */
+    right: max(1.25rem, env(safe-area-inset-right));
     /* Mobile dock top differs from desktop, so the viewport cap must
        track it — otherwise the cap over/under-shoots by ~71px. */
     max-height: calc(
       100dvh - (env(safe-area-inset-top) + 1px) - 0.75rem
     );
+  }
+
+  /* Mobile re-centering (run-8 iter 41): the trigger is 2rem here, so the
+     bubble center sits 4.5rem right of the overlay center (overlay
+     half-width 5.5rem minus trigger half-width 1rem). */
+  .item {
+    left: calc(50% + 4.5rem);
   }
 }
 
