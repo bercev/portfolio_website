@@ -1642,24 +1642,106 @@ html[data-journey] [data-effect-layer="background"] {
   border-bottom: 0;
 }
 
-.journey-pub-index {
+/* Journal plates (run-9 RUN9-SECTION-IDENTITIES, Publications slice):
+   the masthead rule is a child div — the e2e frost test requires the row
+   itself to keep border-top 0, a transparent background, and no
+   box-shadow. */
+.journey-pub-plate-rule {
   grid-column: 1 / -1;
-  margin: 0 0 0.6rem;
-  font: 400 10px/1 var(--font-sans);
-  letter-spacing: var(--label-tracking);
-  font-variant-numeric: tabular-nums;
-  color: var(--muted-foreground);
-  transition: color 180ms ease-out;
+  height: 5px;
+  margin: 0 0 clamp(18px, 2.4vw, 28px);
+  border-top: 2px solid var(--foreground);
+  border-bottom: 1px solid var(--foreground);
 }
 
-.journey-pub-row:hover .journey-pub-index,
-.journey-pub-row:focus-within .journey-pub-index {
+.journey-pub-figure {
+  position: relative;
+  grid-column: 1 / span 4;
+  margin: 0;
+  min-width: 0;
+}
+
+.journey-pub-figure-link {
+  display: block;
+  border: 1px solid var(--foreground);
+  background: #fff;
+}
+
+.journey-pub-figure-link img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.journey-pub-figure-link:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 3px;
+}
+
+.journey-pub-fig-caption {
+  margin: 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+/* Venue stamp: pressed onto the plate's corner on first scroll into view
+   (the press itself lives in publication-plate.tsx, 220ms ease-out). */
+.journey-pub-stamp {
+  position: absolute;
+  z-index: 2;
+  bottom: -12px;
+  right: -8px;
+  max-width: calc(100% - 16px);
+  padding: 5px 9px;
+  border: 2px solid var(--portfolio-accent);
+  background: var(--background);
+  color: var(--portfolio-accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--portfolio-accent) 30%, transparent);
+}
+
+.journey-pub-body {
+  grid-column: 5 / span 8;
+  min-width: 0;
+}
+
+.journey-pub-kicker {
+  margin: 2px 0 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
   color: var(--portfolio-accent);
 }
 
-.journey-pub-main {
-  grid-column: 1 / span 7;
-  min-width: 0;
+.journey-pub-authors {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-author--self {
+  color: var(--portfolio-accent);
+}
+
+.journey-pub-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  margin-top: 0.9rem;
+}
+
+.journey-pub-meta .journey-pub-cite {
+  margin-top: 0;
 }
 
 .journey-pub-title {
@@ -1718,16 +1800,6 @@ html[data-journey] [data-effect-layer="background"] {
   line-height: 1.62;
   color: var(--muted-foreground);
   text-wrap: pretty;
-}
-
-.journey-pub-marginalia {
-  grid-column: 9 / span 4;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  padding-top: 6px;
-  text-align: right;
 }
 
 /* Terminal-style cite button: copies BibTeX, ClickSpark fires the burst. */
@@ -1813,28 +1885,23 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 @media (max-width: 900px) {
-  .journey-pub-main,
-  .journey-pub-marginalia,
-  .journey-pub-index {
+  .journey-pub-figure,
+  .journey-pub-body {
     grid-column: 1 / -1;
   }
 
-  .journey-pub-marginalia {
-    align-items: flex-start;
-    text-align: left;
-    border-top: 1px solid var(--journey-rule-soft);
-    padding-top: 10px;
-    margin-top: 12px;
+  .journey-pub-figure {
+    max-width: 340px;
+  }
+
+  .journey-pub-body {
+    margin-top: 18px;
   }
 }
 
-.journey-pub-venue,
 .journey-pub-date {
   font: 400 11px/1.45 var(--font-sans);
   color: var(--muted-foreground);
-}
-
-.journey-pub-date {
   opacity: 0.85;
 }
 
@@ -2690,11 +2757,6 @@ a.skills-ledger-note {
 
 @media (max-width: 900px) {
 
-}
-
-.journey-pub-row--lead {
-  padding-top: clamp(6px, 1vw, 10px);
-  padding-bottom: clamp(26px, 3.4vw, 40px);
 }
 
 .journey-xp-item--featured {

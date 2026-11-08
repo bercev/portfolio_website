@@ -8,6 +8,13 @@ import { paperAnchorId } from "@/lib/paper-anchor";
 import { HoverPreview } from "@/components/ui/hover-preview";
 import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
 import { Station } from "@/components/ui/station";
+import {
+  plateLabels,
+  VenueStamp,
+} from "@/components/sections/publication-plate";
+
+/** The site owner's name in the author line — rendered in accent. */
+const SELF_AUTHOR = "Berat Ercevik";
 
 type PublicationsProps = {
   readonly content: PortfolioContent["publications"];
@@ -76,14 +83,17 @@ function scholarlyArticleJsonLd(
 function PublicationRow({
   publication,
   index,
+  total,
 }: {
   readonly publication: Publication;
   readonly index: number;
+  readonly total: number;
 }) {
   // RUN8-STYLE-DITHER: the row dissolves in through the blue-noise tile
   // on first scroll into view (reel-4 rule 16, masks for reveals).
   // RUN8-R3-RESIDUAL: rows stagger 30ms apart (reel-4 rule 3).
   const revealRef = useDitherReveal<HTMLElement>(index * DITHER_ROW_STAGGER);
+  const labels = plateLabels(index, total);
   return (
     <article
       key={publication.href}
@@ -92,16 +102,35 @@ function PublicationRow({
       data-dither-reveal
       data-publication-row
       data-publication-lead={index === 0 ? "true" : undefined}
-      className={
-        index === 0
-          ? "journey-pub-row journey-pub-row--lead scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
-          : "journey-pub-row scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
-      }
+      className="journey-pub-row journey-pub-row--plate scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
     >
-      <p className="journey-pub-index" aria-hidden="true">
-        {index + 1}
-      </p>
-      <div className="journey-pub-main">
+      {/* Journal masthead rule — a child div, not a border on the row: the
+          e2e frost test requires the row itself to keep border-top 0,
+          transparent background, and no box-shadow. */}
+      <div className="journey-pub-plate-rule" aria-hidden="true" />
+      <figure className="journey-pub-figure">
+        <a href={publication.href} className="journey-pub-figure-link">
+          {/* eslint-disable-next-line @next/next/no-img-element -- local paper preview, same as HoverPreview's img */}
+          <img
+            src={publication.preview.src}
+            alt={publication.preview.alt}
+            width={publication.preview.width}
+            height={publication.preview.height}
+            loading="lazy"
+          />
+        </a>
+        <figcaption className="journey-pub-fig-caption">
+          {labels.fig} — First page
+        </figcaption>
+        <VenueStamp venue={publication.venue} index={index} />
+        {/* The stamp is aria-hidden chrome; the venue stays in the
+            accessible tree here. */}
+        <span className="sr-only">{publication.venue}</span>
+      </figure>
+      <div className="journey-pub-body">
+        <p className="journey-pub-kicker" aria-hidden="true">
+          {labels.plate}
+        </p>
         <HoverPreview
           title={publication.title}
           href={publication.href}
@@ -116,15 +145,27 @@ function PublicationRow({
           previewClassName="journey-pub-preview"
         />
         <p className="journey-pub-gloss">{publication.gloss}</p>
+        <p className="journey-pub-authors">
+          {publication.authors.map((author, authorIndex) => (
+            <span key={author.name}>
+              {authorIndex > 0 ? " · " : null}
+              <span
+                className={
+                  author.name === SELF_AUTHOR
+                    ? "journey-pub-author--self"
+                    : undefined
+                }
+              >
+                {author.name}
+              </span>
+            </span>
+          ))}
+        </p>
+        <div className="journey-pub-meta">
+          <span className="journey-pub-date">{publication.date}</span>
+          <CiteButton publication={publication} />
+        </div>
       </div>
-      <aside
-        className="journey-pub-marginalia"
-        aria-label="Venue and date"
-      >
-        <span className="journey-pub-venue">{publication.venue}</span>
-        <span className="journey-pub-date">{publication.date}</span>
-        <CiteButton publication={publication} />
-      </aside>
     </article>
   );
 }
@@ -151,6 +192,7 @@ export function Publications({ content, heading }: PublicationsProps) {
             key={publication.href}
             publication={publication}
             index={index}
+            total={content.length}
           />
         ))}
       </div>
