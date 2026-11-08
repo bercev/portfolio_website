@@ -5,6 +5,12 @@ type ParticleTextSceneOptions = {
   colors: readonly string[];
   fontFamily: string;
   text: string;
+  /**
+   * When true, particles start scattered across the canvas and ease into
+   * the letterforms (the GATHER entrance: the word assembles from chaos
+   * instead of appearing formed). Default false (formed at rest).
+   */
+  assemble?: boolean;
 };
 
 const MAX_PARTICLES = 14_000;
@@ -30,6 +36,7 @@ export class ParticleTextScene {
   private readonly colors: readonly string[];
   private readonly fontFamily: string;
   private readonly text: string;
+  private readonly assemble: boolean;
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.OrthographicCamera();
   private readonly renderer: THREE.WebGLRenderer;
@@ -43,11 +50,12 @@ export class ParticleTextScene {
   private pointerY = Number.POSITIVE_INFINITY;
   private startedAt = performance.now();
 
-  constructor({ canvas, colors, fontFamily, text }: ParticleTextSceneOptions) {
+  constructor({ canvas, colors, fontFamily, text, assemble = false }: ParticleTextSceneOptions) {
     this.canvas = canvas;
     this.colors = colors;
     this.fontFamily = fontFamily;
     this.text = text;
+    this.assemble = assemble;
     this.renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: false,
@@ -102,7 +110,11 @@ export class ParticleTextScene {
     const context = sampleCanvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("Particle Text requires a 2D canvas context");
 
-    const maximumFontSize = Math.min(220, height * 0.72);
+    // Run 9: the wordmark must keep the ASCII BERAT's presence — the
+    // 220px cap rendered the particle word ~24% narrower (630px vs 831px
+    // measured). 300px at 0.78 of box height lands ~856px desktop; mobile
+    // stays width-constrained, so it is unchanged there.
+    const maximumFontSize = Math.min(300, height * 0.78);
     context.font = `800 ${maximumFontSize}px ${this.fontFamily}`;
     const measuredWidth = Math.max(1, context.measureText(this.text).width);
     const fontSize = Math.min(maximumFontSize, maximumFontSize * ((width * 0.9) / measuredWidth));
@@ -114,7 +126,10 @@ export class ParticleTextScene {
     context.fillText(this.text.toUpperCase(), width / 2, height / 2);
 
     const imageData = context.getImageData(0, 0, width, height).data;
-    const gap = width < 720 ? 4 : 3;
+    // Run 9: gap 3 everywhere — the mobile gap-4 letters read thin next
+    // to the ASCII BERAT; denser sampling punches the wordmark up at 390px
+    // (mobile count stays ~1.5k, far under the cap).
+    const gap = 3;
     const samples: Array<[number, number, number]> = [];
 
     for (let y = 0; y < height; y += gap) {
@@ -153,6 +168,16 @@ export class ParticleTextScene {
     }
 
     this.origins = positions.slice();
+    if (this.assemble) {
+      // Scatter the live positions across the canvas; the animation loop's
+      // EASE pull toward origins assembles the letters over ~1–2s. Origins
+      // (the letterforms) stay untouched, so the word always settles exact.
+      for (let scatterIndex = 0; scatterIndex < positions.length; scatterIndex += 3) {
+        positions[scatterIndex] = (Math.random() * 2 - 1) * (width / 2);
+        positions[scatterIndex + 1] = (Math.random() * 2 - 1) * (height / 2);
+        positions[scatterIndex + 2] = (Math.random() * 2 - 1) * 80;
+      }
+    }
     this.velocities = new Float32Array(positions.length);
     this.geometry = new THREE.BufferGeometry();
     this.geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -212,11 +237,18 @@ export class ParticleTextScene {
         positions[index] += this.velocities[index];
         positions[index + 1] += this.velocities[index + 1];
         positions[index + 2] += this.velocities[index + 2];
-        positions[index] += (this.origins[index] - positions[index]) * EASE;
-        positions[index + 1] +=
-          (this.origins[index + 1] - positions[index + 1]) * EASE;
+        // Return home with a distance-gated ease: far-flung particles
+        // (fresh scatter, pointer bursts) snap back briskly at 0.12, then
+        // settle gently at EASE 0.05 — so the load assembly reads as a
+        // sweep that lands, not a slow drift.
+        const homeX = this.origins[index] - positions[index];
+        const homeY = this.origins[index + 1] - positions[index + 1];
+        const homeEase =
+          Math.abs(homeX) > 40 || Math.abs(homeY) > 40 ? 0.12 : EASE;
+        positions[index] += homeX * homeEase;
+        positions[index + 1] += homeY * homeEase;
         const idleDepth =
-          this.origins[index + 2] + Math.sin(elapsed * 0.0015 + index * 0.013) * 2;
+          this.origins[index + 2] + Math.sin(elapsed * 0.0015 + index * 0.013) * 3;
         positions[index + 2] += (idleDepth - positions[index + 2]) * EASE;
       }
 
@@ -224,7 +256,10 @@ export class ParticleTextScene {
     }
 
     if (this.points) {
-      this.points.rotation.y = Math.sin((performance.now() - this.startedAt) * 0.00025) * 0.035;
+      // Run 9: the settled wordmark must read as ALIVE, not a static
+      // texture swap — a slow ±~3° sway (was ±2°) keeps the resting hero
+      // visibly breathing while the letters stay legible.
+      this.points.rotation.y = Math.sin((performance.now() - this.startedAt) * 0.00025) * 0.05;
     }
     this.renderer.render(this.scene, this.camera);
     this.animationFrame = requestAnimationFrame(this.animate);

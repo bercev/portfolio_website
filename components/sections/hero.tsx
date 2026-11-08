@@ -1,10 +1,12 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { useTheme } from "next-themes";
 
 import ASCIIText from "@/components/effects/react-bits-ascii-text";
+import { ParticleBerat } from "@/components/effects/particle-berat";
 import { useMotionPreference } from "@/components/providers/motion-provider";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 import type { PortfolioContent } from "@/data/content";
 
@@ -16,7 +18,11 @@ type HeroContent = {
 export function Hero({ content }: { content: HeroContent }) {
   const { identity, hero } = content;
   const { forced } = useMotionPreference();
-  const osReduce = useReducedMotion();
+  // Native media-query read (lib/use-prefers-reduced-motion.ts) — motion's
+  // useReducedMotion() freezes its first-render value and does not yield
+  // the reduced branch under an OS reduce setting in this app (run-9
+  // iter 1 diagnosis); the native hook is the branch's source of truth.
+  const osReduce = usePrefersReducedMotion();
   const reduceMotion = Boolean(forced) || osReduce;
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === "light";
@@ -47,6 +53,14 @@ export function Hero({ content }: { content: HeroContent }) {
   // glyph-alpha change in the shared ASCIIText component — out of
   // run-7's background-only scope; filed as RUN7-LIGHT-BERAT-SOFT.
   const lightBerat = isLight && reduceMotion;
+  // Run 9 (RUN9-HERO-TRANSFORM): in motion mode the wordmark is a live
+  // particle sculpture (GATHER technique) instead of the ASCII glyph field
+  // — it assembles from a scatter on load and repels from the pointer.
+  // The assembly IS the entrance, so the band no longer fade-rises; the
+  // old 0.95s fade survives only as the reduced-motion path's instant
+  // render. Reduced motion keeps the ASCIIText BERAT untouched (crisp
+  // final frame, no canvas loop).
+  const particleMode = !reduceMotion;
 
   return (
     <section
@@ -58,9 +72,10 @@ export function Hero({ content }: { content: HeroContent }) {
       {/* R6 (run-8 iter 8, RUN8-RULE6): the editorial block used to enter as
           one 0.95s fade-rise. Its details now stagger ~30ms apart in reading
           order — glyph band first, then meta / tagline / CTA / signals —
-          same 0.95s duration and site ease-out per element. The glyph band
-          keeps the exact old timing (delay 0.12s), so the BERAT entrance is
-          unchanged. Reduced motion renders everything instantly. */}
+          same 0.95s duration and site ease-out per element. Run 9: the
+          glyph band itself no longer fade-rises in motion mode — the
+          particle assembly is its entrance (see the band below). Reduced
+          motion renders everything instantly. */}
       <div
         data-hero-editorial
         className="flex w-full flex-1 flex-col"
@@ -69,40 +84,44 @@ export function Hero({ content }: { content: HeroContent }) {
           {identity.name}
         </h1>
 
-        {/* BERAT as React Bits ASCIIText (MIT) — real canvas-sampled ASCII art. */}
+        {/* BERAT as a particle sculpture in motion mode (GATHER technique),
+            as React Bits ASCIIText under reduced motion. */}
         <motion.div
           data-hero-glyph-band
           aria-hidden="true"
-          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
         >
-          <ASCIIText
-            text="BERAT"
-            asciiFontSize={5}
-            fontFamily="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
-            fontWeight={700}
-            textColor="#ffffff"
-            colors={
-              lightBerat
-                ? ["#000d17", "#001320", "#001a2b"]
-                : ["#ffffff", "#00e5ff", "#0090ff"]
-            }
-            textScale={2.3}
-            letterSpacing={0.07}
-            blocks={0}
-            waves={0}
-            waveSpeed={0}
-            chroma={0}
-            tilt={1}
-            hueShift={0}
-            scramble={0}
-            intro
-            idle={false}
-            interactive
-            theme="dark"
-            style={{ pointerEvents: "auto" }}
-          />
+          {particleMode ? (
+            <ParticleBerat />
+          ) : (
+            <ASCIIText
+              text="BERAT"
+              asciiFontSize={5}
+              fontFamily="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
+              fontWeight={700}
+              textColor="#ffffff"
+              colors={
+                lightBerat
+                  ? ["#000d17", "#001320", "#001a2b"]
+                  : ["#ffffff", "#00e5ff", "#0090ff"]
+              }
+              textScale={2.3}
+              letterSpacing={0.07}
+              blocks={0}
+              waves={0}
+              waveSpeed={0}
+              chroma={0}
+              tilt={1}
+              hueShift={0}
+              scramble={0}
+              intro
+              idle={false}
+              interactive
+              theme="dark"
+              style={{ pointerEvents: "auto" }}
+            />
+          )}
         </motion.div>
 
         {/* Role / location / tagline / scroll — always below the glyph band. */}
