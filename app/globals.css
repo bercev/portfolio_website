@@ -2211,6 +2211,135 @@ html[data-journey] [data-effect-layer="background"] {
   margin-top: 1.25rem;
 }
 
+/* RUN9-SECTION-IDENTITIES — Projects as drafting-table sheets. Each row is
+   a bordered sheet on the blueprint background: an outer border, a fainter
+   inner margin frame (::before), a FIG./SHEET header strip, a PLATE caption
+   under the preview, and a title-block footer. The pen trace that draws the
+   outer frame lives in project-sheet-frame.tsx (SVG overlay); the resting
+   frame is this quiet border. */
+.journey-project-sheet {
+  position: relative;
+  padding: clamp(1.1rem, 3vw, 2rem);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
+}
+
+.journey-project-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
+}
+
+.journey-sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.65rem;
+  margin-bottom: 1.35rem;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-sheet-plate {
+  display: block;
+  min-width: 0;
+}
+
+.journey-sheet-plate-caption {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-sheet-titleblock {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.75rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.journey-sheet-titleblock-label {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Pen-trace overlay + registration marks (project-sheet-frame.tsx). */
+.journey-sheet-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.journey-sheet-frame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.journey-sheet-frame rect {
+  fill: none;
+  stroke: var(--portfolio-accent);
+  stroke-width: 1.5;
+}
+
+.journey-sheet-crop {
+  position: absolute;
+  top: 1px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--muted-foreground);
+}
+
+.journey-sheet-crop--left {
+  left: 0.55rem;
+}
+
+.journey-sheet-crop--right {
+  right: 0.55rem;
+}
+
+@media (max-width: 700px) {
+  .journey-sheet-titleblock {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  /* Longest header ("FIG. 02 — AI DISCORD CHATBOT" + "SHEET 02 / 02")
+     wraps to two lines at 390px otherwise; the tighter set keeps both
+     sheets' headers on one line (mobile-critic note, iter 3 — measured:
+     207 + 96 + 16 = 319px vs a 314px strip, 5px over at 0.68rem/0.08em). */
+  .journey-sheet-head {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    gap: 0.25rem 0.5rem;
+  }
+}
+
 .journey-case-study {
   margin-top: 2rem;
   max-width: 64rem;

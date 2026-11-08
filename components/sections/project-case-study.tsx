@@ -27,6 +27,7 @@ import {
 } from "@/lib/skill-work";
 
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
+import { SheetFrame, sheetLabels } from "./project-sheet-frame";
 
 const projectPreviews: Partial<
   Record<
@@ -223,12 +224,15 @@ export function CaseStudyRow({
   project,
   featured = false,
   index = 0,
+  total = 1,
   skillNames,
 }: {
   readonly project: Project;
   readonly featured?: boolean;
   /** Position in the project list — staggers the dither reveal (R3). */
   readonly index?: number;
+  /** Project count — the sheet header reads "SHEET 01 / 02". */
+  readonly total?: number;
   /** Ledger skill names, for the reverse-navigation pill links. */
   readonly skillNames: readonly string[];
 }) {
@@ -252,6 +256,10 @@ export function CaseStudyRow({
   const revealRef = useDitherReveal<HTMLElement>(index * DITHER_ROW_STAGGER);
   const preview = projectPreviews[project.title];
   const rowId = projectAnchorId(project.title);
+  // RUN9-SECTION-IDENTITIES: the row is a drafting-table sheet — FIG./SHEET
+  // header, PLATE caption, title-block footer (see the sheet CSS). The
+  // labels duplicate visible text, so the chrome is hidden from AT.
+  const labels = sheetLabels(index, total);
 
   // Reverse skill navigation (run-3 iter 23): the pills live INSIDE
   // this toggle button, so they cannot themselves be <button>s (nested
@@ -349,11 +357,12 @@ export function CaseStudyRow({
       data-dither-reveal
       className={
         featured
-          ? "journey-project-featured scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
-          : "scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+          ? "journey-project-sheet journey-project-featured scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+          : "journey-project-sheet scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
       }
       data-work-tech={techKeyList(project.technologies)}
     >
+      <SheetFrame index={index} />
       <button
         type="button"
         className="journey-case-study-toggle"
@@ -361,6 +370,13 @@ export function CaseStudyRow({
         aria-controls={panelId}
         onClick={handleToggleClick}
       >
+        {/* Sheet header strip: the drawing number. */}
+        <span className="journey-sheet-head" aria-hidden="true">
+          <span>
+            {labels.fig} — {project.title.toUpperCase()}
+          </span>
+          <span>{labels.sheet}</span>
+        </span>
         {/* At rest: problem-framed headline + product meta + one pill strip on
             the left, a calm static preview sidecar on the right. The preview
             stays a static frame (not the hover popover) so it reads at rest
@@ -392,25 +408,30 @@ export function CaseStudyRow({
             ) : null}
           </span>
           {preview ? (
-            preview.chromatic ? (
-              <ChromaticImage
-                src={preview.src}
-                alt={preview.alt}
-                width={800}
-                height={560}
-                className="journey-project-rest-preview"
-              />
-            ) : (
-              <span className="journey-project-rest-preview">
-                {/* eslint-disable-next-line @next/next/no-img-element -- local static preview crop */}
-                <img
+            <span className="journey-sheet-plate">
+              {preview.chromatic ? (
+                <ChromaticImage
                   src={preview.src}
                   alt={preview.alt}
                   width={800}
                   height={560}
+                  className="journey-project-rest-preview"
                 />
+              ) : (
+                <span className="journey-project-rest-preview">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- local static preview crop */}
+                  <img
+                    src={preview.src}
+                    alt={preview.alt}
+                    width={800}
+                    height={560}
+                  />
+                </span>
+              )}
+              <span className="journey-sheet-plate-caption" aria-hidden="true">
+                {labels.plate} — {project.title.toUpperCase()}
               </span>
-            )
+            </span>
           ) : null}
         </span>
       </button>
@@ -470,6 +491,23 @@ export function CaseStudyRow({
         ) : null}
       </AnimatePresence>
       )}
+
+      {/* Title block: the drawing's footer strip. Decorative chrome repeating
+          visible content (project + dates), so hidden from AT. */}
+      <div className="journey-sheet-titleblock" aria-hidden="true">
+        <span>
+          <span className="journey-sheet-titleblock-label">Project</span>
+          {project.title}
+        </span>
+        <span>
+          <span className="journey-sheet-titleblock-label">Dates</span>
+          {project.dates}
+        </span>
+        <span>
+          <span className="journey-sheet-titleblock-label">Scale</span>
+          1:1 · Rev A
+        </span>
+      </div>
     </article>
   );
 }
