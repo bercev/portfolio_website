@@ -1440,7 +1440,7 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .journey-contact-list li {
-  border-bottom: 1px solid var(--journey-rule-soft);
+  /* No static rule: each directory row draws its own (elsewhere-plate). */
 }
 
 .journey-contact-link {
@@ -1457,6 +1457,64 @@ html[data-journey] [data-effect-layer="background"] {
 
 .journey-contact-link:hover {
   color: var(--portfolio-accent);
+}
+
+/* Contact directory plate (run-9 RUN9-ELSEWHERE-PLATE): the Elsewhere rail
+   stops being a bare spec label + plain link list and becomes a bordered
+   directory plate in the drawing set's language — sheet head, registration
+   marks, numbered rows that press in with a drawn rule, title-block
+   footer. The card background sits above the particle bust, which used to
+   stipple across the bare ↗ arrows (audit, iter 19). align-self keeps the
+   plate hugging the top of the rail instead of stretching to the station
+   height (the old .journey-spec class carried this; the plate replaces it). */
+.journey-elsewhere {
+  position: relative;
+  align-self: start;
+  padding: 1.25rem 1.4rem 1.4rem;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
+}
+
+.journey-elsewhere::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
+}
+
+.journey-elsewhere .journey-contact-list {
+  margin-top: 0;
+}
+
+.journey-elsewhere-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.journey-elsewhere-row .journey-contact-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.journey-elsewhere-num {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--portfolio-accent);
+}
+
+.journey-elsewhere-row-rule {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--journey-rule-soft);
+  transform-origin: left center;
 }
 
 /* Journey epilogue (run-9 iter 18, RUN9-EPILOGUE-SIGNOFF): the loop-back

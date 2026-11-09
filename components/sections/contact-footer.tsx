@@ -1,12 +1,11 @@
 import type { PortfolioContent } from "@/data/content";
 
-import { MotionVersionLink } from "@/components/chrome/motion-version-link";
 import { TopoTexture } from "@/components/effects/topo-texture";
 import { TerminalFlyout } from "@/components/terminal/terminal-flyout";
-import { ExternalLink } from "@/components/ui/external-link";
 import { Station } from "@/components/ui/station";
 
 import { ContactForm } from "./contact-form";
+import { ElsewherePlate } from "./elsewhere-plate";
 
 export function ContactFooter({
   content,
@@ -28,25 +27,7 @@ export function ContactFooter({
         </div>
       </div>
 
-      <nav className="journey-col-rail journey-spec" aria-label="Contact links">
-        <p className="journey-spec-label">Elsewhere</p>
-        <ul className="journey-contact-list">
-          {content.links.map((link) => (
-            <li key={link.href}>
-              <ExternalLink
-                href={link.href}
-                download={link.download}
-                className="journey-contact-link"
-              >
-                {link.label}
-              </ExternalLink>
-            </li>
-          ))}
-          <li>
-            <MotionVersionLink className="journey-contact-link" />
-          </li>
-        </ul>
-      </nav>
+      <ElsewherePlate links={content.links} />
     </Station>
   );
 }
