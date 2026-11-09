@@ -3,6 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
+  BUST_YIELD_FADE_MS,
+  BUST_YIELD_RESAMPLE_MS,
+  bustYieldOpacity,
+  bustYieldSamplePoints,
+  cssColorAlpha,
+  nextBustYielded,
+} from "@/lib/bust-yield";
+import {
   contactFaceRamp,
   scrollSnapshot,
   smoothstep01,
@@ -56,6 +64,107 @@ const BUST_MAX_PARTICLES = 8_000; // small box; BERAT's 14k cap is overkill
 // ~26° at the hero, eased back to front-facing at contact by the same
 // ramp that drives the turn-back (so "meets your eyes" still lands at 0).
 const BUST_BASE_YAW = 0.45;
+
+// The BERAT sculpture and its measure frame are background, not content —
+// a sample landing on them must not count as covered (the hero's right
+// side is clear of text even though the canvas spans it).
+const BUST_YIELD_EXCLUDE =
+  "[data-hero-glyph-band],[data-particle-berat-root],[data-hero-measure-frame],[data-ascii-portrait-bust]";
+
+/**
+ * Is the viewport point covered by real page content? Walks from the
+ * topmost element up to <main>: a point counts when it lands on leaf text,
+ * an interactive element, an opaque background, or a visible border.
+ * Background layers are pointer-events:none so they are never hit; the
+ * BERAT band, canvases, and anything outside <main> (nav chrome, tray)
+ * are excluded explicitly.
+ */
+function bustPointCovered(x: number, y: number): boolean {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return false;
+  if (el.closest(BUST_YIELD_EXCLUDE)) return false;
+  if (el.tagName === "CANVAS") return false;
+  const main = document.querySelector("main");
+  if (!main || !main.contains(el)) return false;
+  let node: Element | null = el;
+  while (node && node !== main) {
+    const tag = node.tagName;
+    if (/^(A|BUTTON|INPUT|TEXTAREA|SELECT|LABEL)$/.test(tag)) return true;
+    for (const child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim())
+        return true;
+    }
+    const cs = getComputedStyle(node);
+    if (cssColorAlpha(cs.backgroundColor) > 0.08) return true;
+    if (
+      parseFloat(cs.borderTopWidth) > 0 &&
+      cssColorAlpha(cs.borderTopColor) > 0.08
+    )
+      return true;
+    node = node.parentElement;
+  }
+  return false;
+}
+
+/**
+ * useBustYield — the bust yields to content (RUN9-BUST-OVERLAP): samples
+ * the 4x4 grid inside the bust box on scroll/resize and on a short
+ * interval (layout changes like a case-study expand fire no scroll event;
+ * the featured tape's marquee also drifts pills through the zone), and
+ * flips the yielded state through the hysteresis in lib/bust-yield.ts.
+ * The 600ms CSS fade on the box smooths the flip; sampling is rAF-
+ * throttled and skips hidden tabs.
+ */
+function useBustYield(
+  boxRef: React.RefObject<HTMLDivElement | null>,
+  active: boolean,
+): boolean {
+  const [yielded, setYielded] = useState(false);
+  const yieldedRef = useRef(false);
+
+  useEffect(() => {
+    if (!active) return undefined;
+    let raf = 0;
+    let queued = false;
+    let timer: ReturnType<typeof setInterval> | undefined;
+
+    const sample = () => {
+      queued = false;
+      const box = boxRef.current;
+      if (!box || document.hidden) return;
+      const rect = box.getBoundingClientRect();
+      if (rect.width < 10 || rect.height < 10) return;
+      let covered = 0;
+      for (const p of bustYieldSamplePoints(rect)) {
+        if (bustPointCovered(p.x, p.y)) covered += 1;
+      }
+      const next = nextBustYielded(yieldedRef.current, covered);
+      if (next !== yieldedRef.current) {
+        yieldedRef.current = next;
+        setYielded(next);
+      }
+    };
+    const queue = () => {
+      if (!queued) {
+        queued = true;
+        raf = requestAnimationFrame(sample);
+      }
+    };
+
+    sample();
+    timer = setInterval(sample, BUST_YIELD_RESAMPLE_MS);
+    window.addEventListener("scroll", queue, { passive: true });
+    window.addEventListener("resize", queue);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (timer !== undefined) clearInterval(timer);
+      window.removeEventListener("scroll", queue);
+      window.removeEventListener("resize", queue);
+    };
+  }, [active, boxRef]);
+
+  return yielded;
+}
 
 function ParticleBustCanvas(): React.JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -165,6 +274,8 @@ export function ParticlePortraitBust(): React.JSX.Element | null {
   // still. Applied to the bust's own box (transform-origin = its center);
   // compositor-only, quantized, and off under reduced motion like the blur.
   const diveRef = useScrollDive<HTMLDivElement>(64, 0.08, asciiActive && wide);
+  // Yield to content: fade the bust when real content scrolls under it.
+  const yielded = useBustYield(diveRef, asciiActive && wide);
   useEffect(() => {
     if (!asciiActive || !wide) return;
     setFadedIn(false);
@@ -200,6 +311,7 @@ export function ParticlePortraitBust(): React.JSX.Element | null {
       ref={blurRef}
       aria-hidden="true"
       data-ascii-portrait-bust
+      data-bust-yielded={yielded ? "true" : "false"}
       style={{
         position: "fixed",
         inset: 0,
@@ -256,7 +368,14 @@ export function ParticlePortraitBust(): React.JSX.Element | null {
           // over copy further down the page. The iter-10 vignette mask +
           // size (about clearance) are untouched by the v2 renderer.
           // useScrollDive drives this box's transform (scroll sinks + grows).
-          className="relative aspect-square w-[clamp(200px,22vw,300px)] opacity-[0.65]"
+          // RUN9-BUST-OVERLAP: the box yields to content — when the sampler
+          // finds real content under the box it fades to 0.12 over 600ms
+          // (the hero stays bright; reading sections stay calm).
+          className="relative aspect-square w-[clamp(200px,22vw,300px)]"
+          style={{
+            opacity: bustYieldOpacity(yielded),
+            transition: `opacity ${BUST_YIELD_FADE_MS}ms ease`,
+          }}
         >
           <ParticleBustCanvas />
         </div>
