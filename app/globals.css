@@ -2934,15 +2934,58 @@ html[data-journey] [data-effect-layer="background"] {
   max-width: 64rem;
 }
 
-.journey-case-study-section + .journey-case-study-section {
+/* The dispatch plate is the panel's last section, below the detail
+   plates. */
+.journey-case-study > .journey-case-study-section {
   margin-top: 1.6rem;
 }
 
-.journey-case-study-label {
-  margin: 0 0 0.45rem;
-  font-size: 0.95rem;
-  font-weight: 600;
+/* Case-study detail plates (run-9 RUN9-CASE-DETAIL): the expanded panel
+   stops being bare prose and becomes the drawing's detail callouts — each
+   subsection a bordered plate with a press-in DETAIL numeral + a hairline
+   rule that draws under the head on open. Same 220ms / 0.5s language as
+   the About field notes and the experience revision marks, 45ms stagger
+   per plate (see case-detail.tsx); reduced motion renders everything
+   settled via the native hook there. */
+.journey-case-detail {
+  border: 1px solid var(--journey-rule);
+  padding: 0.85rem 1rem 1rem;
+}
+
+.journey-case-detail + .journey-case-detail {
+  margin-top: 1rem;
+}
+
+.journey-case-detail-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.journey-case-detail-num {
+  font: 600 0.8rem/1.5 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--portfolio-accent);
+  white-space: nowrap;
+}
+
+.journey-case-detail-title {
+  font: 600 0.8rem/1.5 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--foreground);
+}
+
+.journey-case-detail-rule {
+  display: block;
+  height: 1px;
+  margin: 0.6rem 0 0.85rem;
+  background: var(--journey-rule);
+  transform-origin: left center;
+}
+
+.journey-case-detail-body {
+  min-width: 0;
 }
 
 /* Case-study architecture diagrams: calm static SVGs — FROST strokes,
@@ -2994,34 +3037,48 @@ html[data-journey] [data-effect-layer="background"] {
   max-width: 68ch;
 }
 
+/* Measured-values strip: the outcome's metrics read as the drawing's
+   measurements — mono, "+" registration marks, ruled off from the prose
+   above. */
 .journey-case-study-metrics {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem 1.75rem;
-  margin: 0.7rem 0 0;
-  padding: 0;
+  margin: 0.85rem 0 0;
+  padding: 0.7rem 0 0;
+  border-top: 1px solid var(--journey-rule);
   list-style: none;
 }
 
 .journey-case-study-metrics li {
-  font-weight: 700;
+  font: 600 0.85rem/1.6 var(--font-mono);
+  letter-spacing: 0.02em;
   color: var(--foreground);
 }
 
+.journey-case-study-metrics li::before {
+  content: "+ ";
+  color: var(--portfolio-accent);
+}
+
+/* Snapshot as a title-block spec table: mono uppercase terms, hairline
+   rules between the rows on the stacked mobile layout. */
 .journey-case-study-roles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-  margin: 0.45rem 0 0;
+  margin: 0;
 }
 
 .journey-case-study-roles dt {
-  font-size: 0.85rem;
+  font: 600 0.7rem/1.5 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
 .journey-case-study-roles dd {
-  margin: 0.2rem 0 0;
+  margin: 0.25rem 0 0;
   font-weight: 600;
   color: var(--foreground);
 }
@@ -3037,6 +3094,11 @@ html[data-journey] [data-effect-layer="background"] {
 @media (max-width: 700px) {
   .journey-case-study-roles {
     grid-template-columns: 1fr;
+  }
+
+  .journey-case-study-roles > div + div {
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--journey-rule);
   }
 }
 
@@ -4966,11 +5028,18 @@ html.dark .plain-backdrop {
     break-after: avoid;
   }
 
-  /* Case-study labels are <p> elements, so the heading rule above does
-     not cover them — v219 p7 ended with an orphaned "Problem" label whose
-     body started on p8. Keep each label with its section body. */
-  .journey-case-study-label {
+  /* Case-study detail heads are <div> elements, so the heading rule
+     above does not cover them — keep each head with its plate body. */
+  .journey-case-detail-head {
     break-after: avoid;
+  }
+
+  /* Detail plates mount with a press + rule draw when the panel opens;
+     a beforeprint expansion must not catch them mid-animation. */
+  .journey-case-detail-num,
+  .journey-case-detail-rule {
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   p {

@@ -28,6 +28,7 @@ import {
 } from "@/lib/skill-work";
 
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
+import { CaseDetailPlate, caseStudyDetails } from "./case-detail";
 import { DispatchPlate, FoldTab } from "./case-fold-tab";
 import { SheetFrame, sheetLabels } from "./project-sheet-frame";
 
@@ -65,148 +66,90 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
   const sourceHref = project.source;
   const legacyHref =
     !liveHref && !sourceHref ? project.href : undefined;
+  // RUN9-CASE-DETAIL: the interior is the drawing's detail callouts — each
+  // present subsection a numbered DETAIL plate (press-in numeral + rule
+  // draw on open), the Snapshot a title-block spec table, the metrics a
+  // measured-values strip. Copy verbatim; the numbering closes up around
+  // sections a project doesn't have (see case-detail.ts).
+  const details = caseStudyDetails(
+    caseStudy,
+    hasArchitectureDiagram(project.title),
+    Boolean(liveHref || sourceHref || legacyHref),
+  );
 
   return (
     <div className="journey-case-study">
-
-      <div className="journey-case-study-section">
-        <p className="journey-case-study-label">Problem</p>
-        <p className="journey-body journey-case-study-text">{caseStudy.problem}</p>
-      </div>
-
-      <div className="journey-case-study-section">
-        <p className="journey-case-study-label">Key decision</p>
-        <p className="journey-body journey-case-study-text">{caseStudy.decision}</p>
-      </div>
-
-      {/* The decision made visible: a calm static system diagram alongside
-          Problem / Key decision / Outcome. It must prove in one glance what
-          the prose can't — each system's shape. */}
-      {hasArchitectureDiagram(project.title) ? (
-        <div className="journey-case-study-section">
-          <p className="journey-case-study-label">Architecture</p>
-          <ArchitectureDiagram title={project.title} />
-        </div>
-      ) : null}
-
-      {/* The direction explored and rejected — one path considered and why
-          it lost. Renders only when the field is set (honest material only). */}
-      {caseStudy.rejected ? (
-        <div className="journey-case-study-section">
-          <p className="journey-case-study-label">Not shipped</p>
-          <p className="journey-body journey-case-study-text">
-            {caseStudy.rejected}
-          </p>
-        </div>
-      ) : null}
-
-      <div className="journey-case-study-section">
-        <p className="journey-case-study-label">Outcome</p>
-        <p className="journey-body journey-case-study-text">{caseStudy.outcome}</p>
-        {caseStudy.metrics && caseStudy.metrics.length > 0 ? (
-          <ul className="journey-case-study-metrics">
-            {caseStudy.metrics.map((metric) => (
-              <li key={metric}>{metric}</li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-
-      {caseStudy.evaluation ? (
-        <div className="journey-case-study-section">
-          <p className="journey-case-study-label">Evaluation</p>
-          <p className="journey-body journey-case-study-text">
-            {caseStudy.evaluation}
-          </p>
-        </div>
-      ) : null}
-
-      {caseStudy.role || caseStudy.team || caseStudy.timeline ? (
-        <div className="journey-case-study-section">
-          <p className="journey-case-study-label">Snapshot</p>
-          <dl className="journey-case-study-roles">
-            {caseStudy.role ? (
-              <div>
-                <dt>My role</dt>
-                <dd>{caseStudy.role}</dd>
-              </div>
-            ) : null}
-            {caseStudy.team ? (
-              <div>
-                <dt>Team</dt>
-                <dd>{caseStudy.team}</dd>
-              </div>
-            ) : null}
-            {caseStudy.timeline ? (
-              <div>
-                <dt>Timeline</dt>
-                <dd>{caseStudy.timeline}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </div>
-      ) : null}
-
-      {caseStudy.didntWork ? (
-        <div className="journey-case-study-section">
-          <p className="journey-case-study-label">What didn&apos;t work</p>
-          <p className="journey-body journey-case-study-text">
-            {caseStudy.didntWork}
-          </p>
-        </div>
-      ) : null}
-
-      {caseStudy.differently ? (
-        <div className="journey-case-study-section">
-          <p className="journey-case-study-label">
-            What I&apos;d do differently
-          </p>
-          <p className="journey-body journey-case-study-text">
-            {caseStudy.differently}
-          </p>
-        </div>
-      ) : null}
-
-      {caseStudy.tradeoffs ? (
-        <div className="journey-case-study-section">
-          <p className="journey-case-study-label">Trade-offs</p>
-          <p className="journey-body journey-case-study-text">
-            {caseStudy.tradeoffs}
-          </p>
-        </div>
-      ) : null}
-
-      {liveHref || sourceHref || legacyHref ? (
-        <div className="journey-case-study-section journey-case-study-links">
-          {liveHref ? (
-            <ExternalLink
-              href={liveHref}
-              className="decoration-portfolio-accent"
-              iconSize={20}
-            >
-              Live demo
-            </ExternalLink>
-          ) : null}
-          {sourceHref ? (
-            <ExternalLink
-              href={sourceHref}
-              className="decoration-portfolio-accent"
-              iconSize={20}
-            >
-              Source code
-            </ExternalLink>
-          ) : null}
-          {legacyHref ? (
-            <ExternalLink
-              href={legacyHref}
-              className="decoration-portfolio-accent"
-              iconSize={20}
-            >
-              Open project
-            </ExternalLink>
-          ) : null}
-        </div>
-      ) : null}
+      {details.map((detail, index) => (
+        <CaseDetailPlate key={detail.key} index={index} label={detail.label}>
+          {detail.kind === "prose" ? (
+            <p className="journey-body journey-case-study-text">{detail.text}</p>
+          ) : detail.kind === "architecture" ? (
+            <ArchitectureDiagram title={project.title} />
+          ) : detail.kind === "outcome" ? (
+            <>
+              <p className="journey-body journey-case-study-text">{detail.text}</p>
+              {caseStudy.metrics && caseStudy.metrics.length > 0 ? (
+                <ul className="journey-case-study-metrics">
+                  {caseStudy.metrics.map((metric) => (
+                    <li key={metric}>{metric}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
+          ) : detail.kind === "snapshot" ? (
+            <dl className="journey-case-study-roles">
+              {caseStudy.role ? (
+                <div>
+                  <dt>My role</dt>
+                  <dd>{caseStudy.role}</dd>
+                </div>
+              ) : null}
+              {caseStudy.team ? (
+                <div>
+                  <dt>Team</dt>
+                  <dd>{caseStudy.team}</dd>
+                </div>
+              ) : null}
+              {caseStudy.timeline ? (
+                <div>
+                  <dt>Timeline</dt>
+                  <dd>{caseStudy.timeline}</dd>
+                </div>
+              ) : null}
+            </dl>
+          ) : (
+            <div className="journey-case-study-links">
+              {liveHref ? (
+                <ExternalLink
+                  href={liveHref}
+                  className="decoration-portfolio-accent"
+                  iconSize={20}
+                >
+                  Live demo
+                </ExternalLink>
+              ) : null}
+              {sourceHref ? (
+                <ExternalLink
+                  href={sourceHref}
+                  className="decoration-portfolio-accent"
+                  iconSize={20}
+                >
+                  Source code
+                </ExternalLink>
+              ) : null}
+              {legacyHref ? (
+                <ExternalLink
+                  href={legacyHref}
+                  className="decoration-portfolio-accent"
+                  iconSize={20}
+                >
+                  Open project
+                </ExternalLink>
+              ) : null}
+            </div>
+          )}
+        </CaseDetailPlate>
+      ))}
 
       {/* RUN9-CASE-FOLD-TAB: the conversion line is a stamped dispatch
           plate (see case-fold-tab.tsx) — a reader who just finished the
