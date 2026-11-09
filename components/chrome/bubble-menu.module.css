@@ -383,6 +383,20 @@
     height: 1.1rem;
   }
 
+  /* RUN9-TRAY-CHIP-MOBILE (run-9 iter 41): the kicker chip is the
+     overlay's first in-flow child, so on mobile it rendered at the
+     overlay's top — inside the 34px ribbon band, painting over the
+     sheet header ("SHEET 07 / 07 — CONTA…"). Drop it below the band:
+     the overlay top tracks safe-area-inset-top + 1px exactly like the
+     ribbon, so a fixed 2.5rem margin clears the band on every device
+     (kicker top lands at safe-area + 41px vs the band's safe-area +
+     34px). The fan column shifts down with the list — geometry
+     otherwise untouched; the overlay's max-height cap still fits the
+     fan at phone heights. */
+  .trayKicker {
+    margin-top: 2.5rem;
+  }
+
   .overlay {
     top: calc(env(safe-area-inset-top) + 1px);
     /* Same re-anchor as desktop (run-8 iter 41, RUN8-FAN-PILLS-CLIP):
