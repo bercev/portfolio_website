@@ -404,15 +404,16 @@
   }
 }
 
-/* Theme-selector fan escape (run-8 iter 3, RUN8-THEMESEL): the fan's dots
-   sit left of the overlay's box, and overflow-y:auto computes overflow-x
-   to auto, which clipped the two leftmost dots entirely (only 3 of 5
-   visible — the overlay edge, not the column, hid them). On viewports
-   >=700px tall the menu content (20rem list + chapter list, ~564px)
-   fits inside max-height, so no scroll region is needed and the overlay
-   can let the fan paint outside its box. Below 700px the overlay stays
-   the scroll region (run-4 iter 32 guard) and the fan clips there —
-   known limitation, logged in STATE.md. */
+/* Theme-selector plate escape (run-8 iter 3, RUN8-THEMESEL; run-9
+   RUN9-THEME-SWATCHES): the swatch plate sits left of the overlay's box,
+   and overflow-y:auto computes overflow-x to auto, which would clip the
+   plate entirely (only its right sliver visible — the overlay edge, not
+   the column, hiding it). On viewports >=700px tall the menu content
+   (20rem list + chapter list, ~564px) fits inside max-height, so no
+   scroll region is needed and the overlay can let the plate paint
+   outside its box. Below 700px the overlay stays the scroll region
+   (run-4 iter 32 guard) and the plate clips there — known limitation,
+   logged in STATE.md. */
 @media (min-height: 43.75rem) {
   .overlay {
     overflow: visible;

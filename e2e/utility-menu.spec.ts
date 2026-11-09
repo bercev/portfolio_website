@@ -132,9 +132,14 @@ test("keeps every utility icon close to the main menu trigger", async ({
   }
 });
 
-test("centers the expanded color themes over the main menu trigger", async ({
+test("anchors the swatch plate to the theme trigger", async ({
   page,
 }) => {
+  // Run-9 Swatch Library (RUN9-THEME-SWATCHES): the run-8 arc fanned
+  // five dots around the trigger and this test pinned the middle dot's
+  // centering; the plate retires the arc, so the pinned invariant is now
+  // the plate's anchoring — it opens from the trigger, stays inside the
+  // viewport, and lists all six swatches by name.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
@@ -142,14 +147,34 @@ test("centers the expanded color themes over the main menu trigger", async ({
   await menuTrigger.click();
   await page.getByRole("button", { name: /Color theme:/ }).click();
 
-  const menuTriggerBox = await menuTrigger.boundingBox();
-  const centerThemeBox = await page
-    .getByRole("button", { name: "Citrus color theme" })
-    .boundingBox();
-  expect(menuTriggerBox).not.toBeNull();
-  expect(centerThemeBox).not.toBeNull();
+  const plate = page.locator("#theme-palette-options");
+  await expect(plate).toBeVisible();
+  const plateBox = await plate.boundingBox();
+  const themeTrigger = page.getByRole("button", { name: /Color theme:/ });
+  const themeTriggerBox = await themeTrigger.boundingBox();
+  expect(plateBox).not.toBeNull();
+  expect(themeTriggerBox).not.toBeNull();
 
-  const menuCenterX = menuTriggerBox!.x + menuTriggerBox!.width / 2;
-  const centerThemeX = centerThemeBox!.x + centerThemeBox!.width / 2;
-  expect(Math.abs(centerThemeX - menuCenterX)).toBeLessThanOrEqual(16);
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  expect(plateBox!.x).toBeGreaterThanOrEqual(0);
+  expect(plateBox!.y).toBeGreaterThanOrEqual(0);
+  expect(plateBox!.x + plateBox!.width).toBeLessThanOrEqual(viewport!.width);
+  expect(plateBox!.y + plateBox!.height).toBeLessThanOrEqual(viewport!.height);
+  // The plate's right edge sits on the theme trigger's right edge — it
+  // opens leftward from the trigger, never past the viewport. (The 8px
+  // tolerance absorbs the fan plates' slight rotation, which inflates
+  // both bounding boxes by a few px; the layout edges align exactly.)
+  expect(
+    Math.abs(
+      plateBox!.x + plateBox!.width -
+        (themeTriggerBox!.x + themeTriggerBox!.width),
+    ),
+  ).toBeLessThanOrEqual(8);
+
+  for (const name of ["Base", "Ocean", "Orchid", "Citrus", "Forest", "Rose"]) {
+    await expect(
+      page.getByRole("button", { name: `${name} color theme` }),
+    ).toBeVisible();
+  }
 });

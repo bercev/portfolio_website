@@ -12,3 +12,38 @@ export type ThemePalette = keyof typeof THEME_PALETTES;
 export function isThemePalette(value: string | null | undefined): value is ThemePalette {
   return value !== null && value !== undefined && value in THEME_PALETTES;
 }
+
+export type ThemeSwatchRow = {
+  /** null = the Base (no palette override) row. */
+  readonly key: ThemePalette | null;
+  readonly number: string;
+  readonly label: string;
+  readonly accent: string;
+  readonly soft: string;
+  readonly foreground: string;
+};
+
+/**
+ * The Swatch Library rows (run 9, RUN9-THEME-SWATCHES): 00 BASE first,
+ * then the five palettes in arc order. Base accent is the site default
+ * --accent-neon (#7dd3fc, app/globals.css); its soft is the matching
+ * sky-200 companion.
+ */
+export const THEME_SWATCH_ROWS: readonly ThemeSwatchRow[] = [
+  {
+    key: null,
+    number: "00",
+    label: "Base",
+    accent: "#7dd3fc",
+    soft: "#bae6fd",
+    foreground: "#060a12",
+  },
+  ...Object.entries(THEME_PALETTES).map(([name, option], index) => ({
+    key: name as ThemePalette,
+    number: String(index + 1).padStart(2, "0"),
+    label: option.label,
+    accent: option.accent,
+    soft: option.soft,
+    foreground: option.foreground,
+  })),
+];

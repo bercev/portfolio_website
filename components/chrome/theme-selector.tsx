@@ -3,7 +3,7 @@
 import { CheckIcon, PaletteIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 
-import { THEME_PALETTES, type ThemePalette } from "@/lib/theme-palette";
+import { THEME_SWATCH_ROWS } from "@/lib/theme-palette";
 import { useAsciiActive } from "@/lib/use-ascii-active";
 import { usePalette } from "@/components/providers/palette-provider";
 
@@ -19,12 +19,9 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
   // remap + palette lock collapse every accent to ocean, so picking a
   // palette changes nothing visible. Disable with the reason instead.
   const asciiActive = useAsciiActive();
-  const selectedPalette = palette ? THEME_PALETTES[palette] : null;
+  const selectedPalette =
+    THEME_SWATCH_ROWS.find((row) => row.key === palette) ?? THEME_SWATCH_ROWS[0];
   const [isOpen, setIsOpen] = useState(false);
-  // Run-8 RUN8-THEMESEL: the close keyframe animation must never play on
-  // first paint (the dots would flash at their slots on load), so it is
-  // scoped to data-opened, set on the first open.
-  const [hasOpened, setHasOpened] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,7 +56,7 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
         className={`cursor-target ${styles.trigger}${asciiActive ? " opacity-50" : ""}`}
         data-variant={variant}
         data-bubble-menu-item={variant === "menu" ? "" : undefined}
-        aria-label={`Color theme: ${selectedPalette?.label ?? "Base"}`}
+        aria-label={`Color theme: ${selectedPalette.label}`}
         aria-controls="theme-palette-options"
         aria-expanded={isOpen}
         title={
@@ -69,7 +66,7 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
         }
         disabled={asciiActive}
         style={
-          selectedPalette
+          palette
             ? {
                 color: selectedPalette.foreground,
                 backgroundColor: selectedPalette.accent,
@@ -77,37 +74,43 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
             : undefined
         }
         onClick={() => {
-          setHasOpened(true);
           setIsOpen((open) => !open);
         }}
       >
         <PaletteIcon className={styles.icon} weight="regular" aria-hidden="true" />
       </button>
+      {/* Run-9 Swatch Library (RUN9-THEME-SWATCHES): the run-8 arc of five
+          anonymous dots is a labeled plate now — six numbered rows (00
+          BASE + the five palettes), each with its accent swatch and name,
+          so the choice is readable instead of guessed. The plate is
+          anchored to the trigger (right edge to right edge) and opens
+          upward in the menu variant, downward in the compact variant. */}
       <div
         id="theme-palette-options"
         className={styles.options}
         data-open={isOpen}
-        data-opened={hasOpened}
         aria-label="Color theme options"
         aria-hidden={!isOpen}
       >
-        {Object.entries(THEME_PALETTES).map(([name, option], index) => {
-          const themeName = name as ThemePalette;
-          const isSelected = themeName === palette;
+        <div aria-hidden="true" className={styles.optionsHead}>
+          <span>+ Swatch Library</span>
+          <span>{String(THEME_SWATCH_ROWS.length).padStart(2, "0")} plates</span>
+        </div>
+        {THEME_SWATCH_ROWS.map((row, index) => {
+          const isSelected = row.key === palette;
           return (
             <button
-              key={themeName}
+              key={row.number}
               type="button"
               className={`cursor-target ${styles.option}`}
               style={
                 {
                   "--option-index": index,
-                  color: option.foreground,
-                  backgroundColor: option.accent,
                 } as React.CSSProperties
               }
-              aria-label={`${option.label} color theme${isSelected ? ", selected" : ""}`}
-              title={option.label}
+              data-selected={isSelected}
+              aria-label={`${row.label} color theme${isSelected ? ", selected" : ""}`}
+              title={row.label}
               tabIndex={isOpen ? 0 : -1}
               onClick={() => {
                 // Guard the pre-lock-open race: options opened before the
@@ -116,11 +119,26 @@ export function ThemeSelector({ variant = "compact" }: ThemeSelectorProps) {
                   setIsOpen(false);
                   return;
                 }
-                setPalette(isSelected ? null : themeName);
+                // Tapping the selected row clears the override (Base is
+                // the null palette, so it always clears).
+                setPalette(isSelected ? null : row.key);
                 setIsOpen(false);
               }}
             >
-              {isSelected ? <CheckIcon className={styles.check} weight="bold" aria-hidden="true" /> : null}
+              <span aria-hidden="true" className={styles.optionNo}>
+                {row.number}
+              </span>
+              <span
+                aria-hidden="true"
+                className={styles.optionSwatch}
+                style={{ backgroundColor: row.accent }}
+              />
+              <span aria-hidden="true" className={styles.optionName}>
+                {row.label}
+              </span>
+              {isSelected ? (
+                <CheckIcon className={styles.check} weight="bold" aria-hidden="true" />
+              ) : null}
             </button>
           );
         })}

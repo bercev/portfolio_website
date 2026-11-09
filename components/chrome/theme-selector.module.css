@@ -44,7 +44,7 @@
   background: color-mix(in oklab, var(--popover) 96%, transparent);
   border-color: color-mix(in oklab, var(--border) 80%, transparent);
   /* Run-9 Tool Tray: the palette plate is square like its sibling tool
-     plates (was a circle). The palette dots themselves stay round. */
+     plates (was a circle). The swatch rows inside stay square too. */
   border-radius: 10px;
   border-width: 1.5px;
   box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--foreground) 12%, transparent);
@@ -61,172 +61,194 @@
   height: 1.05rem;
 }
 
+/* Run-9 Swatch Library (RUN9-THEME-SWATCHES): the run-8 arc of five
+   anonymous dots is a labeled plate now — a bordered drawing plate
+   anchored to the trigger (right edge to right edge), opening upward in
+   the menu variant and downward in the compact variant. The plate pops
+   200ms site ease-out (scale 0.96 -> 1) and its rows deal in with a
+   30ms stagger, the same stagger the skills plates use. The plate is a
+   sibling of the trigger inside .selector, so it paints above the
+   bubble-menu overlay's chapter list (the overlay lets it paint outside
+   its box on viewports >=700px tall; below that the overlay stays the
+   scroll region and the plate clips — the same known limitation the old
+   fan had, logged in STATE.md). */
 .options {
   position: absolute;
-  top: calc(100% + 0.7rem);
-  left: 50%;
-  width: 9rem;
-  height: 5.5rem;
+  right: 0;
+  /* 17rem on desktop: the head ("+ SWATCH LIBRARY · 06 PLATES") needs
+     ~210px of text, and the menu's close (X) button overlaps the plate's
+     top-right ~48px — at 15rem the count ran under the X and lost its S.
+     The extra 2rem buys the clearance; mobile keeps 13.5rem (its X is
+     32px and sits above the plate, so the head fits there). */
+  width: 17rem;
+  padding: 0.5rem 0.5rem 0.375rem;
+  color: var(--popover-foreground);
+  background: color-mix(in oklab, var(--popover) 96%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  border-radius: 10px;
+  box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--foreground) 12%, transparent);
+  opacity: 0;
   pointer-events: none;
-  transform: translateX(-50%);
+  transform: translateY(6px) scale(0.96);
+  transform-origin: bottom right;
+  transition:
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Menu variant: the fan opens upward from the bottom bubble of the
-   right-edge column. A trigger-centred semicircle would put its middle
-   dots inside the 2.75rem column and its right dots past the viewport,
-   so the semicircle is shifted left until the rightmost dot clears the
-   column: shift −6.2rem puts the rightmost centre at −2.8rem, its right
-   edge 0.275rem clear of the column (run-8 iter 3, RUN8-THEMESEL).
-   The shift alone is NOT the fix for the missing dots — the bubble-menu
-   overlay's overflow clipped anything left of its edge, so the overlay
-   is overflow:visible on tall viewports (see bubble-menu.module.css);
-   the shift only clears the column. */
+   right-edge column. Compact variant: downward, below the trigger. */
 .selector[data-placement="up"] .options {
-  top: auto;
   bottom: calc(100% + 0.7rem);
-  transform: translateX(calc(-50% - 6.2rem));
 }
 
-/* Run-8 reel-4 rules (R2/R3/R7/R10/R12/R14): the dots fly from the
-   trigger along an arc (keyframes below, 50% bowed off the chord), open
-   200ms site ease-out with a 30ms stagger, close on the same arc in
-   reverse at 160ms (200ms × 0.8) with a 10ms reverse stagger. The
-   keyframe animations own the flight; the 160ms transition below only
-   smooths hover/focus scale changes, and the resting states are
-   byte-identical to the animation end keyframes so the release is a
-   no-op. */
-.option {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  display: inline-flex;
-  width: 2.3rem;
-  height: 2.3rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: var(--background);
-  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-  border-radius: 9999px;
-  box-shadow: 0 0.65rem 1.5rem color-mix(in srgb, var(--foreground) 15%, transparent);
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  /* Closed = stacked on the trigger (R11: enter from the trigger),
-     scale 0.95 (R10, was 0.25). --option-start-* is the trigger in
-     container-relative translate coords (down placement: the trigger sits
-     3.225rem above the container top; up placement: 6.2rem right and
-     6.425rem below the container top). */
-  transform: translate(calc(-50% + var(--option-start-x)), var(--option-start-y)) scale(0.95) rotate(-20deg);
-  /* The 160ms transition smooths hover/focus scale changes only — the
-     keyframe animations own the flight (see below). `scale` is in the
-     list because hover grows via the standalone scale property (next
-     rule), not via transform. */
-  transition: opacity 160ms ease-out, transform 160ms cubic-bezier(0.16, 1, 0.3, 1), scale 160ms cubic-bezier(0.16, 1, 0.3, 1);
-  animation: none;
+.selector[data-placement="down"] .options {
+  top: calc(100% + 0.7rem);
+  transform-origin: top right;
 }
 
 .options[data-open="true"] {
+  opacity: 1;
   pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.optionsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  padding: 0.125rem 0.5rem 0.375rem;
+  color: color-mix(in oklab, var(--popover-foreground) 72%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  /* Left-aligned on purpose: the menu's close (X) button overlaps the
+     plate's top-right corner on desktop, and a right-aligned count runs
+     under it ("06 PLATE" + a clipped S). The right side stays blank. */
+}
+
+/* One swatch row: number | accent swatch | name | check. Rows are
+   in-flow buttons (44px touch target at the 2.75rem row height is kept
+   on desktop; 2.25rem on mobile), separated by hairline rules like the
+   drawing plates' rows. The selected row carries an accent left rule
+   and the check; hover tints with the accent. Rows deal in with a 30ms
+   stagger on open; the stagger lives only on the open rule, so closing
+   hides them instantly with the plate. */
+.option {
+  display: flex;
+  width: 100%;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.5rem;
+  color: var(--popover-foreground);
+  font-family: var(--font-mono);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 55%, transparent);
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.option:last-child {
+  border-bottom: 0;
 }
 
 .options[data-open="true"] .option {
   opacity: 1;
-  pointer-events: auto;
-  transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1) rotate(var(--option-rotation));
-  animation: option-arc-in 200ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--option-index) * 30ms) backwards;
+  transform: translateY(0);
+  transition-delay: calc(var(--option-index) * 30ms), calc(var(--option-index) * 30ms), 0ms;
 }
 
-/* Exit: the same arc in reverse. Scoped to data-opened (set on first
-   open) so the animation never plays on first paint — without it the
-   dots would flash at their slots on load. A distinct keyframes name
-   from the open animation guarantees the animation restarts on flip. */
-.options[data-opened="true"][data-open="false"] .option {
-  animation: option-arc-out 160ms cubic-bezier(0.16, 1, 0.3, 1) calc((4 - var(--option-index)) * 10ms) reverse backwards;
-}
-
-/* R7: each dot travels from the trigger (0%) through a midpoint bowed
-   away from the bubble column (50%, per-option --arc-mid-*) to its slot
-   (100%). The two keyframes blocks are intentionally identical — the
-   close animation plays option-arc-out in reverse. */
-@keyframes option-arc-in {
-  0% {
-    opacity: 0;
-    transform: translate(calc(-50% + var(--option-start-x)), var(--option-start-y)) scale(0.95) rotate(-20deg);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(calc(-50% + var(--arc-mid-x)), var(--arc-mid-y)) scale(0.98) rotate(calc(var(--option-rotation) * 0.5));
-  }
-  100% {
-    opacity: 1;
-    transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1) rotate(var(--option-rotation));
-  }
-}
-
-@keyframes option-arc-out {
-  0% {
-    opacity: 0;
-    transform: translate(calc(-50% + var(--option-start-x)), var(--option-start-y)) scale(0.95) rotate(-20deg);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(calc(-50% + var(--arc-mid-x)), var(--arc-mid-y)) scale(0.98) rotate(calc(var(--option-rotation) * 0.5));
-  }
-  100% {
-    opacity: 1;
-    transform: translate(calc(-50% + var(--option-x)), var(--option-y)) scale(1) rotate(var(--option-rotation));
-  }
-}
-
-/* Equal 45-degree steps around a downward semicircle. --arc-mid-* is the
-   down-placement arc midpoint (bowed down, away from the trigger);
-   --option-start-* is the trigger. Up-placement overrides follow. */
-.option:nth-child(1) { --option-x: -3.4rem; --option-y: 0rem; --option-rotation: -8deg; --arc-mid-x: -1.7rem; --arc-mid-y: -0.125rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
-.option:nth-child(2) { --option-x: -2.4rem; --option-y: 2.4rem; --option-rotation: 5deg; --arc-mid-x: -1.2rem; --arc-mid-y: 1.075rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
-.option:nth-child(3) { --option-x: 0rem; --option-y: 3.4rem; --option-rotation: -4deg; --arc-mid-x: 0rem; --arc-mid-y: 1.575rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
-.option:nth-child(4) { --option-x: 2.4rem; --option-y: 2.4rem; --option-rotation: 6deg; --arc-mid-x: 1.2rem; --arc-mid-y: 1.075rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
-.option:nth-child(5) { --option-x: 3.4rem; --option-y: 0rem; --option-rotation: -5deg; --arc-mid-x: 1.7rem; --arc-mid-y: -0.125rem; --option-start-x: 0rem; --option-start-y: -3.225rem; }
-
-.selector[data-placement="up"] .option:nth-child(1) { --option-y: 0rem; --arc-mid-x: 1.4rem; --arc-mid-y: 1.725rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
-.selector[data-placement="up"] .option:nth-child(2) { --option-y: -2.4rem; --arc-mid-x: 1.6rem; --arc-mid-y: 0.525rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
-.selector[data-placement="up"] .option:nth-child(3) { --option-y: -3.4rem; --arc-mid-x: 2.8rem; --arc-mid-y: -0.975rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
-.selector[data-placement="up"] .option:nth-child(4) { --option-y: -2.4rem; --arc-mid-x: 2.6rem; --arc-mid-y: 0.525rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
-.selector[data-placement="up"] .option:nth-child(5) { --option-y: 0rem; --arc-mid-x: 2.8rem; --arc-mid-y: 1.725rem; --option-start-x: 6.2rem; --option-start-y: 6.425rem; }
-
-/* Hover/focus grows the dot via the standalone `scale` property, NOT via
-   transform: the flight keyframes own `transform`, and a transform-based
-   hover (especially !important) would teleport a dot to its slot the
-   moment the cursor — parked on the trigger after the click — touches it
-   mid-flight. `scale` composes with the animated transform instead, so
-   the dot just grows slightly while flying and settles at 1.12 on hover
-   (same pattern as the bubble menu's .link:hover scale). The tilt stays. */
 .option:hover,
 .option:focus-visible {
-  border-color: var(--portfolio-accent);
-  scale: 1.12;
+  background-color: color-mix(in oklab, var(--portfolio-accent) 12%, transparent);
+  outline: none;
+}
+
+.option:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--portfolio-accent);
+}
+
+.option[data-selected="true"] {
+  background-color: color-mix(in oklab, var(--portfolio-accent) 14%, transparent);
+  box-shadow: inset 0.125rem 0 0 var(--portfolio-accent);
+}
+
+.optionNo {
+  width: 1.25rem;
+  flex: none;
+  color: color-mix(in oklab, var(--popover-foreground) 60%, transparent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.option[data-selected="true"] .optionNo {
+  color: var(--portfolio-accent);
+}
+
+.optionSwatch {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+  border: 1px solid color-mix(in oklab, var(--foreground) 25%, transparent);
+  border-radius: 2px;
+  box-shadow: 0 0.25rem 0.75rem color-mix(in oklab, var(--foreground) 15%, transparent);
+}
+
+.optionName {
+  flex: 1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .check {
-  position: absolute;
-  width: 0.8rem;
-  height: 0.8rem;
-  color: currentColor;
-  filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--background) 70%, transparent));
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: none;
+  color: var(--portfolio-accent);
+}
+
+@media (max-width: 899px) {
+  .options {
+    width: 13.5rem;
+  }
+
+  .option {
+    min-height: 2.25rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .trigger,
+  .options,
   .option {
     transition-duration: 0ms;
+    transition-delay: 0ms;
   }
-  /* The open/close rules below beat a bare .option selector on
-     animation-delay (0,3,0 vs 0,1,0), so the stagger must be zeroed
-     here at the same specificity — otherwise reduced-motion users still
-     get a 120ms staggered pop-in. */
-  .options[data-open="true"] .option,
-  .options[data-opened="true"][data-open="false"] .option {
-    animation-delay: 0ms;
-    animation-duration: 0ms;
+  /* The open rule below beats a bare .option selector on transition-delay
+     (0,3,0 vs 0,1,0) — the same specificity trap the old arc's keyframe
+     stagger had — so the stagger must be zeroed here at the same
+     specificity, or reduced-motion users still get a 150ms staggered
+     deal-in. */
+  .options[data-open="true"] .option {
+    transition-delay: 0ms;
   }
 }
