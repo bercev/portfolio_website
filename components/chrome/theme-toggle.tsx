@@ -1,11 +1,12 @@
 "use client";
 
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 
 import { useAsciiActive } from "@/lib/use-ascii-active";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 const toggleClassName =
   "cursor-target inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-wait";
@@ -30,7 +31,7 @@ export function ThemeToggle({
   const resolvedClassName = className ?? toggleClassName;
   // R17: crossfade the Sun/Moon icons with a slight blur instead of a
   // hard swap. Reduced motion = instant swap (duration 0, no blur).
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     // Intentional mount guard (standard next-themes pattern): avoids hydration

@@ -1707,6 +1707,19 @@ html[data-journey] [data-effect-layer="background"] {
   box-shadow: 3px 3px 0 color-mix(in srgb, var(--portfolio-accent) 30%, transparent);
 }
 
+/* At phone widths the figure is ~358px wide, so the rotated stamp's left
+   end lands on the FIG. caption and covers its tail ("First pa…" — the
+   mobile critic's find, run-9 iter 15; byte-identical in motion mode, so
+   pre-existing, not an RM regression). The stamp's low end dips ~14px
+   below its box (rotation), so it must sit 36px up to clear the ~23px
+   caption band: it then reads as pressed on the plate's bottom-right
+   corner, over the preview's margin, instead of on the caption. */
+@media (max-width: 560px) {
+  .journey-pub-stamp {
+    bottom: 36px;
+  }
+}
+
 .journey-pub-body {
   grid-column: 5 / span 8;
   min-width: 0;

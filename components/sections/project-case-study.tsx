@@ -10,7 +10,7 @@
  */
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useState, type MouseEvent } from "react";
 import { flushSync } from "react-dom";
 
@@ -20,6 +20,7 @@ import { TechPills } from "@/components/ui/tech-pills";
 import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
 import type { Project } from "@/data/content";
 import { isProjectHash, projectAnchorId } from "@/lib/project-anchor";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import {
   dispatchSkillHighlight,
   resolveSkillParam,
@@ -249,7 +250,7 @@ export function CaseStudyRow({
   // and afterprint once (vf157 baseline probe on HEAD 302101a).
   const [printOpen, setPrintOpen] = useState(false);
   const panelId = useId();
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   // RUN8-STYLE-DITHER: the row dissolves in through the blue-noise tile
   // on first scroll into view (reel-4 rule 16, masks for reveals).
   // RUN8-R3-RESIDUAL: rows stagger 30ms apart (reel-4 rule 3).

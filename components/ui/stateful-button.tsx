@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motion, useAnimate, useReducedMotion } from "motion/react";
+import { motion, useAnimate } from "motion/react";
 
 import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /**
  * Pre-built component from Aceternity UI (https://ui.aceternity.com/components/stateful-button),
@@ -65,7 +66,7 @@ export function StatefulSubmitButton({
   ...buttonProps
 }: StatefulSubmitButtonProps) {
   const [scope, animate] = useAnimate();
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const prevStateRef = useRef<StatefulSubmitState>(state);
 
   useEffect(() => {

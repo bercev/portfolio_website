@@ -9,7 +9,6 @@ import {
 } from "@phosphor-icons/react";
 import { gsap } from "gsap";
 import { CustomEase } from "gsap/CustomEase";
-import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 // The site's one ease-out family (cubic-bezier .16,1,.3,1 — same curve the
@@ -23,6 +22,7 @@ import { ThemeSelector } from "@/components/chrome/theme-selector";
 import { ThemeToggle } from "@/components/chrome/theme-toggle";
 import { Confetti, type ConfettiRef } from "@/components/ui/confetti";
 import { getResumeConfettiBursts, RESUME_CONFETTI_STAGGER_MS } from "@/lib/resume-confetti";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 import styles from "./bubble-menu.module.css";
 
@@ -57,7 +57,7 @@ export function BubbleMenu({ links, chapters }: BubbleMenuProps) {
   const bubbleRefs = useRef<Array<HTMLLIElement | null>>([]);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const confettiRef = useRef<ConfettiRef>(null);
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = usePrefersReducedMotion();
 
   const clearCloseTimer = () => {
     if (closeTimerRef.current === null) return;

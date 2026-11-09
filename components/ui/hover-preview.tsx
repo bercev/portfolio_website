@@ -1,10 +1,11 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import type { FocusEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ExternalLink } from "@/components/ui/external-link";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 type HoverPreviewProps = {
   readonly title: string;
@@ -34,7 +35,7 @@ export function HoverPreview({
   previewClassName,
 }: HoverPreviewProps) {
   const [isActive, setIsActive] = useState(false);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasPointerRef = useRef(false);
   const hasFocusRef = useRef(false);

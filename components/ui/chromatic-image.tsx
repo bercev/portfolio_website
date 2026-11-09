@@ -25,7 +25,6 @@
  */
 "use client";
 
-import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -33,6 +32,7 @@ import {
   coverTransform,
   tiltForPointer,
 } from "@/lib/chromatic-image-math";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 const VERT_SRC = `
 attribute vec2 a_pos;
@@ -100,7 +100,7 @@ export function ChromaticImage({
   tiltMaxDeg = 4,
   className,
 }: ChromaticImageProps) {
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const [canHover, setCanHover] = useState(false);
   const [fallback, setFallback] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);

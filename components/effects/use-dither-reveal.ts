@@ -15,10 +15,11 @@
 // under @media print, so a mid-reveal row still prints whole.
 "use client";
 
-import { animate, useInView, useReducedMotion } from "motion/react";
+import { animate, useInView } from "motion/react";
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { DITHER_STEPS, ditherMaskUrl } from "@/lib/dither-mask";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /** Same guard as aceternity-ascii-art.tsx: layout effect client-side only. */
 const useIsoLayoutEffect =
@@ -57,20 +58,35 @@ function setHidden(el: HTMLElement) {
 export function useDitherReveal<T extends HTMLElement>(delaySeconds = 0) {
   const ref = useRef<T>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = usePrefersReducedMotion();
 
   // Pre-start: hide the row before it enters view. Runs before paint, so
   // there is no flash of the full row on the frame it scrolls in.
+  // Reduced motion: clear any mask instead of just skipping the hide.
+  // The native hook's server snapshot is false, so the hydration commit
+  // runs this effect with reduceMotion false and hides the row; the
+  // client value lands a moment later and this effect re-runs — a bare
+  // early return would leave the row masked (invisible) forever under
+  // reduced motion, because the reveal effect below also returns early.
   useIsoLayoutEffect(() => {
-    if (reduceMotion) return;
     const el = ref.current;
     if (!el) return;
+    if (reduceMotion) {
+      setMask(el, null);
+      return;
+    }
     setHidden(el);
   }, [reduceMotion]);
 
   useEffect(() => {
-    if (!inView || reduceMotion) return;
     const el = ref.current;
+    if (reduceMotion) {
+      // Same hydration-commit race as above: if the reveal started
+      // before the client value landed, stop it cleared, not mid-mask.
+      if (el) setMask(el, null);
+      return;
+    }
+    if (!inView) return;
     if (!el) return;
     const controls = animate(0, 1, {
       duration: REVEAL_DURATION,

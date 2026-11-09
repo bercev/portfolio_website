@@ -6,12 +6,12 @@ import {
   LinkedinLogoIcon,
   LinkSimpleIcon,
 } from "@phosphor-icons/react";
-import { useReducedMotion } from "motion/react";
 import { useRef } from "react";
 
 import type { PortfolioContent } from "@/data/content";
 
 import { Confetti, type ConfettiRef } from "@/components/ui/confetti";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 type ProfileActionsProps = {
   links: PortfolioContent["contact"]["links"];
@@ -38,7 +38,7 @@ function ProfileIcon({ label }: { label: string }) {
 
 export function ProfileActions({ links }: ProfileActionsProps) {
   const confettiRef = useRef<ConfettiRef>(null);
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = usePrefersReducedMotion();
 
   return (
     <>
