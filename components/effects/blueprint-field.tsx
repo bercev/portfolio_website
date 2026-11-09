@@ -17,8 +17,11 @@ import { resolveActiveChapter } from "./light-ribbons";
  *
  *  1. Veil — a background-colored wash over the ribbons, so the run-7
  *     light reads as glow under paper instead of the whole background.
- *  2. Blueprint grid — fine cell + major lines every 5 cells, rotated
- *     per chapter, theme-token accent at low alpha.
+ *  2. Blueprint grid — two languages: the hero keeps the fine cell +
+ *     major lines every 5 cells; every section chapter is ruled paper
+ *     (major lines only, same majors, same anchoring — the fine mesh
+ *     drops out). The mesh dissolves into noise behind dense body text
+ *     at 390px; the sparse ruling stays trackable at a glance.
  *  3. Stipple dot field — a square dot grid in the MARGINS only (never
  *     behind text), dots breathing ±18% on a 7s wave so the paper is
  *     alive at rest.
@@ -53,17 +56,26 @@ export interface BlueprintProfile {
   dotAlpha: number;
   /** Veil (background wash) alpha over the ribbons. */
   veil: number;
+  /**
+   * True: draw major lines only — ruled paper. The fine 20–30px mesh
+   * dissolves into noise behind dense body text at 390px (three critic
+   * FAILs, RUN9-BG-MOBILE-SECTIONS); a sparse major-only ruling is
+   * trackable at a glance. False: the full fine grid + majors (hero,
+   * where it reads well). Majors are the same lines in both modes
+   * (anchored identically), so the chapter lerp stays continuous.
+   */
+  majorOnly: boolean;
 }
 
 export const BLUEPRINT_PROFILES: Record<string, BlueprintProfile> = {
-  hero: { angle: 0, cell: 26, gridAlpha: 1, dotRadius: 1.6, dotAlpha: 1, veil: 0.2 },
-  about: { angle: -4, cell: 24, gridAlpha: 1.1, dotRadius: 1.8, dotAlpha: 1, veil: 0.22 },
-  publications: { angle: 3, cell: 30, gridAlpha: 0.9, dotRadius: 1.4, dotAlpha: 1, veil: 0.18 },
-  experience: { angle: -2, cell: 26, gridAlpha: 1, dotRadius: 2, dotAlpha: 1.1, veil: 0.22 },
-  projects: { angle: 5, cell: 22, gridAlpha: 1.25, dotRadius: 1.8, dotAlpha: 1.1, veil: 0.24 },
-  skills: { angle: 0, cell: 20, gridAlpha: 1.1, dotRadius: 2.2, dotAlpha: 1.2, veil: 0.2 },
-  contact: { angle: -5, cell: 30, gridAlpha: 0.85, dotRadius: 1.5, dotAlpha: 0.9, veil: 0.26 },
-  epilogue: { angle: 0, cell: 26, gridAlpha: 0.8, dotRadius: 1.4, dotAlpha: 0.9, veil: 0.28 },
+  hero: { angle: 0, cell: 26, gridAlpha: 1, dotRadius: 1.6, dotAlpha: 1, veil: 0.2, majorOnly: false },
+  about: { angle: -4, cell: 24, gridAlpha: 1.1, dotRadius: 1.8, dotAlpha: 1, veil: 0.22, majorOnly: true },
+  publications: { angle: 3, cell: 30, gridAlpha: 0.9, dotRadius: 1.4, dotAlpha: 1, veil: 0.18, majorOnly: true },
+  experience: { angle: -2, cell: 26, gridAlpha: 1, dotRadius: 2, dotAlpha: 1.1, veil: 0.22, majorOnly: true },
+  projects: { angle: 5, cell: 22, gridAlpha: 1.25, dotRadius: 1.8, dotAlpha: 1.1, veil: 0.24, majorOnly: true },
+  skills: { angle: 0, cell: 20, gridAlpha: 1.1, dotRadius: 2.2, dotAlpha: 1.2, veil: 0.2, majorOnly: true },
+  contact: { angle: -5, cell: 30, gridAlpha: 0.85, dotRadius: 1.5, dotAlpha: 0.9, veil: 0.26, majorOnly: true },
+  epilogue: { angle: 0, cell: 26, gridAlpha: 0.8, dotRadius: 1.4, dotAlpha: 0.9, veil: 0.28, majorOnly: true },
 };
 
 export function getBlueprintProfile(name: string | null): BlueprintProfile {
@@ -82,6 +94,9 @@ export function lerpBlueprintProfile(
     dotRadius: a.dotRadius + (b.dotRadius - a.dotRadius) * k,
     dotAlpha: a.dotAlpha + (b.dotAlpha - a.dotAlpha) * k,
     veil: a.veil + (b.veil - a.veil) * k,
+    // Boolean: flip at the midpoint so a chapter lerp swaps grid
+    // languages cleanly instead of smearing between them.
+    majorOnly: k >= 0.5 ? b.majorOnly : a.majorOnly,
   };
 }
 
@@ -120,6 +135,16 @@ const DOT_SPACING = 16;
 const FEATHER = 150;
 /** Breathing period for the stipple dots, seconds. */
 const BREATHE_PERIOD_S = 7;
+/**
+ * Major-only (ruled-paper) chapters get their lines boosted past the
+ * content frost: the frost's 28% wash + 3–14px backdrop blur crushes a
+ * 2px / 0.33-alpha line below perception in the composited frame (both
+ * run-9 iter-14 critics FAILED the first ruled-paper build on exactly
+ * this — real on canvas, invisible rendered). Alpha is capped at 0.95
+ * and the width grows 1px, so the ruling survives as a line, not a
+ * smear. Calibrated against rendered frames, not the raw canvas.
+ */
+const MAJOR_ONLY_ALPHA_BOOST = 2.4;
 
 export function BlueprintField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -245,8 +270,14 @@ export function BlueprintField() {
       const narrow = W < 700;
       const fineA =
         0.09 * p.gridAlpha * (light ? 2 : 1) * (narrow ? 1.6 : 1);
-      const majorA =
-        0.2 * p.gridAlpha * (light ? 1.8 : 1) * (narrow ? 1.5 : 1);
+      const majorA = Math.min(
+        0.95,
+        0.2 *
+          p.gridAlpha *
+          (light ? 1.8 : 1) *
+          (narrow ? 1.5 : 1) *
+          (p.majorOnly ? MAJOR_ONLY_ALPHA_BOOST : 1),
+      );
       ctx.save();
       ctx.translate(W / 2, H / 2);
       ctx.rotate((p.angle * Math.PI) / 180);
@@ -255,17 +286,21 @@ export function BlueprintField() {
       // scale no matter the alpha (two alpha bumps proved it) — the
       // grid needs WEIGHT there, not more opacity.
       const fineW = narrow ? 1.5 : 1;
-      const majorW = narrow ? 2 : 1;
+      const majorW = (narrow ? 2 : 1) + (p.majorOnly ? 1 : 0);
       // Grid lines are drawn axis-aligned in the rotated frame; the
       // major index is counted from the viewport origin so majors stay
-      // put while the fine grid parallax-scrolls.
+      // put while the fine grid parallax-scrolls. In major-only
+      // chapters the step is the major spacing itself (cell * 5) from
+      // the same origin, so the ruled lines ARE the hero's majors —
+      // the fine mesh just drops out between them.
       const x0 = -diag / 2 - p.cell;
       const x1 = diag / 2 + p.cell;
       const y0 = -diag / 2 - p.cell;
       const y1 = diag / 2 + p.cell;
+      const step = p.majorOnly ? p.cell * 5 : p.cell;
       let i = 0;
-      for (let x = x0; x <= x1; x += p.cell, i += 1) {
-        const major = i % 5 === 0;
+      for (let x = x0; x <= x1; x += step, i += 1) {
+        const major = p.majorOnly || i % 5 === 0;
         ctx.strokeStyle = rgba(accent, major ? majorA : fineA);
         ctx.lineWidth = major ? majorW : fineW;
         ctx.beginPath();
@@ -274,8 +309,8 @@ export function BlueprintField() {
         ctx.stroke();
       }
       let j = 0;
-      for (let y = y0 + offY; y <= y1; y += p.cell, j += 1) {
-        const major = j % 5 === 0;
+      for (let y = y0 + offY; y <= y1; y += step, j += 1) {
+        const major = p.majorOnly || j % 5 === 0;
         ctx.strokeStyle = rgba(accent, major ? majorA : fineA);
         ctx.lineWidth = major ? majorW : fineW;
         ctx.beginPath();

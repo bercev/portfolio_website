@@ -18,6 +18,21 @@ describe("getBlueprintProfile", () => {
     );
     expect(BLUEPRINT_PROFILES.projects.angle).toBe(5);
   });
+
+  it("keeps the fine grid in the hero and rules sections major-only", () => {
+    expect(BLUEPRINT_PROFILES.hero.majorOnly).toBe(false);
+    for (const name of [
+      "about",
+      "publications",
+      "experience",
+      "projects",
+      "skills",
+      "contact",
+      "epilogue",
+    ]) {
+      expect(BLUEPRINT_PROFILES[name].majorOnly).toBe(true);
+    }
+  });
 });
 
 describe("lerpBlueprintProfile", () => {
@@ -31,6 +46,30 @@ describe("lerpBlueprintProfile", () => {
     expect(mid.cell).toBeCloseTo(24);
     expect(mid.veil).toBeCloseTo(0.22);
     expect(mid.dotRadius).toBeCloseTo(1.7);
+  });
+
+  it("flips majorOnly at the lerp midpoint", () => {
+    expect(
+      lerpBlueprintProfile(
+        BLUEPRINT_PROFILES.hero,
+        BLUEPRINT_PROFILES.projects,
+        0.25,
+      ).majorOnly,
+    ).toBe(false);
+    expect(
+      lerpBlueprintProfile(
+        BLUEPRINT_PROFILES.hero,
+        BLUEPRINT_PROFILES.projects,
+        0.5,
+      ).majorOnly,
+    ).toBe(true);
+    expect(
+      lerpBlueprintProfile(
+        BLUEPRINT_PROFILES.hero,
+        BLUEPRINT_PROFILES.projects,
+        0.75,
+      ).majorOnly,
+    ).toBe(true);
   });
 
   it("is exact at the endpoints", () => {
