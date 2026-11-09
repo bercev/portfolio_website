@@ -291,6 +291,27 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
         the client render differ from SSR (hydration mismatch under
         RM). It is hidden under reduced motion by CSS instead. */}
       <span aria-hidden="true" className={styles.beam} />
+      {/* Run-9 Sheet Index: the rail is the drawing's index sheet — a
+        sheet counter crowns it and registration "+" marks cap the
+        rule, top and bottom. Aria-hidden: the active link already
+        carries aria-current for assistive tech. */}
+      <span aria-hidden="true" className={styles.regMarkTop}>
+        +
+      </span>
+      <span aria-hidden="true" className={styles.regMarkBottom}>
+        +
+      </span>
+      <div
+        aria-hidden="true"
+        className={styles.counter}
+        data-rail-sheet-counter
+      >
+        INDEX · SHEET{" "}
+        <span className={styles.counterNo}>
+          {String(activeIndex + 1).padStart(2, "0")} /{" "}
+          {String(items.length).padStart(2, "0")}
+        </span>
+      </div>
       <ul
         className={styles.list}
         onPointerMove={handlePointerMove}
@@ -310,11 +331,17 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
               } as CSSProperties
             }
           >
+            {/* Sheet plate, not an arrow: the number is the marker
+              (data-line-sidebar-marker kept — e2e pins 7 of them and
+              the active one's accent background). It keeps the
+              pointer-proximity scale the arrow had. */}
             <span
               aria-hidden="true"
               data-line-sidebar-marker
-              className={styles.marker}
-            />
+              className={styles.sheetNo}
+            >
+              {String(index + 1).padStart(2, "0")}
+            </span>
             <a
               href={`#${item.id}`}
               aria-current={activeIndex === index ? "location" : undefined}
@@ -326,6 +353,10 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
               }}
             >
               <span>{item.label}</span>
+              {/* Drawn rule under the active label (sibling of the
+                label span, never before it — e2e reads the link's
+                first span for the active color). */}
+              <span aria-hidden="true" data-rail-rule className={styles.rule} />
             </a>
           </li>
         ))}
@@ -337,7 +368,7 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
           className={`cursor-target ${styles.utility}`}
           aria-label="Download resume (PDF)"
         >
-          Resume <span aria-hidden="true">↓</span>
+          Takeaway — Resume <span aria-hidden="true">↓</span>
         </a>
       ) : null}
     </nav>

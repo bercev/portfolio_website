@@ -253,6 +253,15 @@ export function BubbleMenu({ links, chapters }: BubbleMenuProps) {
               data-bubble-menu-safe-area
               aria-hidden="true"
             />
+            {/* Run-9 Tool Tray: the fan is the drawing's tool tray — a
+              kicker chip crowns the open menu. It sits in the trigger's
+              row at the overlay's left; the count was dropped (the five
+              plates are the count) because "TOOL TRAY · 05" measured
+              127px wide and ran 7px under the trigger — the short label
+              clears the trigger + its dashed ring by ~26px. */}
+            <div aria-hidden="true" className={styles.trayKicker}>
+              TOOL TRAY
+            </div>
             <ul className={styles.list}>
               {links.map((link, index) => {
                 const Icon =
@@ -325,13 +334,18 @@ export function BubbleMenu({ links, chapters }: BubbleMenuProps) {
                 spacing alone (no label — the names are self-evident — and
                 no divider rule). Plain anchors, exactly like the rail's. */}
             <ul aria-label="Chapters" className={styles.chapterList}>
-              {chapters.map((chapter) => (
+              {chapters.map((chapter, index) => (
                 <li key={chapter.id} className={styles.chapterItem}>
                   <a
                     href={`#${chapter.id}`}
                     className={`cursor-target ${styles.chapterLink}`}
                     onClick={(event) => handleChapterClick(event, chapter.id)}
                   >
+                    {/* Sheet number, aria-hidden: the accessible name
+                      stays the chapter label alone. */}
+                    <span aria-hidden="true" className={styles.tabNo}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
                     {chapter.label}
                   </a>
                 </li>

@@ -147,7 +147,15 @@ export function MobileChapterRibbon({ items }: MobileChapterRibbonProps) {
       <span aria-hidden="true" className={styles.track}>
         <span aria-hidden="true" className={styles.fill} />
       </span>
-      <span className={styles.name}>{active?.label}</span>
+      {/* Run-9 Sheet Index: the ribbon is the drawing's title strip —
+        sheet counter + chapter name, capped by a registration mark. */}
+      <span aria-hidden="true" className={styles.mark}>
+        +
+      </span>
+      <span className={styles.name}>
+        SHEET {String(activeIndex + 1).padStart(2, "0")} /{" "}
+        {String(items.length).padStart(2, "0")} — {active?.label}
+      </span>
     </div>
   );
 }

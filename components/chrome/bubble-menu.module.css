@@ -26,6 +26,10 @@
   pointer-events: none;
 }
 
+/* Run-9 Tool Tray: the trigger is a drafting stamp, not a solid dot —
+   paper face, accent border and icon, dashed registration ring outside
+   it. Hover fills accent; press still scales 0.97. Color and
+   background stay distinct (e2e pins color != backgroundColor). */
 .trigger {
   position: relative;
   z-index: 2;
@@ -35,9 +39,10 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  color: var(--primary-foreground);
-  background: var(--primary);
-  border: 1px solid color-mix(in oklab, var(--primary-foreground) 18%, transparent);
+  color: var(--portfolio-accent);
+  background: var(--background);
+  border: 1.5px solid
+    color-mix(in oklab, var(--portfolio-accent) 80%, transparent);
   border-radius: 9999px;
   box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--foreground) 16%, transparent);
   cursor: pointer;
@@ -48,9 +53,18 @@
     transform 180ms cubic-bezier(.16, 1, .3, 1);
 }
 
+.trigger::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 1px dashed color-mix(in oklab, var(--portfolio-accent) 55%, transparent);
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
 .trigger:hover {
-  color: var(--background);
-  background: var(--foreground);
+  color: var(--portfolio-accent-foreground);
+  background: var(--portfolio-accent);
   transform: scale(1.05);
 }
 
@@ -122,6 +136,34 @@
   );
 }
 
+/* Tool-tray kicker chip: crowns the open fan in the trigger's row at
+   the overlay's left. Fades with the close animation like the chapter
+   list, so it never lingers after the bubbles shrink. */
+.trayKicker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  margin: 0 0 0.6rem;
+  padding: 0.35rem 0.6rem;
+  color: color-mix(in oklab, var(--popover-foreground) 72%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  background: color-mix(in oklab, var(--popover) 96%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  border-radius: 2px;
+  box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--foreground) 12%, transparent);
+  pointer-events: none;
+  transition: opacity 180ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.overlay[data-open="false"] .trayKicker {
+  opacity: 0;
+}
+
 .list {
   position: relative;
   z-index: 1;
@@ -133,13 +175,14 @@
 }
 
 /* Chapter group (run-3 iter 21): the 7 chapter anchors as a text-link
-   list below the bubble column. Separated from the bubbles by spacing
-   alone — no label (the names are self-evident) and no divider rule.
-   Rows are full-width pills in the menu's own popover surface language,
-   28px tall (above the 24px WCAG 2.5.8 floor). The list fades with the
-   close animation via the overlay's data-open, so it never lingers after
-   the bubbles shrink. Not animated by the gsap bubble effect — it is a
-   list, and it appears/disappears with the overlay itself. */
+   list below the bubble column. Run-9 Sheet Index: the pills are
+   numbered sheet tabs now — mono uppercase with an accent sheet
+   number — separated from the bubbles by spacing alone (no label and
+   no divider rule). Rows are 28px tall (above the 24px WCAG 2.5.8
+   floor). The list fades with the close animation via the overlay's
+   data-open, so it never lingers after the bubbles shrink. Not
+   animated by the gsap bubble effect — it is a list, and it
+   appears/disappears with the overlay itself. */
 .chapterList {
   position: relative;
   z-index: 1;
@@ -168,21 +211,31 @@
   align-items: center;
   padding: 0 0.75rem;
   color: var(--popover-foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: 0.04em;
   line-height: 1;
   text-decoration: none;
+  text-transform: uppercase;
   white-space: nowrap;
   background: color-mix(in oklab, var(--popover) 96%, transparent);
   border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
-  border-radius: 9999px;
+  border-radius: 2px;
   box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--foreground) 12%, transparent);
   pointer-events: auto;
   transition:
     color 180ms cubic-bezier(.16, 1, .3, 1),
     background-color 180ms cubic-bezier(.16, 1, .3, 1),
     scale 180ms cubic-bezier(.16, 1, .3, 1);
+}
+
+/* Sheet number inside the tab: accent mono, aria-hidden in the markup
+   so the accessible name stays the chapter label alone. */
+.tabNo {
+  margin-right: 0.5rem;
+  color: var(--portfolio-accent);
+  font-size: 0.75rem;
 }
 
 .chapterLink:hover {
@@ -238,6 +291,9 @@
   --bubble-y: 16.875rem;
 }
 
+/* Run-9 Tool Tray: the bubbles are square tool plates now — same 44px,
+   same fan positions and gsap timing, only the shape and border change.
+   The slight per-plate rotation stays (pinned-note feel). */
 .link {
   display: inline-flex;
   width: 2.75rem;
@@ -255,8 +311,8 @@
   text-decoration: none;
   white-space: nowrap;
   background: color-mix(in oklab, var(--popover) 96%, transparent);
-  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
-  border-radius: 9999px;
+  border: 1.5px solid color-mix(in oklab, var(--border) 80%, transparent);
+  border-radius: 10px;
   box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--foreground) 12%, transparent);
   pointer-events: auto;
   transform-origin: center;
@@ -287,7 +343,8 @@
   .trigger,
   .link,
   .chapterList,
-  .chapterLink {
+  .chapterLink,
+  .trayKicker {
     transition-duration: 0ms;
   }
 }
@@ -312,6 +369,13 @@
   .trigger {
     width: 2rem;
     height: 2rem;
+  }
+
+  /* The stamp's dashed ring would paint 6px past the 34px ribbon band
+     onto scrolling copy — the band's whole point is that nothing floats
+     over copy on mobile. The stamp read survives via border + accent. */
+  .trigger::after {
+    display: none;
   }
 
   .icon {

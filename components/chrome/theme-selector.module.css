@@ -43,6 +43,10 @@
   white-space: nowrap;
   background: color-mix(in oklab, var(--popover) 96%, transparent);
   border-color: color-mix(in oklab, var(--border) 80%, transparent);
+  /* Run-9 Tool Tray: the palette plate is square like its sibling tool
+     plates (was a circle). The palette dots themselves stay round. */
+  border-radius: 10px;
+  border-width: 1.5px;
   box-shadow: 0 0.75rem 2rem color-mix(in oklab, var(--foreground) 12%, transparent);
 }
 
