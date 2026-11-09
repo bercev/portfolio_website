@@ -3328,23 +3328,52 @@ html[data-journey="active"] [data-hero-name-fallback] {
 }
 
 /* Contact form — phosphor terminal styling. */
+/* RUN9-SECTION-IDENTITIES — Contact as a dispatch sheet. The last
+   terminal-styled surface on the site becomes a drafting-table sheet in
+   the same language as the project sheets: card background, quiet border,
+   inner margin frame (::before), a DISPATCH header strip, the live ECG
+   trace across the header, numbered sheet fields, and a title-block
+   footer. The inputs keep their dark wells (the contrast test pins the
+   input background + placeholder color) — fields on the sheet. */
 .journey-contact-form {
+  position: relative;
   margin-top: 1.75rem;
   max-width: 640px;
   padding: 1.25rem 1.4rem 1.4rem;
   font-family: var(--font-mono);
-  background: rgba(5, 7, 12, 0.72);
-  border: 1px solid rgba(125, 211, 252, 0.28);
-  border-radius: 8px;
-  box-shadow: 0 0 24px rgba(125, 211, 252, 0.08);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
 }
-.journey-contact-form-prompt {
-  margin: 0 0 1rem;
-  font-size: 0.85rem;
+.journey-contact-form::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
+}
+.journey-contact-form-fieldnum {
+  color: var(--portfolio-accent);
+  font-weight: 600;
+}
+/* Live ECG trace (RUN9-DETAIL-ECG): canvas draws the heartbeat across
+   the sheet header; the caption names the signal. */
+.journey-dispatch-ecg {
+  display: block;
+  width: 100%;
+  height: 48px;
+}
+.journey-dispatch-ecg-caption {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.35rem 0 1.1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted-foreground);
 }
-.journey-contact-form-ps1 {
-  color: var(--portfolio-accent);
+.journey-dispatch-titleblock {
+  margin-top: 1.5rem;
 }
 .journey-contact-form-field {
   display: block;
@@ -3455,17 +3484,41 @@ html[data-journey="active"] [data-hero-name-fallback] {
   opacity: 0.6;
   cursor: wait;
 }
-.journey-contact-form-receipt {
-  margin: 1.75rem 0 0;
+/* Sent receipt (RUN9-DETAIL-CARD-READY): a stamped dispatch card that
+   pops in — the form's sheet language, with the RECEIVED stamp pressed
+   in at −8° (same press as the publication venue stamps). */
+.journey-contact-receipt {
+  position: relative;
+  margin-top: 1.75rem;
   max-width: 640px;
-  padding: 1.25rem 1.4rem;
+  padding: 1.5rem 1.4rem 1.4rem;
   font-family: var(--font-mono);
-  font-size: 0.9rem;
-  line-height: 1.5;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
+}
+.journey-contact-stamp {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--portfolio-accent);
-  background: rgba(5, 7, 12, 0.72);
-  border: 1px solid rgba(125, 211, 252, 0.28);
-  border-radius: 8px;
+  border: 2px solid var(--portfolio-accent);
+  border-radius: 3px;
+}
+.journey-contact-receipt-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.journey-contact-receipt-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3831,6 +3884,7 @@ html.dark .plain-backdrop {
   div[aria-label="System boot sequence"],
   .journey-snake,
   .journey-contact-form,
+  .journey-contact-receipt,
   .skill-marquee,
   .journey-case-study-more,
   .journey-epilogue-top,

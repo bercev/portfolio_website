@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { motion } from "motion/react";
 
 import { StatefulSubmitButton } from "@/components/ui/stateful-button";
 import {
@@ -13,6 +14,9 @@ import {
   applyTopicPrefix,
   resolveTopicParam,
 } from "@/lib/contact-topics";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+
+import { ContactEcg } from "./contact-ecg";
 
 type Status = "idle" | "sending" | "sent" | "error";
 type FieldName = "name" | "email" | "message";
@@ -28,6 +32,7 @@ export function ContactForm() {
   const [error, setError] = useState("");
   const [invalidField, setInvalidField] = useState<FieldName | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  const reduceMotion = usePrefersReducedMotion();
   // Draft autosave (run-3 iter 11): false until the one-shot restore effect
   // below has run, so the debounced save never fires on the initial empty
   // fields and wipes a stored draft before it is read. Storage IO is
@@ -111,15 +116,15 @@ export function ContactForm() {
     setInvalidField(null);
 
     if (name.trim().length < 2) {
-      fail("name", "$ name: too short (min 2 chars)");
+      fail("name", "FIELD 01 · NAME TOO SHORT — MIN 2 CHARS");
       return;
     }
     if (!EMAIL_RE.test(email.trim())) {
-      fail("email", "$ email: invalid address");
+      fail("email", "FIELD 02 · INVALID ADDRESS");
       return;
     }
     if (message.trim().length < 10) {
-      fail("message", "$ message: too short (min 10 chars)");
+      fail("message", "FIELD 03 · MESSAGE TOO SHORT — MIN 10 CHARS");
       return;
     }
 
@@ -159,21 +164,61 @@ export function ContactForm() {
     } catch (err) {
       setStatus("error");
       setError(
-        err instanceof Error ? `$ send failed: ${err.message}` : "$ send failed",
+        err instanceof Error
+          ? `SEND FAILED · ${err.message}`
+          : "SEND FAILED",
       );
     }
   }
 
+  // Sent state (run-9 RUN9-DETAIL-CARD-READY): the receipt is a stamped
+  // dispatch card that pops in — 200ms ease-out scale/rotate settle, the
+  // RECEIVED stamp pressing in just after (same press as the publication
+  // venue stamps). Reduced motion renders it settled.
   if (status === "sent") {
     return (
-      <div className="journey-contact-form" role="status" aria-live="polite">
-        <pre className="journey-contact-form-receipt">
-{`┌─────────────────────────────────┐
-│  [transmission received ✓]      │
-│  thanks — I'll get back to you  │
-└─────────────────────────────────┘`}
-        </pre>
-      </div>
+      <motion.div
+        className="journey-contact-receipt"
+        data-contact-receipt
+        role="status"
+        aria-live="polite"
+        initial={
+          reduceMotion
+            ? { opacity: 1, scale: 1, rotate: 0 }
+            : { opacity: 0, scale: 0.96, rotate: -1 }
+        }
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={
+          reduceMotion
+            ? { duration: 0 }
+            : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
+        }
+      >
+        <motion.span
+          className="journey-contact-stamp"
+          data-contact-stamp
+          aria-hidden="true"
+          initial={
+            reduceMotion
+              ? { opacity: 1, scale: 1, rotate: -8 }
+              : { opacity: 0, scale: 1.6, rotate: -14 }
+          }
+          animate={{ opacity: 1, scale: 1, rotate: -8 }}
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { duration: 0.22, delay: 0.15, ease: [0.16, 1, 0.3, 1] }
+          }
+        >
+          RECEIVED
+        </motion.span>
+        <p className="journey-contact-receipt-title">
+          Transmission received
+        </p>
+        <p className="journey-contact-receipt-note">
+          Thanks — I&rsquo;ll get back to you.
+        </p>
+      </motion.div>
     );
   }
 
@@ -186,16 +231,36 @@ export function ContactForm() {
       aria-label="Contact form"
       noValidate
     >
-      <p className="journey-contact-form-prompt" aria-hidden="true">
-        <span className="journey-contact-form-ps1">bercev@portfolio:~$</span>{" "}
-        ./send-message.sh
+      <span className="journey-sheet-crop journey-sheet-crop--left" aria-hidden="true">
+        +
+      </span>
+      <span className="journey-sheet-crop journey-sheet-crop--right" aria-hidden="true">
+        +
+      </span>
+      <div className="journey-sheet-head">
+        <span>Dispatch — Form 01</span>
+        <span>To: Berat</span>
+      </div>
+
+      {/* Live signal (RUN9-DETAIL-ECG): the heartbeat trace that proves
+          the line is live — drawn across the sheet header, one beat per
+          second. Static under reduced motion. */}
+      <ContactEcg />
+      <p className="journey-dispatch-ecg-caption" aria-hidden="true">
+        <span>Signal</span>
+        {/* Under reduced motion the trace is a static snapshot, so the
+            caption drops "Live" — it would contradict the settled state
+            (desktop critic, iter 8). */}
+        <span>{reduceMotion ? "60 BPM — Static" : "60 BPM — Live"}</span>
       </p>
 
-      {/* Visible labels are terminal jargon by design ("$ whoami") — the
-          inputs carry honest aria-labels so assistive tech announces
-          "Your name" / "Your email address" / "Your message". */}
+      {/* Visible labels are sheet-field numbers by design ("FIELD 01 —
+          FROM") — the inputs carry honest aria-labels so assistive tech
+          announces "Your name" / "Your email address" / "Your message". */}
       <label className="journey-contact-form-field">
-        <span className="journey-contact-form-label">$ whoami</span>
+        <span className="journey-contact-form-label">
+          <span className="journey-contact-form-fieldnum">01</span> — From
+        </span>
         <input
           type="text"
           name="name"
@@ -216,7 +281,10 @@ export function ContactForm() {
       </label>
 
       <label className="journey-contact-form-field">
-        <span className="journey-contact-form-label">$ your return address</span>
+        <span className="journey-contact-form-label">
+          <span className="journey-contact-form-fieldnum">02</span> — Return
+          address
+        </span>
         <input
           type="email"
           name="email"
@@ -249,7 +317,7 @@ export function ContactForm() {
         aria-label="Start your message with a topic"
       >
         <span className="journey-contact-form-label" aria-hidden="true">
-          $ topic
+          Topic
         </span>
         <span className="journey-contact-form-topic-row">
           {CONTACT_TOPICS.map((topic) => (
@@ -272,7 +340,9 @@ export function ContactForm() {
       </div>
 
       <label className="journey-contact-form-field">
-        <span className="journey-contact-form-label">$ cat message.txt</span>
+        <span className="journey-contact-form-label">
+          <span className="journey-contact-form-fieldnum">03</span> — Message
+        </span>
         <textarea
           ref={messageRef}
           name="message"
@@ -299,14 +369,29 @@ export function ContactForm() {
       ) : null}
 
       {/* Pre-built Aceternity Stateful Button: idle -> spinner (sending) ->
-          idle-reset (error). Success is the receipt panel above — the site's
-          intentional success state — so the button never holds a "sent" state. */}
+          idle-reset (error). Success is the receipt card above — the
+          site's intentional success state — so the button never holds a
+          "sent" state. */}
       <StatefulSubmitButton
         state={status}
         className="journey-contact-form-submit"
       >
-        {status === "sending" ? "[transmitting…]" : "[transmit →]"}
+        {status === "sending" ? "Transmitting…" : "Transmit →"}
       </StatefulSubmitButton>
+
+      <div className="journey-sheet-titleblock journey-dispatch-titleblock">
+        <p>
+          <span className="journey-sheet-titleblock-label">Form</span>
+          Dispatch — 01
+        </p>
+        <p>
+          <span className="journey-sheet-titleblock-label">Rev</span>A
+        </p>
+        <p>
+          <span className="journey-sheet-titleblock-label">Scale</span>
+          1:1
+        </p>
+      </div>
     </form>
   );
 }
