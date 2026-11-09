@@ -28,6 +28,7 @@ import {
 } from "@/lib/skill-work";
 
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
+import { DispatchPlate, FoldTab } from "./case-fold-tab";
 import { SheetFrame, sheetLabels } from "./project-sheet-frame";
 
 const projectPreviews: Partial<
@@ -207,15 +208,12 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
         </div>
       ) : null}
 
-      {/* One calm conversion line at the end of every expanded panel: a
-          reader who just finished the evidence gets a next step. Same
-          treatment as the hero CTA (FROST text, calm underline,
-          ≤200ms hover feedback). */}
+      {/* RUN9-CASE-FOLD-TAB: the conversion line is a stamped dispatch
+          plate (see case-fold-tab.tsx) — a reader who just finished the
+          evidence gets a next step, in the contact slice's dispatch
+          language. */}
       <div className="journey-case-study-section">
-        <a href="#contact" className="cursor-target" data-case-study-cta>
-          Want the full story? Let&rsquo;s talk{" "}
-          <span aria-hidden="true">→</span>
-        </a>
+        <DispatchPlate />
       </div>
     </div>
   );
@@ -402,11 +400,7 @@ export function CaseStudyRow({
                 linkedNames={skillNames}
               />
             </span>
-            {project.caseStudy ? (
-              <span className="journey-case-study-more" aria-hidden="true">
-                {open ? "Close the case study" : "Read the case study"}
-              </span>
-            ) : null}
+            {project.caseStudy ? <FoldTab open={open} /> : null}
           </span>
           {preview ? (
             <span className="journey-sheet-plate">

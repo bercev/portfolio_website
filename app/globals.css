@@ -2571,17 +2571,81 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
+/* RUN9-CASE-FOLD-TAB — the expand affordance is a fold tab on the
+   sheet's edge: a bordered plate with a folded corner (accent dog-ear),
+   a mono drawing instruction, an arrow that rotates as the panel
+   expands, and a hairline rule that draws on the panel's 0.45s ease.
+   The class name is kept so the print stylesheet's screen-only hide
+   still applies. */
 .journey-case-study-more {
-  display: inline-block;
-  margin-top: 1rem;
-  font-size: 0.95rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding: 0.55rem 0.9rem 0.7rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+
+/* Folded corner: an accent dog-ear at the tab's bottom-right. */
+.journey-case-study-more::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  border-style: solid;
+  border-width: 0 0 12px 12px;
+  border-color: transparent transparent var(--portfolio-accent) transparent;
+}
+
+.journey-fold-tab-label {
+  display: inline-block;
+}
+
+.journey-fold-tab-arrow {
+  display: inline-block;
   color: var(--portfolio-accent);
+  transition: transform 300ms ease-out;
+}
+
+.journey-case-study-more--open .journey-fold-tab-arrow {
+  transform: rotate(180deg);
+}
+
+/* The fold line: draws under the label as the panel expands (0.45s, the
+   panel height ease), retracts as it closes. */
+.journey-fold-tab-rule {
+  position: absolute;
+  left: 0.9rem;
+  right: 0.9rem;
+  bottom: 0.32rem;
+  height: 1px;
+  background: var(--portfolio-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 450ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.journey-case-study-more--open .journey-fold-tab-rule {
+  transform: scaleX(1);
 }
 
 .journey-case-study-toggle:hover .journey-case-study-more {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  border-color: color-mix(in srgb, var(--portfolio-accent) 60%, var(--border));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-fold-tab-arrow,
+  .journey-fold-tab-rule {
+    transition: none;
+  }
 }
 
 .journey-case-study-pills {
@@ -3948,23 +4012,81 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 }
 
-/* Case-study conversion line: same calm treatment as the hero CTA. */
+/* RUN9-CASE-FOLD-TAB — the conversion line is a stamped dispatch plate:
+   bordered plate with an inner margin frame, a mono DISPATCH kicker, the
+   same copy, an arrow that slides on hover, and the reel-4 press scale.
+   The kicker is aria-hidden in the markup, so the link's accessible name
+   is unchanged. */
 [data-case-study-cta] {
-  display: inline-block;
+  display: block;
+  position: relative;
   margin: 0.15rem 0 0;
-  font: 500 0.95rem/1.6 var(--font-sans);
-  letter-spacing: -0.01em;
-  color: var(--portfolio-accent);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.25em;
-  text-decoration-color: color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
-  transition: color 150ms ease-out, text-decoration-color 150ms ease-out;
+  padding: 0.9rem 1rem 0.95rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  color: var(--foreground);
+  text-decoration: none;
+  transition:
+    border-color 150ms ease-out,
+    background-color 150ms ease-out,
+    transform 220ms ease-out;
+}
+
+[data-case-study-cta]::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
 }
 
 [data-case-study-cta]:hover {
-  color: var(--foreground);
-  text-decoration-color: currentColor;
+  border-color: color-mix(in srgb, var(--portfolio-accent) 60%, var(--border));
+}
+
+[data-case-study-cta]:active {
+  transform: scale(0.97);
+}
+
+[data-case-study-cta]:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 4px;
+}
+
+.case-study-dispatch-kicker {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.case-study-dispatch-line {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+.case-study-dispatch-arrow {
+  display: inline-block;
+  color: var(--portfolio-accent);
+  transition: transform 200ms ease-out;
+}
+
+[data-case-study-cta]:hover .case-study-dispatch-arrow {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-case-study-cta],
+  .case-study-dispatch-arrow {
+    transition: none;
+  }
 }
 
 /* Missing sheet (run-9 RUN9-ROUTES): the 404 stops speaking terminal and
