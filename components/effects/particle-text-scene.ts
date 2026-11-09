@@ -11,7 +11,51 @@ type ParticleTextSceneOptions = {
    * instead of appearing formed). Default false (formed at rest).
    */
   assemble?: boolean;
+  /**
+   * Fired once, when the assembly has landed (every particle within ~2px
+   * of its origin). Lets the wrapper draw settled-state furniture — the
+   * hero measurement frame — exactly when the wordmark is formed, instead
+   * of guessing with a wall-clock delay (headless rAF runs slow).
+   */
+  onSettled?: () => void;
 };
+
+/** Canvas-pixel bounds of the letterforms (origins are centered coords). */
+export type LetterBounds = {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+};
+
+/** Pure bounds computation, unit-tested without WebGL. */
+export function letterBoundsFromOrigins(
+  origins: Float32Array,
+  width: number,
+  height: number,
+): LetterBounds | null {
+  if (origins.length < 3) return null;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < origins.length; index += 3) {
+    const x = origins[index];
+    const y = origins[index + 1];
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  if (!Number.isFinite(minX)) return null;
+  // Origins are centered with y up; canvas coords have y down.
+  return {
+    left: minX + width / 2,
+    top: height / 2 - maxY,
+    right: maxX + width / 2,
+    bottom: height / 2 - minY,
+  };
+}
 
 const MAX_PARTICLES = 14_000;
 const MOUSE_RADIUS = 150;
@@ -37,6 +81,10 @@ export class ParticleTextScene {
   private readonly fontFamily: string;
   private readonly text: string;
   private readonly assemble: boolean;
+  private readonly onSettled?: () => void;
+  private settledFired = false;
+  private canvasWidth = 0;
+  private canvasHeight = 0;
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.OrthographicCamera();
   private readonly renderer: THREE.WebGLRenderer;
@@ -50,12 +98,13 @@ export class ParticleTextScene {
   private pointerY = Number.POSITIVE_INFINITY;
   private startedAt = performance.now();
 
-  constructor({ canvas, colors, fontFamily, text, assemble = false }: ParticleTextSceneOptions) {
+  constructor({ canvas, colors, fontFamily, text, assemble = false, onSettled }: ParticleTextSceneOptions) {
     this.canvas = canvas;
     this.colors = colors;
     this.fontFamily = fontFamily;
     this.text = text;
     this.assemble = assemble;
+    this.onSettled = onSettled;
     this.renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: false,
@@ -168,6 +217,11 @@ export class ParticleTextScene {
     }
 
     this.origins = positions.slice();
+    this.canvasWidth = width;
+    this.canvasHeight = height;
+    // A rebuild (resize) re-scatters when assembling; re-arm the settled
+    // signal so a fresh assembly can report its landing again.
+    this.settledFired = false;
     if (this.assemble) {
       // Scatter the live positions across the canvas; the animation loop's
       // EASE pull toward origins assembles the letters over ~1–2s. Origins
@@ -191,6 +245,11 @@ export class ParticleTextScene {
     });
     this.points = new THREE.Points(this.geometry, this.material);
     this.scene.add(this.points);
+  }
+
+  /** Canvas-pixel bounds of the settled letterforms, or null pre-build. */
+  getLetterBounds(): LetterBounds | null {
+    return letterBoundsFromOrigins(this.origins, this.canvasWidth, this.canvasHeight);
   }
 
   private clearParticles() {
@@ -218,6 +277,10 @@ export class ParticleTextScene {
     if (positionAttribute instanceof THREE.BufferAttribute) {
       const positions = positionAttribute.array as Float32Array;
       const elapsed = performance.now() - this.startedAt;
+      // Largest remaining assembly distance this frame; the settled signal
+      // fires once every particle is home (pointer bursts after landing do
+      // not retract it — the frame marks the plate, not the particles).
+      let maxHome = 0;
 
       for (let index = 0; index < positions.length; index += 3) {
         const dx = positions[index] - this.pointerX;
@@ -243,6 +306,8 @@ export class ParticleTextScene {
         // sweep that lands, not a slow drift.
         const homeX = this.origins[index] - positions[index];
         const homeY = this.origins[index + 1] - positions[index + 1];
+        const homeDist = Math.abs(homeX) + Math.abs(homeY);
+        if (homeDist > maxHome) maxHome = homeDist;
         const homeEase =
           Math.abs(homeX) > 40 || Math.abs(homeY) > 40 ? 0.12 : EASE;
         positions[index] += homeX * homeEase;
@@ -253,6 +318,11 @@ export class ParticleTextScene {
       }
 
       positionAttribute.needsUpdate = true;
+
+      if (this.assemble && !this.settledFired && maxHome < 2.5) {
+        this.settledFired = true;
+        this.onSettled?.();
+      }
     }
 
     if (this.points) {
