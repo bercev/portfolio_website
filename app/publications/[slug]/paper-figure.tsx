@@ -75,6 +75,46 @@ export function paperFigureShadow(lift: number): string {
   return `0 ${Math.round(40 * l)}px ${Math.round(80 * l)}px ${Math.round(-16 * l)}px rgba(0, 0, 0, ${(PAPER_FIGURE_LIFT_SHADOW_ALPHA * l).toFixed(3)})`;
 }
 
+/**
+ * FIG. plate dimension frame (run-9 RUN9-PAPER-BACKGROUND round 2):
+ * the first-page plate is a measured drawing — dimension lines with end
+ * ticks frame its top and sides, 10px out, drawing in on load (top
+ * first, sides 150ms later). The lines are plain divs inside the
+ * figure link (no SVG scaling), pointer-events none so the venue link
+ * keeps working; the venue stamp presses over the right line's lower
+ * end by design. Reduced motion: settled from the first frame via the
+ * CSS media query (same class as the hero measure frame).
+ */
+export const FIG_MEASURE_OFFSET_PX = 10;
+export const FIG_MEASURE_DRAW_MS = 600;
+export const FIG_MEASURE_TOP_DELAY_MS = 400;
+export const FIG_MEASURE_SIDE_DELAY_MS = 550;
+
+function FigMeasure() {
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        data-fig-measure="top"
+        className="fig-measure fig-measure-top"
+        style={{ animationDelay: `${FIG_MEASURE_TOP_DELAY_MS}ms` }}
+      />
+      <span
+        aria-hidden="true"
+        data-fig-measure="left"
+        className="fig-measure fig-measure-left"
+        style={{ animationDelay: `${FIG_MEASURE_SIDE_DELAY_MS}ms` }}
+      />
+      <span
+        aria-hidden="true"
+        data-fig-measure="right"
+        className="fig-measure fig-measure-right"
+        style={{ animationDelay: `${FIG_MEASURE_SIDE_DELAY_MS}ms` }}
+      />
+    </>
+  );
+}
+
 export function PaperFigure({
   publication,
   index,
@@ -125,6 +165,7 @@ export function PaperFigure({
             width={publication.preview.width}
             height={publication.preview.height}
           />
+          <FigMeasure />
         </a>
         <VenueStamp venue={publication.venue} index={index} />
         <figcaption className="journey-pub-fig-caption">
@@ -152,6 +193,7 @@ export function PaperFigure({
           width={publication.preview.width}
           height={publication.preview.height}
         />
+        <FigMeasure />
       </motion.a>
       <VenueStamp venue={publication.venue} index={index} />
       <figcaption className="journey-pub-fig-caption">

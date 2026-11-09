@@ -187,6 +187,25 @@ export function calmGradientStops(
   return stops;
 }
 
+/**
+ * Column the calm wash + dot/reg-mark exclusion hug. A marked sheet
+ * (paper pages) measures its own border box, so the stipple field
+ * fills the margins around the sheet; otherwise the centered
+ * --journey-content-max column applies (the home-page geometry).
+ * Pure so tests can pin it without a DOM.
+ */
+export function blueprintColumn(
+  rect: { left: number; right: number } | null,
+  width: number,
+  contentMax: number,
+): { colL: number; colR: number } {
+  if (rect) return { colL: rect.left, colR: rect.right };
+  if (!(width > 0)) return { colL: 0, colR: 0 };
+  const pad = Math.min(64, Math.max(16, width * 0.05));
+  const half = Math.min(width / 2 - pad, contentMax / 2);
+  return { colL: width / 2 - half, colR: width / 2 + half };
+}
+
 export function BlueprintField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
@@ -226,22 +245,39 @@ export function BlueprintField() {
     };
 
     const measureColumn = () => {
-      const el = document.querySelector("[data-hero-editorial]");
+      // A route can mark its own sheet as the column (paper pages):
+      // the calm wash + dot exclusion hug the sheet's border box, so
+      // the stipple field fills the margins around it. The hero
+      // editorial stays the home-page measure (text zone, padding
+      // inset); without either, the centered --journey-content-max
+      // fallback applies.
+      const marked = document.querySelector("[data-blueprint-column]");
+      const heroEl = document.querySelector("[data-hero-editorial]");
+      const el = marked ?? heroEl;
+      let rect: { left: number; right: number } | null = null;
       if (el) {
         const r = el.getBoundingClientRect();
-        const cs = getComputedStyle(el);
-        colL = r.left + (parseFloat(cs.paddingLeft) || 0);
-        colR = r.right - (parseFloat(cs.paddingRight) || 0);
-        return;
+        if (marked) {
+          rect = { left: r.left, right: r.right };
+        } else {
+          const cs = getComputedStyle(el);
+          rect = {
+            left: r.left + (parseFloat(cs.paddingLeft) || 0),
+            right: r.right - (parseFloat(cs.paddingRight) || 0),
+          };
+        }
       }
       const maxRaw = getComputedStyle(root).getPropertyValue(
         "--journey-content-max",
       );
       const max = parseFloat(maxRaw) || 1200;
-      const pad = Math.min(64, Math.max(16, W * 0.05));
-      const half = Math.min(W / 2 - pad, max / 2);
-      colL = W / 2 - half;
-      colR = W / 2 + half;
+      const column = blueprintColumn(rect, W, max);
+      colL = column.colL;
+      colR = column.colR;
+      // Probe hook (same family as data-active-chapter): the measured
+      // column in px, so verify scripts can assert the calm hugs the
+      // sheet instead of the 1200px fallback.
+      canvas.dataset.blueprintColumn = `${Math.round(colL)},${Math.round(colR)}`;
     };
 
     const resize = () => {

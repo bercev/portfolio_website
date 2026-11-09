@@ -1749,6 +1749,7 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .journey-pub-figure-link {
+  position: relative;
   display: block;
   border: 1px solid var(--foreground);
   background: #fff;
@@ -1771,6 +1772,116 @@ html[data-journey] [data-effect-layer="background"] {
   font-size: 11px;
   letter-spacing: 0.06em;
   color: var(--muted-foreground);
+}
+
+/* FIG. plate dimension frame (run-9 RUN9-PAPER-BACKGROUND round 2):
+   the first-page plate is a measured drawing — dimension lines with end
+   ticks frame its top and sides, 10px out, drawing in on load (top
+   first, sides 150ms later), riding the figure's settle tilt. Plain
+   divs (no SVG scaling) inside the figure link, pointer-events none so
+   the venue link keeps working; the venue stamp (z 2) presses over the
+   right line's lower end by design. Reduced motion: settled from the
+   first frame. */
+.fig-measure {
+  position: absolute;
+  background: var(--accent-neon);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.fig-measure-top {
+  left: -10px;
+  right: -10px;
+  top: -10px;
+  height: 1.5px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: fig-measure-draw-x 0.6s ease-out both;
+}
+
+.fig-measure-top::before,
+.fig-measure-top::after {
+  content: "";
+  position: absolute;
+  top: -3.25px;
+  width: 1.5px;
+  height: 8px;
+  background: var(--accent-neon);
+}
+
+.fig-measure-top::before {
+  left: 0;
+}
+
+.fig-measure-top::after {
+  right: 0;
+}
+
+.fig-measure-left,
+.fig-measure-right {
+  top: -10px;
+  bottom: -10px;
+  width: 1.5px;
+  transform: scaleY(0);
+  transform-origin: top center;
+  animation: fig-measure-draw-y 0.6s ease-out both;
+}
+
+.fig-measure-left {
+  left: -10px;
+}
+
+.fig-measure-right {
+  right: -10px;
+}
+
+.fig-measure-left::before,
+.fig-measure-left::after,
+.fig-measure-right::before,
+.fig-measure-right::after {
+  content: "";
+  position: absolute;
+  left: -3.25px;
+  width: 8px;
+  height: 1.5px;
+  background: var(--accent-neon);
+}
+
+.fig-measure-left::before,
+.fig-measure-right::before {
+  top: 0;
+}
+
+.fig-measure-left::after,
+.fig-measure-right::after {
+  bottom: 0;
+}
+
+@keyframes fig-measure-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fig-measure-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fig-measure-top,
+  .fig-measure-left,
+  .fig-measure-right {
+    animation: none;
+    transform: none;
+  }
 }
 
 /* Venue stamp: pressed onto the plate's corner on first scroll into view
@@ -3020,6 +3131,11 @@ html[data-journey] [data-effect-layer="background"] {
    sheet-head strip, masthead rule, FIG plate, citation slip, title block. */
 .journey-pub-page {
   position: relative;
+  /* Run 9 — paper routes join the drafting table (RUN9-PAPER-BACKGROUND):
+     the BlueprintField canvas is fixed at z-journey-scene+1 (3), so the
+     sheet needs --z-page-content (10) to paint above it — same rule as
+     the /plain masthead strip over the fixed backdrop. */
+  z-index: var(--z-page-content);
   width: min(46rem, calc(100% - 2rem));
   margin: clamp(2rem, 6vw, 4rem) auto;
   padding: clamp(1.25rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.75rem) 2rem;

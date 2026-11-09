@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BLUEPRINT_PROFILES,
+  blueprintColumn,
   calmGradientStops,
   getBlueprintProfile,
   lerpBlueprintProfile,
@@ -88,6 +89,32 @@ describe("lerpBlueprintProfile", () => {
         1,
       ),
     ).toEqual(BLUEPRINT_PROFILES.skills);
+  });
+});
+
+describe("blueprintColumn", () => {
+  it("passes a marked sheet's border box through untouched", () => {
+    // Paper sheet at 1440px: 46rem + padding ≈ 326..1114.
+    expect(blueprintColumn({ left: 326, right: 1114 }, 1440, 1200)).toEqual({
+      colL: 326,
+      colR: 1114,
+    });
+  });
+
+  it("falls back to the centered content-max column without a rect", () => {
+    expect(blueprintColumn(null, 1440, 1200)).toEqual({
+      colL: 120,
+      colR: 1320,
+    });
+    expect(blueprintColumn(null, 390, 1200)).toEqual({
+      colL: 19.5,
+      colR: 370.5,
+    });
+  });
+
+  it("returns a degenerate column for a non-positive width", () => {
+    expect(blueprintColumn(null, 0, 1200)).toEqual({ colL: 0, colR: 0 });
+    expect(blueprintColumn(null, -20, 1200)).toEqual({ colL: 0, colR: 0 });
   });
 });
 

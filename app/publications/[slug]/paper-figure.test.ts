@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  FIG_MEASURE_DRAW_MS,
+  FIG_MEASURE_OFFSET_PX,
+  FIG_MEASURE_SIDE_DELAY_MS,
+  FIG_MEASURE_TOP_DELAY_MS,
   PAPER_FIGURE_LIFT_SHADOW_ALPHA,
   PAPER_FIGURE_RAISED_ROTATE_DEG,
   PAPER_FIGURE_RAISED_SCALE,
@@ -79,5 +83,27 @@ describe("paperFigureShadow", () => {
   it("clamps lift to the end states", () => {
     expect(paperFigureShadow(-1)).toBe(paperFigureShadow(0));
     expect(paperFigureShadow(2)).toBe(paperFigureShadow(1));
+  });
+});
+
+describe("figMeasure timing", () => {
+  it("draws the top line first, then the sides, inside ~1.2s of load", () => {
+    expect(FIG_MEASURE_TOP_DELAY_MS).toBeGreaterThanOrEqual(0);
+    expect(FIG_MEASURE_SIDE_DELAY_MS).toBeGreaterThan(
+      FIG_MEASURE_TOP_DELAY_MS,
+    );
+    expect(FIG_MEASURE_DRAW_MS).toBeGreaterThan(0);
+    expect(FIG_MEASURE_TOP_DELAY_MS + FIG_MEASURE_DRAW_MS).toBeLessThanOrEqual(
+      1000,
+    );
+    expect(
+      FIG_MEASURE_SIDE_DELAY_MS + FIG_MEASURE_DRAW_MS,
+    ).toBeLessThanOrEqual(1200);
+  });
+
+  it("sits outside the plate but inside the sheet's narrow padding", () => {
+    // Plate padding is 20px at 390px; the frame must clear it.
+    expect(FIG_MEASURE_OFFSET_PX).toBeGreaterThan(0);
+    expect(FIG_MEASURE_OFFSET_PX).toBeLessThan(20);
   });
 });
