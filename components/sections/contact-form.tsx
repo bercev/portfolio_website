@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 
 import { StatefulSubmitButton } from "@/components/ui/stateful-button";
 import {
@@ -9,6 +9,13 @@ import {
   contactDraftAction,
   parseContactDraft,
 } from "@/lib/contact-draft";
+import {
+  fileSheetFormEnter,
+  fileSheetFormExit,
+  fileSheetReceiptEnter,
+  fileSheetScrollTarget,
+  fileSheetStampTransition,
+} from "@/lib/contact-file-sheet";
 import {
   CONTACT_TOPICS,
   applyTopicPrefix,
@@ -33,6 +40,7 @@ export function ContactForm() {
   const [error, setError] = useState("");
   const [invalidField, setInvalidField] = useState<FieldName | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  const filingRef = useRef<HTMLDivElement>(null);
   const reduceMotion = usePrefersReducedMotion();
   // Draft autosave (run-3 iter 11): false until the one-shot restore effect
   // below has run, so the debounced save never fires on the initial empty
@@ -172,66 +180,112 @@ export function ContactForm() {
     }
   }
 
-  // Sent state (run-9 RUN9-DETAIL-CARD-READY): the receipt is a stamped
-  // dispatch card that pops in — 200ms ease-out scale/rotate settle, the
-  // RECEIVED stamp pressing in just after (same press as the publication
-  // venue stamps). Reduced motion renders it settled.
-  if (status === "sent") {
-    return (
-      <motion.div
-        className="journey-contact-receipt"
-        data-contact-receipt
-        role="status"
-        aria-live="polite"
-        initial={
-          reduceMotion
-            ? { opacity: 1, scale: 1, rotate: 0 }
-            : { opacity: 0, scale: 0.96, rotate: -1 }
-        }
-        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-        transition={
-          reduceMotion
-            ? { duration: 0 }
-            : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
-        }
-      >
-        <motion.span
-          className="journey-contact-stamp"
-          data-contact-stamp
-          aria-hidden="true"
-          initial={
-            reduceMotion
-              ? { opacity: 1, scale: 1, rotate: -8 }
-              : { opacity: 0, scale: 1.6, rotate: -14 }
-          }
-          animate={{ opacity: 1, scale: 1, rotate: -8 }}
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : { duration: 0.22, delay: 0.15, ease: [0.16, 1, 0.3, 1] }
-          }
-        >
-          RECEIVED
-        </motion.span>
-        <p className="journey-contact-receipt-title">
-          Transmission received
-        </p>
-        <p className="journey-contact-receipt-note">
-          Thanks — I&rsquo;ll get back to you.
-        </p>
-      </motion.div>
-    );
+  // Success cut (run-9 RUN9-FILE-THE-SHEET): on submit success the
+  // page cuts to the filing container's top so the filing + plate play
+  // in view. On a phone the Transmit button sits ~500px below the
+  // form's top, so without the cut the receipt lands above the viewport
+  // and the visitor never sees the confirmation. An instant cut, not a
+  // smooth scroll — a second animation would fight the filing motion.
+  useEffect(() => {
+    if (status !== "sent") return;
+    const el = filingRef.current;
+    if (!el) return;
+    window.scrollTo({
+      top: fileSheetScrollTarget(
+        el.getBoundingClientRect().top,
+        window.scrollY,
+      ),
+      behavior: "instant",
+    });
+  }, [status]);
+
+  // "Send another" (run-9 RUN9-FILE-THE-SHEET): the filed receipt
+  // offers a way back to the form — name + email stay (they are the
+  // sender's identity), only the sent message clears. The debounced
+  // draft save then keeps the identity as a draft, as it would for
+  // any unsent form.
+  function sendAnother() {
+    setMessage("");
+    setStatus("idle");
   }
 
   const describedBy = error ? ERROR_ID : undefined;
+  const formEnter = fileSheetFormEnter(reduceMotion);
+  const receiptEnter = fileSheetReceiptEnter(reduceMotion);
 
+  // Filing motion (run-9 RUN9-FILE-THE-SHEET): on a genuine submit
+  // success the dispatch sheet files itself — the form card rises,
+  // scales down and collapses while the stamped RECEIVED plate slides
+  // in from below with next steps + a primary action. The receipt pop
+  // stays the settled state language; reduced motion swaps instantly.
   return (
-    <form
-      className="journey-contact-form"
-      onSubmit={onSubmit}
-      aria-label="Contact form"
-      noValidate
-    >
+    <div className="journey-contact-filing" ref={filingRef}>
+      <AnimatePresence initial={false}>
+        {status === "sent" ? (
+          <motion.div
+            key="receipt"
+            className="journey-contact-receipt"
+            data-contact-receipt
+            role="status"
+            aria-live="polite"
+            initial={receiptEnter.initial}
+            animate={receiptEnter.animate}
+            transition={receiptEnter.transition}
+          >
+            <motion.span
+              className="journey-contact-stamp"
+              data-contact-stamp
+              aria-hidden="true"
+              initial={
+                reduceMotion
+                  ? { opacity: 1, scale: 1, rotate: -8 }
+                  : { opacity: 0, scale: 1.6, rotate: -14 }
+              }
+              animate={{ opacity: 1, scale: 1, rotate: -8 }}
+              transition={fileSheetStampTransition(reduceMotion)}
+            >
+              RECEIVED
+            </motion.span>
+            <p className="journey-contact-receipt-title">
+              Transmission received
+            </p>
+            <p className="journey-contact-receipt-note">
+              Thanks — I&rsquo;ll get back to you.
+            </p>
+            <p className="journey-contact-receipt-next">
+              <span className="journey-contact-receipt-next-kicker">
+                What&rsquo;s next —
+              </span>{" "}
+              I&rsquo;ll reply to {email} within a few days.
+            </p>
+            <a
+              className="journey-contact-receipt-action"
+              href="#projects"
+              data-contact-receipt-action
+            >
+              See my work ↓
+            </a>
+            <button
+              type="button"
+              className="journey-contact-receipt-again"
+              onClick={sendAnother}
+              data-contact-receipt-again
+            >
+              Send another message →
+            </button>
+          </motion.div>
+        ) : (
+          <motion.form
+            key="form"
+            className="journey-contact-form"
+            onSubmit={onSubmit}
+            aria-label="Contact form"
+            noValidate
+            initial={formEnter.initial}
+            animate={formEnter.animate}
+            transition={formEnter.transition}
+            exit={fileSheetFormExit(reduceMotion)}
+          >
       <span className="journey-sheet-crop journey-sheet-crop--left" aria-hidden="true">
         +
       </span>
@@ -399,6 +453,9 @@ export function ContactForm() {
           1:1
         </p>
       </div>
-    </form>
+          </motion.form>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

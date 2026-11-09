@@ -4979,7 +4979,8 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
   .journey-contact-form-topic-chip,
   .journey-contact-form-submit,
-  .journey-contact-form-submit::before {
+  .journey-contact-form-submit::before,
+  .journey-contact-receipt-action {
     transition: none;
   }
 }
@@ -5014,10 +5015,89 @@ html[data-journey="active"] [data-hero-name-fallback] {
   font-weight: 600;
   color: var(--foreground);
 }
+/* Narrow phones (RUN9-FILE-THE-SHEET round 2): the RECEIVED stamp is
+   absolutely positioned top-right, so below ~375px the title text runs
+   under it (measured −21px at 360px, −57px at 320px; only +6px at
+   390px). Reserve the stamp's lane so the title wraps instead of
+   sliding underneath — at 390px it still fits on one line. */
+@media (max-width: 430px) {
+  .journey-contact-receipt-title {
+    padding-right: 6rem;
+  }
+}
 .journey-contact-receipt-note {
   margin: 0;
   font-size: 0.9rem;
   color: var(--muted-foreground);
+}
+
+/* Filing motion (RUN9-FILE-THE-SHEET): the form card files away and
+   the stamped RECEIVED plate slides in — the filing container is the
+   shared frame for the swap, and the plate gains next steps + a
+   primary action. */
+.journey-contact-filing {
+  position: relative;
+}
+.journey-contact-receipt-next {
+  margin: 0.85rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+.journey-contact-receipt-next-kicker {
+  color: var(--foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.journey-contact-receipt-action {
+  display: block;
+  margin-top: 1.1rem;
+  padding: 0.7rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border: 1px solid var(--border);
+  transition:
+    border-color 200ms ease-out,
+    transform 200ms ease-out;
+}
+.journey-contact-receipt-action:hover {
+  border-color: var(--portfolio-accent);
+}
+.journey-contact-receipt-action:active {
+  transform: scale(0.97);
+}
+.journey-contact-receipt-action:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+.journey-contact-receipt-again {
+  display: block;
+  margin: 0.7rem auto 0;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.journey-contact-receipt-again:hover {
+  color: var(--foreground);
+}
+.journey-contact-receipt-again:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
