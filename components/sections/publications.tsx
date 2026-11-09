@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { PortfolioContent, Publication } from "@/data/content";
 
 import { paperAnchorId } from "@/lib/paper-anchor";
+import { AuthorDial } from "@/components/sections/author-dial";
 import { CitationGallery } from "@/components/sections/citation-gallery";
 import { HoverPreview } from "@/components/ui/hover-preview";
 import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
@@ -185,6 +186,9 @@ function PublicationRow({
           >
             {galleryOpen ? "[links ↑]" : "[links ↓]"}
           </button>
+          {/* RUN9-AUTHOR-DIALS: the radial author-position gauge — his
+              real slot among the paper's authors, at the row's right end. */}
+          <AuthorDial authors={publication.authors} index={index} />
         </div>
         <CitationGallery
           publication={publication}

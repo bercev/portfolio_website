@@ -1946,13 +1946,159 @@ html[data-journey] [data-effect-layer="background"] {
 
 .journey-pub-meta {
   display: flex;
-  align-items: baseline;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 18px;
   margin-top: 0.9rem;
 }
 
 .journey-pub-meta .journey-pub-cite {
   margin-top: 0;
+}
+
+/* Author-position dial (run-9 RUN9-AUTHOR-DIALS, 60fps #2134 Runmo
+   Distance Wheel Fill): the gauge sits at the meta row's right end — a
+   ring with one tick per author, an arc sweeping the owner's slot, and
+   a centre number that rolls digit-by-digit. Hover crossfades the
+   number to its ordinal; the centre overlay never takes the pointer. */
+.journey-pub-meta .author-dial {
+  margin-left: auto;
+}
+
+.author-dial {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 60px;
+  font-family: var(--font-mono);
+}
+
+.author-dial-face {
+  position: relative;
+  flex: none;
+  width: 60px;
+  height: 60px;
+}
+
+.author-dial-caption {
+  margin-top: 3px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  /* Near-foreground, not muted: the caption sits over the particle
+     bust's glyph cluster at desktop widths, and muted gray reads a
+     beat late there (desktop re-critic, round 2). */
+  color: var(--foreground);
+  opacity: 0.8;
+}
+
+.author-dial-ring {
+  display: block;
+}
+
+.author-dial-track {
+  fill: none;
+  stroke: var(--muted-foreground);
+  stroke-opacity: 0.35;
+  stroke-width: 1.5;
+}
+
+.author-dial-arc {
+  fill: none;
+  stroke: var(--accent-neon);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.author-dial-tick {
+  stroke: var(--muted-foreground);
+  stroke-opacity: 0.55;
+  stroke-width: 1;
+}
+
+.author-dial-tick--self {
+  stroke: var(--accent-neon);
+  stroke-opacity: 1;
+  stroke-width: 1.5;
+}
+
+.author-dial-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.author-dial-value {
+  position: relative;
+  display: block;
+  height: 14px;
+  line-height: 1;
+}
+
+.author-dial-num {
+  display: inline-flex;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+  transition: opacity 200ms ease-out;
+}
+
+.author-dial-digit {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.author-dial-digit-column {
+  display: block;
+}
+
+.author-dial-digit-cell {
+  display: block;
+  height: 1em;
+  line-height: 1;
+}
+
+.author-dial-num-print {
+  display: none;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.author-dial-ord {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 14px;
+  line-height: 1;
+  color: var(--accent-neon);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.author-dial:hover .author-dial-num {
+  opacity: 0;
+}
+
+.author-dial:hover .author-dial-ord {
+  opacity: 1;
+}
+
+.author-dial-total {
+  margin-top: 2px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
 }
 
 .journey-pub-title {
@@ -5870,6 +6016,25 @@ html.dark .plain-backdrop {
   .journey-arch-flow {
     stroke-dasharray: none !important;
     stroke-dashoffset: 0 !important;
+  }
+
+  /* Author-position dial (run-9 RUN9-AUTHOR-DIALS): a plate below the
+     fold never triggers useInView in print layout, so the arc would
+     print hidden and the rolling strips would print 00 — the settled
+     offset comes from the --author-dial-settled custom property, and
+     the number prints as plain text while the strips and the ordinal
+     are hidden. */
+  .author-dial-arc {
+    stroke-dashoffset: var(--author-dial-settled) !important;
+  }
+  .author-dial-ord {
+    display: none !important;
+  }
+  .author-dial-digit {
+    display: none !important;
+  }
+  .author-dial-num-print {
+    display: inline !important;
   }
 
   *,
