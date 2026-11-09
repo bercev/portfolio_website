@@ -1,6 +1,8 @@
 import type { PortfolioContent } from "@/data/content";
 
 import { AboutNote } from "@/components/sections/about-notes";
+import { CourseworkList } from "@/components/sections/about-coursework";
+import { courseworkCountLabel } from "@/lib/about-coursework";
 import { LedeReveal } from "@/components/sections/lede-reveal";
 import { Station } from "@/components/ui/station";
 
@@ -66,13 +68,9 @@ export function About({ content, heading }: AboutProps) {
         </dl>
 
         <p className="journey-spec-label journey-spec-label--inset">
-          Coursework
+          Coursework — {courseworkCountLabel(education.coursework.length)}
         </p>
-        <ul className="journey-spec-tags">
-          {education.coursework.map((course) => (
-            <li key={course}>{course}</li>
-          ))}
-        </ul>
+        <CourseworkList courses={education.coursework} />
 
         <p className="journey-about-titleblock-foot">
           Scale 1:1 · Drawn by Berat · Rev A

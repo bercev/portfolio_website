@@ -1614,17 +1614,6 @@ html[data-journey] [data-effect-layer="background"] {
 
 /* Primary email CTA — the highest-intent recruiter action. */
 
-.journey-spec-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.9rem;
-  margin: 0.9rem 0 0;
-  padding: 0;
-  list-style: none;
-  font: 400 0.82rem/1.7 var(--font-sans);
-  color: var(--muted-foreground);
-}
-
 .journey-lead {
   color: var(--muted-foreground);
   max-width: 58ch;
@@ -3767,6 +3756,44 @@ a.skills-plate-note {
 .journey-about-titleblock-mark {
   font: 600 0.9rem/1 var(--font-mono);
   color: var(--portfolio-accent);
+}
+
+/* Coursework as a drafted parts list (run-9 iter 30,
+   RUN9-ABOUT-COURSEWORK): each course is a numbered part — a mono accent
+   numeral that presses in, a hairline rule that draws across the row —
+   the same 220ms press / 0.5s rule-draw language as the field notes and
+   the experience revision marks. */
+.journey-coursework-list {
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-coursework-row {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 0 0.75rem;
+  padding: 0.5rem 0 0;
+}
+
+.journey-coursework-num {
+  font: 600 0.72rem/1.6 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--portfolio-accent);
+}
+
+.journey-coursework-name {
+  font: 400 0.88rem/1.6 var(--font-sans);
+  color: var(--foreground);
+}
+
+.journey-coursework-rule {
+  display: block;
+  grid-column: 1 / -1;
+  height: 1px;
+  margin-top: 0.5rem;
+  background: var(--journey-rule-soft);
+  transform-origin: left center;
 }
 
 .journey-about-titleblock-foot {
