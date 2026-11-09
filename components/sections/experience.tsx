@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, type MouseEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useInView } from "motion/react";
 
 import type { PortfolioContent } from "@/data/content";
 
@@ -39,6 +40,16 @@ function renderSummary(summary: string) {
 }
 
 export function Experience({ content, heading, skillNames }: ExperienceProps) {
+  // Measuring-tape entry (run-9 iter 23, RUN9-EXP-TAPE): latched once the
+  // featured row first enters view, so the tape's sculpt-pop plays once
+  // when the reader reaches the experience section (same latch pattern
+  // as the skill tape, iter 21).
+  const featuredRef = useRef<HTMLElement | null>(null);
+  const featuredInView = useInView(featuredRef, { once: true, amount: 0.3 });
+  const [tapeEntered, setTapeEntered] = useState(false);
+  useEffect(() => {
+    if (featuredInView) setTapeEntered(true);
+  }, [featuredInView]);
   // Experience-row reverse navigation (run-3 iter 25, mirroring the
   // project-row path from iter 23): unlike case-study rows, experience
   // rows are plain articles, not toggle buttons, so the click is
@@ -87,6 +98,7 @@ export function Experience({ content, heading, skillNames }: ExperienceProps) {
             data-experience-row
             data-work-tech={techKeyList(experience.technologies)}
             data-experience-featured={index === 0 ? "true" : undefined}
+            ref={index === 0 ? featuredRef : undefined}
             className={
               index === 0
                 ? "journey-xp-item journey-xp-item--featured scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
@@ -116,6 +128,8 @@ export function Experience({ content, heading, skillNames }: ExperienceProps) {
                 technologies={experience.technologies}
                 marquee={index === 0}
                 linkedNames={index === 0 ? undefined : skillNames}
+                tape={index === 0}
+                tapeEntered={index === 0 ? tapeEntered : undefined}
               />
             </div>
           </article>
