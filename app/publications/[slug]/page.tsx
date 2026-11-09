@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { VenueStamp } from "@/components/sections/publication-plate";
 import { portfolio, type Publication } from "@/data/content";
 
 import { BibtexBlock } from "./bibtex-block";
+import { getPaperSheet } from "./paper-sheet";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -69,14 +71,24 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Paper pages as printed-journal sheets (run-9 RUN9-ROUTES): the bare
+ * centered column becomes a drawing sheet — sheet-head strip, masthead
+ * double rule, serif title, full author line (Berat in accent), the real
+ * first page as a FIG. plate with a press-in venue stamp, and the BibTeX as
+ * a tear-off citation slip, over a title-block footer. Metadata, JSON-LD,
+ * and both links are unchanged; the stamp is the only motion on the page
+ * (presses in on first view, settled under reduced motion).
+ */
 export default async function PublicationPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const publication = getPublication(slug);
-  if (!publication) notFound();
+  const sheet = getPaperSheet(slug);
+  if (!sheet) notFound();
+  const { publication, index, labels } = sheet;
 
   const url = `${siteUrl}/publications/${publication.slug}`;
   const jsonLd = {
@@ -104,55 +116,94 @@ export default async function PublicationPage({
   };
 
   return (
-    <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-3xl px-6 py-16">
+    <main id="main-content" tabIndex={-1} className="journey-pub-page">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <nav aria-label="Breadcrumb" className="mb-8 text-sm">
-        <Link href="/" className="underline underline-offset-4">
-          Berat Ercevik
-        </Link>
+      <div className="journey-sheet-head journey-pub-page-head">
+        <span>Journal — {labels.plate}</span>
+        <span>{publication.venue}</span>
+      </div>
+      <nav aria-label="Breadcrumb" className="journey-pub-page-crumb">
+        <Link href="/">Berat Ercevik</Link>
         <span aria-hidden="true"> / </span>
-        <Link href="/#publications" className="underline underline-offset-4">
-          Publications
-        </Link>
+        <Link href="/#publications">Publications</Link>
       </nav>
-      <p className="text-sm font-medium opacity-70">
-        {publication.venue} · {publication.date}
+      <div className="journey-pub-plate-rule" aria-hidden="true" />
+      <h1 className="journey-pub-title">{publication.title}</h1>
+      <p className="journey-pub-authors">
+        {publication.authors.map((author, i) => (
+          <span key={author.name}>
+            {i > 0 ? ", " : ""}
+            {author.name === "Berat Ercevik" ? (
+              <span className="journey-pub-author--self">{author.name}</span>
+            ) : (
+              author.name
+            )}
+          </span>
+        ))}
       </p>
-      <h1 className="mt-4 text-3xl font-semibold leading-tight md:text-4xl">
-        {publication.title}
-      </h1>
-      <p className="mt-3 text-sm opacity-70">
-        {publication.authors.map((author) => author.name).join(", ")}
-      </p>
-      <section aria-labelledby="abstract" className="mt-8">
-        <h2 id="abstract" className="text-lg font-semibold">
+      <figure className="journey-pub-figure journey-pub-page-figure">
+        <a href={publication.href} className="journey-pub-figure-link">
+          {/* eslint-disable-next-line @next/next/no-img-element -- local paper preview, same as the list plate */}
+          <img
+            src={publication.preview.src}
+            alt={publication.preview.alt}
+            width={publication.preview.width}
+            height={publication.preview.height}
+          />
+        </a>
+        <VenueStamp venue={publication.venue} index={index} />
+        <figcaption className="journey-pub-fig-caption">
+          {labels.fig} — First page
+        </figcaption>
+      </figure>
+      <section
+        aria-labelledby="abstract"
+        className="journey-pub-page-section"
+      >
+        <h2 id="abstract" className="journey-pub-page-h2">
           Abstract
         </h2>
-        <p className="mt-2 leading-relaxed">{publication.gloss}</p>
+        <p className="journey-pub-page-abstract">{publication.gloss}</p>
       </section>
-      <div className="mt-8 flex flex-wrap gap-3">
-        <a
-          href={publication.href}
-          className="rounded border px-4 py-2 text-sm font-medium underline-offset-4 hover:underline"
-        >
+      <div className="journey-pub-page-actions">
+        <a href={publication.href} className="journey-pub-page-action">
           Read the paper
         </a>
         <a
           href={publication.pdfUrl}
-          className="journey-pub-pdf-link rounded border px-4 py-2 text-sm font-medium underline-offset-4 hover:underline"
+          className="journey-pub-pdf-link journey-pub-page-action"
         >
           Download PDF
         </a>
       </div>
-      <section aria-labelledby="cite" className="mt-10">
-        <h2 id="cite" className="text-lg font-semibold">
+      <section aria-labelledby="cite" className="journey-pub-page-section">
+        <h2 id="cite" className="journey-pub-page-h2">
           Cite
         </h2>
-        <BibtexBlock bibtex={publication.bibtex} />
+        <div className="journey-cite-slip">
+          <p className="journey-cite-slip-head" aria-hidden="true">
+            Citation slip — BibTeX
+          </p>
+          <BibtexBlock bibtex={publication.bibtex} />
+        </div>
       </section>
+      <footer className="journey-sheet-titleblock journey-pub-titleblock">
+        <div>
+          <span className="journey-sheet-titleblock-label">Paper</span>
+          {labels.plate}
+        </div>
+        <div>
+          <span className="journey-sheet-titleblock-label">Venue</span>
+          {publication.venue}
+        </div>
+        <div>
+          <span className="journey-sheet-titleblock-label">Date</span>
+          {publication.date}
+        </div>
+      </footer>
     </main>
   );
 }

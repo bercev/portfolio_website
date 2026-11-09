@@ -2484,6 +2484,109 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
+/* Paper pages as journal sheets (run-9 RUN9-ROUTES): the bare centered
+   column becomes a drawing sheet — translucent card + inner margin frame,
+   sheet-head strip, masthead rule, FIG plate, citation slip, title block. */
+.journey-pub-page {
+  position: relative;
+  width: min(46rem, calc(100% - 2rem));
+  margin: clamp(2rem, 6vw, 4rem) auto;
+  padding: clamp(1.25rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.75rem) 2rem;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
+}
+
+.journey-pub-page::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
+}
+
+.journey-pub-page-crumb {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-page-crumb a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.journey-pub-page-figure {
+  margin-top: 1.75rem;
+}
+
+.journey-pub-page-section {
+  margin-top: 2rem;
+}
+
+.journey-pub-page-h2 {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-page-abstract {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.journey-pub-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.journey-pub-page-action {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.journey-pub-page-action:hover {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+/* Citation slip (CRED ticket-slip transfer, run-9 iter 9 research): the
+   BibTeX rides on a tear-off slip — dashed rule under a mono kicker. */
+.journey-cite-slip-head {
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed
+    color-mix(in srgb, var(--foreground) 40%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-titleblock {
+  margin-top: 2.5rem;
+}
+
+@media (max-width: 700px) {
+  .journey-pub-page {
+    width: calc(100% - 1.5rem);
+  }
+}
+
 .journey-case-study {
   margin-top: 2rem;
   max-width: 64rem;
@@ -3260,28 +3363,55 @@ html[data-journey="active"] [data-hero-name-fallback] {
   text-decoration-color: currentColor;
 }
 
-/* Branded 404 (research iter 33, ryanlidev "honest status codes"): the terminal
- * voice kept calm — one status line, one plain sentence, two ways out.
- * FROST palette, square corners, no glow; tokens keep light/dark correct. */
-.not-found {
+/* Missing sheet (run-9 RUN9-ROUTES): the 404 stops speaking terminal and
+ * becomes an empty drawing sheet — bordered plate, inner margin frame, a
+ * dashed empty FIG frame where the drawing would be, title-block footer.
+ * Server component, no JS; FROST palette, square corners, no glow. */
+.not-found-sheet {
   flex: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   justify-content: center;
   gap: 1.25rem;
-  max-width: 34rem;
-  margin: 0 auto;
-  padding: 4rem 1.5rem 6rem;
+  width: min(40rem, calc(100% - 2rem));
+  margin: clamp(2rem, 6vh, 4rem) auto;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
+}
+.not-found-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
+}
+.not-found-sheet-head {
+  margin-bottom: 0;
 }
 .not-found-status {
   margin: 0;
-  font: 600 1.5rem/1.35 var(--font-mono);
+  font-family: var(--font-mono);
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  font-weight: 600;
   letter-spacing: -0.01em;
+  line-height: 1.25;
   color: var(--foreground);
 }
-.not-found-prompt {
-  color: var(--portfolio-accent);
+.not-found-empty-plate {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 7;
+  border: 1px dashed color-mix(in srgb, var(--foreground) 45%, transparent);
+}
+.not-found-empty-plate-mark {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  color: var(--muted-foreground);
+}
+.not-found-empty-plate-caption {
+  margin: -0.5rem 0 0;
 }
 .not-found-line {
   margin: 0;
@@ -3309,6 +3439,9 @@ html[data-journey="active"] [data-hero-name-fallback] {
 .not-found-link:hover {
   color: var(--foreground);
   text-decoration-color: currentColor;
+}
+.not-found-titleblock {
+  margin-top: 0.5rem;
 }
 @media (prefers-reduced-motion: reduce) {
   .not-found-link {
@@ -3560,39 +3693,128 @@ html[data-journey="active"] [data-hero-name-fallback] {
 
 }
 
-/* Dedicated /plain site: CSS-only backdrop, freeze motion without WebGL. */
+/* Dedicated /plain site: a static blueprint print (run-9 RUN9-ROUTES) —
+   grid, margin frame, registration marks, print stamp. CSS only, zero
+   motion, so /plain keeps its no-animations contract in both themes. */
 .plain-backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-journey-scene);
   pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse at 50% 12%,
-      color-mix(in srgb, var(--accent-neon) 14%, transparent),
-      transparent 52%
+  background-color: var(--background);
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent) 1px,
+      transparent 1px
     ),
-    radial-gradient(
-      ellipse at 82% 78%,
-      color-mix(in srgb, var(--chroma-cyan-neon, var(--accent-neon)) 9%, transparent),
-      transparent 48%
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--foreground) 7%, transparent) 1px,
+      transparent 1px
     ),
-    var(--background);
+    linear-gradient(
+      color-mix(in srgb, var(--foreground) 13%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--foreground) 13%, transparent) 1px,
+      transparent 1px
+    );
+  background-size:
+    25px 25px,
+    25px 25px,
+    125px 125px,
+    125px 125px;
+}
+
+.plain-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
+}
+
+.plain-backdrop-crop {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--muted-foreground);
+}
+
+.plain-backdrop-crop--tl {
+  top: 2px;
+  left: 6px;
+}
+
+.plain-backdrop-crop--tr {
+  top: 2px;
+  right: 6px;
+}
+
+.plain-backdrop-crop--bl {
+  bottom: 2px;
+  left: 6px;
+}
+
+.plain-backdrop-crop--br {
+  bottom: 2px;
+  right: 6px;
 }
 
 html.dark .plain-backdrop {
-  background:
-    radial-gradient(
-      ellipse at 50% 10%,
-      color-mix(in srgb, var(--accent-neon) 10%, transparent),
-      transparent 50%
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--foreground) 9%, transparent) 1px,
+      transparent 1px
     ),
-    radial-gradient(
-      ellipse at 78% 72%,
-      color-mix(in srgb, var(--chroma-cyan-neon, var(--accent-neon)) 7%, transparent),
-      transparent 46%
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--foreground) 9%, transparent) 1px,
+      transparent 1px
     ),
-    var(--background);
+    linear-gradient(
+      color-mix(in srgb, var(--foreground) 16%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--foreground) 16%, transparent) 1px,
+      transparent 1px
+    );
+}
+
+/* Print-edition masthead (run-9 RUN9-ROUTES): the strip that makes /plain
+   read as a different edition at a glance — in-flow, so it can never cover
+   scrolling copy the way a fixed corner stamp did. */
+.plain-edition-strip {
+  position: relative;
+  z-index: var(--z-page-content);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 700px) {
+  .plain-edition-strip {
+    /* The fixed chapter ribbon is a top bar at phone width (opaque,
+       ~34px tall) and covers the strip's first line at scrollY 0 — clear
+       it. On desktop the ribbon is the left rail, so no offset is needed. */
+    margin-top: 2.25rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    gap: 0.25rem 0.5rem;
+  }
 }
 
 [data-plain-root] .tech-pills-marquee {

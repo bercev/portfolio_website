@@ -15,14 +15,10 @@
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
+import { plateLabels } from "@/lib/plate-labels";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
-/** Plate labels: "FIG. 01", "PLATE 01 / 02". */
-export function plateLabels(index: number, total: number) {
-  const n = String(index + 1).padStart(2, "0");
-  const t = String(Math.max(total, 1)).padStart(2, "0");
-  return { fig: `FIG. ${n}`, plate: `PLATE ${n} / ${t}` };
-}
+export { plateLabels };
 
 /** The stamp presses in as the dither dissolve finishes (0.65s) + row stagger. */
 export function stampDelay(index: number) {
