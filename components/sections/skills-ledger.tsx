@@ -12,6 +12,8 @@ import {
   skillHasWork,
 } from "@/lib/skill-work";
 
+import { seriesKicker, SkillPlate } from "@/components/sections/skills-plate";
+
 type SkillsLedgerProps = {
   readonly groups: PortfolioContent["skills"];
   /** Every experience + project stack, for the exact-match link check. */
@@ -19,14 +21,15 @@ type SkillsLedgerProps = {
 };
 
 /**
- * Skills proof ledger (run-2 IDEA, research iter 39): the scannable
- * record under the marquee. The marquee stays as ambient brand motion;
- * this is the surface a hiring manager actually reads — visible category
- * headings (the old ones were sr-only), every skill name, and its proof
- * note as visible text (the old rendering kept notes in title tooltips).
- * Notes that name a project link to that exact row; ambiguous notes stay
- * plain text (see skillProofHref). Static text, so the reduced-motion
- * poster is the same record, not a lesser one.
+ * Skills parts catalog (run-9 RUN9-SECTION-IDENTITIES, fourth slice:
+ * Skills — the ledger became plates, run-9 iter 6). The scannable record
+ * under the marquee is now a grid of bordered spec plates: continuous
+ * part numbers (SK-01..), series kickers, proof notes as spec lines, and
+ * the same highlight buttons for linked skills. The marquee stays as
+ * ambient brand motion; this is the surface a hiring manager actually
+ * reads — visible category headings (the old ones were sr-only), every
+ * skill name, and its proof note as visible text (the old rendering kept
+ * notes in title tooltips).
  *
  * Skill → work highlight (run-3 iter 7): a skill name that exactly
  * matches a work entry's stack is a button. Tapping it highlights the
@@ -35,7 +38,9 @@ type SkillsLedgerProps = {
  * hidden from a hiring visitor. Skills with no exact match stay plain
  * text (no dead affordance). The highlight is a static style, so the
  * reduced-motion poster is identical; the scroll is an instant jump,
- * not an animated one.
+ * not an animated one. The active plate additionally carries a coachmark
+ * border pulse (run-9 iter 6); reduced motion renders it as a static
+ * accent border.
  */
 export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
   const [activeSkill, setActiveSkill] = useState<string | null>(null);
@@ -132,56 +137,57 @@ export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
     }
   }, [activeSkill]);
 
+  // Continuous part numbers (SK-01..) across the whole catalog: each
+  // series starts where the previous one ended.
+  let plateCursor = 0;
+  const series = groups.map((group) => {
+    const start = plateCursor;
+    plateCursor += group.items.length;
+    return { group, start };
+  });
+
   return (
-    <div className="skills-ledger" aria-label="Skills by category, with proof">
-      <p className="skills-ledger-hint">
+    <div className="skills-catalog" aria-label="Skills by category, with proof">
+      <p className="skills-catalog-hint">
         Select a skill to highlight the work that uses it.
       </p>
       {activeSkill !== null ? (
-        <p className="skills-ledger-active">
+        <p className="skills-catalog-active">
           Highlighting work using <strong>{activeSkill}</strong> —{" "}
           <button
             type="button"
-            className="skills-ledger-clear"
+            className="skills-catalog-clear"
             onClick={() => setActiveSkill(null)}
           >
             Clear highlight
           </button>
         </p>
       ) : null}
-      {groups.map((group) => (
-        <section key={group.category} className="skills-ledger-group">
-          <h3 className="skills-ledger-heading">{group.category}</h3>
-          <ul className="skills-ledger-list">
-            {group.items.map((item) => {
+      {series.map(({ group, start }, groupIndex) => (
+        <section key={group.category} className="skills-catalog-series">
+          <p className="skills-series-kicker" aria-hidden="true">
+            {seriesKicker(groupIndex, group.items.length)}
+          </p>
+          <h3 className="skills-series-heading">{group.category}</h3>
+          <ul className="skills-plates">
+            {group.items.map((item, itemIndex) => {
               const href = skillProofHref(item.note);
               const linked = skillHasWork(item.name, workTech);
               return (
-                <li key={item.name} className="skills-ledger-row">
-                  {linked ? (
-                    <button
-                      type="button"
-                      className="skills-ledger-skill"
-                      aria-pressed={activeSkill === item.name}
-                      onClick={() =>
-                        setActiveSkill((current) =>
-                          current === item.name ? null : item.name,
-                        )
-                      }
-                    >
-                      {item.name}
-                    </button>
-                  ) : (
-                    <span className="skills-ledger-name">{item.name}</span>
-                  )}
-                  {href ? (
-                    <a className="skills-ledger-note" href={href}>
-                      {item.note}
-                    </a>
-                  ) : (
-                    <span className="skills-ledger-note">{item.note}</span>
-                  )}
-                </li>
+                <SkillPlate
+                  key={item.name}
+                  index={start + itemIndex}
+                  name={item.name}
+                  note={item.note}
+                  noteHref={href}
+                  linked={linked}
+                  active={activeSkill === item.name}
+                  onToggle={() =>
+                    setActiveSkill((current) =>
+                      current === item.name ? null : item.name,
+                    )
+                  }
+                />
               );
             })}
           </ul>

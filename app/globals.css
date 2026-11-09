@@ -2668,98 +2668,132 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
-/* Skills proof ledger (run-2 iter 39): the scannable record under the
-   marquee. Editorial, not cards — category headings + hairline rows,
-   name in the foreground voice, proof note in the muted voice. Linked
-   notes underline; unlinked notes are identical except for the link. */
-.skills-ledger {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 3rem;
-  row-gap: 2.25rem;
+/* Skills parts catalog (run-9 iter 6): the ledger rows became spec plates
+   — a bordered grid, one plate per skill, with a continuous part number,
+   a series kicker per category, and the proof note as the spec line. The
+   marquee above stays the ambient motion; the plates are the record a
+   hiring manager reads. Linked notes underline; unlinked notes are
+   identical except for the link. */
+.skills-catalog {
   margin-top: 2.5rem;
 }
 
-@media (max-width: 900px) {
-  .skills-ledger {
-    grid-template-columns: 1fr;
-  }
-}
-
-.skills-ledger-group {
+.skills-catalog-series {
   min-width: 0;
 }
 
-.skills-ledger-heading {
-  margin: 0 0 0.75rem;
+.skills-catalog-series + .skills-catalog-series {
+  margin-top: 2.25rem;
+}
+
+.skills-series-kicker {
+  margin: 0 0 0.35rem;
+  color: var(--muted-foreground);
+  font: 500 0.72rem/1.4 var(--font-mono);
+  letter-spacing: 0.14em;
+}
+
+.skills-series-heading {
+  margin: 0 0 0.9rem;
   color: var(--foreground);
   font: 600 1rem/1.3 var(--font-sans);
   letter-spacing: -0.01em;
 }
 
-.skills-ledger-list {
+.skills-plates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.skills-ledger-row {
+@media (max-width: 1100px) {
+  .skills-plates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .skills-plates {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skills-plate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.8rem 0.95rem 0.85rem;
+  border: 1px solid var(--journey-rule);
+  border-radius: 2px;
+  background: transparent;
+  /* The deal-in writes transform + opacity inline (motion); the plate
+     keeps its own will-change so the compositor stays on the transform. */
+  will-change: transform, opacity;
+}
+
+.skills-plate-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem 0;
-  border-top: 1px solid var(--journey-rule);
+  margin: 0 0 0.35rem;
 }
 
-.skills-ledger-row:last-child {
-  border-bottom: 1px solid var(--journey-rule);
-}
-
-.skills-ledger-name {
-  color: var(--foreground);
-  font: 500 0.95rem/1.4 var(--font-sans);
-}
-
-.skills-ledger-note {
-  flex: none;
-  max-width: 55%;
-  text-align: right;
+.skills-plate-index {
   color: var(--muted-foreground);
-  font: 400 0.85rem/1.4 var(--font-sans);
+  font: 500 0.72rem/1.4 var(--font-mono);
+  letter-spacing: 0.12em;
 }
 
-a.skills-ledger-note {
+.skills-plate-mark {
+  color: var(--muted-foreground);
+  font: 400 0.85rem/1 var(--font-mono);
+}
+
+.skills-plate-name,
+.skills-plate-skill {
+  color: var(--foreground);
+  font: 600 1.02rem/1.35 var(--font-sans);
+  letter-spacing: -0.01em;
+}
+
+.skills-plate-note {
+  color: var(--muted-foreground);
+  font: 400 0.85rem/1.45 var(--font-sans);
+}
+
+a.skills-plate-note {
   text-decoration: underline;
   text-underline-offset: 3px;
   /* WCAG 2.5.8 (run-3 iter 17 census): the note text is 19px tall, so
      expand the hit area to 24px with padding and neutralize the visual
-     shift with a matching negative margin (the iter-43 pattern; the row
-     is flex, so the link is blockified and both apply). */
+     shift with a matching negative margin (the iter-43 pattern). */
   padding-block: 2.5px;
   margin-block: -2.5px;
 }
 
-/* Skill → work highlight (run-3 iter 7): the hint and active lines span
-   the ledger grid; linked skill names use the same quiet underline as the
-   hero signal links, so the rows still read as facts, not buttons. */
-.skills-ledger-hint,
-.skills-ledger-active {
-  grid-column: 1 / -1;
-  margin: 0;
+/* Skill → work highlight (run-3 iter 7): the hint and active lines sit
+   above the catalog; linked skill names use the same quiet underline as
+   the hero signal links, so the plates still read as facts, not buttons. */
+.skills-catalog-hint,
+.skills-catalog-active {
+  margin: 0 0 1.75rem;
 }
 
-.skills-ledger-hint {
+.skills-catalog-hint {
   color: var(--muted-foreground);
   font: 400 0.85rem/1.4 var(--font-sans);
 }
 
-.skills-ledger-active {
+.skills-catalog-active {
   color: var(--foreground);
   font: 400 0.9rem/1.4 var(--font-sans);
 }
 
-.skills-ledger-clear {
+.skills-catalog-clear {
   /* WCAG 2.5.8 (run-3 iter 17 census): the text is 20.2px tall, so expand
      the hit area to 24px with padding and neutralize the visual shift with
      a matching negative margin (the iter-43 rail-utility pattern). */
@@ -2774,7 +2808,7 @@ a.skills-ledger-note {
   text-underline-offset: 0.22em;
 }
 
-.skills-ledger-skill {
+.skills-plate-skill {
   /* WCAG 2.5.8 (run-3 iter 17 census): the text is 21.3px tall and the
      shortest name ("Git") 20.5px wide, so expand the hit area past 24px
      on both axes with padding and neutralize the visual shift with
@@ -2785,8 +2819,6 @@ a.skills-ledger-note {
   margin-inline: -2px;
   border: 0;
   background: none;
-  color: var(--foreground);
-  font: 500 0.95rem/1.4 var(--font-sans);
   cursor: pointer;
   text-align: left;
   text-decoration: underline;
@@ -2796,13 +2828,38 @@ a.skills-ledger-note {
   transition: text-decoration-color 150ms ease-out;
 }
 
-.skills-ledger-skill:hover,
-.skills-ledger-skill[aria-pressed="true"] {
+.skills-plate-skill:hover,
+.skills-plate-skill[aria-pressed="true"] {
   text-decoration-color: currentColor;
 }
 
-.skills-ledger-skill[aria-pressed="true"] {
+.skills-plate-skill[aria-pressed="true"] {
   color: var(--portfolio-accent);
+}
+
+/* Active plate (run-9 iter 6): the 60fps coachmark border pulse — a
+   breathing accent ring around the highlighted skill, so the highlight
+   is visible at a glance. Reduced motion: static accent border only. */
+.skills-plate--active {
+  border-color: color-mix(in srgb, var(--portfolio-accent) 65%, transparent);
+  animation: skills-plate-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skills-plate-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--portfolio-accent) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--portfolio-accent) 12%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skills-plate--active {
+    animation: none;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--portfolio-accent) 35%, transparent);
+  }
 }
 
 /* Highlighted work rows + tech: an accent outline on the row, accent
@@ -3826,3 +3883,4 @@ html.dark .plain-backdrop {
     break-inside: avoid;
   }
 }
+
