@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 
+import { BlueprintField } from "@/components/effects/blueprint-field";
 import { NotFoundGhostFigure } from "@/components/sections/not-found-figure";
 import { PaperActionPlate } from "@/components/sections/paper-action-plate";
+import {
+  NotFoundSpreadMeasure,
+  NotFoundTearEdge,
+} from "@/components/sections/not-found-spread";
 
 export const metadata: Metadata = {
   title: "404 — segment not found",
@@ -18,16 +23,32 @@ export const metadata: Metadata = {
  * root layout (skip link + theme providers). One status line, one plain
  * sentence, two ways out — same as before, in the site's new drafting
  * language. The terminal flyout itself is untouched (frozen).
+ *
+ * Run-9 RUN9-404-SPREAD: the lone plate becomes a full missing-sheet
+ * spread — the BlueprintField canvas mounts behind it (notfound chapter,
+ * ruled paper; the sheet marks itself as the measured column), the sheet
+ * goes wide so the ghost figure reads at full-bleed scale, an oversized
+ * exterior dimension line measures the figure above it, and the bottom
+ * border is replaced by a torn-sheet edge.
  */
 export default function NotFound() {
   return (
-    <main id="main-content" tabIndex={-1} className="not-found-sheet">
-      <div className="journey-sheet-head not-found-sheet-head">
-        <span>Drawing — Sheet not on file</span>
-        <span>Rev —</span>
-      </div>
-      <h1 className="not-found-status">404 — Sheet not found</h1>
-      <NotFoundGhostFigure />
+    <>
+      <BlueprintField />
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="not-found-sheet"
+        data-light-chapter="notfound"
+        data-blueprint-column
+      >
+        <div className="journey-sheet-head not-found-sheet-head">
+          <span>Drawing — Sheet not on file</span>
+          <span>Rev —</span>
+        </div>
+        <h1 className="not-found-status">404 — Sheet not found</h1>
+        <NotFoundSpreadMeasure />
+        <NotFoundGhostFigure />
       <p className="journey-pub-fig-caption not-found-ghost-caption">
         Fig. — · No drawing on file
       </p>
@@ -65,6 +86,8 @@ export default function NotFound() {
           Berat
         </div>
       </footer>
+      <NotFoundTearEdge />
     </main>
+    </>
   );
 }

@@ -71,6 +71,7 @@ export function NotFoundGhostFigure() {
       >
         {/* Diagonal cross — the void, drawn corner to corner. */}
         <motion.line
+          className="not-found-ghost-diagonal"
           x1="0"
           y1="0"
           x2="640"
@@ -85,6 +86,7 @@ export function NotFoundGhostFigure() {
           }}
         />
         <motion.line
+          className="not-found-ghost-diagonal"
           x1="640"
           y1="0"
           x2="0"

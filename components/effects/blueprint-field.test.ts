@@ -31,9 +31,17 @@ describe("getBlueprintProfile", () => {
       "skills",
       "contact",
       "epilogue",
+      "notfound",
     ]) {
       expect(BLUEPRINT_PROFILES[name].majorOnly).toBe(true);
     }
+  });
+
+  it("returns the missing-sheet profile for the 404 chapter", () => {
+    expect(getBlueprintProfile("notfound")).toEqual(
+      BLUEPRINT_PROFILES.notfound,
+    );
+    expect(BLUEPRINT_PROFILES.notfound.angle).toBe(-3);
   });
 });
 

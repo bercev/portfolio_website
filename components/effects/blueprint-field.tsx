@@ -76,6 +76,12 @@ export const BLUEPRINT_PROFILES: Record<string, BlueprintProfile> = {
   skills: { angle: 0, cell: 20, gridAlpha: 1.1, dotRadius: 2.2, dotAlpha: 1.2, veil: 0.2, majorOnly: true },
   contact: { angle: -5, cell: 30, gridAlpha: 0.85, dotRadius: 1.5, dotAlpha: 0.9, veil: 0.26, majorOnly: true },
   epilogue: { angle: 0, cell: 26, gridAlpha: 0.8, dotRadius: 1.4, dotAlpha: 0.9, veil: 0.28, majorOnly: true },
+  /**
+   * The 404 missing sheet (run-9 RUN9-404-SPREAD): ruled paper like the
+   * other sheets — the page is sparse, so the fine mesh would dissolve
+   * behind the sheet and the field is where the grid must read.
+   */
+  notfound: { angle: -3, cell: 28, gridAlpha: 1, dotRadius: 1.6, dotAlpha: 1, veil: 0.2, majorOnly: true },
 };
 
 export function getBlueprintProfile(name: string | null): BlueprintProfile {
