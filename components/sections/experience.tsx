@@ -7,7 +7,7 @@ import type { PortfolioContent } from "@/data/content";
 
 import { roleAnchorId } from "@/lib/role-anchor";
 import { Station } from "@/components/ui/station";
-import { TechPills } from "@/components/ui/tech-pills";
+import { TechPills, techTapeLegend } from "@/components/ui/tech-pills";
 import { RevisionMark } from "@/components/sections/experience-revision";
 import {
   dispatchSkillHighlight,
@@ -128,7 +128,9 @@ export function Experience({ content, heading, skillNames }: ExperienceProps) {
                 technologies={experience.technologies}
                 marquee={index === 0}
                 linkedNames={index === 0 ? undefined : skillNames}
-                tape={index === 0}
+                tape
+                tapeLegend={techTapeLegend(index)}
+                tapePrefix="EX"
                 tapeEntered={index === 0 ? tapeEntered : undefined}
               />
             </div>

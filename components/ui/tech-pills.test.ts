@@ -1,6 +1,32 @@
 import { describe, expect, it } from "vitest";
 
-import { expTapePartLabel, expTapePopDelay } from "./tech-pills";
+import {
+  expTapePartLabel,
+  expTapePopDelay,
+  techTapeLegend,
+  techTapePartLabel,
+} from "./tech-pills";
+
+describe("techTapePartLabel", () => {
+  it("numbers the parts with the given prefix in order", () => {
+    expect(techTapePartLabel("PR", 0, 5)).toBe("PR-01");
+    expect(techTapePartLabel("PR", 1, 5)).toBe("PR-02");
+    expect(techTapePartLabel("PR", 4, 5)).toBe("PR-05");
+  });
+
+  it("wraps at the tech count and is PR-01 when there are none", () => {
+    expect(techTapePartLabel("PR", 5, 5)).toBe("PR-01");
+    expect(techTapePartLabel("PR", 3, 0)).toBe("PR-01");
+  });
+});
+
+describe("techTapeLegend", () => {
+  it("numbers the tapes 01… per section row", () => {
+    expect(techTapeLegend(0)).toBe("STACK — TAPE 01");
+    expect(techTapeLegend(1)).toBe("STACK — TAPE 02");
+    expect(techTapeLegend(3)).toBe("STACK — TAPE 04");
+  });
+});
 
 describe("expTapePartLabel", () => {
   it("numbers the parts EX-01… in order", () => {

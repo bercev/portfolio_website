@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BLUEPRINT_PROFILES,
+  calmGradientStops,
   getBlueprintProfile,
   lerpBlueprintProfile,
 } from "./blueprint-field";
@@ -87,5 +88,42 @@ describe("lerpBlueprintProfile", () => {
         1,
       ),
     ).toEqual(BLUEPRINT_PROFILES.skills);
+  });
+});
+
+describe("calmGradientStops", () => {
+  it("matches the settled desktop geometry", () => {
+    const stops = calmGradientStops(120, 1320, 1440);
+    expect(stops).toHaveLength(6);
+    expect(stops[0]).toBe(0);
+    expect(stops[1]).toBe(0);
+    expect(stops[2]).toBeCloseTo(120 / 1440, 10);
+    expect(stops[3]).toBeCloseTo(1320 / 1440, 10);
+    expect(stops[4]).toBe(1);
+    expect(stops[5]).toBe(1);
+  });
+
+  it("clamps the collapsed-viewport geometry that threw offset 16", () => {
+    // 1×1 transient viewport during a full-page screenshot: the column
+    // keeps its min-content width while W is 1, so colR / W is 16.
+    const stops = calmGradientStops(0, 16, 1);
+    expect(stops).toEqual([0, 0, 0, 1, 1, 1]);
+  });
+
+  it("stays in [0, 1] and non-decreasing for degenerate geometry", () => {
+    for (const [colL, colR, width] of [
+      [-500, 200, 1440],
+      [1500, 900, 1440],
+      [0, 0, 0],
+      [100, 50, -20],
+    ] as const) {
+      const stops = calmGradientStops(colL, colR, width);
+      expect(stops).toHaveLength(6);
+      for (let i = 0; i < stops.length; i += 1) {
+        expect(stops[i]).toBeGreaterThanOrEqual(0);
+        expect(stops[i]).toBeLessThanOrEqual(1);
+        if (i > 0) expect(stops[i]).toBeGreaterThanOrEqual(stops[i - 1]);
+      }
+    }
   });
 });

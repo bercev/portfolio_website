@@ -16,7 +16,7 @@ import { flushSync } from "react-dom";
 
 import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
-import { TechPills } from "@/components/ui/tech-pills";
+import { TechPills, techTapeLegend } from "@/components/ui/tech-pills";
 import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
 import type { Project } from "@/data/content";
 import { isProjectHash, projectAnchorId } from "@/lib/project-anchor";
@@ -341,6 +341,9 @@ export function CaseStudyRow({
               <TechPills
                 technologies={project.technologies}
                 linkedNames={skillNames}
+                tape
+                tapeLegend={techTapeLegend(index)}
+                tapePrefix="PR"
               />
             </span>
             {project.caseStudy ? <FoldTab open={open} /> : null}

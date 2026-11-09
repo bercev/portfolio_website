@@ -2387,6 +2387,127 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--foreground);
 }
 
+/* Static measuring tape (run-9 iter 29, RUN9-TECH-TAPE): the same
+   drawing-set steel tape as the featured experience marquee, for the
+   static stack rows — experience rows 2–4 and both project sheets.
+   No marquee: the strip is still, the tags pop in on first view
+   (self-latched per row), and the tick rules draw across on entry.
+   Linked pills keep their reverse-navigation click delegation — only
+   their dress changes. */
+.tech-tape {
+  border-top: 1px solid var(--journey-rule);
+  border-bottom: 1px solid var(--journey-rule);
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+}
+
+.tech-tape .tech-pills {
+  position: relative;
+  padding: 0.45rem 0;
+}
+
+/* Tick rules across the top edge of the strip: minor every 8px (7px
+   tall), major every 40px (14px tall), same frost-survival calibration
+   as the skill tape (42%/65%). They draw in (scaleX) on entry; the
+   static variants show them settled. */
+.tech-tape .tech-pills::before,
+.tech-tape .tech-pills::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.tech-tape .tech-pills::before {
+  height: 7px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--foreground) 42%, transparent) 0 1px,
+    transparent 1px 8px
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.tech-tape .tech-pills::after {
+  height: 14px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--foreground) 65%, transparent) 0 1px,
+    transparent 1px 40px
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.tech-tape--in .tech-pills::before,
+.tech-tape--in .tech-pills::after {
+  transform: scaleX(1);
+  transition: transform 0.6s ease-out;
+}
+
+/* Engraved tags: mono, foreground ink, bordered plate on the tape face.
+   The negative margin-block of the base pill (the 24px click-target
+   trick) is reset: the tape's border + padding set its own box. */
+.tech-tape .tech-pill {
+  padding: 0.3rem 0.55rem;
+  margin-block: 0;
+  border: 1px solid var(--journey-rule);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  color: var(--foreground);
+  font: 500 0.85rem/1.2 var(--font-mono);
+  letter-spacing: 0;
+}
+
+.tech-tape .tech-pill-icon {
+  color: var(--foreground);
+}
+
+.tech-tape-num {
+  /* --accent-neon, not --accent: --accent is #7dd3fc at 14% alpha
+     (a wash for fills), which renders the 11px numeral nearly
+     invisible; the neon token is the solid bright cyan. */
+  color: var(--accent-neon);
+  font: 600 0.7rem/1.2 var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.tech-tape--in .tech-pill {
+  animation: skill-tape-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+
+/* Tape legend: the stack line above the strip, mono uppercase. */
+.tech-tape-legend {
+  margin: 0 0 0.35rem;
+  font: 600 0.7rem/1.5 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.tech-tape-legend::before {
+  content: "+ ";
+  color: var(--foreground);
+}
+
+/* Static tape under reduced motion: ticks drawn, tags static. This
+   block MUST sit after the .tech-tape base rules above — the early
+   reduced-motion block loses the cascade to them (same-specificity
+   base rules come later in the file), which left unentered tapes
+   tick-less under RM in round 1. */
+@media (prefers-reduced-motion: reduce) {
+  .tech-tape .tech-pills::before,
+  .tech-tape .tech-pills::after {
+    transform: none;
+  }
+
+  .tech-tape--in .tech-pill {
+    animation: none;
+  }
+}
+
 /* Run-6 RUN6-PILLS (reel 1): tech stacks are quiet text, not pill
    chrome — no border, background, or capsule radius. Class names are
    kept: e2e locators, the skill→work data-tech delegation, and the
@@ -4788,11 +4909,14 @@ html.dark .plain-backdrop {
 /* The blueprint print renders the tape settled: ticks drawn, tags static
    (the entry latch may never fire in the static print render). */
 [data-plain-root] .exp-tape .tech-pills::before,
-[data-plain-root] .exp-tape .tech-pills::after {
+[data-plain-root] .exp-tape .tech-pills::after,
+[data-plain-root] .tech-tape .tech-pills::before,
+[data-plain-root] .tech-tape .tech-pills::after {
   transform: none;
 }
 
-[data-plain-root] .exp-tape--in .tech-pill {
+[data-plain-root] .exp-tape--in .tech-pill,
+[data-plain-root] .tech-tape--in .tech-pill {
   animation: none;
 }
 
@@ -5124,11 +5248,14 @@ html.dark .plain-backdrop {
   /* The tape prints settled: ticks drawn, tags static — otherwise a
      print snapshot could freeze the pills mid-pop at opacity 0. */
   .exp-tape .tech-pills::before,
-  .exp-tape .tech-pills::after {
+  .exp-tape .tech-pills::after,
+  .tech-tape .tech-pills::before,
+  .tech-tape .tech-pills::after {
     transform: none;
   }
 
-  .exp-tape--in .tech-pill {
+  .exp-tape--in .tech-pill,
+  .tech-tape--in .tech-pill {
     animation: none;
   }
 

@@ -146,6 +146,47 @@ const BREATHE_PERIOD_S = 7;
  */
 const MAJOR_ONLY_ALPHA_BOOST = 2.4;
 
+/**
+ * Column-calm gradient stops (run-9 iter 29): the feathered background
+ * wash over the text zone — transparent at the outer edges, full calm
+ * over the column, feathered by `feather` px on each side.
+ *
+ * The stops MUST stay inside [0, 1] and non-decreasing, or
+ * CanvasGradient.addColorStop throws and the whole draw aborts. The
+ * naive half-clamps (`Math.max(0, colR / W)` with no upper clamp,
+ * `Math.min(1, colL / W)` with no lower clamp) threw exactly that —
+ * offset 16, twice per draw — when the viewport transiently collapsed
+ * to 1×1 during a full-page screenshot: the measured column keeps its
+ * min-content width (~16px) while W is 1, so colR / W is 16. Clamp
+ * every stop to [0, 1] and enforce monotonicity with a running max, so
+ * any transient geometry (collapsed viewport, stale column measure,
+ * colL > colR) yields a valid gradient instead of a pageerror.
+ */
+export function calmGradientStops(
+  colL: number,
+  colR: number,
+  width: number,
+  feather: number = FEATHER,
+): readonly number[] {
+  if (!(width > 0)) return [0, 0, 0, 1, 1, 1];
+  const raw = [
+    0,
+    (colL - feather) / width,
+    colL / width,
+    colR / width,
+    (colR + feather) / width,
+    1,
+  ];
+  const stops: number[] = [];
+  let prev = 0;
+  for (const v of raw) {
+    const clamped = Math.min(1, Math.max(0, v));
+    prev = Math.max(prev, clamped);
+    stops.push(prev);
+  }
+  return stops;
+}
+
 export function BlueprintField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
@@ -359,12 +400,13 @@ export function BlueprintField() {
       // 5. Column calm — feathered background wash over the text zone.
       const grad = ctx.createLinearGradient(0, 0, W, 0);
       const calmA = 0.32 * (light ? 0.7 : 1) * (W < 700 ? 0.3 : 1);
-      grad.addColorStop(0, rgba(bg, 0));
-      grad.addColorStop(Math.max(0, (colL - FEATHER) / W), rgba(bg, 0));
-      grad.addColorStop(Math.min(1, colL / W), rgba(bg, calmA));
-      grad.addColorStop(Math.max(0, colR / W), rgba(bg, calmA));
-      grad.addColorStop(Math.min(1, (colR + FEATHER) / W), rgba(bg, 0));
-      grad.addColorStop(1, rgba(bg, 0));
+      const calmStops = calmGradientStops(colL, colR, W);
+      grad.addColorStop(calmStops[0], rgba(bg, 0));
+      grad.addColorStop(calmStops[1], rgba(bg, 0));
+      grad.addColorStop(calmStops[2], rgba(bg, calmA));
+      grad.addColorStop(calmStops[3], rgba(bg, calmA));
+      grad.addColorStop(calmStops[4], rgba(bg, 0));
+      grad.addColorStop(calmStops[5], rgba(bg, 0));
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
     };
