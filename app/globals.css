@@ -3710,23 +3710,119 @@ html[data-journey="active"] [data-hero-name-fallback] {
   color: var(--foreground);
 }
 
-/* The hero's single call to action: FROST text link, calm underline, ≤200ms feedback. */
+/* The hero's single call to action (run-9 RUN9-HERO-CTA-PLATE): a stamped
+ * drawing plate, not a bare text link — bordered plate, inner margin frame,
+ * sheet kicker, mono label, accent pen trace on load, 0.97 press. */
 [data-hero-cta] {
-  display: inline-block;
-  margin: 0.15rem 0 0;
-  font: 500 0.95rem/1.6 var(--font-sans);
-  letter-spacing: -0.01em;
-  color: var(--portfolio-accent);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.25em;
-  text-decoration-color: color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
-  transition: color 150ms ease-out, text-decoration-color 150ms ease-out;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin: 0.35rem 0 0;
+  padding: 0.5rem 1.15rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+  color: var(--foreground);
+  text-decoration: none;
+  transition:
+    border-color 200ms ease-out,
+    background-color 200ms ease-out,
+    transform 220ms ease-out;
+}
+
+[data-hero-cta]::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  pointer-events: none;
 }
 
 [data-hero-cta]:hover {
+  border-color: color-mix(in srgb, var(--foreground) 55%, transparent);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+}
+
+[data-hero-cta]:hover .hero-cta-arrow {
+  transform: translateY(2px);
+}
+
+[data-hero-cta]:active {
+  transform: scale(0.97);
+}
+
+[data-hero-cta]:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+
+.hero-cta-label {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
   color: var(--foreground);
-  text-decoration-color: currentColor;
+}
+
+.hero-cta-arrow {
+  display: inline-block;
+  color: var(--portfolio-accent);
+  transition: transform 200ms ease-out;
+}
+
+.hero-cta-trace {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-cta-trace svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-cta-trace rect {
+  fill: none;
+  stroke: var(--portfolio-accent);
+  stroke-width: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-hero-cta],
+  [data-hero-cta]:hover .hero-cta-arrow,
+  .hero-cta-arrow {
+    transition-duration: 0ms;
+  }
+
+  [data-hero-cta]:hover .hero-cta-arrow {
+    transform: none;
+  }
+}
+
+/* RUN9-HERO-CTA-PLATE round 2: at phone widths the plate stretches the
+   full content width so it reads as a thumb-sized control, not a
+   half-width island. The MagneticButton wrapper goes block so the
+   anchor's 100% width has something to fill; the drift still works. */
+@media (max-width: 560px) {
+  /* The wrap is a flex item of the lede (align-items: flex-start), so it
+     shrink-to-fits its content — the block/100% rules below only stretch
+     the plate if the wrap itself stretches first. */
+  [data-hero-cta-wrap] {
+    align-self: stretch;
+  }
+
+  [data-hero-cta-wrap] > div {
+    display: block;
+  }
+
+  [data-hero-cta] {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Case-study conversion line: same calm treatment as the hero CTA. */
@@ -3841,7 +3937,14 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 
   [data-hero-signals] {
-    margin-top: 1.75rem;
+    margin-top: 1rem;
+  }
+
+  /* RUN9-HERO-CTA-PLATE round 2: the plate's extra height vs the old text
+     link pushed the third signal row below the 844px fold on mobile — the
+     tighter stack + slimmer rows buy it back. */
+  [data-hero-signal] {
+    padding: 0.6rem 0;
   }
 }
 

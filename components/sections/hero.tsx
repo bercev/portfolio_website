@@ -9,6 +9,7 @@ import { HeroTaglineFlip } from "@/components/sections/hero-tagline-flip";
 import { useMotionPreference } from "@/components/providers/motion-provider";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { MagneticButton } from "@/components/ui/magnetic-button";
+import { HeroCtaPlate } from "@/components/sections/hero-cta-plate";
 import type { PortfolioContent } from "@/data/content";
 
 type HeroContent = {
@@ -154,8 +155,10 @@ export function Hero({ content }: { content: HeroContent }) {
               </motion.p>
             ) : null}
 
-            {/* One calm call to action: subtle magnetic drift + spring return (Aceternity
-                MagneticButton), held still under reduced motion. */}
+            {/* One call to action (run-9 RUN9-HERO-CTA-PLATE): a stamped
+                drawing plate — sheet kicker + mono label + pen trace on
+                load. Same anchor, same MagneticButton drift, same 0.21s
+                entrance stagger; held still under reduced motion. */}
             <motion.div
               data-hero-cta-wrap
               initial={reduceMotion ? false : { opacity: 0, y: 16 }}
@@ -163,9 +166,7 @@ export function Hero({ content }: { content: HeroContent }) {
               transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.21 }}
             >
               <MagneticButton strength={reduceMotion ? 0 : 0.22} maxDistance={36}>
-                <a href="#projects" className="cursor-target" data-hero-cta>
-                  See my work <span aria-hidden="true">↓</span>
-                </a>
+                <HeroCtaPlate />
               </MagneticButton>
             </motion.div>
           </div>
