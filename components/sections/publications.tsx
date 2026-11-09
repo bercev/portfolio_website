@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { PortfolioContent, Publication } from "@/data/content";
 
 import { paperAnchorId } from "@/lib/paper-anchor";
+import { CitationGallery } from "@/components/sections/citation-gallery";
 import { HoverPreview } from "@/components/ui/hover-preview";
 import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
 import { Station } from "@/components/ui/station";
@@ -94,6 +95,10 @@ function PublicationRow({
   // RUN8-R3-RESIDUAL: rows stagger 30ms apart (reel-4 rule 3).
   const revealRef = useDitherReveal<HTMLElement>(index * DITHER_ROW_STAGGER);
   const labels = plateLabels(index, total);
+  // RUN9-CITATION-GALLERY: the row's [links] control fans the paper's
+  // real links into a gallery strip beneath the row.
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const galleryId = `cite-gallery-${publication.slug}`;
   return (
     <article
       key={publication.href}
@@ -164,7 +169,29 @@ function PublicationRow({
         <div className="journey-pub-meta">
           <span className="journey-pub-date">{publication.date}</span>
           <CiteButton publication={publication} />
+          <button
+            type="button"
+            onClick={() => setGalleryOpen((value) => !value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && galleryOpen) {
+                event.preventDefault();
+                setGalleryOpen(false);
+              }
+            }}
+            className="journey-pub-links"
+            aria-expanded={galleryOpen}
+            aria-controls={galleryId}
+            title="Show the paper's links"
+          >
+            {galleryOpen ? "[links ↑]" : "[links ↓]"}
+          </button>
         </div>
+        <CitationGallery
+          publication={publication}
+          open={galleryOpen}
+          id={galleryId}
+          onRequestClose={() => setGalleryOpen(false)}
+        />
       </div>
     </article>
   );

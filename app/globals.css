@@ -1902,8 +1902,10 @@ html[data-journey] [data-effect-layer="background"] {
   text-wrap: pretty;
 }
 
-/* Terminal-style cite button: copies BibTeX, ClickSpark fires the burst. */
-.journey-pub-cite {
+/* Terminal-style cite button: copies BibTeX, ClickSpark fires the burst.
+   The [links] trigger shares the same mono bracket voice. */
+.journey-pub-cite,
+.journey-pub-links {
   margin-top: 4px;
   padding: 2px 0;
   border: 0;
@@ -1916,14 +1918,135 @@ html[data-journey] [data-effect-layer="background"] {
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
 }
 
-.journey-pub-cite:hover {
+.journey-pub-cite:hover,
+.journey-pub-links:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.journey-pub-cite:focus-visible {
+.journey-pub-cite:focus-visible,
+.journey-pub-links:focus-visible {
   outline: 2px solid var(--portfolio-accent);
   outline-offset: 2px;
+}
+
+/* Citation gallery (run-9 RUN9-CITATION-GALLERY): the [links] control
+   prints the paper's real links out and fans them into a horizontal
+   gallery strip beneath the row — the 60fps #2121 CRED Tickets Shuffle
+   in the drawing set's ticket language. The strip mounts on open, so
+   the fan-in is keyed to mount (motion, ~80ms stagger per card); the
+   status line ticks in above the strip. At phone widths the strip is a
+   horizontal scroll-snap gallery; print hides it (interactive chrome). */
+.journey-cite-gallery {
+  margin-top: 14px;
+}
+
+.journey-cite-gallery-status {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--portfolio-accent);
+  text-transform: uppercase;
+  /* The venue phrase wraps at phone widths — balance the lines so the
+     wrap never strands a lone word ("WORKSHOP" alone on line 2). */
+  text-wrap: balance;
+}
+
+.journey-cite-gallery-strip {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-cite-gallery-strip > li {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+}
+
+.journey-cite-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--foreground);
+  background: var(--card);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--foreground);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.journey-cite-card:hover {
+  border-color: var(--portfolio-accent);
+}
+
+.journey-cite-card:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+
+.journey-cite-card-num {
+  color: var(--portfolio-accent);
+  font-weight: 600;
+}
+
+.journey-cite-card-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journey-cite-card-arrow {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  transition: transform 180ms ease-out;
+}
+
+.journey-cite-card:hover .journey-cite-card-arrow {
+  transform: translate(1px, -1px);
+  color: var(--portfolio-accent);
+}
+
+.journey-cite-card-action {
+  margin-left: auto;
+  color: var(--portfolio-accent);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .journey-cite-gallery-strip {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 6px;
+    margin: 0 -2px;
+    padding: 2px 2px 6px;
+  }
+
+  /* 136px cards + 6px gaps + tighter tracking (round 3): the 132px
+     round-2 cards truncated "01 OPENREVIEW" by 1px and "04 BIBTEX" by
+     8px (probe: label scrollWidth > clientWidth). At 136px / 0.03em
+     tracking both fit with room to spare, and the third card's peek
+     still shows "03 PAPER" in full. */
+  .journey-cite-gallery-strip > li {
+    flex: 0 0 136px;
+    scroll-snap-align: start;
+  }
+
+  .journey-cite-card {
+    padding: 8px 10px;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+  }
 }
 
 /* ASCII Snake: playable terminal game in The Shipyard. */
@@ -5367,6 +5490,8 @@ html.dark .plain-backdrop {
   .skill-marquee,
   .journey-case-study-more,
   .journey-epilogue-stamp,
+  .journey-cite-gallery,
+  .journey-pub-links,
   /* Print record (run-4 iter 39): the skip link is position:fixed, and
      Chromium repeats fixed elements on every printed page — it leaked
      onto 12/16 pages of the v219 PDF and interleaved into reading order
