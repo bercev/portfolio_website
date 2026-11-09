@@ -7,6 +7,7 @@ import { portfolio, type Publication } from "@/data/content";
 
 import { BibtexBlock } from "./bibtex-block";
 import { getPaperSheet } from "./paper-sheet";
+import { PaperSignature } from "./paper-signature";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -78,7 +79,9 @@ export async function generateMetadata({
  * first page as a FIG. plate with a press-in venue stamp, and the BibTeX as
  * a tear-off citation slip, over a title-block footer. Metadata, JSON-LD,
  * and both links are unchanged; the stamp is the only motion on the page
- * (presses in on first view, settled under reduced motion).
+ * (presses in on first view, settled under reduced motion), plus the
+ * signature sign-off under the citation slip (draws in on first view,
+ * settled under reduced motion).
  */
 export default async function PublicationPage({
   params,
@@ -190,6 +193,7 @@ export default async function PublicationPage({
           <BibtexBlock bibtex={publication.bibtex} />
         </div>
       </section>
+      <PaperSignature />
       <footer className="journey-sheet-titleblock journey-pub-titleblock">
         <div>
           <span className="journey-sheet-titleblock-label">Paper</span>

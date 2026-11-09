@@ -2577,6 +2577,50 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
+/* Paper-page sign-off (run-9 RUN9-DETAIL-SIGNATURE): the signature draws
+   itself in under the citation slip — drafting-hand ink, never a font. */
+.journey-pub-signoff {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed
+    color-mix(in srgb, var(--foreground) 40%, transparent);
+}
+
+.journey-pub-signoff-kicker {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-signature {
+  display: block;
+  width: min(260px, 100%);
+  height: auto;
+  margin-top: 0.5rem;
+}
+
+.journey-pub-signature path {
+  fill: none;
+  stroke: var(--foreground);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.journey-pub-signoff-name {
+  margin: 0.35rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
 .journey-pub-titleblock {
   margin-top: 2.5rem;
 }
