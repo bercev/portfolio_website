@@ -2845,19 +2845,93 @@ html[data-journey] [data-effect-layer="background"] {
   margin-top: 1.75rem;
 }
 
-.journey-pub-page-action {
-  display: inline-block;
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--foreground);
+/* Stamped action plates (run-9 RUN9-PAPER-ACTIONS): the paper-page
+   actions and the 404 links share one plate — bordered plate + inner
+   margin frame, accent-neon numeral (presses in via motion), hairline
+   rule (draws via motion), arrow slides on hover, 0.97 press. */
+.paper-action-plate {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--foreground) 55%, transparent);
+  background: var(--card);
   font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--foreground);
   text-decoration: none;
+  transition:
+    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.journey-pub-page-action:hover {
-  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+.paper-action-plate::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+  pointer-events: none;
+}
+
+.paper-action-plate:hover {
+  border-color: var(--accent-neon);
+}
+
+.paper-action-plate:active {
+  transform: scale(0.97);
+}
+
+.paper-action-plate:focus-visible {
+  outline: 2px solid var(--accent-neon);
+  outline-offset: 2px;
+}
+
+.paper-action-plate-num {
+  color: var(--accent-neon);
+  font-weight: 700;
+}
+
+.paper-action-plate-arrow {
+  display: inline-block;
+  color: var(--accent-neon);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.paper-action-plate:hover .paper-action-plate-arrow--right {
+  transform: translateX(3px);
+}
+
+.paper-action-plate:hover .paper-action-plate-arrow--up-right {
+  transform: translate(2px, -2px);
+}
+
+.paper-action-plate:hover .paper-action-plate-arrow--down {
+  transform: translateY(3px);
+}
+
+.paper-action-plate:hover .paper-action-plate-arrow--left {
+  transform: translateX(-3px);
+}
+
+.paper-action-plate-rule {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.45rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--foreground) 35%, transparent);
+  transform-origin: left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-action-plate,
+  .paper-action-plate-arrow {
+    transition: none;
+  }
 }
 
 /* Citation slip (CRED ticket-slip transfer, run-9 iter 9 research): the
@@ -4210,31 +4284,11 @@ html[data-journey="active"] [data-hero-name-fallback] {
 .not-found-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.75rem;
+  gap: 0.75rem;
   margin-top: 0.25rem;
-}
-.not-found-link {
-  font: 500 0.95rem/1.6 var(--font-mono);
-  color: var(--portfolio-accent);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.25em;
-  text-decoration-color: color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
-  transition:
-    color 150ms cubic-bezier(0.16, 1, 0.3, 1),
-    text-decoration-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.not-found-link:hover {
-  color: var(--foreground);
-  text-decoration-color: currentColor;
 }
 .not-found-titleblock {
   margin-top: 0.5rem;
-}
-@media (prefers-reduced-motion: reduce) {
-  .not-found-link {
-    transition: none;
-  }
 }
 
 @media (max-width: 900px) {

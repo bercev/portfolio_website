@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+
+import { PaperActionPlate } from "@/components/sections/paper-action-plate";
 
 export const metadata: Metadata = {
   title: "404 — segment not found",
@@ -33,12 +34,21 @@ export default function NotFound() {
         This address doesn&rsquo;t resolve to anything here.
       </p>
       <nav aria-label="Where to go from here" className="not-found-nav">
-        <Link href="/" className="not-found-link">
-          &larr; back home
-        </Link>
-        <Link href="/#contact" className="not-found-link">
-          get in touch &rarr;
-        </Link>
+        <PaperActionPlate
+          href="/"
+          index={0}
+          label="back home"
+          arrow="←"
+          arrowPosition="before"
+          arrowDirection="left"
+        />
+        <PaperActionPlate
+          href="/#contact"
+          index={1}
+          label="get in touch"
+          arrow="→"
+          arrowDirection="right"
+        />
       </nav>
       <footer className="journey-sheet-titleblock not-found-titleblock">
         <div>

@@ -8,6 +8,7 @@ import { BibtexBlock } from "./bibtex-block";
 import { getPaperSheet } from "./paper-sheet";
 import { PaperFigure } from "./paper-figure";
 import { PaperSignature } from "./paper-signature";
+import { PaperActionPlate } from "@/components/sections/paper-action-plate";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -163,15 +164,21 @@ export default async function PublicationPage({
         <p className="journey-pub-page-abstract">{publication.gloss}</p>
       </section>
       <div className="journey-pub-page-actions">
-        <a href={publication.href} className="journey-pub-page-action">
-          Read the paper
-        </a>
-        <a
+        <PaperActionPlate
+          href={publication.href}
+          index={0}
+          label="Read the paper"
+          arrow="↗"
+          arrowDirection="up-right"
+        />
+        <PaperActionPlate
           href={publication.pdfUrl}
-          className="journey-pub-pdf-link journey-pub-page-action"
-        >
-          Download PDF
-        </a>
+          index={1}
+          label="Download PDF"
+          arrow="↓"
+          arrowDirection="down"
+          className="journey-pub-pdf-link"
+        />
       </div>
       <section aria-labelledby="cite" className="journey-pub-page-section">
         <h2 id="cite" className="journey-pub-page-h2">
