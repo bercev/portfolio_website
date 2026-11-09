@@ -130,23 +130,60 @@ function resolveLightAccent(palette: string): RGB {
 }
 
 describe("design-token contrast", () => {
-  it("keeps the contact-form placeholder at 4.5:1 on the dark input", () => {
-    const placeholder = parseRgba(
-      decl(blockOf(/\.journey-contact-form-input::placeholder\s*\{([^}]*)\}/), "color"),
+  it("keeps the contact-form placeholder at 4.5:1 on the ledger-line sheet face", () => {
+    // RUN9-FORM-CONTROLS: the input is a transparent ledger line now, so
+    // the placeholder sits on the form sheet face — color-mix(var(--card)
+    // 78%, transparent) over the page background — in every theme. The
+    // placeholder itself is color-mix(var(--muted-foreground) 85%,
+    // transparent). Resolve both mixes per theme and check the composite.
+    const placeholderDecl = decl(
+      blockOf(/\.journey-contact-form-input::placeholder\s*\{([^}]*)\}/),
+      "color",
     );
-    const inputBg = parseRgba(
-      decl(blockOf(/\.journey-contact-form-input\s*\{([^}]*)\}/), "background"),
+    const phMix =
+      /color-mix\(\s*in srgb\s*,\s*var\(--muted-foreground\)\s*([\d.]+)%\s*,\s*transparent\s*\)/.exec(
+        placeholderDecl,
+      );
+    if (!phMix) {
+      throw new Error(
+        `contrast guard: unrecognized placeholder color-mix: ${placeholderDecl}`,
+      );
+    }
+    const phAlpha = Number(phMix[1]) / 100;
+    const formDecl = decl(
+      blockOf(/\.journey-contact-form\s*\{([^}]*)\}/),
+      "background",
     );
-    // The input is near-opaque dark in both modes; check it against both
-    // dark page surfaces it can composite over.
-    const surfaces = [
-      hexToRgb(decl(blockOf(/html\[data-ascii="active"\]\s*\{([^}]*)\}/), "--background")),
-      hexToRgb(decl(blockOf(/\.dark\s*\{([^}]*)\}/), "--background")),
+    const formMix =
+      /color-mix\(\s*in srgb\s*,\s*var\(--card\)\s*([\d.]+)%\s*,\s*transparent\s*\)/.exec(
+        formDecl,
+      );
+    if (!formMix) {
+      throw new Error(
+        `contrast guard: unrecognized form background color-mix: ${formDecl}`,
+      );
+    }
+    const cardAlpha = Number(formMix[1]) / 100;
+    const themes = [
+      { name: "light", selector: /:root\s*\{([^}]*)\}/ },
+      { name: "dark", selector: /\.dark\s*\{([^}]*)\}/ },
+      { name: "ascii", selector: /html\[data-ascii="active"\]\s*\{([^}]*)\}/ },
     ];
-    for (const surface of surfaces) {
-      const filled = composite(inputBg.rgb, inputBg.alpha, surface);
-      const ratio = contrast(composite(placeholder.rgb, placeholder.alpha, filled), filled);
-      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    for (const { name, selector } of themes) {
+      const themeBlock = blockOf(selector);
+      const muted = hexToRgb(decl(themeBlock, "--muted-foreground"));
+      const bg = hexToRgb(decl(themeBlock, "--background"));
+      const cardDecl = decl(themeBlock, "--card");
+      const card = cardDecl.startsWith("#")
+        ? { rgb: hexToRgb(cardDecl), alpha: 1 }
+        : parseRgba(cardDecl);
+      const face = composite(card.rgb, card.alpha * cardAlpha, bg);
+      const text = composite(muted, phAlpha, face);
+      const ratio = contrast(text, face);
+      expect(
+        ratio,
+        `placeholder on sheet face (${name})`,
+      ).toBeGreaterThanOrEqual(4.5);
     }
   });
 

@@ -17,6 +17,7 @@ import {
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 import { ContactEcg } from "./contact-ecg";
+import { contactTopicTab } from "@/lib/contact-form-controls";
 
 type Status = "idle" | "sending" | "sent" | "error";
 type FieldName = "name" | "email" | "message";
@@ -320,7 +321,7 @@ export function ContactForm() {
           Topic
         </span>
         <span className="journey-contact-form-topic-row">
-          {CONTACT_TOPICS.map((topic) => (
+          {CONTACT_TOPICS.map((topic, index) => (
             <button
               key={topic.label}
               type="button"
@@ -333,6 +334,12 @@ export function ContactForm() {
               }}
               className="journey-contact-form-topic-chip"
             >
+              <span
+                className="journey-contact-form-topicnum"
+                aria-hidden="true"
+              >
+                {contactTopicTab(index)}
+              </span>
               {topic.label}
             </button>
           ))}
