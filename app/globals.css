@@ -2862,6 +2862,85 @@ a.skills-plate-note {
   }
 }
 
+/* About as field notes + title block (run-9 iter 7, RUN9-SECTION-IDENTITIES,
+   fifth slice: About). The bio becomes numbered field notes — a mono
+   numeral in the left margin that presses in, a hairline rule that draws
+   across the top of each note — and the education rail becomes a bordered
+   title block. Same 220ms press / 0.5s rule-draw language as the
+   experience revision marks, so the section identities read as one
+   drawing set. */
+.journey-about-notes-head {
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--journey-rule);
+  font: 600 0.7rem/1.5 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-about-note {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: 0 1rem;
+}
+
+.journey-about-note-num {
+  display: block;
+  padding-top: 0.4rem;
+  font: 600 0.8rem/1.5 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--portfolio-accent);
+}
+
+.journey-about-note-body {
+  min-width: 0;
+}
+
+.journey-about-note-rule {
+  display: block;
+  height: 1px;
+  margin-bottom: 0.85rem;
+  background: var(--journey-rule);
+  transform-origin: left center;
+}
+
+.journey-about-titleblock {
+  border: 1px solid var(--journey-rule);
+  padding: 0.9rem 1rem 1rem;
+}
+
+.journey-about-titleblock-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--journey-rule);
+}
+
+.journey-about-titleblock-mark {
+  font: 600 0.9rem/1 var(--font-mono);
+  color: var(--portfolio-accent);
+}
+
+.journey-about-titleblock-foot {
+  margin: 1rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--journey-rule);
+  font: 500 0.65rem/1.6 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 700px) {
+  .journey-about-note {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    gap: 0 0.75rem;
+  }
+}
+
 /* Highlighted work rows + tech: an accent outline on the row, accent
    text + underline for the exact matching tech (run-6: no pill fill) —
    nothing is hidden. */
