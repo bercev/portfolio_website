@@ -1967,13 +1967,46 @@ html[data-journey] [data-effect-layer="background"] {
   border-bottom: 0;
 }
 
-.journey-xp-outboard {
+/* Revision log: the REV column replaces the bare date outboard — letter,
+   rule, dates stacked in the same 2-column rail. */
+.journey-xp-rev {
   grid-column: 1 / span 2;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0;
+  gap: 6px;
   padding-top: 8px;
+}
+
+.journey-xp-rev-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.journey-xp-rev-tag {
+  font: 500 10px/1.4 var(--font-sans);
+  letter-spacing: 0.14em;
+  color: var(--muted-foreground);
+}
+
+.journey-xp-rev-letter {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--foreground);
+}
+
+/* Short accent rule under the letter; motion draws it scaleX 0→1. */
+.journey-xp-rev-rule {
+  display: block;
+  width: 44px;
+  height: 2px;
+  margin-top: 8px;
+  background: var(--portfolio-accent);
+  transform-origin: left center;
 }
 
 /* Indented past the date rail but closing on the same line as every other
@@ -1991,7 +2024,7 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 @media (max-width: 900px) {
-  .journey-xp-outboard,
+  .journey-xp-rev,
   .journey-xp-main,
   .journey-xp-stack {
     grid-column: 1 / -1;
@@ -2036,6 +2069,50 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-xp-summary .journey-xp-insight {
   font-weight: 700;
   color: var(--foreground);
+}
+
+/* Revision-table chrome: column labels aligned to the rows' subgrid
+   columns, over a stronger rule than the row separators. */
+.journey-xp-loghead {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--journey-rule);
+  font: 500 11px/1.5 var(--font-sans);
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+}
+
+.journey-xp-loghead-rev {
+  grid-column: 1 / span 2;
+}
+
+.journey-xp-loghead-role {
+  grid-column: 3 / span 5;
+}
+
+.journey-xp-loghead-stack {
+  grid-column: 9 / span 4;
+}
+
+/* Title-block footer for the revision table. */
+.journey-xp-logfoot {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--journey-rule-soft);
+  font: 500 11px/1.5 var(--font-sans);
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+}
+
+/* The stacked mobile rows have no columns for the labels to align to, so
+   the header strip hides there. This must sit AFTER the loghead's own
+   display:grid rule (same specificity — later wins). */
+@media (max-width: 900px) {
+  .journey-xp-loghead {
+    display: none;
+  }
 }
 
 .tech-pills-marquee {

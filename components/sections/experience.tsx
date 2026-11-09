@@ -7,6 +7,7 @@ import type { PortfolioContent } from "@/data/content";
 import { roleAnchorId } from "@/lib/role-anchor";
 import { Station } from "@/components/ui/station";
 import { TechPills } from "@/components/ui/tech-pills";
+import { RevisionMark } from "@/components/sections/experience-revision";
 import {
   dispatchSkillHighlight,
   resolveSkillParam,
@@ -64,9 +65,21 @@ export function Experience({ content, heading, skillNames }: ExperienceProps) {
     <Station
       id="experience"
       heading={heading}
+      note="Latest first"
       className="journey-station--systems"
     >
+      {/* Revision-table header strip — the ledger's column labels, aligned
+          to the rows' subgrid columns (REV / role / stack). Aria-hidden
+          chrome: the rows themselves carry the real content. */}
       <div className="journey-rail-list journey-ledger">
+        <div
+          className="journey-xp-loghead"
+          aria-hidden="true"
+        >
+          <span className="journey-xp-loghead-rev">REV</span>
+          <span className="journey-xp-loghead-role">ROLE — DESCRIPTION</span>
+          <span className="journey-xp-loghead-stack">STACK</span>
+        </div>
         {content.map((experience, index) => (
           <article
             key={`${experience.role}-${experience.dates}`}
@@ -81,7 +94,12 @@ export function Experience({ content, heading, skillNames }: ExperienceProps) {
             }
             onClick={index === 0 ? undefined : handleRowClick}
           >
-            <div className="journey-xp-outboard">
+            {/* Revision mark replaces the bare date outboard: the REV
+                letter (newest = highest letter, see experience-revision)
+                presses in, a short accent rule draws under it, and the
+                date range sits below — one scannable revision entry. */}
+            <div className="journey-xp-rev">
+              <RevisionMark index={index} total={content.length} />
               <span className="journey-xp-when">{experience.dates}</span>
             </div>
             <div className="journey-xp-main">
@@ -103,6 +121,11 @@ export function Experience({ content, heading, skillNames }: ExperienceProps) {
           </article>
         ))}
       </div>
+      {/* Revision-table footer: entry count + order, in the drawing's
+          title-block voice. */}
+      <p className="journey-xp-logfoot">
+        {content.length} REVISIONS · LATEST FIRST · DRAWN BY BERAT
+      </p>
     </Station>
   );
 }
