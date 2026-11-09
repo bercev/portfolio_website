@@ -5,6 +5,15 @@ import type { FocusEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ExternalLink } from "@/components/ui/external-link";
+import {
+  PREVIEW_SWEEP_BAND_FADE_START,
+  PREVIEW_SWEEP_BAND_OPACITY,
+  PREVIEW_SWEEP_BAND_WIDTH_PX,
+  PREVIEW_SWEEP_SHEEN_MS,
+  PREVIEW_SWEEP_WIPE_MS,
+  previewSweepBandLeft,
+  previewSweepClip,
+} from "@/components/ui/hover-preview-sweep";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 type HoverPreviewProps = {
@@ -23,6 +32,9 @@ type HoverPreviewProps = {
 );
 
 const CLOSE_DELAY_MS = 180;
+
+// Site ease-out (reel-4 R1), shared by the pop and the sweep.
+const SWEEP_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 export function HoverPreview({
   title,
@@ -135,28 +147,50 @@ export function HoverPreview({
                   ? `${title} compact PDF reader`
                   : `${title} project preview`
               }
-              className={
+              // `relative` makes the card the sheen band's containing block:
+              // without it the band would position against the slot/wrapper
+              // (the project variant's wrapper is wider than the card).
+              className={`${
                 previewClassName
                   ? previewClassName
                   : "block w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-none bg-card shadow-[6px_8px_0_color-mix(in_srgb,var(--foreground)_10%,transparent)]"
-              }
+              } relative`}
               initial={
                 shouldReduceMotion
                   ? { opacity: 0 }
                   // R10: popovers start at 0.95 scale (RUN8-R10-RESIDUAL).
-                  : { opacity: 0, scale: 0.95, y: 10 }
+                  // RUN9-HOVER-SWEEP: the card is revealed by a left->right
+                  // wipe (Revolut Single Use Pulse Card Sweep Morph, 60fps
+                  // shot 2114) while a sheen band rides its leading edge.
+                  : {
+                      opacity: 0,
+                      scale: 0.95,
+                      y: 10,
+                      clipPath: previewSweepClip(0),
+                    }
               }
               animate={{
                 opacity: 1,
                 scale: 1,
                 y: 0,
+                ...(shouldReduceMotion
+                  ? {}
+                  : { clipPath: previewSweepClip(1) }),
                 // R2: entrance 220ms, site ease-out. R9 evaluated: the rise IS
                 // the entrance, so R1 (ease-out for entrances) governs it;
                 // ease-in-out is reserved for non-entrance moves
                 // (case-study expand, RUN8-CASESTUDY).
                 transition: {
                   duration: shouldReduceMotion ? 0 : 0.22,
-                  ease: [0.16, 1, 0.3, 1],
+                  ease: SWEEP_EASE,
+                  ...(shouldReduceMotion
+                    ? {}
+                    : {
+                        clipPath: {
+                          duration: PREVIEW_SWEEP_WIPE_MS / 1000,
+                          ease: SWEEP_EASE,
+                        },
+                      }),
                 },
               }}
               exit={
@@ -204,6 +238,53 @@ export function HoverPreview({
                   className="block h-auto w-full"
                 />
               ) : null}
+              {/* RUN9-HOVER-SWEEP: the sheen band rides the wipe's leading
+                  edge across the card face, then dissolves — the card returns
+                  to its pristine resting state. Entrance-only (Revolut's idle
+                  ambient loop is deliberately not carried over: a repeating
+                  sweep over a PDF reader would distract from reading).
+                  Reduced motion renders no band at all. */}
+              {shouldReduceMotion ? null : (
+                <motion.span
+                  data-preview-sweep
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 z-10"
+                  style={{ width: PREVIEW_SWEEP_BAND_WIDTH_PX }}
+                  initial={{
+                    left: previewSweepBandLeft(0),
+                    opacity: PREVIEW_SWEEP_BAND_OPACITY,
+                  }}
+                  animate={{
+                    left: previewSweepBandLeft(1),
+                    opacity: 0,
+                    transition: {
+                      duration: PREVIEW_SWEEP_SHEEN_MS / 1000,
+                      ease: SWEEP_EASE,
+                      opacity: {
+                        delay:
+                          (PREVIEW_SWEEP_SHEEN_MS *
+                            PREVIEW_SWEEP_BAND_FADE_START) /
+                          1000,
+                        duration:
+                          (PREVIEW_SWEEP_SHEEN_MS *
+                            (1 - PREVIEW_SWEEP_BAND_FADE_START)) /
+                          1000,
+                        ease: "linear",
+                      },
+                    },
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="block h-full w-full"
+                    style={{
+                      transform: "skewX(-12deg)",
+                      background:
+                        "linear-gradient(100deg, transparent 0%, color-mix(in srgb, var(--accent-neon) 30%, transparent) 50%, transparent 100%)",
+                    }}
+                  />
+                </motion.span>
+              )}
             </motion.span>
           </span>
         ) : null}
