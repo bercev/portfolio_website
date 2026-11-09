@@ -1,17 +1,54 @@
 /**
- * Journey epilogue (run-2 iter 49). The scroll journey previously ended
- * dead at the contact station: nothing after it, and the only `#home`
- * link in the tree lived in dead-code site-header.tsx. This is the
- * loop-back beat — a small static ASCII mark, one sign-off line, and a
- * plain `#home` anchor — mounted BELOW the whole contact station in
- * PortfolioMain, never above the form's transmit button.
+ * Journey epilogue (run-9 iter 18, RUN9-EPILOGUE-SIGNOFF). The scroll
+ * journey used to end dead at the contact station: three bare lines on
+ * open background (run-2 iter 49, static by design). It is now the
+ * drawing set's sign-off plate — the closing sheet, in the same
+ * drafting language as every other run-9 surface: a bordered plate with
+ * a sheet head ("END OF DRAWING — SHEET 07 / 07"), registration marks,
+ * the ASCII BERAT mark, the same sign-off line, a colophon of verified
+ * facts (typefaces from app/layout.tsx, Next.js from package.json), and
+ * the loop-back as a stamped "RETURN TO SHEET 01 ↑" button.
  *
- * Static by design: no client JS, no animation, so the reduced-motion
- * poster is byte-identical to the full-motion frame, and the return
- * trip needs no reverse-animation work — every scroll system on the
- * site is position-driven and exactly reversible.
+ * Motion (60fps Circle Splash Bubbles Pop, shot 2131, read this
+ * iteration): the sign-off's three elements pop in as a cluster on
+ * first view — scale 0.6 with a spring that overshoots, staggered, the
+ * way Circle's avatar bubbles spring into existence — then settle and
+ * stay. The sheet head presses in (the run-9 220ms press language).
+ * Entry-only: a footer should rest, not chatter, so Circle's idle loop
+ * is deliberately not carried over. Reduced motion: everything renders
+ * settled from the first frame (native hook — motion's useReducedMotion()
+ * is unreliable in this app, run-9 iter 1).
  */
+"use client";
+
+import { motion, useInView } from "motion/react";
+import { useRef } from "react";
+
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+
+/** The sign-off elements pop in staggered, mark → line → stamp. */
+export function epiloguePopDelay(index: number) {
+  return 0.05 + index * 0.12;
+}
+
+/** Circle's overshoot: an underdamped spring (damping ratio < 1), so the
+ * pop visibly overshoots 1 before settling — pinned by test. */
+export const EPILOGUE_POP_SPRING = {
+  type: "spring",
+  stiffness: 300,
+  damping: 16,
+} as const;
+
+/** Reel-4 rule 1: entrances ease out. */
+const SITE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+const PRESS_DURATION = 0.22;
+
 export function JourneyEpilogue() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const reduceMotion = usePrefersReducedMotion();
+  const popped = inView && !reduceMotion;
+
   return (
     <footer
       data-journey-epilogue
@@ -19,15 +56,104 @@ export function JourneyEpilogue() {
       aria-label="End of the journey"
       className="journey-epilogue"
     >
-      <p aria-hidden="true" className="journey-epilogue-mark">
-        ░▒▓ BERAT ▓▒░
-      </p>
-      <p className="journey-epilogue-line">
-        End of the journey — thanks for reading to the bottom.
-      </p>
-      <a href="#home" className="journey-epilogue-top">
-        Back to top ↑
-      </a>
+      <div ref={ref} className="journey-epilogue-plate">
+        <span
+          className="journey-sheet-crop journey-sheet-crop--left"
+          aria-hidden="true"
+        >
+          +
+        </span>
+        <span
+          className="journey-sheet-crop journey-sheet-crop--right"
+          aria-hidden="true"
+        >
+          +
+        </span>
+        <motion.div
+          className="journey-sheet-head journey-epilogue-head"
+          initial={{ opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 1.25 }}
+          animate={
+            popped || reduceMotion
+              ? { opacity: 1, scale: 1 }
+              : { opacity: 0, scale: 1.25 }
+          }
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { duration: PRESS_DURATION, ease: SITE_EASE }
+          }
+        >
+          <span>End of drawing</span>
+          <span>Sheet 07 / 07</span>
+        </motion.div>
+        <motion.p
+          aria-hidden="true"
+          className="journey-epilogue-mark"
+          initial={{ opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 0.6 }}
+          animate={
+            popped || reduceMotion
+              ? { opacity: 1, scale: 1 }
+              : { opacity: 0, scale: 0.6 }
+          }
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(0) }
+          }
+        >
+          ░▒▓ BERAT ▓▒░
+        </motion.p>
+        <motion.p
+          className="journey-epilogue-line"
+          initial={{ opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 0.6 }}
+          animate={
+            popped || reduceMotion
+              ? { opacity: 1, scale: 1 }
+              : { opacity: 0, scale: 0.6 }
+          }
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(1) }
+          }
+        >
+          End of the journey — thanks for reading to the bottom.
+        </motion.p>
+        <motion.p
+          className="journey-epilogue-colophon"
+          initial={{ opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 0.6 }}
+          animate={
+            popped || reduceMotion
+              ? { opacity: 1, scale: 1 }
+              : { opacity: 0, scale: 0.6 }
+          }
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(1) }
+          }
+        >
+          Set in Bricolage Grotesque + JetBrains Mono · Drawn by Berat ·
+          Built with Next.js
+        </motion.p>
+        <motion.a
+          href="#home"
+          className="journey-epilogue-stamp"
+          initial={{ opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 0.6 }}
+          animate={
+            popped || reduceMotion
+              ? { opacity: 1, scale: 1 }
+              : { opacity: 0, scale: 0.6 }
+          }
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(2) }
+          }
+        >
+          Return to sheet 01 ↑
+        </motion.a>
+      </div>
     </footer>
   );
 }

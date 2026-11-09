@@ -1459,41 +1459,81 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--portfolio-accent);
 }
 
-/* Journey epilogue (run-2 iter 49): the loop-back beat below the contact
-   station. Static text + a plain anchor — no new chrome language, FROST
-   accent only, identical under reduced motion. */
+/* Journey epilogue (run-9 iter 18, RUN9-EPILOGUE-SIGNOFF): the loop-back
+   beat below the contact station is the drawing set's sign-off plate —
+   a bordered sheet with a sheet head, registration marks, the ASCII
+   BERAT mark, the sign-off line, a colophon, and the loop-back as a
+   stamped button. The plate sits at the site's widest sheet measure
+   (60rem, same as the featured project sheet). */
 .journey-epilogue {
   padding: 3rem 1.25rem 4rem;
   border-top: 1px solid var(--journey-rule-soft);
   text-align: center;
 }
 
+.journey-epilogue-plate {
+  position: relative;
+  max-width: 60rem;
+  margin-inline: auto;
+  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.5rem);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.journey-epilogue-plate::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
+}
+
+.journey-epilogue-head {
+  text-align: left;
+}
+
 .journey-epilogue-mark {
   margin: 0 0 0.75rem;
-  font: 700 0.95rem/1.4 var(--font-mono);
+  font: 700 clamp(1.15rem, 2.5vw, 1.5rem) / 1.4 var(--font-mono);
   letter-spacing: var(--label-tracking);
   color: var(--portfolio-accent);
 }
 
 .journey-epilogue-line {
-  margin: 0 0 1rem;
-  font: 400 0.95rem/1.6 var(--font-sans);
+  margin: 0 0 0.5rem;
+  font: 400 1.05rem/1.6 var(--font-sans);
+  color: var(--foreground);
+}
+
+.journey-epilogue-colophon {
+  margin: 0 0 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
-.journey-epilogue-top {
-  font: 500 0.95rem/1.4 var(--font-sans);
+.journey-epilogue-stamp {
+  display: inline-block;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--foreground);
-  text-decoration: underline;
-  text-underline-offset: 0.25em;
-  /* WCAG 2.5.8 (run-3 iter 17 census): the link is 18px tall and stands
-     alone on its line, so no inline exception applies — expand the hit
-     area to 26px with vertical padding. This is an inline link, so the
-     padding expands the hit area without moving the line box. */
-  padding-block: 4px;
+  text-decoration: none;
+  /* WCAG 2.5.8 (run-3 iter 17 census): the old inline link was 18px
+     tall, so its hit area was padded to 26px. The stamp is a bordered
+     button-sized target (~44px tall) and needs no extra padding. */
 }
 
-.journey-epilogue-top:hover {
+.journey-epilogue-stamp:hover {
+  border-color: var(--portfolio-accent);
   color: var(--portfolio-accent);
 }
 
@@ -4253,7 +4293,7 @@ html.dark .plain-backdrop {
   .journey-contact-receipt,
   .skill-marquee,
   .journey-case-study-more,
-  .journey-epilogue-top,
+  .journey-epilogue-stamp,
   /* Print record (run-4 iter 39): the skip link is position:fixed, and
      Chromium repeats fixed elements on every printed page — it leaked
      onto 12/16 pages of the v219 PDF and interleaved into reading order
