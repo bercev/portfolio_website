@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { VenueStamp } from "@/components/sections/publication-plate";
 import { portfolio, type Publication } from "@/data/content";
 
 import { BibtexBlock } from "./bibtex-block";
 import { getPaperSheet } from "./paper-sheet";
+import { PaperFigure } from "./paper-figure";
 import { PaperSignature } from "./paper-signature";
 
 const siteUrl =
@@ -78,10 +78,11 @@ export async function generateMetadata({
  * double rule, serif title, full author line (Berat in accent), the real
  * first page as a FIG. plate with a press-in venue stamp, and the BibTeX as
  * a tear-off citation slip, over a title-block footer. Metadata, JSON-LD,
- * and both links are unchanged; the stamp is the only motion on the page
- * (presses in on first view, settled under reduced motion), plus the
- * signature sign-off under the citation slip (draws in on first view,
- * settled under reduced motion).
+ * and both links are unchanged; the FIG. plate settles from a raised,
+ * lifted state as it scrolls into place (PaperFigure, App Store header
+ * asset transfer — settled flat under reduced motion), the stamp presses
+ * in on first view, plus the signature sign-off under the citation slip
+ * (draws in on first view, settled under reduced motion).
  */
 export default async function PublicationPage({
   params,
@@ -147,21 +148,11 @@ export default async function PublicationPage({
           </span>
         ))}
       </p>
-      <figure className="journey-pub-figure journey-pub-page-figure">
-        <a href={publication.href} className="journey-pub-figure-link">
-          {/* eslint-disable-next-line @next/next/no-img-element -- local paper preview, same as the list plate */}
-          <img
-            src={publication.preview.src}
-            alt={publication.preview.alt}
-            width={publication.preview.width}
-            height={publication.preview.height}
-          />
-        </a>
-        <VenueStamp venue={publication.venue} index={index} />
-        <figcaption className="journey-pub-fig-caption">
-          {labels.fig} — First page
-        </figcaption>
-      </figure>
+      <PaperFigure
+        publication={publication}
+        index={index}
+        figLabel={labels.fig}
+      />
       <section
         aria-labelledby="abstract"
         className="journey-pub-page-section"
