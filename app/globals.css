@@ -2926,6 +2926,149 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
+/* Measuring tape (run-9 iter 21, RUN9-SKILL-TAPE): the skills ticker's
+   quiet text becomes the drawing set's steel tape — two engraved strips
+   with tick marks, the skill names as engraved tags on the tape. The
+   track carries the ticks (they scroll with the tape); the frame is the
+   static strip. Entry is the 60fps Duolingo sculpt pop (shot 2123): the
+   tick rules draw across and the tags pop in with spring overshoot,
+   staggered 30ms. Reduced motion renders the settled tape. */
+.skill-tape {
+  border-top: 1px solid var(--journey-rule);
+  border-bottom: 1px solid var(--journey-rule);
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+}
+
+.skill-tape .skill-marquee-track {
+  position: relative;
+  padding: 0.45rem 0;
+}
+
+/* Tick rules ride on the moving track so they travel with the tape:
+   minor ticks every 8px (5px tall), major ticks every 40px (10px tall).
+   They draw in (scaleX) on entry; the static variant shows them settled. */
+.skill-tape .skill-marquee-track::before,
+.skill-tape .skill-marquee-track::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.skill-tape .skill-marquee-track::before {
+  height: 7px;
+  /* Frost-survival boost (same calibration as iter 14's majorOnly boost):
+     the --journey-rule tokens (12%/24%) crush to invisibility under the
+     content frost; the tape's ticks need 42%/65% to read at a glance.
+     Round 2 (this iteration): the 30%/48% round-1 values still read faint
+     to both critics — the ticks are the weakest element, so they go
+     stronger and a touch taller. */
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--foreground) 42%, transparent) 0 1px,
+    transparent 1px 8px
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.skill-tape .skill-marquee-track::after {
+  height: 14px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--foreground) 65%, transparent) 0 1px,
+    transparent 1px 40px
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.skill-tape--in .skill-marquee-track::before,
+.skill-tape--in .skill-marquee-track::after {
+  transform: scaleX(1);
+  transition: transform 0.6s ease-out;
+}
+
+.skill-marquee--static.skill-tape .skill-marquee-track::before,
+.skill-marquee--static.skill-tape .skill-marquee-track::after {
+  transform: none;
+}
+
+/* Static (reduced-motion) tape: the wrapped rows must not strand a lone
+   tag on its own line — the 12-tag row wrapped 11+1 at 1440px, leaving
+   "Clerk" orphaned (desktop critic, round 1). The static tags run a touch
+   smaller and tighter so the full row fits one line at desktop widths,
+   and wrapped lines center so any residual wrap reads as balanced rows
+   rather than a lone straggler. Motion tags keep the roomier sizing —
+   their width never matters, they scroll. */
+.skill-marquee--static.skill-tape .skill-marquee-track {
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.skill-marquee--static.skill-tape .skill-pill {
+  padding: 0.25rem 0.45rem;
+  font-size: 0.8rem;
+}
+
+/* Engraved tags: mono, foreground ink, bordered plate on the tape face.
+   The run-6 middot separators retire — the tape's gaps are the rhythm. */
+.skill-tape .skill-pill {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--journey-rule);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  color: var(--foreground);
+  font: 500 0.85rem/1.2 var(--font-mono);
+  letter-spacing: 0;
+}
+
+.skill-tape .skill-marquee-track > li + li::before {
+  content: none;
+}
+
+.skill-tape--in .skill-pill {
+  animation: skill-tape-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+
+@keyframes skill-tape-tag-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Tape legend: the category line above each strip, mono uppercase. */
+.skill-tape-legend {
+  font: 600 0.7rem/1.5 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.skill-tape-legend::before {
+  content: "+ ";
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-tape--in .skill-pill {
+    animation: none;
+  }
+
+  .skill-tape .skill-marquee-track::before,
+  .skill-tape .skill-marquee-track::after {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* Skills parts catalog (run-9 iter 6): the ledger rows became spec plates
    — a bordered grid, one plate per skill, with a continuous part number,
    a series kicker per category, and the proof note as the spec line. The

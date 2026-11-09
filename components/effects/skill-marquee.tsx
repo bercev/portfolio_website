@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   motion,
   useAnimationFrame,
@@ -33,6 +33,19 @@ function wrapLoop(pct: number): number {
   return w > 0 ? w - 50 : w;
 }
 
+// Measuring-tape stagger (run-9 iter 21, RUN9-SKILL-TAPE): the duplicated
+// loop copy pops in phase with the original — the stagger index wraps at
+// the pill count so both copies share one rhythm (60fps Duolingo Sparkle
+// Sculpt Pop, shot 2123: the carve pops with a spring overshoot).
+export function skillTapeStaggerIndex(index: number, count: number): number {
+  return count > 0 ? index % count : 0;
+}
+
+// Pop delay in seconds: 0.1s lead, then 30ms per tag (the run-8 stagger).
+export function skillTapePopDelay(index: number, count: number): number {
+  return 0.1 + skillTapeStaggerIndex(index, count) * 0.03;
+}
+
 function SkillRow({
   groups,
   direction,
@@ -40,6 +53,7 @@ function SkillRow({
   inView,
   reduceMotion,
   label,
+  entered,
 }: {
   readonly groups: readonly SkillGroup[];
   readonly direction: "forward" | "reverse";
@@ -47,6 +61,8 @@ function SkillRow({
   readonly inView: boolean;
   readonly reduceMotion: boolean;
   readonly label: string;
+  /** Latched once the stack first enters view — drives the tape entry. */
+  readonly entered: boolean;
 }) {
   const pills = groups.flatMap((group) =>
     group.items.map((item) => ({ item, category: group.category })),
@@ -104,7 +120,7 @@ function SkillRow({
         data-skills-row
         data-direction={direction}
         tabIndex={0}
-        className="skill-marquee skill-marquee--static"
+        className="skill-marquee skill-marquee--static skill-tape"
       >
         <ul className="skill-marquee-track" aria-label={label}>
           {loop.map((pill, index) => (
@@ -114,6 +130,11 @@ function SkillRow({
               className="skill-pill"
               title={pill.item.note}
               aria-hidden={index >= pills.length ? true : undefined}
+              style={
+                {
+                  animationDelay: `${skillTapePopDelay(index, pills.length)}s`,
+                } as CSSProperties
+              }
             >
               {pill.item.name}
             </li>
@@ -128,7 +149,11 @@ function SkillRow({
       data-skills-row
       data-direction={direction}
       tabIndex={0}
-      className="skill-marquee"
+      className={
+        entered
+          ? "skill-marquee skill-tape skill-tape--in"
+          : "skill-marquee skill-tape"
+      }
       onMouseEnter={() => {
         paused.current = true;
       }}
@@ -154,6 +179,11 @@ function SkillRow({
             className="skill-pill"
             title={pill.item.note}
             aria-hidden={index >= pills.length ? true : undefined}
+            style={
+              {
+                animationDelay: `${skillTapePopDelay(index, pills.length)}s`,
+              } as CSSProperties
+            }
           >
             {pill.item.name}
           </li>
@@ -172,6 +202,13 @@ export function SkillMarquee({
   const rows = [groups.slice(0, 2), groups.slice(2)] as const;
   const stackRef = useRef<HTMLDivElement>(null);
   const inView = useInView(stackRef, { margin: "240px" });
+  // Tape entry (run-9 iter 21): latched on first in-view so the sculpt-pop
+  // plays once when the reader reaches the skills section, never again on
+  // scroll-back (useInView itself toggles; this latch does not).
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    if (inView) setEntered(true);
+  }, [inView]);
   // Shared scroll velocity (run-2 iter 20): the snapshot publisher's
   // low-passed px/s, fed into each row's spring source on its own
   // animation frame. Subscribed only in full-motion; the reduced-motion
@@ -186,7 +223,7 @@ export function SkillMarquee({
     <div className="skill-marquee-stack" data-skill-cluster ref={stackRef}>
       {rows.map((rowGroups, index) => (
         <div key={`row-${index}`} className="skill-marquee-row">
-          <p className="journey-spec-label" aria-hidden="true">
+          <p className="journey-spec-label skill-tape-legend" aria-hidden="true">
             {rowGroups.map((group) => group.category).join(" · ")}
           </p>
           <SkillRow
@@ -197,6 +234,7 @@ export function SkillMarquee({
             inView={inView}
             reduceMotion={reduceMotion}
             label={rowGroups.map((group) => group.category).join(", ")}
+            entered={entered}
           />
         </div>
       ))}
