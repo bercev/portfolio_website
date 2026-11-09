@@ -6,6 +6,10 @@ import { useTheme } from "next-themes";
 import ASCIIText from "@/components/effects/react-bits-ascii-text";
 import { ParticleBerat } from "@/components/effects/particle-berat";
 import { HeroTaglineFlip } from "@/components/sections/hero-tagline-flip";
+import {
+  HeroVerbTicker,
+  verbPhrase,
+} from "@/components/sections/hero-verb-ticker";
 import { useMotionPreference } from "@/components/providers/motion-provider";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { MagneticButton } from "@/components/ui/magnetic-button";
@@ -150,6 +154,27 @@ export function Hero({ content }: { content: HeroContent }) {
                 <span className="sr-only">{hero.tagline}</span>
                 <HeroTaglineFlip
                   lines={hero.taglines}
+                  reduceMotion={reduceMotion}
+                />
+              </motion.p>
+            ) : null}
+
+            {/* RUN9-HERO-VERB-TICKER: the thesis line — what he actually
+                does, cycling verb-led phrases from content.ts under a
+                static "DOING —" prefix. Same 0.95s entrance stagger,
+                slotted between the tagline (0.18s) and the CTA (0.21s);
+                held still under reduced motion. Screen readers get the
+                first phrase, once; the flipper is visual (aria-hidden). */}
+            {hero.verbs?.length ? (
+              <motion.p
+                data-hero-verb-ticker
+                initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.195 }}
+              >
+                <span className="sr-only">{verbPhrase(hero.verbs[0])}</span>
+                <HeroVerbTicker
+                  verbs={hero.verbs}
                   reduceMotion={reduceMotion}
                 />
               </motion.p>

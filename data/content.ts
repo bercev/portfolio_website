@@ -108,6 +108,15 @@ export interface PortfolioContent {
     /** The lede flip cycles through these (first = tagline); all from
         content.ts roles only — no invented copy. */
     readonly taglines: readonly string[];
+    /** The verb ticker cycles through these (first = the static/RM line);
+        verb-led phrases from his real work only — the bio's "study how
+        LLMs behave in the wild" and "building multi-agent pipelines",
+        the @GrokSet paper's public Grok conversations, and the two
+        venues (ICML 2026, arXiv). No invented copy. */
+    readonly verbs: readonly {
+      readonly verb: string;
+      readonly object: string;
+    }[];
     readonly bio: string;
     /** Masthead rail — the three facts a recruiter needs off the first screen. */
     readonly signals: readonly {
@@ -183,6 +192,12 @@ export const portfolio = {
       "Full-stack software engineer, researcher",
       "LLM researcher",
       "AI systems engineer",
+    ],
+    verbs: [
+      { verb: "Measuring", object: "how LLMs behave in the wild" },
+      { verb: "Probing", object: "public Grok conversations" },
+      { verb: "Building", object: "multi-agent pipelines" },
+      { verb: "Publishing", object: "at ICML · arXiv" },
     ],
     bio: "I write software first and study how LLMs behave in the wild. I recently finished an AI Systems Engineer internship building multi-agent pipelines, with SkillOptimizer (ICML 2026 AIWILD Workshop) and @GrokSet (arXiv), while finishing CS at UC Santa Cruz (4.0).",
     signals: [

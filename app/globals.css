@@ -4476,6 +4476,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   [data-hero-glyph-band],
   [data-hero-meta],
   [data-hero-tagline],
+  [data-hero-verb-ticker],
   [data-hero-cta-wrap],
   [data-hero-signals] {
     opacity: 1 !important;
@@ -4502,7 +4503,10 @@ html[data-journey="active"] [data-hero-name-fallback] {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: clamp(1.1rem, 2.4vh, 1.75rem);
+  /* RUN9-HERO-VERB-TICKER: tightened from clamp(1.1rem, 2.4vh, 1.75rem)
+     so the new thesis line fits without pushing the third signal row
+     below the 844px fold on mobile (before: signals bottom 827). */
+  gap: clamp(0.75rem, 2vh, 1.5rem);
 }
 
 [data-hero-editorial] [data-hero-meta] {
@@ -4546,6 +4550,65 @@ html[data-journey="active"] [data-hero-name-fallback] {
   align-self: end;
   text-wrap: balance;
   will-change: transform, opacity;
+}
+
+/* RUN9-HERO-VERB-TICKER: the thesis line — small mono uppercase under the
+   big display tagline, so the two flippers never read as one unit. The
+   "DOING —" prefix is static; only the verb-led phrase slides up behind
+   the clip boundary (grid-stacked lines in one overflow-hidden cell, the
+   tagline flip's mechanism). The verb carries the accent; the object
+   stays foreground. One line at 390px by construction — the longest
+   phrase ("Measuring how LLMs behave in the wild") measures 322px at
+   0.8rem, so the ≤560px rule drops the ticker to 0.7rem / 0.04em and the
+   probe pins the fit (round 1 at 0.8rem clipped "LD" at the edge). */
+[data-hero-verb-ticker] {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+
+[data-hero-verb-prefix] {
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+[data-hero-verb-flip] {
+  display: inline-grid;
+  overflow: hidden;
+}
+
+[data-hero-verb-line] {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+
+[data-hero-verb-word] {
+  color: var(--accent-neon);
+  font-weight: 600;
+}
+
+[data-hero-verb-object] {
+  color: var(--foreground);
+}
+
+/* ≤560px: the longest phrase ("Measuring how LLMs behave in the wild")
+   measures 322px at 0.8rem, so prefix + gap + flipper = 393px against a
+   351px lede — round 1 clipped "LD" at the viewport edge in the mobile
+   RM frame (rightmost bright pixel x=389). Smaller type + tighter
+   tracking buys ~70px; re-probed to fit one line at 390px. */
+@media (max-width: 560px) {
+  [data-hero-verb-ticker] {
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+  }
 }
 
 /* Three facts, pinned to the right edge — the recruiter's first scan. */
@@ -4981,8 +5044,15 @@ html[data-journey="active"] [data-hero-name-fallback] {
     grid-column: 1 / -1;
   }
 
+  /* RUN9-HERO-VERB-TICKER: the thesis line's ~32px buys its room here —
+     the below-block's top padding and the signals' top margin tighten so
+     the third signal row still clears the 844px fold (before: 827). */
+  [data-hero-below] {
+    padding-top: 1.25rem;
+  }
+
   [data-hero-signals] {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
   }
 
   /* RUN9-HERO-CTA-PLATE round 2: the plate's extra height vs the old text
@@ -5384,6 +5454,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   [data-hero-glyph-band],
   [data-hero-meta],
   [data-hero-tagline],
+  [data-hero-verb-ticker],
   [data-hero-cta-wrap],
   [data-hero-signals] {
     opacity: 1 !important;
