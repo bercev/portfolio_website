@@ -3412,8 +3412,10 @@ html[data-journey] [data-effect-layer="background"] {
   min-width: 0;
 }
 
-/* Case-study architecture diagrams: calm static SVGs — FROST strokes,
-   square corners, no animation. The diagram proves in one glance what the
+/* Case-study architecture diagrams: living schematics (run-9
+   RUN9-ARCH-SCHEMATIC-LIVE) — FROST strokes, square corners; nodes light
+   in sequence and arrows draw in on first view, settling to the old
+   static diagram verbatim. The diagram proves in one glance what the
    prose can't: each system's shape. Capped at 30rem so the text stays
    legible on mobile (viewBox scales to the panel width) without going
    billboard-sized on desktop. */
@@ -5517,6 +5519,16 @@ html.dark .plain-backdrop {
      10px low — !important beats the inline transform. */
   [data-warp-glyph] {
     transform: none !important;
+  }
+
+  /* Living schematics (run-9 RUN9-ARCH-SCHEMATIC-LIVE): a diagram below
+     the fold never triggers whileInView in print layout, so its arrows
+     would print undrawn — !important beats the inline dasharray. The
+     global print opacity:1 rule above already covers the node/label
+     fades and the arrowhead opacity. */
+  .journey-arch-flow {
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
   }
 
   *,
