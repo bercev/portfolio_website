@@ -3886,10 +3886,26 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .skills-series-heading {
-  margin: 0 0 0.9rem;
+  margin: 0;
   color: var(--foreground);
   font: 600 1rem/1.3 var(--font-sans);
   letter-spacing: -0.01em;
+}
+
+/* Parts bins (run-9 iter 40, RUN9-SKILLS-BINS): each series head carries
+   its big series letter, like a bin-row label on a parts wall. */
+.skills-series-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.9rem;
+}
+
+.skills-series-letter {
+  flex: none;
+  color: color-mix(in srgb, var(--foreground) 16%, transparent);
+  font: 700 2.4rem/0.8 var(--font-mono);
 }
 
 .skills-plates {
@@ -3965,6 +3981,60 @@ a.skills-plate-note {
      shift with a matching negative margin (the iter-43 pattern). */
   padding-block: 2.5px;
   margin-block: -2.5px;
+}
+
+/* Parts bins (run-9 iter 40, RUN9-SKILLS-BINS): a skill filed under
+   >=2 work entries gets a double-width bin; a skill no stack lists is
+   a dashed loose bin, proved by its note. The USED-IN rail is the
+   plate's wiring diagram — one accent node per work entry that lists
+   the skill. The rail is static text, so reduced motion needs no
+   settle block; the deal-in already settles the plate. */
+.skills-plate--wide {
+  grid-column: span 2;
+}
+
+.skills-plate--loose {
+  border-style: dashed;
+}
+
+.skills-bin-rail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.6rem;
+  margin: 0.55rem 0 0;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--journey-rule);
+}
+
+.skills-bin-rail-label {
+  color: var(--muted-foreground);
+  font: 500 0.62rem/1.4 var(--font-mono);
+  letter-spacing: 0.14em;
+}
+
+.skills-bin-use {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--foreground);
+  font: 500 0.68rem/1.4 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.skills-bin-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+}
+
+@media (max-width: 700px) {
+  .skills-plate--wide {
+    grid-column: auto;
+  }
 }
 
 /* Skill → work highlight (run-3 iter 7): the hint and active lines sit

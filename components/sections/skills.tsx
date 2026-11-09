@@ -1,5 +1,7 @@
 import type { PortfolioContent } from "@/data/content";
 
+import type { SkillWorkEntry } from "@/lib/skill-bins";
+
 import { SkillMarquee } from "@/components/effects/skill-marquee";
 import { SkillsLedger } from "@/components/sections/skills-ledger";
 import { Station } from "@/components/ui/station";
@@ -7,11 +9,11 @@ import { Station } from "@/components/ui/station";
 type SkillsProps = {
   readonly content: PortfolioContent["skills"];
   readonly heading: PortfolioContent["navigation"][number]["label"];
-  /** Every experience + project stack, for the ledger's skill links. */
-  readonly workTech: readonly (readonly string[])[];
+  /** Every experience + project entry, for the ledger's skill links + bin filing. */
+  readonly workEntries: readonly SkillWorkEntry[];
 };
 
-export function Skills({ content, heading, workTech }: SkillsProps) {
+export function Skills({ content, heading, workEntries }: SkillsProps) {
   return (
     <Station
       id="skills"
@@ -25,7 +27,7 @@ export function Skills({ content, heading, workTech }: SkillsProps) {
         are the one heading per category, visible to everyone, so screen
         readers don't get the same heading twice.
       */}
-      <SkillsLedger groups={content} workTech={workTech} />
+      <SkillsLedger groups={content} workEntries={workEntries} />
     </Station>
   );
 }

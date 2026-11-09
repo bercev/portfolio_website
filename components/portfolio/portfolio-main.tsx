@@ -42,9 +42,15 @@ export function PortfolioMain() {
       <Skills
         content={portfolio.skills}
         heading={portfolio.navigation[5].label}
-        workTech={[
-          ...portfolio.experience.map((entry) => entry.technologies),
-          ...portfolio.projects.map((project) => project.technologies),
+        workEntries={[
+          ...portfolio.experience.map((entry) => ({
+            name: entry.organization,
+            technologies: entry.technologies,
+          })),
+          ...portfolio.projects.map((project) => ({
+            name: project.title,
+            technologies: project.technologies,
+          })),
         ]}
       />
       <ContactFooter content={portfolio.contact} />

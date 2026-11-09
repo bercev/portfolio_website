@@ -13,6 +13,13 @@
  * the accent name. Reduced motion: static plates, settled border, no pulse
  * (native hook — motion's useReducedMotion() is unreliable in this app,
  * run-9 iter 1).
+ *
+ * Parts bins (run-9 iter 40, RUN9-SKILLS-BINS): the uniform grid is a bin
+ * wall now — a skill filed under >=2 work entries gets a double-width
+ * bin, a skill no stack lists is a dashed loose bin, and every filed
+ * plate carries a USED-IN rail (one node per work entry that lists the
+ * skill). The rhythm comes from real usage depth (lib/skill-bins.ts),
+ * never decoration.
  */
 "use client";
 
@@ -20,6 +27,7 @@ import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { skillBinKind, skillBinSpan } from "@/lib/skill-bins";
 
 /** Continuous part number across the whole catalog: "SK-01". */
 export function plateIndex(index: number) {
@@ -59,6 +67,7 @@ export function SkillPlate({
   linked,
   active,
   onToggle,
+  uses,
 }: {
   /** Continuous plate number (0-based) across the catalog. */
   readonly index: number;
@@ -70,19 +79,32 @@ export function SkillPlate({
   readonly linked: boolean;
   readonly active: boolean;
   readonly onToggle: () => void;
+  /** Work-entry names whose stack lists the skill (lib/skill-bins.ts). */
+  readonly uses: readonly string[];
 }) {
   const ref = useRef<HTMLLIElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const reduceMotion = usePrefersReducedMotion();
   const settled = inView || reduceMotion;
+  // Parts bins (run-9 iter 40, RUN9-SKILLS-BINS): a skill filed under
+  // >=2 entries gets a double-width bin, and a skill no stack lists is
+  // a dashed loose bin — the grid rhythm comes from real usage depth.
+  const wide = skillBinSpan(uses.length) === 2;
+  const loose = skillBinKind(uses.length) === "loose";
 
   return (
     <motion.li
       ref={ref}
       data-skill-plate
-      className={
-        active ? "skills-plate skills-plate--active" : "skills-plate"
-      }
+      data-skill-bin={loose ? "loose" : "filed"}
+      className={[
+        "skills-plate",
+        active ? "skills-plate--active" : "",
+        wide ? "skills-plate--wide" : "",
+        loose ? "skills-plate--loose" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       // Key the deal to inView, not to mount: an opacity target of 1 in
       // the pre-entry branch would animate to settled while the plate is
       // still below the fold (same class of bug as the iter-3 pen trace).
@@ -126,6 +148,17 @@ export function SkillPlate({
       ) : (
         <span className="skills-plate-note">{note}</span>
       )}
+      {uses.length > 0 ? (
+        <p className="skills-bin-rail">
+          <span className="skills-bin-rail-label">USED IN</span>
+          {uses.map((use) => (
+            <span key={use} className="skills-bin-use">
+              <span aria-hidden="true" className="skills-bin-dot" />
+              {use}
+            </span>
+          ))}
+        </p>
+      ) : null}
     </motion.li>
   );
 }

@@ -6,18 +6,22 @@ import type { PortfolioContent } from "@/data/content";
 
 import { skillProofHref } from "@/lib/skill-proof";
 import {
+  type SkillWorkEntry,
+  skillUses,
+} from "@/lib/skill-bins";
+import {
   normalizeTech,
   resolveSkillParam,
   SKILL_HIGHLIGHT_EVENT,
   skillHasWork,
 } from "@/lib/skill-work";
 
-import { seriesKicker, SkillPlate } from "@/components/sections/skills-plate";
+import { seriesKicker, seriesLetter, SkillPlate } from "@/components/sections/skills-plate";
 
 type SkillsLedgerProps = {
   readonly groups: PortfolioContent["skills"];
-  /** Every experience + project stack, for the exact-match link check. */
-  readonly workTech: readonly (readonly string[])[];
+  /** Every experience + project entry, for the skill links + bin filing. */
+  readonly workEntries: readonly SkillWorkEntry[];
 };
 
 /**
@@ -42,7 +46,10 @@ type SkillsLedgerProps = {
  * border pulse (run-9 iter 6); reduced motion renders it as a static
  * accent border.
  */
-export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
+export function SkillsLedger({ groups, workEntries }: SkillsLedgerProps) {
+  // The stacks, for the exact-match link check (skillHasWork) — derived
+  // from the entries so the ledger takes one prop, not two.
+  const workTech = workEntries.map((entry) => entry.technologies);
   const [activeSkill, setActiveSkill] = useState<string | null>(null);
   // True only for the mount-applied param highlight: the highlight
   // effect below skips its scroll once, then resets, so clicks scroll.
@@ -149,7 +156,8 @@ export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
   return (
     <div className="skills-catalog" aria-label="Skills by category, with proof">
       <p className="skills-catalog-hint">
-        Select a skill to highlight the work that uses it.
+        Select a skill to highlight the work that uses it. A dashed bin is
+        proved by its note, not by a stack.
       </p>
       {activeSkill !== null ? (
         <p className="skills-catalog-active">
@@ -165,10 +173,17 @@ export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
       ) : null}
       {series.map(({ group, start }, groupIndex) => (
         <section key={group.category} className="skills-catalog-series">
-          <p className="skills-series-kicker" aria-hidden="true">
-            {seriesKicker(groupIndex, group.items.length)}
-          </p>
-          <h3 className="skills-series-heading">{group.category}</h3>
+          <div className="skills-series-head">
+            <div>
+              <p className="skills-series-kicker" aria-hidden="true">
+                {seriesKicker(groupIndex, group.items.length)}
+              </p>
+              <h3 className="skills-series-heading">{group.category}</h3>
+            </div>
+            <span aria-hidden="true" className="skills-series-letter">
+              {seriesLetter(groupIndex)}
+            </span>
+          </div>
           <ul className="skills-plates">
             {group.items.map((item, itemIndex) => {
               const href = skillProofHref(item.note);
@@ -182,6 +197,7 @@ export function SkillsLedger({ groups, workTech }: SkillsLedgerProps) {
                   noteHref={href}
                   linked={linked}
                   active={activeSkill === item.name}
+                  uses={skillUses(item.name, workEntries)}
                   onToggle={() =>
                     setActiveSkill((current) =>
                       current === item.name ? null : item.name,
