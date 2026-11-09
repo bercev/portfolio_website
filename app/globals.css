@@ -4409,18 +4409,42 @@ html[data-journey="active"] [data-hero-name-fallback] {
   line-height: 1.25;
   color: var(--foreground);
 }
-.not-found-empty-plate {
+/* Ghost wireframe (run-9 RUN9-404-GHOST-FIGURE): the missing figure is
+ * drawn as a void — diagonal hairlines cross corner to corner, dimension
+ * lines with end ticks run just inside the top and left edges, and a
+ * "NO DRAWING" stamp presses in over the crossing. */
+.not-found-ghost {
+  position: relative;
   display: grid;
   place-items: center;
   aspect-ratio: 16 / 7;
   border: 1px dashed color-mix(in srgb, var(--foreground) 45%, transparent);
 }
-.not-found-empty-plate-mark {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  color: var(--muted-foreground);
+.not-found-ghost-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
-.not-found-empty-plate-caption {
+.not-found-ghost-svg line {
+  stroke: color-mix(in srgb, var(--foreground) 40%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.not-found-ghost-stamp {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-neon);
+  border: 1px solid color-mix(in srgb, var(--accent-neon) 75%, transparent);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  padding: 0.35rem 0.7rem;
+}
+.not-found-ghost-caption {
   margin: -0.5rem 0 0;
 }
 .not-found-line {

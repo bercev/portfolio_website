@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { NotFoundGhostFigure } from "@/components/sections/not-found-figure";
 import { PaperActionPlate } from "@/components/sections/paper-action-plate";
 
 export const metadata: Metadata = {
@@ -10,11 +11,13 @@ export const metadata: Metadata = {
 /**
  * Missing sheet (run-9 RUN9-ROUTES): the 404 stops speaking terminal and
  * becomes an empty drawing sheet — bordered plate, inner margin frame, a
- * dashed empty FIG frame where the drawing would be, and a title-block
- * footer. Server component: no journey/WebGL, no new dependencies, renders
- * inside the root layout (skip link + theme providers). One status line,
- * one plain sentence, two ways out — same as before, in the site's new
- * drafting language. The terminal flyout itself is untouched (frozen).
+ * ghost wireframe where the drawing would be (run-9 RUN9-404-GHOST-FIGURE:
+ * diagonal cross + dimension lines + "NO DRAWING" stamp, so the joke reads
+ * as a drawing, not an empty box), and a title-block footer. Server
+ * component: no journey/WebGL, no new dependencies, renders inside the
+ * root layout (skip link + theme providers). One status line, one plain
+ * sentence, two ways out — same as before, in the site's new drafting
+ * language. The terminal flyout itself is untouched (frozen).
  */
 export default function NotFound() {
   return (
@@ -24,10 +27,8 @@ export default function NotFound() {
         <span>Rev —</span>
       </div>
       <h1 className="not-found-status">404 — Sheet not found</h1>
-      <div className="not-found-empty-plate" aria-hidden="true">
-        <span className="not-found-empty-plate-mark">+</span>
-      </div>
-      <p className="journey-pub-fig-caption not-found-empty-plate-caption">
+      <NotFoundGhostFigure />
+      <p className="journey-pub-fig-caption not-found-ghost-caption">
         Fig. — · No drawing on file
       </p>
       <p className="not-found-line">
