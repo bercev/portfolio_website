@@ -3,8 +3,36 @@ import * as THREE from "three";
 type ParticleTextSceneOptions = {
   canvas: HTMLCanvasElement;
   colors: readonly string[];
-  fontFamily: string;
-  text: string;
+  /**
+   * Text source: sampled from a filled 2D render of the word. Required
+   * unless `image` is given.
+   */
+  fontFamily?: string;
+  text?: string;
+  /**
+   * Image source (run 9, RUN9-PARTICLE-PORTRAIT): a loaded
+   * HTMLImageElement sampled by luminance instead of a text render —
+   * the GATHER treatment of the portrait bust. Mutually exclusive with
+   * `text`/`fontFamily`; one source is required.
+   */
+  image?: HTMLImageElement;
+  /**
+   * Cap on the point cloud (default 14_000). The bust's 200–300px box
+   * needs fewer points than the BERAT wordmark; pass a lower cap there.
+   */
+  maxParticles?: number;
+  /**
+   * Pointer-repulsion radius in canvas px (default 150, the BERAT
+   * value). The bust's 300px box needs a face-scale crater — 150 eats
+   * ~55% of the head and reads as a donut (round-2 critic note).
+   */
+  mouseRadius?: number;
+  /**
+   * Live yaw source (radians) for the whole cloud, read every frame
+   * and composed with the idle sway — the bust's scroll turn. Defaults
+   * to 0 (the wordmark never turns).
+   */
+  yawSource?: () => number;
   /**
    * When true, particles start scattered across the canvas and ease into
    * the letterforms (the GATHER entrance: the word assembles from chaos
@@ -58,6 +86,96 @@ export function letterBoundsFromOrigins(
 }
 
 const MAX_PARTICLES = 14_000;
+/** Luminance floor for image sampling — matches the ASCII bust's skip. */
+const IMAGE_LUM_THRESHOLD = 0.05;
+/** Relief depth (px) across the full luminance range of an image source. */
+const IMAGE_DEPTH_SCALE = 48;
+
+export type ImageSample = {
+  /** Centered, y-up origins (x, y, depth-from-luminance triples). */
+  origins: Float32Array;
+  /** Per-point luminance 0..1, parallel to origins. */
+  luminances: Float32Array;
+};
+
+/**
+ * Pure image→point-cloud sampling, unit-tested without WebGL. Luminance
+ * comes from the red channel (the portrait source is monochrome); pixels
+ * at or below `threshold` are skipped (crushed background); depth is the
+ * luminance relief, so the cloud reads as a sculpture when it turns.
+ */
+export function sampleImagePoints(
+  imageData: Uint8ClampedArray,
+  width: number,
+  height: number,
+  gap: number,
+  threshold: number = IMAGE_LUM_THRESHOLD,
+  depthScale: number = IMAGE_DEPTH_SCALE,
+): ImageSample {
+  const origins: number[] = [];
+  const luminances: number[] = [];
+  for (let y = 0; y < height; y += gap) {
+    for (let x = 0; x < width; x += gap) {
+      const lum = imageData[(y * width + x) * 4] / 255;
+      if (lum <= threshold) continue;
+      origins.push(x - width / 2, height / 2 - y, (lum - 0.5) * depthScale);
+      luminances.push(lum);
+    }
+  }
+  return {
+    origins: Float32Array.from(origins),
+    luminances: Float32Array.from(luminances),
+  };
+}
+
+/**
+ * Histogram stretch for image sources: remap the kept luminances to the
+ * full [0,1] range by their observed min/max, so the palette gradient
+ * spans the face's actual tonal range instead of the slice the source
+ * happens to occupy. The portrait's kept pixels run 0.365–1.0 with 40%
+ * crammed into 0.4–0.5 — without the stretch, most of the face renders
+ * one gradient step and reads as a featureless dome (round-2 critic
+ * D2). Depth keeps the raw luminance; only the color is stretched.
+ * Pure, unit-tested. Identity on a flat or empty input.
+ */
+export function normalizeLuminances(luminances: Float32Array): Float32Array {
+  if (luminances.length === 0) return luminances;
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  for (const lum of luminances) {
+    if (lum < min) min = lum;
+    if (lum > max) max = lum;
+  }
+  if (!(max > min)) return luminances;
+  const out = new Float32Array(luminances.length);
+  for (let i = 0; i < luminances.length; i++) {
+    out[i] = (luminances[i] - min) / (max - min);
+  }
+  return out;
+}
+export function gradientColorHex(colors: readonly string[], t: number): string {
+  const clamped = Math.min(1, Math.max(0, t));
+  const scaled = clamped * (colors.length - 1);
+  const index = Math.min(colors.length - 2, Math.floor(scaled));
+  const frac = scaled - index;
+  const parse = (hex: string): [number, number, number] => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+  const a = parse(colors[index]);
+  const b = parse(colors[index + 1]);
+  const channel = (i: number) =>
+    Math.round(a[i] + (b[i] - a[i]) * frac)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${channel(0)}${channel(1)}${channel(2)}`;
+}
+
+/** Pure idle sway (radians) — the cloud breathes ±~3° around its yaw. */
+export function swayYaw(elapsedMs: number): number {
+  return Math.sin(elapsedMs * 0.00025) * 0.05;
+}
 const MOUSE_RADIUS = 150;
 const MOUSE_STRENGTH = 5;
 const FRICTION = 0.75;
@@ -78,8 +196,12 @@ export function normalizeParticleColor(color: string) {
 export class ParticleTextScene {
   private readonly canvas: HTMLCanvasElement;
   private readonly colors: readonly string[];
-  private readonly fontFamily: string;
-  private readonly text: string;
+  private readonly fontFamily: string | undefined;
+  private readonly text: string | undefined;
+  private readonly image: HTMLImageElement | undefined;
+  private readonly maxParticles: number;
+  private readonly mouseRadius: number;
+  private readonly yawSource: (() => number) | undefined;
   private readonly assemble: boolean;
   private readonly onSettled?: () => void;
   private settledFired = false;
@@ -98,11 +220,18 @@ export class ParticleTextScene {
   private pointerY = Number.POSITIVE_INFINITY;
   private startedAt = performance.now();
 
-  constructor({ canvas, colors, fontFamily, text, assemble = false, onSettled }: ParticleTextSceneOptions) {
+  constructor({ canvas, colors, fontFamily, text, image, maxParticles, mouseRadius, yawSource, assemble = false, onSettled }: ParticleTextSceneOptions) {
+    if (!image && !text) {
+      throw new Error("ParticleTextScene requires a text or image source");
+    }
     this.canvas = canvas;
     this.colors = colors;
     this.fontFamily = fontFamily;
     this.text = text;
+    this.image = image;
+    this.maxParticles = maxParticles ?? MAX_PARTICLES;
+    this.mouseRadius = mouseRadius ?? MOUSE_RADIUS;
+    this.yawSource = yawSource;
     this.assemble = assemble;
     this.onSettled = onSettled;
     this.renderer = new THREE.WebGLRenderer({
@@ -114,8 +243,20 @@ export class ParticleTextScene {
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
-    this.canvas.addEventListener("pointermove", this.handlePointerMove);
-    this.canvas.addEventListener("pointerleave", this.handlePointerLeave);
+    // Pointer input is window-level, not canvas-level: the bust lives
+    // under a pointer-events:none wrapper (it must never block clicks on
+    // the copy beneath it), so its canvas never receives pointer events.
+    // The handler maps the pointer into canvas coords and the animation
+    // loop's distance gate (MOUSE_RADIUS) ignores pointers far away, so
+    // a window listener behaves identically for the BERAT canvas — whose
+    // pointer-events:auto band already covered the same area — and is the
+    // only way the bust's repulsion field ever fires.
+    window.addEventListener("pointermove", this.handlePointerMove);
+    document.documentElement.addEventListener(
+      "pointerleave",
+      this.handlePointerLeave,
+    );
+    document.addEventListener("visibilitychange", this.handlePointerGone);
   }
 
   start() {
@@ -143,8 +284,12 @@ export class ParticleTextScene {
 
   dispose() {
     cancelAnimationFrame(this.animationFrame);
-    this.canvas.removeEventListener("pointermove", this.handlePointerMove);
-    this.canvas.removeEventListener("pointerleave", this.handlePointerLeave);
+    window.removeEventListener("pointermove", this.handlePointerMove);
+    document.documentElement.removeEventListener(
+      "pointerleave",
+      this.handlePointerLeave,
+    );
+    document.removeEventListener("visibilitychange", this.handlePointerGone);
     this.clearParticles();
     this.renderer.dispose();
     this.renderer.forceContextLoss();
@@ -163,34 +308,66 @@ export class ParticleTextScene {
     // 220px cap rendered the particle word ~24% narrower (630px vs 831px
     // measured). 300px at 0.78 of box height lands ~856px desktop; mobile
     // stays width-constrained, so it is unchanged there.
-    const maximumFontSize = Math.min(300, height * 0.78);
-    context.font = `800 ${maximumFontSize}px ${this.fontFamily}`;
-    const measuredWidth = Math.max(1, context.measureText(this.text).width);
-    const fontSize = Math.min(maximumFontSize, maximumFontSize * ((width * 0.9) / measuredWidth));
-    context.clearRect(0, 0, width, height);
-    context.fillStyle = "#fff";
-    context.font = `800 ${fontSize}px ${this.fontFamily}`;
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.fillText(this.text.toUpperCase(), width / 2, height / 2);
-
-    const imageData = context.getImageData(0, 0, width, height).data;
-    // Run 9: gap 3 everywhere — the mobile gap-4 letters read thin next
-    // to the ASCII BERAT; denser sampling punches the wordmark up at 390px
-    // (mobile count stays ~1.5k, far under the cap).
-    const gap = 3;
+    const gap = 3; // Denser sampling punches the wordmark up at 390px
+    // (mobile count stays ~1.5k, far under the cap); the bust's small
+    // box needs the same density to read as a face, not a sparse cloud.
     const samples: Array<[number, number, number]> = [];
+    // Parallel luminance per sample for image sources (null for text).
+    let sampleLums: number[] | null = null;
+    if (this.image) {
+      // Image source: sample at the image's NATIVE resolution (gap 1 in
+      // source pixels, origins scaled to the canvas) — sampling the
+      // upscaled 300px draw at gap 3 aliased against the 84px source
+      // (3.57x upscale) and banded the settled face (round 1). The old
+      // ASCII renderer sampled the same 84x84 grid.
+      const iw = this.image.naturalWidth || width;
+      const ih = this.image.naturalHeight || height;
+      const srcCanvas = document.createElement("canvas");
+      srcCanvas.width = iw;
+      srcCanvas.height = ih;
+      const srcContext = srcCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+      if (!srcContext) throw new Error("Particle Text requires a 2D canvas context");
+      srcContext.drawImage(this.image, 0, 0);
+      const imageData = srcContext.getImageData(0, 0, iw, ih).data;
+      const sampled = sampleImagePoints(imageData, iw, ih, 1);
+      const scaleX = width / iw;
+      const scaleY = height / ih;
+      for (let i = 0; i < sampled.origins.length; i += 3) {
+        samples.push([
+          sampled.origins[i] * scaleX,
+          sampled.origins[i + 1] * scaleY,
+          sampled.origins[i + 2],
+        ]);
+      }
+      // Color uses the histogram-stretched luminance (round 3) so the
+      // gradient spans the face; depth keeps the raw relief.
+      sampleLums = Array.from(normalizeLuminances(sampled.luminances));
+    } else {
+      const maximumFontSize = Math.min(300, height * 0.78);
+      context.font = `800 ${maximumFontSize}px ${this.fontFamily}`;
+      const measuredWidth = Math.max(1, context.measureText(this.text ?? "").width);
+      const fontSize = Math.min(maximumFontSize, maximumFontSize * ((width * 0.9) / measuredWidth));
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = "#fff";
+      context.font = `800 ${fontSize}px ${this.fontFamily}`;
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText((this.text ?? "").toUpperCase(), width / 2, height / 2);
 
-    for (let y = 0; y < height; y += gap) {
-      for (let x = 0; x < width; x += gap) {
-        if (imageData[(y * width + x) * 4 + 3] > 128) {
-          const depth = Math.sin(x * 0.037 + y * 0.021) * 16;
-          samples.push([x - width / 2, height / 2 - y, depth]);
+      const imageData = context.getImageData(0, 0, width, height).data;
+      for (let y = 0; y < height; y += gap) {
+        for (let x = 0; x < width; x += gap) {
+          if (imageData[(y * width + x) * 4 + 3] > 128) {
+            const depth = Math.sin(x * 0.037 + y * 0.021) * 16;
+            samples.push([x - width / 2, height / 2 - y, depth]);
+          }
         }
       }
     }
 
-    const stride = Math.max(1, Math.ceil(samples.length / MAX_PARTICLES));
+    const stride = Math.max(1, Math.ceil(samples.length / this.maxParticles));
     const particleCount = Math.ceil(samples.length / stride);
     const positions = new Float32Array(particleCount * 3);
     const colorValues = new Float32Array(particleCount * 3);
@@ -206,10 +383,27 @@ export class ParticleTextScene {
       positions[offset + 1] = sample[1];
       positions[offset + 2] = sample[2];
 
-      const colorHash =
-        Math.abs(Math.sin(sample[0] * 12.9898 + sample[1] * 78.233) * 43_758.5453) %
-        1;
-      const color = palette[Math.floor(colorHash * palette.length)];
+      // Image sources keep their shading as a smooth gradient: the color
+      // walks the palette stops with luminance, so the face's tonal
+      // gradation survives instead of quantizing into contour bands.
+      // Text keeps its position-hash speckle.
+      const color =
+        sampleLums !== null
+          ? new THREE.Color(
+              normalizeParticleColor(
+                gradientColorHex(this.colors, sampleLums[sampleIndex]),
+              ),
+            )
+          : palette[
+              Math.floor(
+                (Math.abs(
+                  Math.sin(sample[0] * 12.9898 + sample[1] * 78.233) *
+                    43_758.5453,
+                ) %
+                  1) *
+                  palette.length,
+              )
+            ];
       colorValues[offset] = color.r;
       colorValues[offset + 1] = color.g;
       colorValues[offset + 2] = color.b;
@@ -272,6 +466,12 @@ export class ParticleTextScene {
     this.pointerY = Number.POSITIVE_INFINITY;
   };
 
+  // A hidden tab has no pointer in the window — ease back to the scroll
+  // pose instead of holding a stale repulsion.
+  private readonly handlePointerGone = () => {
+    if (document.visibilityState === "hidden") this.handlePointerLeave();
+  };
+
   private readonly animate = () => {
     const positionAttribute = this.geometry?.getAttribute("position");
     if (positionAttribute instanceof THREE.BufferAttribute) {
@@ -287,8 +487,8 @@ export class ParticleTextScene {
         const dy = positions[index + 1] - this.pointerY;
         const distance = Math.hypot(dx, dy);
 
-        if (distance < MOUSE_RADIUS && distance > 0) {
-          const force = (1 - distance / MOUSE_RADIUS) * MOUSE_STRENGTH;
+        if (distance < this.mouseRadius && distance > 0) {
+          const force = (1 - distance / this.mouseRadius) * MOUSE_STRENGTH;
           this.velocities[index] += (dx / distance) * force;
           this.velocities[index + 1] += (dy / distance) * force;
           this.velocities[index + 2] += force * 0.35;
@@ -328,8 +528,20 @@ export class ParticleTextScene {
     if (this.points) {
       // Run 9: the settled wordmark must read as ALIVE, not a static
       // texture swap — a slow ±~3° sway (was ±2°) keeps the resting hero
-      // visibly breathing while the letters stay legible.
-      this.points.rotation.y = Math.sin((performance.now() - this.startedAt) * 0.00025) * 0.05;
+      // visibly breathing while the letters stay legible. The bust composes
+      // the same sway onto its live scroll-turn yaw (0 when no yaw source
+      // is given, so the wordmark is untouched).
+      const yaw = this.yawSource ? this.yawSource() : 0;
+      this.points.rotation.y = yaw + swayYaw(performance.now() - this.startedAt);
+      // Observability (same quantized pattern as the old bust's
+      // data-glance): the live scroll-turn yaw in milliradians, so
+      // probes gate on the component's own value instead of the frame.
+      // Exactly "0" at the hero; ~"1000" at mid-scroll; back to "0" at
+      // contact (the turn-back). Only written when a yaw source exists.
+      if (this.yawSource) {
+        const yq = String(Math.round(yaw * 1000));
+        if (this.canvas.dataset.yaw !== yq) this.canvas.dataset.yaw = yq;
+      }
     }
     this.renderer.render(this.scene, this.camera);
     this.animationFrame = requestAnimationFrame(this.animate);

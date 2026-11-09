@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
  * ocean and light/dark tokens collapse to dark — so the theme controls are
  * no-ops there and must say so instead of looking clickable. Under reduced
  * motion the scene never boots, the attribute stays unset, and the controls
- * work normally. Same MutationObserver read as ascii-portrait-bust.tsx.
+ * work normally. Same MutationObserver read as particle-portrait-bust.tsx.
  */
 export function useAsciiActive(): boolean {
   const [active, setActive] = useState(false);
