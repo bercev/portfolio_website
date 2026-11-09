@@ -3377,6 +3377,24 @@ html[data-journey="active"] [data-hero-name-fallback] {
   text-wrap: balance;
 }
 
+/* RUN9-DETAIL-LEDE-FLIP: the tagline lines stack in one grid cell, so the
+   container's height is always the tallest line's — the roll never shifts
+   the CTA or signals below. Lines roll up out / in from below; overflow
+   clips them mid-roll. Each line balances its own wrap. */
+[data-hero-tagline-flip] {
+  display: grid;
+  overflow: hidden;
+}
+
+[data-hero-tagline-line] {
+  grid-area: 1 / 1;
+  /* Bottom-anchored: every identity's last line sits on the same baseline,
+     tight above the CTA — a short line never leaves a dead band below it. */
+  align-self: end;
+  text-wrap: balance;
+  will-change: transform, opacity;
+}
+
 /* Three facts, pinned to the right edge — the recruiter's first scan. */
 [data-hero-signals] {
   grid-column: 9 / span 4;

@@ -105,6 +105,9 @@ export interface PortfolioContent {
   }[];
   readonly hero: {
     readonly tagline: string;
+    /** The lede flip cycles through these (first = tagline); all from
+        content.ts roles only — no invented copy. */
+    readonly taglines: readonly string[];
     readonly bio: string;
     /** Masthead rail — the three facts a recruiter needs off the first screen. */
     readonly signals: readonly {
@@ -176,6 +179,11 @@ export const portfolio = {
   hero: {
     tagline:
       "Full-stack software engineer, researcher",
+    taglines: [
+      "Full-stack software engineer, researcher",
+      "LLM researcher",
+      "AI systems engineer",
+    ],
     bio: "I write software first and study how LLMs behave in the wild. I recently finished an AI Systems Engineer internship building multi-agent pipelines, with SkillOptimizer (ICML 2026 AIWILD Workshop) and @GrokSet (arXiv), while finishing CS at UC Santa Cruz (4.0).",
     signals: [
       { label: "Now", value: "Building products" },

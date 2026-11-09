@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 
 import ASCIIText from "@/components/effects/react-bits-ascii-text";
 import { ParticleBerat } from "@/components/effects/particle-berat";
+import { HeroTaglineFlip } from "@/components/sections/hero-tagline-flip";
 import { useMotionPreference } from "@/components/providers/motion-provider";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { MagneticButton } from "@/components/ui/magnetic-button";
@@ -143,7 +144,13 @@ export function Hero({ content }: { content: HeroContent }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
               >
-                {hero.tagline}
+                {/* Screen readers get the first line, once; the flipper is
+                    visual (aria-hidden) so it never announces every 3s. */}
+                <span className="sr-only">{hero.tagline}</span>
+                <HeroTaglineFlip
+                  lines={hero.taglines}
+                  reduceMotion={reduceMotion}
+                />
               </motion.p>
             ) : null}
 
