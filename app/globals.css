@@ -3059,6 +3059,123 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
+/* Tear-off citation slip (run-9 RUN9-BIBTEX-SLIP): the BibTeX block is a
+   slip torn from the sheet — punched-hole perforation along the top edge,
+   a dashed tear line that draws across on first view, a mono kicker, and
+   a stamped COPY plate. Same 68% card face as the skill/tech tapes, same
+   inner margin frame as the plates, same 220ms / 0.5s press-and-draw
+   family. The COPY plate presses at the reel-4 0.97 scale; reduced
+   motion renders the slip settled (native hook in bibtex-block.tsx). */
+.bibtex-slip {
+  position: relative;
+  margin-top: 0.75rem;
+  border: 1px solid var(--journey-rule);
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+}
+
+.bibtex-slip::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  pointer-events: none;
+}
+
+.bibtex-slip-perf {
+  position: relative;
+  height: 16px;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--foreground) 60%, transparent) 2.5px,
+    transparent 2.6px
+  );
+  background-size: 16px 16px;
+  background-position: center;
+  background-repeat: repeat-x;
+}
+
+.bibtex-slip-tear {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  border-bottom: 1px dashed
+    color-mix(in srgb, var(--foreground) 60%, transparent);
+  transform-origin: left;
+}
+
+.bibtex-slip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 1rem 0.5rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.bibtex-slip-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.bibtex-slip-copy {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+  border: 1px solid var(--journey-rule);
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition:
+    border-color 220ms ease-out,
+    color 220ms ease-out,
+    transform 220ms ease-out;
+}
+
+.bibtex-slip-copy:hover,
+.bibtex-slip-copy[data-copied="true"] {
+  border-color: var(--accent-neon);
+  color: var(--accent-neon);
+}
+
+.bibtex-slip-copy:active {
+  transform: scale(0.97);
+}
+
+.bibtex-slip-code {
+  margin: 0;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--foreground);
+}
+
+/* Round-2: at phone width the 0.75rem key line wraps and leaves a lone
+   "," on its own line — 0.7rem fits the 42-char entry key on one line. */
+@media (max-width: 700px) {
+  .bibtex-slip-code {
+    font-size: 0.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bibtex-slip-copy {
+    transition: none;
+  }
+}
+
 /* Paper-page sign-off (run-9 RUN9-DETAIL-SIGNATURE): the signature draws
    itself in under the citation slip — drafting-hand ink, never a font. */
 .journey-pub-signoff {
