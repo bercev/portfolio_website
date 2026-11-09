@@ -226,6 +226,49 @@
   color: var(--portfolio-accent);
 }
 
+/* The hint under the plate head: the hold interaction is otherwise
+   undiscoverable. One quiet mono line, same voice as the head. */
+.optionsHint {
+  padding: 0.375rem 0.5rem 0.25rem;
+  color: color-mix(in oklab, var(--popover-foreground) 55%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* RUN9-THEME-LAMP: the drafting lamp's beam. A fixed cone portalled to
+   the body (the fan's transformed ancestors would pin a fixed child to
+   the wrong box), z-45 — above the page content (10) and below the nav
+   (50) and the Tool Tray plate, so the plate stays readable while the
+   beam washes the sheet. Geometry (left/top/width/height/gradient/
+   clip-path) arrives inline from lib/theme-lamp; this class carries the
+   sweep (scaleX out of the row, 250ms site ease-out) and the release
+   dissolve (opacity 250ms). */
+.lampBeam {
+  position: fixed;
+  z-index: 45;
+  pointer-events: none;
+  animation: lamp-beam-sweep 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 250ms ease-out;
+}
+
+.lampBeam[data-phase="fade"] {
+  opacity: 0;
+}
+
+@keyframes lamp-beam-sweep {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media (max-width: 899px) {
   .options {
     width: 13.5rem;
