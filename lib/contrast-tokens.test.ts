@@ -130,12 +130,14 @@ function resolveLightAccent(palette: string): RGB {
 }
 
 describe("design-token contrast", () => {
-  it("keeps the contact-form placeholder at 4.5:1 on the ledger-line sheet face", () => {
-    // RUN9-FORM-CONTROLS: the input is a transparent ledger line now, so
-    // the placeholder sits on the form sheet face — color-mix(var(--card)
-    // 78%, transparent) over the page background — in every theme. The
-    // placeholder itself is color-mix(var(--muted-foreground) 85%,
-    // transparent). Resolve both mixes per theme and check the composite.
+  it("keeps the contact-form placeholder at 4.5:1 on the field-plate face", () => {
+    // RUN9-FIELD-PLATES: the input is a transparent face on a numbered
+    // field plate now, so the placeholder sits on the plate face —
+    // color-mix(var(--card) N%, transparent) — composited over the form
+    // sheet face (color-mix(var(--card) M%, transparent) over the page
+    // background) in every theme. The placeholder itself is
+    // color-mix(var(--muted-foreground) 85%, transparent). Resolve all
+    // three mixes per theme and check the composite.
     const placeholderDecl = decl(
       blockOf(/\.journey-contact-form-input::placeholder\s*\{([^}]*)\}/),
       "color",
@@ -150,6 +152,20 @@ describe("design-token contrast", () => {
       );
     }
     const phAlpha = Number(phMix[1]) / 100;
+    const plateDecl = decl(
+      blockOf(/\.journey-contact-form-field\s*\{([^}]*)\}/),
+      "background",
+    );
+    const plateMix =
+      /color-mix\(\s*in srgb\s*,\s*var\(--card\)\s*([\d.]+)%\s*,\s*transparent\s*\)/.exec(
+        plateDecl,
+      );
+    if (!plateMix) {
+      throw new Error(
+        `contrast guard: unrecognized field-plate background color-mix: ${plateDecl}`,
+      );
+    }
+    const plateAlpha = Number(plateMix[1]) / 100;
     const formDecl = decl(
       blockOf(/\.journey-contact-form\s*\{([^}]*)\}/),
       "background",
@@ -177,12 +193,17 @@ describe("design-token contrast", () => {
       const card = cardDecl.startsWith("#")
         ? { rgb: hexToRgb(cardDecl), alpha: 1 }
         : parseRgba(cardDecl);
-      const face = composite(card.rgb, card.alpha * cardAlpha, bg);
-      const text = composite(muted, phAlpha, face);
-      const ratio = contrast(text, face);
+      const sheetFace = composite(card.rgb, card.alpha * cardAlpha, bg);
+      const plateFace = composite(
+        card.rgb,
+        card.alpha * plateAlpha,
+        sheetFace,
+      );
+      const text = composite(muted, phAlpha, plateFace);
+      const ratio = contrast(text, plateFace);
       expect(
         ratio,
-        `placeholder on sheet face (${name})`,
+        `placeholder on field-plate face (${name})`,
       ).toBeGreaterThanOrEqual(4.5);
     }
   });

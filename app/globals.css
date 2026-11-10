@@ -5519,16 +5519,25 @@ html[data-journey="active"] [data-hero-name-fallback] {
   border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   pointer-events: none;
 }
+/* Field plates (RUN9-FIELD-PLATES): the three dispatch fields are
+   numbered plates in the sheet language — a bordered card face, an
+   inner margin frame, "+" registration marks at the top corners and a
+   chip numeral — so they read as drafted objects at rest, not bare
+   underlines. */
 .journey-contact-form-fieldnum {
   display: inline-block;
+  padding: 0.1rem 0.35rem;
   color: var(--portfolio-accent);
   font-weight: 600;
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  border: 1px solid var(--border);
   transition: transform 0.22s ease-out;
 }
-/* Focus pen-rule (RUN9-FORM-CONTROLS): the field's baseline is a quiet
-   ruled line; focusing draws an accent pen-rule across it in 450ms
-   (the fold-tab rule timing) while the field numeral presses 1.25 -> 1
-   in 220ms (the Elsewhere / case-detail press). */
+/* Focus pen-rule (RUN9-FORM-CONTROLS, plate in RUN9-FIELD-PLATES):
+   the plate's bottom edge is a quiet border; focusing draws an accent
+   pen-rule across it in 450ms (the fold-tab rule timing) while the
+   field numeral presses 1.25 -> 1 in 220ms (the Elsewhere /
+   case-detail press). */
 @keyframes contact-fieldnum-press {
   from {
     transform: scale(1.25);
@@ -5561,9 +5570,24 @@ html[data-journey="active"] [data-hero-name-fallback] {
   position: relative;
   display: block;
   margin-bottom: 1rem;
+  /* Plate face: a step lighter than the sheet face (card 68% over the
+     sheet's card 78%), so the plate reads as a raised card on the
+     sheet. Top padding clears the "+" registration marks. */
+  padding: 1rem 0.8rem 0.8rem;
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+  border: 1px solid var(--border);
 }
-/* Accent pen-rule, drawn left -> right on focus. It sits on the field's
-   bottom edge, over the input's own quiet baseline. */
+/* Inner margin frame — the same 3px inset frame the submit plate and
+   the sheet itself carry. */
+.journey-contact-form-field::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
+}
+/* Accent pen-rule, drawn left -> right on focus. It sits on the plate's
+   bottom edge, over the plate's own border. */
 .journey-contact-form-field::after {
   content: "";
   position: absolute;
@@ -5579,6 +5603,13 @@ html[data-journey="active"] [data-hero-name-fallback] {
 }
 .journey-contact-form-field:focus-within::after {
   transform: scaleX(1);
+}
+/* Returned line: the plate border goes red-ink when its input is
+   invalid — the error line below names the field number. */
+.journey-contact-form-field:has(
+  .journey-contact-form-input[aria-invalid="true"]
+) {
+  border-color: #ff6b57;
 }
 .journey-contact-form-field:focus-within
   .journey-contact-form-fieldnum {
@@ -5597,31 +5628,25 @@ html[data-journey="active"] [data-hero-name-fallback] {
   font: inherit;
   font-size: 0.9rem;
   color: var(--foreground);
-  /* Ledger line, not a box: transparent face, one ruled baseline. The
-     sheet's card face shows through, so this reads in both themes. */
+  /* Transparent face on the plate: the plate is the boundary now, so
+     the input carries no border of its own. */
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--border);
   border-radius: 0;
   outline: none;
-  transition: border-bottom-color 0.15s ease-out;
 }
 .journey-contact-form-input::placeholder {
   /* Muted-foreground token at 0.85 alpha, the same composite the dark
-     box used (5.43:1) — now on the sheet face in either theme. */
+     box used (5.43:1) — now on the plate face in either theme. */
   color: color-mix(in srgb, var(--muted-foreground) 85%, transparent);
 }
 .journey-contact-form-input:focus {
   /* The focus signal is the accent pen-rule drawn by the field's
      ::after — no box-shadow ring, no border swap. The global
      :focus-visible halo (5px accent box-shadow) is suppressed here on
-     purpose: the 2px pen-rule across the baseline IS the visible focus
-     indicator, and the two together read as a heavy box. */
-  border-bottom-color: var(--border);
+     purpose: the 2px pen-rule across the plate's bottom edge IS the
+     visible focus indicator, and the two together read as a heavy box. */
   box-shadow: none;
-}
-.journey-contact-form-input[aria-invalid="true"] {
-  border-bottom-color: #ff6b57;
 }
 .journey-contact-form-input:disabled {
   opacity: 0.6;
@@ -5688,6 +5713,10 @@ html[data-journey="active"] [data-hero-name-fallback] {
   padding-left: 0.6rem;
   font-size: 0.82rem;
   color: #ff6b57;
+  /* Balanced wrap: at 390px the long "FIELD 01 · … MIN 2 CHARS"
+     string must not orphan a lone "CHARS" on its own line (mobile
+     critic, iter 48). */
+  text-wrap: balance;
   /* Red-ink correction mark: the error reads as a returned line, not a
      floating caption. */
   border-left: 2px solid #ff6b57;
@@ -5740,11 +5769,15 @@ html[data-journey="active"] [data-hero-name-fallback] {
   opacity: 0.6;
   cursor: wait;
 }
-/* Reduced motion (RUN9-FORM-CONTROLS): the pen-rule appears instantly
-   on focus (no draw), the numeral never presses, chips and plate swap
-   state with no transition — the settled form is the same form. */
+/* Reduced motion (RUN9-FORM-CONTROLS, plates in RUN9-FIELD-PLATES):
+   the pen-rule appears instantly on focus (no draw), the numeral
+   never presses, chips and plates swap state with no transition —
+   the settled form is the same form. */
 @media (prefers-reduced-motion: reduce) {
   .journey-contact-form-field::after {
+    transition: none;
+  }
+  .journey-contact-form-fieldnum {
     transition: none;
   }
   .journey-contact-form-field:focus-within

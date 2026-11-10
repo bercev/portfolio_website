@@ -5,8 +5,26 @@ import {
   CONTACT_FIELDNUM_PRESS_SCALE,
   CONTACT_FIELD_RULE_MS,
   CONTACT_SUBMIT_PRESS_SCALE,
+  contactFieldNumber,
   contactTopicTab,
 } from "./contact-form-controls";
+
+describe("contactFieldNumber", () => {
+  it("numbers the three dispatch fields in sheet order", () => {
+    expect(contactFieldNumber("name")).toBe("01");
+    expect(contactFieldNumber("email")).toBe("02");
+    expect(contactFieldNumber("message")).toBe("03");
+  });
+
+  it("matches the numbers the validation copy names", () => {
+    // "FIELD 01 · NAME TOO SHORT", "FIELD 02 · INVALID ADDRESS",
+    // "FIELD 03 · MESSAGE TOO SHORT" — the plate numeral and the
+    // error line must agree on which field is which.
+    expect(`FIELD ${contactFieldNumber("name")}`).toBe("FIELD 01");
+    expect(`FIELD ${contactFieldNumber("email")}`).toBe("FIELD 02");
+    expect(`FIELD ${contactFieldNumber("message")}`).toBe("FIELD 03");
+  });
+});
 
 describe("contactTopicTab", () => {
   it("letters the three real topics A / B / C", () => {

@@ -24,7 +24,7 @@ import {
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 import { ContactEcg } from "./contact-ecg";
-import { contactTopicTab } from "@/lib/contact-form-controls";
+import { contactFieldNumber, contactTopicTab } from "@/lib/contact-form-controls";
 
 type Status = "idle" | "sending" | "sent" | "error";
 type FieldName = "name" | "email" | "message";
@@ -314,7 +314,25 @@ export function ContactForm() {
           announces "Your name" / "Your email address" / "Your message". */}
       <label className="journey-contact-form-field">
         <span className="journey-contact-form-label">
-          <span className="journey-contact-form-fieldnum">01</span> — From
+          <span className="journey-contact-form-fieldnum">
+            {contactFieldNumber("name")}
+          </span>{" "}
+          — From
+        </span>
+        {/* Registration marks (RUN9-FIELD-PLATES): the plate's top
+            corners carry the sheet's "+" marks, straddling the border
+            like the Elsewhere plate's. */}
+        <span
+          className="journey-sheet-crop journey-sheet-crop--left"
+          aria-hidden="true"
+        >
+          +
+        </span>
+        <span
+          className="journey-sheet-crop journey-sheet-crop--right"
+          aria-hidden="true"
+        >
+          +
         </span>
         <input
           type="text"
@@ -337,8 +355,22 @@ export function ContactForm() {
 
       <label className="journey-contact-form-field">
         <span className="journey-contact-form-label">
-          <span className="journey-contact-form-fieldnum">02</span> — Return
-          address
+          <span className="journey-contact-form-fieldnum">
+            {contactFieldNumber("email")}
+          </span>{" "}
+          — Return address
+        </span>
+        <span
+          className="journey-sheet-crop journey-sheet-crop--left"
+          aria-hidden="true"
+        >
+          +
+        </span>
+        <span
+          className="journey-sheet-crop journey-sheet-crop--right"
+          aria-hidden="true"
+        >
+          +
         </span>
         <input
           type="email"
@@ -402,7 +434,22 @@ export function ContactForm() {
 
       <label className="journey-contact-form-field">
         <span className="journey-contact-form-label">
-          <span className="journey-contact-form-fieldnum">03</span> — Message
+          <span className="journey-contact-form-fieldnum">
+            {contactFieldNumber("message")}
+          </span>{" "}
+          — Message
+        </span>
+        <span
+          className="journey-sheet-crop journey-sheet-crop--left"
+          aria-hidden="true"
+        >
+          +
+        </span>
+        <span
+          className="journey-sheet-crop journey-sheet-crop--right"
+          aria-hidden="true"
+        >
+          +
         </span>
         <textarea
           ref={messageRef}
