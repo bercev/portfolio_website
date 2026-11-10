@@ -1884,6 +1884,140 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
+/* Dimension numerals (run-9 RUN9-PAPER-COMPOSITION): mono numerals on a
+   sheet-colored chip that breaks the dimension line, fading in once the
+   line has drawn. Siblings of the lines so the draw's scale never
+   squashes the text; side numerals read vertically. */
+.fig-measure-label {
+  position: absolute;
+  z-index: 1;
+  padding: 2px 6px;
+  background: var(--card);
+  color: var(--accent-neon);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  animation: fig-measure-label-in 0.3s ease-out both;
+}
+
+.fig-measure-label-top {
+  left: 50%;
+  top: -10px;
+  transform: translate(-50%, -50%);
+}
+
+.fig-measure-label-left {
+  left: -10px;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+.fig-measure-label-right {
+  right: -10px;
+  top: 50%;
+  transform: translate(50%, -50%) rotate(90deg);
+}
+
+@keyframes fig-measure-label-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion for the numerals: this block MUST sit after the base
+   label rules — an earlier RM block loses the cascade to the base
+   `opacity: 0` (same specificity, later rule wins; the iter-29
+   tech-tape RM bug, same class). Labels keep their centering transform;
+   only the fade is removed. */
+@media (prefers-reduced-motion: reduce) {
+  .fig-measure-label {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Phone widths: the side numerals stay off. A chip centered on the side
+   line needs ~23px of margin while the frame offset is 10px, so at the
+   raised (scroll-0) scale the left chip clips 3px past the viewport
+   edge; the strip's SIZE cell already carries both dims, so nothing is
+   lost — the top numeral + strip are the phone composition. */
+@media (max-width: 560px) {
+  .fig-measure-label-left,
+  .fig-measure-label-right {
+    display: none;
+  }
+}
+
+/* Figure title-block strip (run-9 RUN9-PAPER-COMPOSITION): the caption
+   becomes a drafting title block under the white plate — FIG / SHEET /
+   SIZE / SCALE cells with hairline dividers. It REPLACES the old
+   "FIG. 01 — First page" caption line on paper pages; the publications
+   list keeps its .journey-pub-fig-caption. */
+.journey-pub-fig-titleblock {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 10px 0 0;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.journey-pub-fig-cell {
+  min-width: 0;
+  padding: 0.55rem 0.75rem;
+  border-left: 1px solid var(--border);
+}
+
+.journey-pub-fig-cell:first-child {
+  border-left: 0;
+}
+
+.journey-pub-fig-cell-label {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-fig-cell-value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 560px) {
+  .journey-pub-fig-titleblock {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .journey-pub-fig-cell:nth-child(3),
+  .journey-pub-fig-cell:nth-child(4) {
+    border-top: 1px solid var(--border);
+  }
+
+  .journey-pub-fig-cell:nth-child(3) {
+    border-left: 0;
+  }
+}
+
 /* Venue stamp: pressed onto the plate's corner on first scroll into view
    (the press itself lives in publication-plate.tsx, 220ms ease-out). */
 .journey-pub-stamp {
@@ -1916,6 +2050,20 @@ html[data-journey] [data-effect-layer="background"] {
   .journey-pub-stamp {
     bottom: 36px;
   }
+}
+
+/* Paper pages (run-9 RUN9-PAPER-COMPOSITION round 3): the figure's
+   title-block strip now fills the corner the stamp used to hang over,
+   so on paper pages the stamp hangs BELOW the plate instead. The
+   rotated stamp's high corner reached ~33px into the strip on desktop
+   and hid the SCALE label outright on mobile (both critics, round 2);
+   at bottom: -54px its top edge clears the strip by ~9px on both
+   widths (probed: desktop settled top 33px above the figure bottom,
+   mobile 81px — the same -54px lands both). The figure's 3.5rem bottom
+   margin is the stamp's clear zone above the abstract. List plates
+   keep the rules above. */
+.journey-pub-page-figure .journey-pub-stamp {
+  bottom: -54px;
 }
 
 .journey-pub-body {
@@ -3312,6 +3460,10 @@ html[data-journey] [data-effect-layer="background"] {
 
 .journey-pub-page-figure {
   margin-top: 1.75rem;
+  /* Run-9 RUN9-PAPER-COMPOSITION round 3: the venue stamp hangs below
+     the plate (see the stamp rule below), so the figure reserves a clear
+     zone for it above the abstract. */
+  margin-bottom: 3.5rem;
 }
 
 .journey-pub-page-section {

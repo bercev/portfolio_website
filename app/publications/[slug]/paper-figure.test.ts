@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   FIG_MEASURE_DRAW_MS,
+  FIG_MEASURE_LABEL_FADE_MS,
+  FIG_MEASURE_LABEL_SIDE_DELAY_MS,
+  FIG_MEASURE_LABEL_TOP_DELAY_MS,
   FIG_MEASURE_OFFSET_PX,
   FIG_MEASURE_SIDE_DELAY_MS,
   FIG_MEASURE_TOP_DELAY_MS,
@@ -10,6 +13,8 @@ import {
   PAPER_FIGURE_RAISED_SCALE,
   PAPER_FIGURE_RAISED_Y_PX,
   PAPER_FIGURE_SETTLE_SCROLL_PX,
+  figMeasureLabels,
+  figTitleBlockCells,
   paperFigureSettle,
   paperFigureShadow,
 } from "./paper-figure";
@@ -105,5 +110,64 @@ describe("figMeasure timing", () => {
     // Plate padding is 20px at 390px; the frame must clear it.
     expect(FIG_MEASURE_OFFSET_PX).toBeGreaterThan(0);
     expect(FIG_MEASURE_OFFSET_PX).toBeLessThan(20);
+  });
+});
+
+describe("figMeasureLabels (RUN9-PAPER-COMPOSITION)", () => {
+  it("labels the top line with the width and the sides with the height", () => {
+    expect(figMeasureLabels(817, 867)).toEqual({ top: "817", side: "867" });
+    expect(figMeasureLabels(795, 870)).toEqual({ top: "795", side: "870" });
+  });
+
+  it("rounds fractional dims and never prints NaN or a negative", () => {
+    expect(figMeasureLabels(817.6, 866.4)).toEqual({
+      top: "818",
+      side: "866",
+    });
+    expect(figMeasureLabels(Number.NaN, 0)).toEqual({
+      top: "—",
+      side: "—",
+    });
+    expect(figMeasureLabels(-12, Infinity)).toEqual({
+      top: "—",
+      side: "—",
+    });
+  });
+
+  it("fades each numeral in only after its line has drawn", () => {
+    expect(FIG_MEASURE_LABEL_TOP_DELAY_MS).toBeGreaterThanOrEqual(
+      FIG_MEASURE_TOP_DELAY_MS + FIG_MEASURE_DRAW_MS,
+    );
+    expect(FIG_MEASURE_LABEL_SIDE_DELAY_MS).toBeGreaterThanOrEqual(
+      FIG_MEASURE_SIDE_DELAY_MS + FIG_MEASURE_DRAW_MS,
+    );
+    expect(FIG_MEASURE_LABEL_FADE_MS).toBeGreaterThan(0);
+    expect(
+      FIG_MEASURE_LABEL_SIDE_DELAY_MS + FIG_MEASURE_LABEL_FADE_MS,
+    ).toBeLessThanOrEqual(1600);
+  });
+});
+
+describe("figTitleBlockCells (RUN9-PAPER-COMPOSITION)", () => {
+  it("builds the four-cell strip from the real preview dims", () => {
+    expect(figTitleBlockCells("FIG. 01", 817, 867)).toEqual([
+      { label: "FIG", value: "01" },
+      { label: "SHEET", value: "First page" },
+      { label: "SIZE", value: "817 × 867 PX" },
+      { label: "SCALE", value: "1:1" },
+    ]);
+    expect(figTitleBlockCells("FIG. 02", 795, 870)[2]).toEqual({
+      label: "SIZE",
+      value: "795 × 870 PX",
+    });
+  });
+
+  it("degrades to dashes instead of inventing dims", () => {
+    const cells = figTitleBlockCells("FIG. 01", Number.NaN, -4);
+    expect(cells[2]).toEqual({ label: "SIZE", value: "—" });
+    expect(figTitleBlockCells("FIG. —", 817, 867)[0]).toEqual({
+      label: "FIG",
+      value: "—",
+    });
   });
 });

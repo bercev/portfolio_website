@@ -89,8 +89,63 @@ export const FIG_MEASURE_OFFSET_PX = 10;
 export const FIG_MEASURE_DRAW_MS = 600;
 export const FIG_MEASURE_TOP_DELAY_MS = 400;
 export const FIG_MEASURE_SIDE_DELAY_MS = 550;
+/** Dimension-numeral fade (run-9 RUN9-PAPER-COMPOSITION): the labels
+ * fade in once their line has drawn — top label after the top line
+ * lands (400 + 600), side labels after the sides land (550 + 600). */
+export const FIG_MEASURE_LABEL_TOP_DELAY_MS = 1050;
+export const FIG_MEASURE_LABEL_SIDE_DELAY_MS = 1200;
+export const FIG_MEASURE_LABEL_FADE_MS = 300;
 
-function FigMeasure() {
+/** A dimension extent as printed on the frame: the preview's real pixel
+ * count, rounded; anything unusable prints as an em dash, never NaN. */
+function dimensionText(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "—";
+  return String(Math.round(value));
+}
+
+/**
+ * The numerals printed on the FIG. plate's dimension frame (run-9
+ * RUN9-PAPER-COMPOSITION): the top line measures the plate's width, the
+ * side lines its height — the preview image's real pixel dims from
+ * content.ts, so the drawing measures something true.
+ */
+export function figMeasureLabels(
+  width: number,
+  height: number,
+): { readonly top: string; readonly side: string } {
+  return { top: dimensionText(width), side: dimensionText(height) };
+}
+
+/** One cell of the figure's title-block strip. */
+export interface FigTitleBlockCell {
+  readonly label: string;
+  readonly value: string;
+}
+
+/**
+ * The figure's title-block strip (run-9 RUN9-PAPER-COMPOSITION): FIG
+ * number, sheet name, real preview size, and the drawing scale — the
+ * strip REPLACES the old "FIG. 01 — First page" caption line (same
+ * facts, plus the measured size), so the caption is not duplicated.
+ */
+export function figTitleBlockCells(
+  figLabel: string,
+  width: number,
+  height: number,
+): readonly FigTitleBlockCell[] {
+  const number = /(\d+)/.exec(figLabel)?.[1] ?? "—";
+  const w = dimensionText(width);
+  const h = dimensionText(height);
+  return [
+    { label: "FIG", value: number },
+    { label: "SHEET", value: "First page" },
+    { label: "SIZE", value: w === "—" || h === "—" ? "—" : `${w} × ${h} PX` },
+    { label: "SCALE", value: "1:1" },
+  ];
+}
+
+function FigMeasure({ width, height }: { readonly width: number; readonly height: number }) {
+  const labels = figMeasureLabels(width, height);
   return (
     <>
       <span
@@ -111,6 +166,35 @@ function FigMeasure() {
         className="fig-measure fig-measure-right"
         style={{ animationDelay: `${FIG_MEASURE_SIDE_DELAY_MS}ms` }}
       />
+      {/* Dimension numerals (RUN9-PAPER-COMPOSITION): mono numerals on a
+        sheet-colored chip that breaks the line, fading in once the line
+        has drawn. Siblings of the lines (not children) so the draw's
+        scaleX/scaleY never squashes the text; aria-hidden — the
+        title-block strip below carries the same dims as real text. */}
+      <span
+        aria-hidden="true"
+        data-fig-measure-label="top"
+        className="fig-measure-label fig-measure-label-top"
+        style={{ animationDelay: `${FIG_MEASURE_LABEL_TOP_DELAY_MS}ms` }}
+      >
+        {labels.top}
+      </span>
+      <span
+        aria-hidden="true"
+        data-fig-measure-label="left"
+        className="fig-measure-label fig-measure-label-left"
+        style={{ animationDelay: `${FIG_MEASURE_LABEL_SIDE_DELAY_MS}ms` }}
+      >
+        {labels.side}
+      </span>
+      <span
+        aria-hidden="true"
+        data-fig-measure-label="right"
+        className="fig-measure-label fig-measure-label-right"
+        style={{ animationDelay: `${FIG_MEASURE_LABEL_SIDE_DELAY_MS}ms` }}
+      >
+        {labels.side}
+      </span>
     </>
   );
 }
@@ -150,6 +234,28 @@ export function PaperFigure({
   const boxShadow = useTransform(sprung, (p) =>
     paperFigureShadow(paperFigureSettle(p).lift),
   );
+  // Shared by both branches: the measured frame (real preview dims) and
+  // the title-block strip that replaces the old caption line.
+  const measure = (
+    <FigMeasure
+      width={publication.preview.width}
+      height={publication.preview.height}
+    />
+  );
+  const titleBlock = (
+    <figcaption className="journey-pub-fig-titleblock">
+      {figTitleBlockCells(
+        figLabel,
+        publication.preview.width,
+        publication.preview.height,
+      ).map((cell) => (
+        <span key={cell.label} className="journey-pub-fig-cell">
+          <span className="journey-pub-fig-cell-label">{cell.label}</span>
+          <span className="journey-pub-fig-cell-value">{cell.value}</span>
+        </span>
+      ))}
+    </figcaption>
+  );
 
   if (reduceMotion) {
     return (
@@ -165,12 +271,10 @@ export function PaperFigure({
             width={publication.preview.width}
             height={publication.preview.height}
           />
-          <FigMeasure />
+          {measure}
         </a>
         <VenueStamp venue={publication.venue} index={index} />
-        <figcaption className="journey-pub-fig-caption">
-          {figLabel} — First page
-        </figcaption>
+        {titleBlock}
       </figure>
     );
   }
@@ -193,12 +297,10 @@ export function PaperFigure({
           width={publication.preview.width}
           height={publication.preview.height}
         />
-        <FigMeasure />
+        {measure}
       </motion.a>
       <VenueStamp venue={publication.venue} index={index} />
-      <figcaption className="journey-pub-fig-caption">
-        {figLabel} — First page
-      </figcaption>
+      {titleBlock}
     </motion.figure>
   );
 }
