@@ -4640,7 +4640,11 @@ html[data-journey="active"] [data-hero-name-fallback] {
   grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
   column-gap: var(--shell-gap);
   align-items: end;
-  padding-top: clamp(2rem, 4vh, 3.5rem);
+  /* RUN9-HERO-SIGNALS: tightened from clamp(2rem, 4vh, 3.5rem) — the
+     STATUS plate's head + padding add ~40px to the signals strip, and
+     the fold buy-back has to come from the stack above it (this rule,
+     the lede gap, the row padding). */
+  padding-top: clamp(1.5rem, 3vh, 2.5rem);
   padding-bottom: clamp(6vh, 8vh, 11vh);
 }
 
@@ -4651,8 +4655,11 @@ html[data-journey="active"] [data-hero-name-fallback] {
   align-items: flex-start;
   /* RUN9-HERO-VERB-TICKER: tightened from clamp(1.1rem, 2.4vh, 1.75rem)
      so the new thesis line fits without pushing the third signal row
-     below the 844px fold on mobile (before: signals bottom 827). */
-  gap: clamp(0.75rem, 2vh, 1.5rem);
+     below the 844px fold on mobile (before: signals bottom 827).
+     RUN9-HERO-SIGNALS: tightened again to clamp(0.55rem, 1.4vh, 1.15rem)
+     — the STATUS plate's head + padding add ~40px to the strip, and the
+     fold buy-back comes from the stack above it. */
+  gap: clamp(0.55rem, 1.4vh, 1.15rem);
 }
 
 [data-hero-editorial] [data-hero-meta] {
@@ -4757,18 +4764,71 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 }
 
-/* Three facts, pinned to the right edge — the recruiter's first scan. */
+/* RUN9-HERO-SIGNALS — the three facts are a stamped STATUS plate, not
+   bare rows: bordered plate with inner margin frame (::before), a compact
+   sheet head ("Status — Sheet 01"), "+" registration marks, and numbered
+   status lines whose numerals press in and whose hairline rules draw on
+   first view (the Elsewhere-plate / REV-letter family). The 78% card face
+   sits above the particle bust, which yields to content anyway (iter 36).
+   The plate adds ~40px to the strip; the fold buy-back lives above it
+   (below padding-top, lede gap, row padding) — see the mobile block. */
 [data-hero-signals] {
+  position: relative;
   grid-column: 9 / span 4;
   margin: 0;
-  padding-bottom: 0.4rem;
+  padding: 0.6rem 0.9rem 0.5rem;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 1px solid var(--border);
+}
+
+[data-hero-signals]::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  pointer-events: none;
+}
+
+.hero-signals-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 [data-hero-signal] {
+  position: relative;
   display: grid;
-  grid-template-columns: 5.25rem minmax(0, 1fr);
+  grid-template-columns: 1.25rem 5.25rem minmax(0, 1fr);
   gap: 0.75rem;
-  padding: 0.75rem 0;
+  padding: 0.55rem 0;
+  align-items: baseline;
+}
+
+.hero-signals-num {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--portfolio-accent);
+}
+
+.hero-signals-rule {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--journey-rule-soft);
+  transform-origin: left center;
 }
 
 [data-hero-signal] dt {
@@ -5261,20 +5321,25 @@ html[data-journey="active"] [data-hero-name-fallback] {
 
   /* RUN9-HERO-VERB-TICKER: the thesis line's ~32px buys its room here —
      the below-block's top padding and the signals' top margin tighten so
-     the third signal row still clears the 844px fold (before: 827). */
+     the third signal row still clears the 844px fold (before: 827).
+     RUN9-HERO-SIGNALS: the STATUS plate's head + padding add ~35px to
+     the strip on mobile, so the buy-back grows — below padding-top
+     1.25→0.5rem, plate padding slimmer, rows 0.6→0.4rem, margin-top
+     0.5→0.35rem. The probe is the judge: signals bottom must stay ≤844. */
   [data-hero-below] {
-    padding-top: 1.25rem;
+    padding-top: 0.5rem;
   }
 
   [data-hero-signals] {
-    margin-top: 0.5rem;
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.8rem 0.4rem;
   }
 
   /* RUN9-HERO-CTA-PLATE round 2: the plate's extra height vs the old text
      link pushed the third signal row below the 844px fold on mobile — the
      tighter stack + slimmer rows buy it back. */
   [data-hero-signal] {
-    padding: 0.6rem 0;
+    padding: 0.4rem 0;
   }
 }
 

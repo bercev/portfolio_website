@@ -14,6 +14,7 @@ import { useMotionPreference } from "@/components/providers/motion-provider";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 import { HeroCtaPlate } from "@/components/sections/hero-cta-plate";
+import { HeroSignalsPlate } from "@/components/sections/hero-signals-plate";
 import type { PortfolioContent } from "@/data/content";
 
 type HeroContent = {
@@ -196,27 +197,14 @@ export function Hero({ content }: { content: HeroContent }) {
             </motion.div>
           </div>
 
-          <motion.dl
-            data-hero-signals
-            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.24 }}
-          >
-            {hero.signals.map((signal) => (
-              <div key={signal.label} data-hero-signal>
-                <dt>{signal.label}</dt>
-                <dd>
-                  {signal.href ? (
-                    <a href={signal.href} data-hero-signal-link>
-                      {signal.value}
-                    </a>
-                  ) : (
-                    signal.value
-                  )}
-                </dd>
-              </div>
-            ))}
-          </motion.dl>
+          {/* RUN9-HERO-SIGNALS: the signals strip is a stamped STATUS plate
+              — sheet head, numbered status lines with press-in numerals +
+              drawn rules. Same 0.24s entrance stagger and same copy; held
+              still under reduced motion. */}
+          <HeroSignalsPlate
+            signals={hero.signals}
+            reduceMotion={reduceMotion}
+          />
         </div>
       </div>
     </section>
