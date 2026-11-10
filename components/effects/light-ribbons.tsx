@@ -7,6 +7,10 @@ import { usePalette } from "@/components/providers/palette-provider";
 import { GLYPHS } from "@/components/effects/floating-glyphs";
 import { REDUCED_MOTION_QUERY } from "@/lib/effect-policy";
 import { BLUE_NOISE_128 } from "@/lib/blue-noise";
+import {
+  getBustTravelBox,
+  streamGlyphHiddenByBust,
+} from "@/lib/bust-travel";
 
 /**
  * LightRibbons — run 7: the user-approved Waylume-style animated light
@@ -1684,9 +1688,17 @@ export function LightRibbons() {
       // is ABSENT (no rAF loop draws it); on mobile the margin bands
       // are empty, so it is absent there by construction. The probe
       // hook reports how many glyphs were drawn this frame.
+      // RUN9-BUST-TRAVEL: the stream yields to the portrait — a glyph
+      // whose center falls inside the bust's live box (plus
+      // clearance) is skipped while the bust is bright, so no "018"
+      // triple ever marches over the dome again. When the bust is
+      // parked its published opacity is 0 and the gate lifts: the
+      // margin belongs to the stream between chapters, to the bust
+      // at hero and contact.
       if (!reduced) {
         const host = list.find((b) => b.role === "bright") ?? list[0];
         const bands = glyphStreamMarginBands(W, colL, colR);
+        const bustBox = getBustTravelBox();
         if (host && bands.length > 0) {
           const breath =
             1 + host.bd * Math.sin((tChapter * 6.2832) / host.bp + host.bph);
@@ -1724,6 +1736,7 @@ export function LightRibbons() {
             }
             if (!inBand) continue;
             const gy = centerY(host, gx, tChapter);
+            if (streamGlyphHiddenByBust(gx, gy, bustBox)) continue;
             const a =
               baseA * energy(gx, gy) * revealFactorAt(gx, gy);
             if (a < 0.004) continue;

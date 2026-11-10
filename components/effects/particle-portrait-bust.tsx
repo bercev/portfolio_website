@@ -5,11 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import {
   BUST_YIELD_FADE_MS,
   BUST_YIELD_RESAMPLE_MS,
-  bustYieldOpacity,
   bustYieldSamplePoints,
   cssColorAlpha,
   nextBustYielded,
 } from "@/lib/bust-yield";
+import {
+  bustParked,
+  bustTravelOpacity,
+  setBustTravelBox,
+} from "@/lib/bust-travel";
 import {
   contactFaceRamp,
   scrollSnapshot,
@@ -107,20 +111,27 @@ function bustPointCovered(x: number, y: number): boolean {
 }
 
 /**
- * useBustYield — the bust yields to content (RUN9-BUST-OVERLAP): samples
- * the 4x4 grid inside the bust box on scroll/resize and on a short
- * interval (layout changes like a case-study expand fire no scroll event;
- * the featured tape's marquee also drifts pills through the zone), and
- * flips the yielded state through the hysteresis in lib/bust-yield.ts.
- * The 600ms CSS fade on the box smooths the flip; sampling is rAF-
- * throttled and skips hidden tabs.
+ * useBustTravel — the bust yields to content AND parks between chapters
+ * (RUN9-BUST-OVERLAP + RUN9-BUST-TRAVEL): samples the 4x4 grid inside
+ * the bust box on scroll/resize and on a short interval (layout changes
+ * like a case-study expand fire no scroll event; the featured tape's
+ * marquee also drifts pills through the zone), and flips the yielded
+ * state through the hysteresis in lib/bust-yield.ts. The 600ms CSS fade
+ * on the box smooths the flip; sampling is rAF-throttled and skips
+ * hidden tabs. The same sample also resolves the park state from the
+ * shared scroll snapshot (hero + contact show the figure, chapters
+ * between park it at opacity 0) and publishes the live box + target
+ * opacity to the bust-travel holder, so the glyph stream can yield to
+ * the portrait instead of marching through it.
  */
-function useBustYield(
+function useBustTravel(
   boxRef: React.RefObject<HTMLDivElement | null>,
   active: boolean,
-): boolean {
+): { yielded: boolean; parked: boolean } {
   const [yielded, setYielded] = useState(false);
   const yieldedRef = useRef(false);
+  const [parked, setParked] = useState(false);
+  const parkedRef = useRef(false);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -138,11 +149,23 @@ function useBustYield(
       for (const p of bustYieldSamplePoints(rect)) {
         if (bustPointCovered(p.x, p.y)) covered += 1;
       }
-      const next = nextBustYielded(yieldedRef.current, covered);
-      if (next !== yieldedRef.current) {
-        yieldedRef.current = next;
-        setYielded(next);
+      const nextYielded = nextBustYielded(yieldedRef.current, covered);
+      if (nextYielded !== yieldedRef.current) {
+        yieldedRef.current = nextYielded;
+        setYielded(nextYielded);
       }
+      const nextParked = bustParked(scrollSnapshot.chapterIndex);
+      if (nextParked !== parkedRef.current) {
+        parkedRef.current = nextParked;
+        setParked(nextParked);
+      }
+      setBustTravelBox({
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height,
+        opacity: bustTravelOpacity(nextYielded, nextParked),
+      });
     };
     const queue = () => {
       if (!queued) {
@@ -160,10 +183,11 @@ function useBustYield(
       if (timer !== undefined) clearInterval(timer);
       window.removeEventListener("scroll", queue);
       window.removeEventListener("resize", queue);
+      setBustTravelBox(null);
     };
   }, [active, boxRef]);
 
-  return yielded;
+  return { yielded, parked };
 }
 
 function ParticleBustCanvas(): React.JSX.Element | null {
@@ -274,8 +298,10 @@ export function ParticlePortraitBust(): React.JSX.Element | null {
   // still. Applied to the bust's own box (transform-origin = its center);
   // compositor-only, quantized, and off under reduced motion like the blur.
   const diveRef = useScrollDive<HTMLDivElement>(64, 0.08, asciiActive && wide);
-  // Yield to content: fade the bust when real content scrolls under it.
-  const yielded = useBustYield(diveRef, asciiActive && wide);
+  // Yield to content + park between chapters: fade the bust when real
+  // content scrolls under it, and fade it out entirely for the chapters
+  // between hero and contact (RUN9-BUST-TRAVEL).
+  const { yielded, parked } = useBustTravel(diveRef, asciiActive && wide);
   useEffect(() => {
     if (!asciiActive || !wide) return;
     setFadedIn(false);
@@ -312,6 +338,7 @@ export function ParticlePortraitBust(): React.JSX.Element | null {
       aria-hidden="true"
       data-ascii-portrait-bust
       data-bust-yielded={yielded ? "true" : "false"}
+      data-bust-parked={parked ? "true" : "false"}
       style={{
         position: "fixed",
         inset: 0,
@@ -371,9 +398,12 @@ export function ParticlePortraitBust(): React.JSX.Element | null {
           // RUN9-BUST-OVERLAP: the box yields to content — when the sampler
           // finds real content under the box it fades to 0.12 over 600ms
           // (the hero stays bright; reading sections stay calm).
+          // RUN9-BUST-TRAVEL: the box parks between chapters — hero and
+          // contact show the figure, chapters 1–5 fade it to 0 entirely,
+          // so no smudge lingers behind the plates mid-scroll.
           className="relative aspect-square w-[clamp(200px,22vw,300px)]"
           style={{
-            opacity: bustYieldOpacity(yielded),
+            opacity: bustTravelOpacity(yielded, parked),
             transition: `opacity ${BUST_YIELD_FADE_MS}ms ease`,
           }}
         >
