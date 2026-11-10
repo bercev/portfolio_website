@@ -46,32 +46,38 @@ export default function NotFound() {
           <span>Drawing — Sheet not on file</span>
           <span>Rev —</span>
         </div>
-        <h1 className="not-found-status">404 — Sheet not found</h1>
-        <NotFoundSpreadMeasure />
-        <NotFoundGhostFigure />
-      <p className="journey-pub-fig-caption not-found-ghost-caption">
-        Fig. — · No drawing on file
-      </p>
-      <p className="not-found-line">
-        This address doesn&rsquo;t resolve to anything here.
-      </p>
-      <nav aria-label="Where to go from here" className="not-found-nav">
-        <PaperActionPlate
-          href="/"
-          index={0}
-          label="back home"
-          arrow="←"
-          arrowPosition="before"
-          arrowDirection="left"
-        />
-        <PaperActionPlate
-          href="/#contact"
-          index={1}
-          label="get in touch"
-          arrow="→"
-          arrowDirection="right"
-        />
-      </nav>
+        <div className="not-found-spread">
+          <div className="not-found-spread-figure">
+            <NotFoundSpreadMeasure />
+            <NotFoundGhostFigure />
+            <p className="journey-pub-fig-caption not-found-ghost-caption">
+              Fig. — · No drawing on file
+            </p>
+          </div>
+          <div className="not-found-spread-status">
+            <h1 className="not-found-status">404 — Sheet not found</h1>
+            <p className="not-found-line">
+              This address doesn&rsquo;t resolve to anything here.
+            </p>
+            <nav aria-label="Where to go from here" className="not-found-nav">
+              <PaperActionPlate
+                href="/"
+                index={0}
+                label="back home"
+                arrow="←"
+                arrowPosition="before"
+                arrowDirection="left"
+              />
+              <PaperActionPlate
+                href="/#contact"
+                index={1}
+                label="get in touch"
+                arrow="→"
+                arrowDirection="right"
+              />
+            </nav>
+          </div>
+        </div>
       <footer className="journey-sheet-titleblock not-found-titleblock">
         <div>
           <span className="journey-sheet-titleblock-label">Sheet</span>

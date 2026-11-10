@@ -5053,6 +5053,11 @@ html[data-journey="active"] [data-hero-name-fallback] {
   letter-spacing: -0.01em;
   line-height: 1.25;
   color: var(--foreground);
+  /* Balance the wrap (run-9 RUN9-404-COMPOSITION): without it the
+     headline breaks "404 — Sheet not / found" with a lone "found" —
+     the iter-39 orphan note. Balanced, it reads "404 — Sheet / not
+     found" at both widths. */
+  text-wrap: balance;
 }
 /* Spread measure (run-9 RUN9-404-SPREAD): an oversized exterior
    dimension line above the ghost figure — the missing figure measured
@@ -5182,6 +5187,70 @@ html[data-journey="active"] [data-hero-name-fallback] {
 }
 .not-found-titleblock {
   margin-top: 0.5rem;
+}
+
+/* Two-column spread (run-9 RUN9-404-COMPOSITION): the 404 stops reading
+ * as one stacked column widened + re-textured (both iter-39 critics'
+ * "vastly different" dissent) and becomes a spread — ghost figure left,
+ * status + sentence + actions right, title block full-width below.
+ * Below 900px the spread flattens to the exact stacked column: the
+ * wrapper and both columns are display:contents, so the leaves flow as
+ * the sheet's own flex children with the sheet's 1.25rem gap, and the
+ * explicit order values restore the headline-first sequence (the DOM
+ * order is figure column first, so without them the headline would drop
+ * below the figure on mobile). At desktop the same order values are
+ * harmless — they sort within each column. */
+.not-found-spread,
+.not-found-spread-figure,
+.not-found-spread-status {
+  display: contents;
+}
+.not-found-status {
+  order: 1;
+}
+.not-found-measure {
+  order: 2;
+}
+.not-found-ghost {
+  order: 3;
+}
+.not-found-ghost-caption {
+  order: 4;
+}
+.not-found-line {
+  order: 5;
+}
+.not-found-nav {
+  order: 6;
+}
+.not-found-titleblock {
+  order: 7;
+}
+
+@media (min-width: 900px) {
+  /* The spread: figure ~60% / status ~40% (3fr/2fr), 2.5rem gutter.
+     The status column centers vertically against the figure block, so
+     headline + sentence + stacked plates read as one group beside the
+     ghost, not three items stranded down a tall column. The action
+     plates stack full-width (flex column + stretch) instead of sitting
+     in a row under the sentence. */
+  .not-found-spread {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 2.5rem;
+  }
+  .not-found-spread-figure,
+  .not-found-spread-status {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .not-found-spread-status {
+    align-self: center;
+  }
+  .not-found-nav {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 900px) {
