@@ -1,11 +1,13 @@
 /**
- * Paper-page sign-off (run-9 RUN9-DETAIL-SIGNATURE): the author's name
- * signed under the citation slip, in the drafting hand — a hand-drawn SVG
- * signature that draws itself in on first scroll into view (60fps Run
- * Receipt Signature Interaction transfer: trigger → 1.4s pen draw → settle).
- * Reduced motion: fully drawn from the first frame (native hook — motion's
- * useReducedMotion() is unreliable in this app, run-9 iter 1). The signature
- * is a stroke path, never a font — it must read as drawn, not typed.
+ * Paper-page sign-off (run-10 RUN10-PAPERS): the author's name signed
+ * under the BibTeX panel as a trace of light — the same hand-drawn SVG
+ * signature strokes, now in accent neon with a soft glow, drawing
+ * themselves in on first scroll into view (60fps Run Receipt Signature
+ * Interaction transfer: trigger → 1.4s pen draw → settle). Reduced
+ * motion: fully drawn from the first frame (native hook — motion's
+ * useReducedMotion() is unreliable in this app, run-9 iter 1). The
+ * signature is a stroke path, never a font — it must read as drawn,
+ * not typed.
  */
 "use client";
 

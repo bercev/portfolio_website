@@ -11,3 +11,15 @@ export function plateLabels(index: number, total: number) {
   const t = String(Math.max(total, 1)).padStart(2, "0");
   return { fig: `FIG. ${n}`, plate: `PLATE ${n} / ${t}` };
 }
+
+/**
+ * Flow labels (run-10 RUN10-PAPERS): the same numbering without the
+ * drafting words — "01", "01 / 02" — for the paper pages, which read as
+ * light, not paper. The publications list keeps plateLabels until its
+ * own run-10 item (RUN10-PUBLICATIONS).
+ */
+export function flowLabels(index: number, total: number) {
+  const n = String(index + 1).padStart(2, "0");
+  const t = String(Math.max(total, 1)).padStart(2, "0");
+  return { fig: n, plate: `${n} / ${t}` };
+}

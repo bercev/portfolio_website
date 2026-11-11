@@ -1,17 +1,15 @@
 /**
- * The BibTeX block as a tear-off citation slip (run-9 RUN9-BIBTEX-SLIP).
+ * The BibTeX block as a light-flow panel (run-10 RUN10-PAPERS).
  *
- * The paper pages' BibTeX was the only stock-looking element left on an
- * otherwise drafted page — a plain rounded bordered box with a "BibTeX" /
- * "Copy" header row. It is now a slip torn from the sheet: a punched-hole
- * perforation along the top edge, a dashed tear line that draws across on
- * first scroll into view, a mono "BIBTEX" kicker, and a stamped COPY plate
- * (accent border on hover and while copied, reel-4 0.97 press). The slip
- * itself settles from a slight tilt; the COPY label presses in on the
- * fold-tab timing. Copy semantics and the BibTeX text are verbatim
- * (clipboard write, 2s "Copied" reset, aria-live). Reduced motion renders
- * the slip settled from the first frame via the native hook (motion's
- * useReducedMotion() is unreliable in this app, run-9 iter 1).
+ * The paper pages' BibTeX stops being a tear-off slip — no perforation,
+ * no dashed tear line, no tilt — and becomes a borderless panel lit from
+ * above: a beam of accent light draws across the top edge on first
+ * scroll into view, a mono "BibTeX" kicker, and a luminous COPY pill
+ * (accent border on hover and while copied, reel-4 0.97 press). Copy
+ * semantics and the BibTeX text are verbatim (clipboard write, 2s
+ * "Copied" reset, aria-live). Reduced motion renders the panel settled
+ * from the first frame via the native hook (motion's useReducedMotion()
+ * is unreliable in this app, run-9 iter 1).
  */
 "use client";
 
@@ -19,14 +17,14 @@ import { motion, useInView } from "motion/react";
 import { useRef, useState } from "react";
 
 import {
-  BIBTEX_SLIP_COPY_DELAY_S,
-  BIBTEX_SLIP_PRESS_MS,
-  BIBTEX_SLIP_RULE_DELAY_S,
-  BIBTEX_SLIP_RULE_MS,
-  BIBTEX_SLIP_TEAR_MS,
-  bibtexSlipCopyLabel,
-  bibtexSlipSettle,
-} from "@/lib/bibtex-slip";
+  BIBTEX_FLOW_BEAM_DELAY_S,
+  BIBTEX_FLOW_BEAM_MS,
+  BIBTEX_FLOW_COPY_DELAY_S,
+  BIBTEX_FLOW_FADE_MS,
+  BIBTEX_FLOW_PRESS_MS,
+  bibtexFlowCopyLabel,
+  bibtexFlowSettle,
+} from "@/lib/bibtex-flow";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /** Reel-4 rule 1: entrances ease out. */
@@ -52,56 +50,56 @@ export function BibtexBlock({ bibtex }: { bibtex: string }) {
   return (
     <motion.div
       ref={ref}
-      className="bibtex-slip"
-      initial={{ rotate: -1.2, y: 4, opacity: 0 }}
-      animate={entered ? bibtexSlipSettle() : {}}
+      className="bibtex-flow"
+      initial={
+        reduceMotion ? bibtexFlowSettle() : { y: 8, opacity: 0 }
+      }
+      animate={entered ? bibtexFlowSettle() : {}}
       transition={{
-        duration: BIBTEX_SLIP_TEAR_MS / 1000,
+        duration: BIBTEX_FLOW_FADE_MS / 1000,
         delay: 0.05,
         ease: SITE_EASE,
       }}
     >
-      <div className="bibtex-slip-perf" aria-hidden="true">
-        <motion.span
-          className="bibtex-slip-tear"
-          aria-hidden="true"
-          initial={{ scaleX: 0 }}
-          animate={entered ? { scaleX: 1 } : {}}
-          transition={{
-            duration: BIBTEX_SLIP_RULE_MS / 1000,
-            delay: BIBTEX_SLIP_RULE_DELAY_S,
-            ease: SITE_EASE,
-          }}
-        />
-      </div>
-      <div className="bibtex-slip-head">
-        <span className="bibtex-slip-kicker">BibTeX</span>
+      <motion.span
+        className="bibtex-flow-beam"
+        aria-hidden="true"
+        initial={{ scaleX: 0 }}
+        animate={entered ? { scaleX: 1 } : {}}
+        transition={{
+          duration: reduceMotion ? 0 : BIBTEX_FLOW_BEAM_MS / 1000,
+          delay: BIBTEX_FLOW_BEAM_DELAY_S,
+          ease: SITE_EASE,
+        }}
+      />
+      <div className="bibtex-flow-head">
+        <span className="bibtex-flow-kicker">BibTeX</span>
         <button
           type="button"
           onClick={copy}
-          className="bibtex-slip-copy"
+          className="bibtex-flow-copy"
           data-copied={copied}
           aria-live="polite"
         >
           <motion.span
-            className="bibtex-slip-copy-label"
+            className="bibtex-flow-copy-label"
             aria-hidden="true"
             initial={{ scale: 1.25, opacity: 0 }}
             animate={entered ? { scale: 1, opacity: 1 } : {}}
             transition={{
-              duration: BIBTEX_SLIP_PRESS_MS / 1000,
-              delay: BIBTEX_SLIP_COPY_DELAY_S,
+              duration: reduceMotion ? 0 : BIBTEX_FLOW_PRESS_MS / 1000,
+              delay: BIBTEX_FLOW_COPY_DELAY_S,
               ease: SITE_EASE,
             }}
           >
-            {bibtexSlipCopyLabel(copied)}
+            {bibtexFlowCopyLabel(copied)}
           </motion.span>
           <span className="sr-only">
             {copied ? "Copied to clipboard" : "Copy BibTeX to clipboard"}
           </span>
         </button>
       </div>
-      <pre className="bibtex-slip-code">{bibtex}</pre>
+      <pre className="bibtex-flow-code">{bibtex}</pre>
     </motion.div>
   );
 }

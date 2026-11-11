@@ -1,24 +1,24 @@
 /**
- * Stamped action plates for the routes (run-9 RUN9-PAPER-ACTIONS).
+ * Luminous action buttons for the routes (run-10 RUN10-PAPERS).
  *
  * The paper-page action buttons ("Read the paper" / "Download PDF") and
- * the 404 links ("back home" / "get in touch") were the last controls on
- * the routes still in pre-run-9 form — plain bordered buttons and plain
- * underlined text links. They are now drawing plates in the same family
- * as the fold tab, the Elsewhere rows, and the dispatch plate: bordered
- * plate + inner margin frame, a numbered accent-neon numeral that
- * presses in (220ms ease-out, 1.25→1) and a hairline rule that draws
- * (0.5s scaleX) on first scroll into view, 45ms stagger per plate, an
- * arrow that slides on hover, and the reel-4 0.97 press.
+ * the 404 links ("back home" / "get in touch") were drawing plates —
+ * bordered plate + inner margin frame. They are now light controls in
+ * the same family as the fold-tab pill and the BibTeX COPY pill: a
+ * borderless accent wash, a numbered accent-neon numeral that presses
+ * in (220ms ease-out, 1.25→1) and a hairline light rule that draws
+ * (0.5s scaleX) on first scroll into view, 45ms stagger per button, an
+ * arrow that slides on hover, and the reel-4 0.97 press, with a soft
+ * glow on hover.
  *
  * Copy, hrefs, and semantics are verbatim — the label text and the
- * arrow glyph are unchanged, only composed as plate chrome (the arrow
- * is an aria-hidden decorative span). The PDF plate keeps its
+ * arrow glyph are unchanged, only composed as light controls (the arrow
+ * is an aria-hidden decorative span). The PDF button keeps its
  * `journey-pub-pdf-link` class so the print hide still applies.
- * Reduced motion renders the plate settled from the first frame via the
+ * Reduced motion renders the button settled from the first frame via the
  * native hook (motion's useReducedMotion() is unreliable in this app,
  * run-9 iter 1). The breadcrumb links stay plain — wayfinding text,
- * plates there would be clutter.
+ * buttons there would be clutter.
  */
 "use client";
 

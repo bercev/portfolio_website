@@ -1,67 +1,52 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  FIG_MEASURE_DRAW_MS,
-  FIG_MEASURE_LABEL_FADE_MS,
-  FIG_MEASURE_LABEL_SIDE_DELAY_MS,
-  FIG_MEASURE_LABEL_TOP_DELAY_MS,
-  FIG_MEASURE_OFFSET_PX,
-  FIG_MEASURE_SIDE_DELAY_MS,
-  FIG_MEASURE_TOP_DELAY_MS,
-  PAPER_FIGURE_LIFT_SHADOW_ALPHA,
-  PAPER_FIGURE_RAISED_ROTATE_DEG,
-  PAPER_FIGURE_RAISED_SCALE,
-  PAPER_FIGURE_RAISED_Y_PX,
+  PAPER_FIGURE_GLOW_ALPHA_PCT,
+  PAPER_FIGURE_GLOW_BLUR_PX,
+  PAPER_FIGURE_GLOW_SCALE,
+  PAPER_FIGURE_GLOW_SPREAD_PX,
+  PAPER_FIGURE_GLOW_Y_PX,
   PAPER_FIGURE_SETTLE_SCROLL_PX,
-  figMeasureLabels,
-  figTitleBlockCells,
+  figCaptionText,
+  paperFigureGlow,
   paperFigureSettle,
-  paperFigureShadow,
 } from "./paper-figure";
 
 describe("paperFigureSettle", () => {
-  it("settles inside one short scroll: the plate is still in view", () => {
-    // The plate sits ~390px down at load on both widths; a settle
-    // longer than that would finish with the plate off-screen.
+  it("settles inside one short scroll: the figure is still in view", () => {
+    // The figure sits ~390px down at load on both widths; a settle
+    // longer than that would finish with the figure off-screen.
     expect(PAPER_FIGURE_SETTLE_SCROLL_PX).toBeGreaterThan(0);
     expect(PAPER_FIGURE_SETTLE_SCROLL_PX).toBeLessThanOrEqual(300);
   });
 
-  it("starts raised: enlarged, lifted, and tilted off the drawing", () => {
+  it("starts haloed: slightly enlarged, lifted, and glowing", () => {
     const settled = paperFigureSettle(0);
-    expect(settled.scale).toBe(PAPER_FIGURE_RAISED_SCALE);
+    expect(settled.scale).toBe(PAPER_FIGURE_GLOW_SCALE);
     expect(settled.scale).toBeGreaterThan(1);
-    expect(settled.y).toBe(PAPER_FIGURE_RAISED_Y_PX);
-    expect(settled.rotate).toBe(PAPER_FIGURE_RAISED_ROTATE_DEG);
-    expect(settled.rotate).toBeLessThan(0);
-    expect(settled.lift).toBe(1);
+    expect(settled.y).toBe(PAPER_FIGURE_GLOW_Y_PX);
+    expect(settled.glow).toBe(1);
   });
 
-  it("ends settled flat: scale 1, no offset, straight, no lift", () => {
+  it("ends settled: scale 1, no offset, no glow", () => {
     const settled = paperFigureSettle(1);
     expect(settled.scale).toBe(1);
     expect(settled.y).toBe(0);
-    expect(settled.rotate).toBe(0);
-    expect(settled.lift).toBe(0);
+    expect(settled.glow).toBe(0);
   });
 
-  it("eases monotonically between the raised and settled states", () => {
+  it("eases monotonically between the haloed and settled states", () => {
     const samples = [0, 0.25, 0.5, 0.75, 1].map(paperFigureSettle);
     for (let i = 1; i < samples.length; i++) {
       expect(samples[i].scale).toBeLessThan(samples[i - 1].scale);
       expect(samples[i].y).toBeLessThan(samples[i - 1].y);
-      expect(samples[i].rotate).toBeGreaterThan(samples[i - 1].rotate);
-      expect(samples[i].lift).toBeLessThan(samples[i - 1].lift);
+      expect(samples[i].glow).toBeLessThan(samples[i - 1].glow);
     }
     expect(samples[2].scale).toBeCloseTo(
-      (PAPER_FIGURE_RAISED_SCALE + 1) / 2,
+      (PAPER_FIGURE_GLOW_SCALE + 1) / 2,
       10,
     );
-    expect(samples[2].y).toBeCloseTo(PAPER_FIGURE_RAISED_Y_PX / 2, 10);
-    expect(samples[2].rotate).toBeCloseTo(
-      PAPER_FIGURE_RAISED_ROTATE_DEG / 2,
-      10,
-    );
+    expect(samples[2].y).toBeCloseTo(PAPER_FIGURE_GLOW_Y_PX / 2, 10);
   });
 
   it("clamps out-of-range progress to the end states", () => {
@@ -71,103 +56,34 @@ describe("paperFigureSettle", () => {
   });
 });
 
-describe("paperFigureShadow", () => {
+describe("paperFigureGlow", () => {
   it("is a flat transparent shadow when settled", () => {
-    expect(paperFigureShadow(0)).toBe("0 0px 0px 0px rgba(0, 0, 0, 0)");
+    expect(paperFigureGlow(0)).toBe("0 0px 0px 0px rgba(0, 0, 0, 0)");
   });
 
-  it("is a lifted paper shadow at full raise", () => {
-    const shadow = paperFigureShadow(1);
-    expect(shadow).toContain("40px");
-    expect(shadow).toContain("80px");
-    expect(shadow).toContain(
-      `rgba(0, 0, 0, ${PAPER_FIGURE_LIFT_SHADOW_ALPHA.toFixed(3)})`,
-    );
+  it("is an accent halo at full glow", () => {
+    const glow = paperFigureGlow(1);
+    expect(glow).toContain(`${PAPER_FIGURE_GLOW_BLUR_PX}px`);
+    expect(glow).toContain(`${PAPER_FIGURE_GLOW_SPREAD_PX}px`);
+    expect(glow).toContain("var(--accent-neon)");
+    expect(glow).toContain(`${PAPER_FIGURE_GLOW_ALPHA_PCT}%`);
   });
 
-  it("clamps lift to the end states", () => {
-    expect(paperFigureShadow(-1)).toBe(paperFigureShadow(0));
-    expect(paperFigureShadow(2)).toBe(paperFigureShadow(1));
-  });
-});
-
-describe("figMeasure timing", () => {
-  it("draws the top line first, then the sides, inside ~1.2s of load", () => {
-    expect(FIG_MEASURE_TOP_DELAY_MS).toBeGreaterThanOrEqual(0);
-    expect(FIG_MEASURE_SIDE_DELAY_MS).toBeGreaterThan(
-      FIG_MEASURE_TOP_DELAY_MS,
-    );
-    expect(FIG_MEASURE_DRAW_MS).toBeGreaterThan(0);
-    expect(FIG_MEASURE_TOP_DELAY_MS + FIG_MEASURE_DRAW_MS).toBeLessThanOrEqual(
-      1000,
-    );
-    expect(
-      FIG_MEASURE_SIDE_DELAY_MS + FIG_MEASURE_DRAW_MS,
-    ).toBeLessThanOrEqual(1200);
-  });
-
-  it("sits outside the plate but inside the sheet's narrow padding", () => {
-    // Plate padding is 20px at 390px; the frame must clear it.
-    expect(FIG_MEASURE_OFFSET_PX).toBeGreaterThan(0);
-    expect(FIG_MEASURE_OFFSET_PX).toBeLessThan(20);
+  it("clamps glow to the end states", () => {
+    expect(paperFigureGlow(-1)).toBe(paperFigureGlow(0));
+    expect(paperFigureGlow(2)).toBe(paperFigureGlow(1));
   });
 });
 
-describe("figMeasureLabels (RUN9-PAPER-COMPOSITION)", () => {
-  it("labels the top line with the width and the sides with the height", () => {
-    expect(figMeasureLabels(817, 867)).toEqual({ top: "817", side: "867" });
-    expect(figMeasureLabels(795, 870)).toEqual({ top: "795", side: "870" });
+describe("figCaptionText", () => {
+  it("names the first page with its real pixel dims", () => {
+    expect(figCaptionText(817, 867)).toBe("First page · 817 × 867");
+    expect(figCaptionText(795, 870)).toBe("First page · 795 × 870");
   });
 
   it("rounds fractional dims and never prints NaN or a negative", () => {
-    expect(figMeasureLabels(817.6, 866.4)).toEqual({
-      top: "818",
-      side: "866",
-    });
-    expect(figMeasureLabels(Number.NaN, 0)).toEqual({
-      top: "—",
-      side: "—",
-    });
-    expect(figMeasureLabels(-12, Infinity)).toEqual({
-      top: "—",
-      side: "—",
-    });
-  });
-
-  it("fades each numeral in only after its line has drawn", () => {
-    expect(FIG_MEASURE_LABEL_TOP_DELAY_MS).toBeGreaterThanOrEqual(
-      FIG_MEASURE_TOP_DELAY_MS + FIG_MEASURE_DRAW_MS,
-    );
-    expect(FIG_MEASURE_LABEL_SIDE_DELAY_MS).toBeGreaterThanOrEqual(
-      FIG_MEASURE_SIDE_DELAY_MS + FIG_MEASURE_DRAW_MS,
-    );
-    expect(FIG_MEASURE_LABEL_FADE_MS).toBeGreaterThan(0);
-    expect(
-      FIG_MEASURE_LABEL_SIDE_DELAY_MS + FIG_MEASURE_LABEL_FADE_MS,
-    ).toBeLessThanOrEqual(1600);
-  });
-});
-
-describe("figTitleBlockCells (RUN9-PAPER-COMPOSITION)", () => {
-  it("builds the four-cell strip from the real preview dims", () => {
-    expect(figTitleBlockCells("FIG. 01", 817, 867)).toEqual([
-      { label: "FIG", value: "01" },
-      { label: "SHEET", value: "First page" },
-      { label: "SIZE", value: "817 × 867 PX" },
-      { label: "SCALE", value: "1:1" },
-    ]);
-    expect(figTitleBlockCells("FIG. 02", 795, 870)[2]).toEqual({
-      label: "SIZE",
-      value: "795 × 870 PX",
-    });
-  });
-
-  it("degrades to dashes instead of inventing dims", () => {
-    const cells = figTitleBlockCells("FIG. 01", Number.NaN, -4);
-    expect(cells[2]).toEqual({ label: "SIZE", value: "—" });
-    expect(figTitleBlockCells("FIG. —", 817, 867)[0]).toEqual({
-      label: "FIG",
-      value: "—",
-    });
+    expect(figCaptionText(817.6, 866.4)).toBe("First page · 818 × 866");
+    expect(figCaptionText(Number.NaN, 0)).toBe("First page");
+    expect(figCaptionText(-12, Infinity)).toBe("First page");
   });
 });

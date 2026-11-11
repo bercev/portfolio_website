@@ -1,5 +1,5 @@
 import { portfolio, type Publication } from "@/data/content";
-import { plateLabels } from "@/lib/plate-labels";
+import { flowLabels } from "@/lib/plate-labels";
 
 export type PaperSheet = {
   publication: Publication;
@@ -8,8 +8,8 @@ export type PaperSheet = {
 };
 
 /**
- * The paper page's sheet identity: which publication, its plate labels
- * (FIG. 01 / PLATE 01 / 02), and its position in the journal. Pure so the
+ * The paper page's flow identity: which publication, its light labels
+ * ("01", "01 / 02"), and its position in the journal. Pure so the
  * labels stay testable without rendering the server component.
  */
 export function getPaperSheet(slug: string): PaperSheet | undefined {
@@ -21,6 +21,6 @@ export function getPaperSheet(slug: string): PaperSheet | undefined {
   return {
     publication,
     index,
-    labels: plateLabels(index, portfolio.publications.length),
+    labels: flowLabels(index, portfolio.publications.length),
   };
 }

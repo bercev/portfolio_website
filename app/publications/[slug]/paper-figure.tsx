@@ -1,21 +1,17 @@
 /**
- * Paper-page FIG. plate, header-asset treatment (run-9
- * RUN9-PAPER-HEADER-ASSET): the App Store App Page Header Asset
- * Animation (60fps shot 2124) restyled to the drafting language — the
- * first-page plate arrives as a sheet held above the drawing and settles
- * flat as the reader scrolls. Scroll-linked to the PAGE scroll (the
- * plate is already in view at load on both widths, so a target-based
- * range would be settled before the reader ever sees it): raised +
- * slightly enlarged + tilted + lifted paper shadow at scroll 0, easing
- * to scale 1 / y 0 / rotate 0 / no shadow over the first 200px of
- * scrolling, sprung so the settle eases rather than tracking scroll 1:1.
- * The tilt is the drafting cue — a sheet placed at an angle, straightened
- * as it lands; the shadow is large and soft so the lift reads on the
- * dark sheet. Reversible on scroll-back, like the reference.
- * Transform-only: no layout shift, the venue stamp rides along as a
- * child, and the caption lifts with the plate. Reduced motion: the
- * settled flat plate from the first frame (native hook — motion's
- * useReducedMotion() is unreliable in this app, run-9 iter 1).
+ * Paper-page figure, light/flow (run-10 RUN10-PAPERS): the first-page
+ * preview arrives as light washing in — a soft accent glow that fades
+ * as the figure settles into place over the first 200px of page scroll,
+ * sprung so the settle eases rather than tracking scroll 1:1. The
+ * drafting chrome is gone: no dimension frame, no FIG. title-block
+ * strip, no venue stamp — the caption is one quiet light line ("First
+ * page · 817 × 867", the preview's real pixel dims, so the figure still
+ * says something true). Scroll-linked to the PAGE scroll (the figure is
+ * already in view at load on both widths, so a target-based range would
+ * be settled before the reader ever sees it). Transform-only: no layout
+ * shift. Reduced motion: the settled figure from the first frame
+ * (native hook — motion's useReducedMotion() is unreliable in this app,
+ * run-9 iter 1).
  */
 "use client";
 
@@ -23,21 +19,18 @@ import { motion, useScroll, useSpring, useTransform } from "motion/react";
 
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { Publication } from "@/data/content";
-import { VenueStamp } from "@/components/sections/publication-plate";
 
-/** Raised state: the sheet floats 8% large, 48px up, and 1.5° askew off
- * the drawing — bold enough to read at a glance (round-1's 5% / 32px /
- * untilted state failed both critics on visibility). */
-export const PAPER_FIGURE_RAISED_SCALE = 1.08;
-export const PAPER_FIGURE_RAISED_Y_PX = 48;
-export const PAPER_FIGURE_RAISED_ROTATE_DEG = -1.5;
-/** Page scroll over which the plate settles (px): the plate is still
+/** Glow-in state: the figure arrives 3% large and 24px down, haloed. */
+export const PAPER_FIGURE_GLOW_SCALE = 1.03;
+export const PAPER_FIGURE_GLOW_Y_PX = 24;
+/** Page scroll over which the figure settles (px): the figure is still
  * comfortably in view at both widths when the settle completes. */
 export const PAPER_FIGURE_SETTLE_SCROLL_PX = 200;
-/** Lifted paper shadow at full raise (fades to a flat plate) — large and
- * soft so the lift reads on the dark sheet (round-1's 0.4α shadow was
- * invisible against the navy in both critics' frames). */
-export const PAPER_FIGURE_LIFT_SHADOW_ALPHA = 0.55;
+/** Glow halo at full glow: blur and spread in px. */
+export const PAPER_FIGURE_GLOW_BLUR_PX = 64;
+export const PAPER_FIGURE_GLOW_SPREAD_PX = 16;
+/** Accent share of the halo at full glow (percent, via color-mix). */
+export const PAPER_FIGURE_GLOW_ALPHA_PCT = 40;
 
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -52,168 +45,54 @@ function clamp01(value: number): number {
 export function paperFigureSettle(progress: number): {
   readonly scale: number;
   readonly y: number;
-  /** Degrees, negative = counter-clockwise askew; 0 = straight. */
-  readonly rotate: number;
-  /** 1 = fully lifted, 0 = settled flat. */
-  readonly lift: number;
+  /** 1 = fully haloed, 0 = settled. */
+  readonly glow: number;
 } {
   const p = clamp01(progress);
   const remaining = 1 - p;
   return {
-    scale: PAPER_FIGURE_RAISED_SCALE + (1 - PAPER_FIGURE_RAISED_SCALE) * p,
-    y: PAPER_FIGURE_RAISED_Y_PX * remaining,
-    // -1.5 * 0 is -0; normalize so the settled state is exactly 0.
-    rotate: remaining === 0 ? 0 : PAPER_FIGURE_RAISED_ROTATE_DEG * remaining,
-    lift: remaining,
+    scale: PAPER_FIGURE_GLOW_SCALE + (1 - PAPER_FIGURE_GLOW_SCALE) * p,
+    y: PAPER_FIGURE_GLOW_Y_PX * remaining,
+    glow: remaining,
   };
 }
 
-/** The lifted paper shadow for a given lift amount (0 = flat, no shadow). */
-export function paperFigureShadow(lift: number): string {
-  const l = clamp01(lift);
+/** The accent halo for a given glow amount (0 = settled, no halo). */
+export function paperFigureGlow(glow: number): string {
+  const l = clamp01(glow);
   if (l <= 0) return "0 0px 0px 0px rgba(0, 0, 0, 0)";
-  return `0 ${Math.round(40 * l)}px ${Math.round(80 * l)}px ${Math.round(-16 * l)}px rgba(0, 0, 0, ${(PAPER_FIGURE_LIFT_SHADOW_ALPHA * l).toFixed(3)})`;
+  return `0 0 ${Math.round(PAPER_FIGURE_GLOW_BLUR_PX * l)}px ${Math.round(PAPER_FIGURE_GLOW_SPREAD_PX * l)}px color-mix(in srgb, var(--accent-neon) ${Math.round(PAPER_FIGURE_GLOW_ALPHA_PCT * l)}%, transparent)`;
 }
 
-/**
- * FIG. plate dimension frame (run-9 RUN9-PAPER-BACKGROUND round 2):
- * the first-page plate is a measured drawing — dimension lines with end
- * ticks frame its top and sides, 10px out, drawing in on load (top
- * first, sides 150ms later). The lines are plain divs inside the
- * figure link (no SVG scaling), pointer-events none so the venue link
- * keeps working; the venue stamp presses over the right line's lower
- * end by design. Reduced motion: settled from the first frame via the
- * CSS media query (same class as the hero measure frame).
- */
-export const FIG_MEASURE_OFFSET_PX = 10;
-export const FIG_MEASURE_DRAW_MS = 600;
-export const FIG_MEASURE_TOP_DELAY_MS = 400;
-export const FIG_MEASURE_SIDE_DELAY_MS = 550;
-/** Dimension-numeral fade (run-9 RUN9-PAPER-COMPOSITION): the labels
- * fade in once their line has drawn — top label after the top line
- * lands (400 + 600), side labels after the sides land (550 + 600). */
-export const FIG_MEASURE_LABEL_TOP_DELAY_MS = 1050;
-export const FIG_MEASURE_LABEL_SIDE_DELAY_MS = 1200;
-export const FIG_MEASURE_LABEL_FADE_MS = 300;
-
-/** A dimension extent as printed on the frame: the preview's real pixel
- * count, rounded; anything unusable prints as an em dash, never NaN. */
+/** A pixel count, rounded; anything unusable prints as an em dash. */
 function dimensionText(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "—";
   return String(Math.round(value));
 }
 
 /**
- * The numerals printed on the FIG. plate's dimension frame (run-9
- * RUN9-PAPER-COMPOSITION): the top line measures the plate's width, the
- * side lines its height — the preview image's real pixel dims from
- * content.ts, so the drawing measures something true.
+ * The figure's quiet light caption: "First page" plus the preview's
+ * real pixel dims when usable, so the figure still measures something
+ * true without a dimension frame.
  */
-export function figMeasureLabels(
-  width: number,
-  height: number,
-): { readonly top: string; readonly side: string } {
-  return { top: dimensionText(width), side: dimensionText(height) };
-}
-
-/** One cell of the figure's title-block strip. */
-export interface FigTitleBlockCell {
-  readonly label: string;
-  readonly value: string;
-}
-
-/**
- * The figure's title-block strip (run-9 RUN9-PAPER-COMPOSITION): FIG
- * number, sheet name, real preview size, and the drawing scale — the
- * strip REPLACES the old "FIG. 01 — First page" caption line (same
- * facts, plus the measured size), so the caption is not duplicated.
- */
-export function figTitleBlockCells(
-  figLabel: string,
-  width: number,
-  height: number,
-): readonly FigTitleBlockCell[] {
-  const number = /(\d+)/.exec(figLabel)?.[1] ?? "—";
+export function figCaptionText(width: number, height: number): string {
   const w = dimensionText(width);
   const h = dimensionText(height);
-  return [
-    { label: "FIG", value: number },
-    { label: "SHEET", value: "First page" },
-    { label: "SIZE", value: w === "—" || h === "—" ? "—" : `${w} × ${h} PX` },
-    { label: "SCALE", value: "1:1" },
-  ];
-}
-
-function FigMeasure({ width, height }: { readonly width: number; readonly height: number }) {
-  const labels = figMeasureLabels(width, height);
-  return (
-    <>
-      <span
-        aria-hidden="true"
-        data-fig-measure="top"
-        className="fig-measure fig-measure-top"
-        style={{ animationDelay: `${FIG_MEASURE_TOP_DELAY_MS}ms` }}
-      />
-      <span
-        aria-hidden="true"
-        data-fig-measure="left"
-        className="fig-measure fig-measure-left"
-        style={{ animationDelay: `${FIG_MEASURE_SIDE_DELAY_MS}ms` }}
-      />
-      <span
-        aria-hidden="true"
-        data-fig-measure="right"
-        className="fig-measure fig-measure-right"
-        style={{ animationDelay: `${FIG_MEASURE_SIDE_DELAY_MS}ms` }}
-      />
-      {/* Dimension numerals (RUN9-PAPER-COMPOSITION): mono numerals on a
-        sheet-colored chip that breaks the line, fading in once the line
-        has drawn. Siblings of the lines (not children) so the draw's
-        scaleX/scaleY never squashes the text; aria-hidden — the
-        title-block strip below carries the same dims as real text. */}
-      <span
-        aria-hidden="true"
-        data-fig-measure-label="top"
-        className="fig-measure-label fig-measure-label-top"
-        style={{ animationDelay: `${FIG_MEASURE_LABEL_TOP_DELAY_MS}ms` }}
-      >
-        {labels.top}
-      </span>
-      <span
-        aria-hidden="true"
-        data-fig-measure-label="left"
-        className="fig-measure-label fig-measure-label-left"
-        style={{ animationDelay: `${FIG_MEASURE_LABEL_SIDE_DELAY_MS}ms` }}
-      >
-        {labels.side}
-      </span>
-      <span
-        aria-hidden="true"
-        data-fig-measure-label="right"
-        className="fig-measure-label fig-measure-label-right"
-        style={{ animationDelay: `${FIG_MEASURE_LABEL_SIDE_DELAY_MS}ms` }}
-      >
-        {labels.side}
-      </span>
-    </>
-  );
+  if (w === "—" || h === "—") return "First page";
+  return `First page · ${w} × ${h}`;
 }
 
 export function PaperFigure({
   publication,
-  index,
-  figLabel,
 }: {
   readonly publication: Publication;
-  readonly index: number;
-  readonly figLabel: string;
 }) {
   const reduceMotion = usePrefersReducedMotion();
-  // Page scroll, not a target range: the plate is already in view at
+  // Page scroll, not a target range: the figure is already in view at
   // load on both widths (top ~390px), so a target-based offset would
   // report progress 1 before the reader sees anything. The settle runs
-  // over the first 240px of page scroll instead — raised at load,
-  // flat once the reader has scrolled a little.
+  // over the first 200px of page scroll instead — haloed at load,
+  // settled once the reader has scrolled a little.
   const { scrollY } = useScroll();
   const progress = useTransform(
     scrollY,
@@ -230,30 +109,12 @@ export function PaperFigure({
   });
   const scale = useTransform(sprung, (p) => paperFigureSettle(p).scale);
   const y = useTransform(sprung, (p) => paperFigureSettle(p).y);
-  const rotate = useTransform(sprung, (p) => paperFigureSettle(p).rotate);
   const boxShadow = useTransform(sprung, (p) =>
-    paperFigureShadow(paperFigureSettle(p).lift),
+    paperFigureGlow(paperFigureSettle(p).glow),
   );
-  // Shared by both branches: the measured frame (real preview dims) and
-  // the title-block strip that replaces the old caption line.
-  const measure = (
-    <FigMeasure
-      width={publication.preview.width}
-      height={publication.preview.height}
-    />
-  );
-  const titleBlock = (
-    <figcaption className="journey-pub-fig-titleblock">
-      {figTitleBlockCells(
-        figLabel,
-        publication.preview.width,
-        publication.preview.height,
-      ).map((cell) => (
-        <span key={cell.label} className="journey-pub-fig-cell">
-          <span className="journey-pub-fig-cell-label">{cell.label}</span>
-          <span className="journey-pub-fig-cell-value">{cell.value}</span>
-        </span>
-      ))}
+  const caption = (
+    <figcaption className="journey-pub-fig-flow">
+      {figCaptionText(publication.preview.width, publication.preview.height)}
     </figcaption>
   );
 
@@ -271,10 +132,8 @@ export function PaperFigure({
             width={publication.preview.width}
             height={publication.preview.height}
           />
-          {measure}
         </a>
-        <VenueStamp venue={publication.venue} index={index} />
-        {titleBlock}
+        {caption}
       </figure>
     );
   }
@@ -283,7 +142,7 @@ export function PaperFigure({
     <motion.figure
       data-paper-figure
       className="journey-pub-figure journey-pub-page-figure"
-      style={{ scale, y, rotate }}
+      style={{ scale, y }}
     >
       <motion.a
         href={publication.href}
@@ -297,10 +156,8 @@ export function PaperFigure({
           width={publication.preview.width}
           height={publication.preview.height}
         />
-        {measure}
       </motion.a>
-      <VenueStamp venue={publication.venue} index={index} />
-      {titleBlock}
+      {caption}
     </motion.figure>
   );
 }

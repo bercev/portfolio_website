@@ -74,16 +74,18 @@ export async function generateMetadata({
 }
 
 /**
- * Paper pages as printed-journal sheets (run-9 RUN9-ROUTES): the bare
- * centered column becomes a drawing sheet — sheet-head strip, masthead
- * double rule, serif title, full author line (Berat in accent), the real
- * first page as a FIG. plate with a press-in venue stamp, and the BibTeX as
- * a tear-off citation slip, over a title-block footer. Metadata, JSON-LD,
- * and both links are unchanged; the FIG. plate settles from a raised,
- * lifted state as it scrolls into place (PaperFigure, App Store header
- * asset transfer — settled flat under reduced motion), the stamp presses
- * in on first view, plus the signature sign-off under the citation slip
- * (draws in on first view, settled under reduced motion).
+ * Paper pages as light (run-10 RUN10-PAPERS): the bare centered column
+ * becomes a luminous flow — a borderless haloed panel, a glow-dot head
+ * strip ("01 / 02" + venue), a light rule under the breadcrumb, a serif
+ * title, full author line (Berat in accent), the real first page as a
+ * figure that glows in on scroll, and the BibTeX as a light panel with
+ * a beam across its top edge, plus the signature sign-off as a trace of
+ * light under it and a glow-dot footer. Metadata, JSON-LD, and both
+ * links are unchanged; the figure settles from a haloed state as the
+ * reader scrolls (PaperFigure, App Store header asset transfer —
+ * settled under reduced motion), the beam draws on first view, plus the
+ * signature sign-off under the BibTeX panel (draws in on first view,
+ * settled under reduced motion).
  */
 export default async function PublicationPage({
   params,
@@ -93,7 +95,7 @@ export default async function PublicationPage({
   const { slug } = await params;
   const sheet = getPaperSheet(slug);
   if (!sheet) notFound();
-  const { publication, index, labels } = sheet;
+  const { publication, labels } = sheet;
 
   const url = `${siteUrl}/publications/${publication.slug}`;
   const jsonLd = {
@@ -133,7 +135,7 @@ export default async function PublicationPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="journey-sheet-head journey-pub-page-head">
-        <span>Journal — {labels.plate}</span>
+        <span>{labels.plate}</span>
         <span>{publication.venue}</span>
       </div>
       <nav aria-label="Breadcrumb" className="journey-pub-page-crumb">
@@ -155,11 +157,7 @@ export default async function PublicationPage({
           </span>
         ))}
       </p>
-      <PaperFigure
-        publication={publication}
-        index={index}
-        figLabel={labels.fig}
-      />
+      <PaperFigure publication={publication} />
       <section
         aria-labelledby="abstract"
         className="journey-pub-page-section"
@@ -190,24 +188,19 @@ export default async function PublicationPage({
         <h2 id="cite" className="journey-pub-page-h2">
           Cite
         </h2>
-        <div className="journey-cite-slip">
-          <p className="journey-cite-slip-head" aria-hidden="true">
-            Citation slip — BibTeX
-          </p>
-          <BibtexBlock bibtex={publication.bibtex} />
-        </div>
+        <BibtexBlock bibtex={publication.bibtex} />
       </section>
       <PaperSignature />
-      <footer className="journey-sheet-titleblock journey-pub-titleblock">
-        <div>
+      <footer className="journey-pub-flow-footer">
+        <div className="journey-pub-flow-footer-cell">
           <span className="journey-sheet-titleblock-label">Paper</span>
           {labels.plate}
         </div>
-        <div>
+        <div className="journey-pub-flow-footer-cell">
           <span className="journey-sheet-titleblock-label">Venue</span>
           {publication.venue}
         </div>
-        <div>
+        <div className="journey-pub-flow-footer-cell">
           <span className="journey-sheet-titleblock-label">Date</span>
           {publication.date}
         </div>

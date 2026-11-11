@@ -1764,250 +1764,6 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
-/* FIG. plate dimension frame (run-9 RUN9-PAPER-BACKGROUND round 2):
-   the first-page plate is a measured drawing — dimension lines with end
-   ticks frame its top and sides, 10px out, drawing in on load (top
-   first, sides 150ms later), riding the figure's settle tilt. Plain
-   divs (no SVG scaling) inside the figure link, pointer-events none so
-   the venue link keeps working; the venue stamp (z 2) presses over the
-   right line's lower end by design. Reduced motion: settled from the
-   first frame. */
-.fig-measure {
-  position: absolute;
-  background: var(--accent-neon);
-  opacity: 0.85;
-  pointer-events: none;
-}
-
-.fig-measure-top {
-  left: -10px;
-  right: -10px;
-  top: -10px;
-  height: 1.5px;
-  transform: scaleX(0);
-  transform-origin: left center;
-  animation: fig-measure-draw-x 0.6s ease-out both;
-}
-
-.fig-measure-top::before,
-.fig-measure-top::after {
-  content: "";
-  position: absolute;
-  top: -3.25px;
-  width: 1.5px;
-  height: 8px;
-  background: var(--accent-neon);
-}
-
-.fig-measure-top::before {
-  left: 0;
-}
-
-.fig-measure-top::after {
-  right: 0;
-}
-
-.fig-measure-left,
-.fig-measure-right {
-  top: -10px;
-  bottom: -10px;
-  width: 1.5px;
-  transform: scaleY(0);
-  transform-origin: top center;
-  animation: fig-measure-draw-y 0.6s ease-out both;
-}
-
-.fig-measure-left {
-  left: -10px;
-}
-
-.fig-measure-right {
-  right: -10px;
-}
-
-.fig-measure-left::before,
-.fig-measure-left::after,
-.fig-measure-right::before,
-.fig-measure-right::after {
-  content: "";
-  position: absolute;
-  left: -3.25px;
-  width: 8px;
-  height: 1.5px;
-  background: var(--accent-neon);
-}
-
-.fig-measure-left::before,
-.fig-measure-right::before {
-  top: 0;
-}
-
-.fig-measure-left::after,
-.fig-measure-right::after {
-  bottom: 0;
-}
-
-@keyframes fig-measure-draw-x {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-@keyframes fig-measure-draw-y {
-  from {
-    transform: scaleY(0);
-  }
-  to {
-    transform: scaleY(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fig-measure-top,
-  .fig-measure-left,
-  .fig-measure-right {
-    animation: none;
-    transform: none;
-  }
-}
-
-/* Dimension numerals (run-9 RUN9-PAPER-COMPOSITION): mono numerals on a
-   sheet-colored chip that breaks the dimension line, fading in once the
-   line has drawn. Siblings of the lines so the draw's scale never
-   squashes the text; side numerals read vertically. */
-.fig-measure-label {
-  position: absolute;
-  z-index: 1;
-  padding: 2px 6px;
-  background: var(--card);
-  color: var(--accent-neon);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  line-height: 1.4;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  animation: fig-measure-label-in 0.3s ease-out both;
-}
-
-.fig-measure-label-top {
-  left: 50%;
-  top: -10px;
-  transform: translate(-50%, -50%);
-}
-
-.fig-measure-label-left {
-  left: -10px;
-  top: 50%;
-  transform: translate(-50%, -50%) rotate(-90deg);
-}
-
-.fig-measure-label-right {
-  right: -10px;
-  top: 50%;
-  transform: translate(50%, -50%) rotate(90deg);
-}
-
-@keyframes fig-measure-label-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Reduced motion for the numerals: this block MUST sit after the base
-   label rules — an earlier RM block loses the cascade to the base
-   `opacity: 0` (same specificity, later rule wins; the iter-29
-   tech-tape RM bug, same class). Labels keep their centering transform;
-   only the fade is removed. */
-@media (prefers-reduced-motion: reduce) {
-  .fig-measure-label {
-    animation: none;
-    opacity: 1;
-  }
-}
-
-/* Phone widths: the side numerals stay off. A chip centered on the side
-   line needs ~23px of margin while the frame offset is 10px, so at the
-   raised (scroll-0) scale the left chip clips 3px past the viewport
-   edge; the strip's SIZE cell already carries both dims, so nothing is
-   lost — the top numeral + strip are the phone composition. */
-@media (max-width: 560px) {
-  .fig-measure-label-left,
-  .fig-measure-label-right {
-    display: none;
-  }
-}
-
-/* Figure title-block strip (run-9 RUN9-PAPER-COMPOSITION): the caption
-   becomes a drafting title block under the white plate — FIG / SHEET /
-   SIZE / SCALE cells with hairline dividers. It REPLACES the old
-   "FIG. 01 — First page" caption line on paper pages; the publications
-   list keeps its .journey-pub-fig-caption. */
-.journey-pub-fig-titleblock {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 10px 0 0;
-  border: 1px solid var(--border);
-  background: var(--card);
-}
-
-.journey-pub-fig-cell {
-  min-width: 0;
-  padding: 0.55rem 0.75rem;
-  border-left: 1px solid var(--border);
-}
-
-.journey-pub-fig-cell:first-child {
-  border-left: 0;
-}
-
-.journey-pub-fig-cell-label {
-  display: block;
-  margin-bottom: 0.15rem;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
-.journey-pub-fig-cell-value {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--foreground);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-@media (max-width: 560px) {
-  .journey-pub-fig-titleblock {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .journey-pub-fig-cell:nth-child(3),
-  .journey-pub-fig-cell:nth-child(4) {
-    border-top: 1px solid var(--border);
-  }
-
-  .journey-pub-fig-cell:nth-child(3) {
-    border-left: 0;
-  }
-}
-
 /* Venue stamp: pressed onto the plate's corner on first scroll into view
    (the press itself lives in publication-plate.tsx, 220ms ease-out). */
 .journey-pub-stamp {
@@ -2040,20 +1796,6 @@ html[data-journey] [data-effect-layer="background"] {
   .journey-pub-stamp {
     bottom: 36px;
   }
-}
-
-/* Paper pages (run-9 RUN9-PAPER-COMPOSITION round 3): the figure's
-   title-block strip now fills the corner the stamp used to hang over,
-   so on paper pages the stamp hangs BELOW the plate instead. The
-   rotated stamp's high corner reached ~33px into the strip on desktop
-   and hid the SCALE label outright on mobile (both critics, round 2);
-   at bottom: -54px its top edge clears the strip by ~9px on both
-   widths (probed: desktop settled top 33px above the figure bottom,
-   mobile 81px — the same -54px lands both). The figure's 3.5rem bottom
-   margin is the stamp's clear zone above the abstract. List plates
-   keep the rules above. */
-.journey-pub-page-figure .journey-pub-stamp {
-  bottom: -54px;
 }
 
 .journey-pub-body {
@@ -3462,12 +3204,14 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
-/* Paper pages as journal sheets (run-9 RUN9-ROUTES): the bare centered
-   column becomes a drawing sheet — translucent card + inner margin frame,
-   sheet-head strip, masthead rule, FIG plate, citation slip, title block. */
+/* Paper pages as light (run-10 RUN10-PAPERS): the bare centered column
+   becomes a luminous flow — a borderless haloed panel, a glow-dot head
+   strip, a light rule, the figure glowing in, the BibTeX as a light
+   panel, and a glow-dot footer. No sheet border, no inner margin
+   frame. */
 .journey-pub-page {
   position: relative;
-  /* Run 10 removed the BlueprintField canvas; the sheet still needs
+  /* Run 10 removed the BlueprintField canvas; the panel still needs
      --z-page-content (10) to paint above the fixed ribbon canvas —
      same rule as the /plain masthead strip over the fixed backdrop. */
   z-index: var(--z-page-content);
@@ -3475,15 +3219,41 @@ html[data-journey] [data-effect-layer="background"] {
   margin: clamp(2rem, 6vw, 4rem) auto;
   padding: clamp(1.25rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.75rem) 2rem;
   background: color-mix(in srgb, var(--card) 78%, transparent);
-  border: 1px solid var(--border);
+  box-shadow: 0 0 120px
+    color-mix(in srgb, var(--accent-neon) 10%, transparent);
 }
 
-.journey-pub-page::before {
+/* The head strip carries a glow dot on its number ("01 / 02"): the
+   dot rides on the first span, so the strip's space-between keeps the
+   number at the left edge and the venue at the right. */
+.journey-pub-page-head span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.journey-pub-page-head span:first-child::before {
   content: "";
-  position: absolute;
-  inset: 7px;
-  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-  pointer-events: none;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-neon);
+  box-shadow: 0 0 10px var(--accent-neon);
+}
+
+/* The masthead rule on paper pages is a single beam of light, not the
+   double rule — the publications list keeps its own rule until
+   RUN10-PUBLICATIONS. */
+.journey-pub-page .journey-pub-plate-rule {
+  height: 1px;
+  margin: 0 0 clamp(18px, 2.4vw, 28px);
+  border: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
 }
 
 .journey-pub-page-crumb {
@@ -3501,10 +3271,39 @@ html[data-journey] [data-effect-layer="background"] {
 
 .journey-pub-page-figure {
   margin-top: 1.75rem;
-  /* Run-9 RUN9-PAPER-COMPOSITION round 3: the venue stamp hangs below
-     the plate (see the stamp rule below), so the figure reserves a clear
-     zone for it above the abstract. */
-  margin-bottom: 3.5rem;
+  margin-bottom: 1rem;
+}
+
+/* On paper pages the figure link is lit, not plated: a faint accent
+   edge instead of the foreground border — the publications list keeps
+   its plate border until RUN10-PUBLICATIONS. */
+.journey-pub-page-figure .journey-pub-figure-link {
+  border: 1px solid
+    color-mix(in srgb, var(--accent-neon) 35%, transparent);
+}
+
+/* Figure caption (run-10 RUN10-PAPERS): one quiet light line — a glow
+   dot + "First page · 817 × 867" — replacing the FIG. title-block
+   strip. */
+.journey-pub-fig-flow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.85rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+.journey-pub-fig-flow::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-neon);
+  box-shadow: 0 0 8px var(--accent-neon);
 }
 
 .journey-pub-page-section {
@@ -3533,18 +3332,19 @@ html[data-journey] [data-effect-layer="background"] {
   margin-top: 1.75rem;
 }
 
-/* Stamped action plates (run-9 RUN9-PAPER-ACTIONS): the paper-page
-   actions and the 404 links share one plate — bordered plate + inner
-   margin frame, accent-neon numeral (presses in via motion), hairline
-   rule (draws via motion), arrow slides on hover, 0.97 press. */
+/* Luminous action buttons (run-10 RUN10-PAPERS): the paper-page
+   actions and the 404 links share one light control — a borderless
+   accent wash, accent-neon numeral (presses in via motion), hairline
+   light rule (draws via motion), arrow slides on hover, 0.97 press,
+   soft glow on hover. */
 .paper-action-plate {
   position: relative;
   display: inline-flex;
   align-items: baseline;
   gap: 0.6rem;
   padding: 0.75rem 1rem 0.85rem;
-  border: 1px solid color-mix(in srgb, var(--foreground) 55%, transparent);
-  background: var(--card);
+  border: 0;
+  background: color-mix(in srgb, var(--accent-neon) 8%, var(--card));
   font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 600;
@@ -3553,20 +3353,15 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--foreground);
   text-decoration: none;
   transition:
-    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
     transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.paper-action-plate::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
-  pointer-events: none;
-}
-
 .paper-action-plate:hover {
-  border-color: var(--accent-neon);
+  background: color-mix(in srgb, var(--accent-neon) 14%, var(--card));
+  box-shadow: 0 0 20px
+    color-mix(in srgb, var(--accent-neon) 30%, transparent);
 }
 
 .paper-action-plate:active {
@@ -3622,68 +3417,35 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
-/* Citation slip (CRED ticket-slip transfer, run-9 iter 9 research): the
-   BibTeX rides on a tear-off slip — dashed rule under a mono kicker. */
-.journey-cite-slip-head {
-  margin: 0 0 0.6rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px dashed
-    color-mix(in srgb, var(--foreground) 40%, transparent);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
-/* Tear-off citation slip (run-9 RUN9-BIBTEX-SLIP): the BibTeX block is a
-   slip torn from the sheet — punched-hole perforation along the top edge,
-   a dashed tear line that draws across on first view, a mono kicker, and
-   a stamped COPY plate. Same 68% card face as the skill/tech tapes, same
-   inner margin frame as the plates, same 220ms / 0.5s press-and-draw
-   family. The COPY plate presses at the reel-4 0.97 scale; reduced
-   motion renders the slip settled (native hook in bibtex-block.tsx). */
-.bibtex-slip {
+/* Light-flow BibTeX panel (run-10 RUN10-PAPERS): the BibTeX block is
+   a borderless panel lit from above — a beam of accent light draws
+   across the top edge on first view, a mono kicker, and a luminous
+   COPY pill. Same 220ms / 0.5s press-and-draw family as the old slip.
+   The COPY pill presses at the reel-4 0.97 scale; reduced motion
+   renders the panel settled (native hook in bibtex-block.tsx). */
+.bibtex-flow {
   position: relative;
   margin-top: 0.75rem;
-  border: 1px solid var(--journey-rule);
   background: color-mix(in srgb, var(--card) 68%, transparent);
 }
 
-.bibtex-slip::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
-  pointer-events: none;
-}
-
-.bibtex-slip-perf {
-  position: relative;
-  height: 16px;
-  background-image: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--foreground) 60%, transparent) 2.5px,
-    transparent 2.6px
-  );
-  background-size: 16px 16px;
-  background-position: center;
-  background-repeat: repeat-x;
-}
-
-.bibtex-slip-tear {
+.bibtex-flow-beam {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: 0;
-  border-bottom: 1px dashed
-    color-mix(in srgb, var(--foreground) 60%, transparent);
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 80%, transparent),
+    color-mix(in srgb, var(--accent-neon) 15%, transparent)
+  );
+  box-shadow: 0 0 12px
+    color-mix(in srgb, var(--accent-neon) 45%, transparent);
   transform-origin: left;
 }
 
-.bibtex-slip-head {
+.bibtex-flow-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3693,7 +3455,7 @@ html[data-journey] [data-effect-layer="background"] {
     color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 
-.bibtex-slip-kicker {
+.bibtex-flow-kicker {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 600;
@@ -3702,34 +3464,39 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
-.bibtex-slip-copy {
+.bibtex-flow-copy {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--foreground);
-  background: color-mix(in srgb, var(--card) 68%, transparent);
-  border: 1px solid var(--journey-rule);
-  padding: 0.3rem 0.7rem;
+  background: transparent;
+  border: 1px solid
+    color-mix(in srgb, var(--accent-neon) 45%, transparent);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
   cursor: pointer;
   transition:
     border-color 220ms ease-out,
     color 220ms ease-out,
+    box-shadow 220ms ease-out,
     transform 220ms ease-out;
 }
 
-.bibtex-slip-copy:hover,
-.bibtex-slip-copy[data-copied="true"] {
+.bibtex-flow-copy:hover,
+.bibtex-flow-copy[data-copied="true"] {
   border-color: var(--accent-neon);
   color: var(--accent-neon);
+  box-shadow: 0 0 12px
+    color-mix(in srgb, var(--accent-neon) 40%, transparent);
 }
 
-.bibtex-slip-copy:active {
+.bibtex-flow-copy:active {
   transform: scale(0.97);
 }
 
-.bibtex-slip-code {
+.bibtex-flow-code {
   margin: 0;
   padding: 1rem;
   font-family: var(--font-mono);
@@ -3743,24 +3510,24 @@ html[data-journey] [data-effect-layer="background"] {
 /* Round-2: at phone width the 0.75rem key line wraps and leaves a lone
    "," on its own line — 0.7rem fits the 42-char entry key on one line. */
 @media (max-width: 700px) {
-  .bibtex-slip-code {
+  .bibtex-flow-code {
     font-size: 0.7rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bibtex-slip-copy {
+  .bibtex-flow-copy {
     transition: none;
   }
 }
 
-/* Paper-page sign-off (run-9 RUN9-DETAIL-SIGNATURE): the signature draws
-   itself in under the citation slip — drafting-hand ink, never a font. */
+/* Paper-page sign-off (run-10 RUN10-PAPERS): the signature draws
+   itself in under the BibTeX panel as a trace of light, never a font. */
 .journey-pub-signoff {
   margin-top: 2.5rem;
   padding-top: 1.25rem;
-  border-top: 1px dashed
-    color-mix(in srgb, var(--foreground) 40%, transparent);
+  border-top: 1px solid
+    color-mix(in srgb, var(--accent-neon) 30%, transparent);
 }
 
 .journey-pub-signoff-kicker {
@@ -3778,11 +3545,13 @@ html[data-journey] [data-effect-layer="background"] {
   width: min(260px, 100%);
   height: auto;
   margin-top: 0.5rem;
+  filter: drop-shadow(0 0 6px
+    color-mix(in srgb, var(--accent-neon) 55%, transparent));
 }
 
 .journey-pub-signature path {
   fill: none;
-  stroke: var(--foreground);
+  stroke: var(--accent-neon);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -3798,8 +3567,42 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
-.journey-pub-titleblock {
+/* Paper-page flow footer (run-10 RUN10-PAPERS): the title block
+   becomes three quiet facts under a light rule — Paper / Venue / Date,
+   each label led by a glow dot. */
+.journey-pub-flow-footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
   margin-top: 2.5rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid
+    color-mix(in srgb, var(--accent-neon) 30%, transparent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.journey-pub-flow-footer .journey-sheet-titleblock-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.journey-pub-flow-footer .journey-sheet-titleblock-label::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-neon);
+  box-shadow: 0 0 8px var(--accent-neon);
+}
+
+@media (max-width: 700px) {
+  .journey-pub-flow-footer {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
 }
 
 @media (max-width: 700px) {
