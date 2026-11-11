@@ -10,12 +10,13 @@ import {
   parseContactDraft,
 } from "@/lib/contact-draft";
 import {
-  fileSheetFormEnter,
-  fileSheetFormExit,
-  fileSheetReceiptEnter,
-  fileSheetScrollTarget,
-  fileSheetStampTransition,
-} from "@/lib/contact-file-sheet";
+  contactFlowFormEnter,
+  contactFlowFormExit,
+  contactFlowGlowTransition,
+  contactFlowReceiptEnter,
+  contactFlowScrollTarget,
+} from "@/lib/contact-flow";
+import { flowLabels } from "@/lib/plate-labels";
 import {
   CONTACT_TOPICS,
   applyTopicPrefix,
@@ -23,8 +24,7 @@ import {
 } from "@/lib/contact-topics";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
-import { ContactEcg } from "./contact-ecg";
-import { contactFieldNumber, contactTopicTab } from "@/lib/contact-form-controls";
+import { ContactLightFlow } from "./contact-light-flow";
 
 type Status = "idle" | "sending" | "sent" | "error";
 type FieldName = "name" | "email" | "message";
@@ -40,7 +40,7 @@ export function ContactForm() {
   const [error, setError] = useState("");
   const [invalidField, setInvalidField] = useState<FieldName | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
-  const filingRef = useRef<HTMLDivElement>(null);
+  const flowRef = useRef<HTMLDivElement>(null);
   const reduceMotion = usePrefersReducedMotion();
   // Draft autosave (run-3 iter 11): false until the one-shot restore effect
   // below has run, so the debounced save never fires on the initial empty
@@ -125,15 +125,15 @@ export function ContactForm() {
     setInvalidField(null);
 
     if (name.trim().length < 2) {
-      fail("name", "FIELD 01 · NAME TOO SHORT — MIN 2 CHARS");
+      fail("name", "01 · Your name needs at least 2 characters");
       return;
     }
     if (!EMAIL_RE.test(email.trim())) {
-      fail("email", "FIELD 02 · INVALID ADDRESS");
+      fail("email", "02 · That email address doesn't look right");
       return;
     }
     if (message.trim().length < 10) {
-      fail("message", "FIELD 03 · MESSAGE TOO SHORT — MIN 10 CHARS");
+      fail("message", "03 · Your message needs at least 10 characters");
       return;
     }
 
@@ -174,24 +174,25 @@ export function ContactForm() {
       setStatus("error");
       setError(
         err instanceof Error
-          ? `SEND FAILED · ${err.message}`
-          : "SEND FAILED",
+          ? `Couldn't send — ${err.message}`
+          : "Couldn't send — please try again",
       );
     }
   }
 
-  // Success cut (run-9 RUN9-FILE-THE-SHEET): on submit success the
-  // page cuts to the filing container's top so the filing + plate play
-  // in view. On a phone the Transmit button sits ~500px below the
-  // form's top, so without the cut the receipt lands above the viewport
-  // and the visitor never sees the confirmation. An instant cut, not a
-  // smooth scroll — a second animation would fight the filing motion.
+  // Success cut (run-9 RUN9-FILE-THE-SHEET, re-skinned run-10
+  // RUN10-CONTACT): on submit success the page cuts to the flow
+  // container's top so the lift + glow play in view. On a phone the
+  // Transmit button sits ~500px below the form's top, so without the
+  // cut the receipt lands above the viewport and the visitor never
+  // sees the confirmation. An instant cut, not a smooth scroll — a
+  // second animation would fight the flow motion.
   useEffect(() => {
     if (status !== "sent") return;
-    const el = filingRef.current;
+    const el = flowRef.current;
     if (!el) return;
     window.scrollTo({
-      top: fileSheetScrollTarget(
+      top: contactFlowScrollTarget(
         el.getBoundingClientRect().top,
         window.scrollY,
       ),
@@ -199,27 +200,26 @@ export function ContactForm() {
     });
   }, [status]);
 
-  // "Send another" (run-9 RUN9-FILE-THE-SHEET): the filed receipt
-  // offers a way back to the form — name + email stay (they are the
-  // sender's identity), only the sent message clears. The debounced
-  // draft save then keeps the identity as a draft, as it would for
-  // any unsent form.
+  // "Send another" (run-9 RUN9-FILE-THE-SHEET): the receipt offers a
+  // way back to the form — name + email stay (they are the sender's
+  // identity), only the sent message clears. The debounced draft save
+  // then keeps the identity as a draft, as it would for any unsent form.
   function sendAnother() {
     setMessage("");
     setStatus("idle");
   }
 
   const describedBy = error ? ERROR_ID : undefined;
-  const formEnter = fileSheetFormEnter(reduceMotion);
-  const receiptEnter = fileSheetReceiptEnter(reduceMotion);
+  const formEnter = contactFlowFormEnter(reduceMotion);
+  const receiptEnter = contactFlowReceiptEnter(reduceMotion);
 
-  // Filing motion (run-9 RUN9-FILE-THE-SHEET): on a genuine submit
-  // success the dispatch sheet files itself — the form card rises,
-  // scales down and collapses while the stamped RECEIVED plate slides
-  // in from below with next steps + a primary action. The receipt pop
-  // stays the settled state language; reduced motion swaps instantly.
+  // Flow motion (run-10 RUN10-CONTACT): on a genuine submit success
+  // the form panel lifts away on light — it rises, scales down and
+  // fades while the RECEIVED glow panel slides in from below with
+  // next steps + a primary action. The receipt pop stays the settled
+  // state language; reduced motion swaps instantly.
   return (
-    <div className="journey-contact-filing" ref={filingRef}>
+    <div className="journey-contact-flow" ref={flowRef}>
       <AnimatePresence initial={false}>
         {status === "sent" ? (
           <motion.div
@@ -233,18 +233,18 @@ export function ContactForm() {
             transition={receiptEnter.transition}
           >
             <motion.span
-              className="journey-contact-stamp"
-              data-contact-stamp
+              className="journey-contact-glow"
+              data-contact-glow
               aria-hidden="true"
               initial={
                 reduceMotion
-                  ? { opacity: 1, scale: 1, rotate: -8 }
-                  : { opacity: 0, scale: 1.6, rotate: -14 }
+                  ? { opacity: 1, scale: 1 }
+                  : { opacity: 0, scale: 1.12 }
               }
-              animate={{ opacity: 1, scale: 1, rotate: -8 }}
-              transition={fileSheetStampTransition(reduceMotion)}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={contactFlowGlowTransition(reduceMotion)}
             >
-              RECEIVED
+              Received
             </motion.span>
             <p className="journey-contact-receipt-title">
               Transmission received
@@ -284,55 +284,38 @@ export function ContactForm() {
             initial={formEnter.initial}
             animate={formEnter.animate}
             transition={formEnter.transition}
-            exit={fileSheetFormExit(reduceMotion)}
+            exit={contactFlowFormExit(reduceMotion)}
           >
-      <span className="journey-sheet-crop journey-sheet-crop--left" aria-hidden="true">
-        +
-      </span>
-      <span className="journey-sheet-crop journey-sheet-crop--right" aria-hidden="true">
-        +
-      </span>
-      <div className="journey-sheet-head">
-        <span>Dispatch — Form 01</span>
+      <div className="journey-contact-flow-head">
+        <span className="journey-contact-flow-head-num">
+          {flowLabels(0, 1).plate}
+        </span>
         <span>To: Berat</span>
       </div>
 
-      {/* Live signal (RUN9-DETAIL-ECG): the heartbeat trace that proves
-          the line is live — drawn across the sheet header, one beat per
-          second. Static under reduced motion. */}
-      <ContactEcg />
-      <p className="journey-dispatch-ecg-caption" aria-hidden="true">
-        <span>Signal</span>
-        {/* Under reduced motion the trace is a static snapshot, so the
-            caption drops "Live" — it would contradict the settled state
-            (desktop critic, iter 8). */}
-        <span>{reduceMotion ? "60 BPM — Static" : "60 BPM — Live"}</span>
+      {/* Living light (run-10 RUN10-CONTACT): a wave of light drifts
+          across the form's head — the line is live. Static under
+          reduced motion. */}
+      <ContactLightFlow />
+      <p className="journey-contact-lightflow-caption" aria-hidden="true">
+        <span>Light current</span>
+        {/* Under reduced motion the wave is a static snapshot, so the
+            caption drops "Flowing" — it would contradict the settled
+            state (desktop critic, run-9 iter 8, same rule as the old
+            ECG caption). */}
+        <span>{reduceMotion ? "Still" : "Flowing"}</span>
       </p>
 
-      {/* Visible labels are sheet-field numbers by design ("FIELD 01 —
-          FROM") — the inputs carry honest aria-labels so assistive tech
-          announces "Your name" / "Your email address" / "Your message". */}
+      {/* Visible labels are flow numbers by design ("01 / 03 —
+          From") — the inputs carry honest aria-labels so assistive
+          tech announces "Your name" / "Your email address" / "Your
+          message". */}
       <label className="journey-contact-form-field">
         <span className="journey-contact-form-label">
-          <span className="journey-contact-form-fieldnum">
-            {contactFieldNumber("name")}
+          <span className="journey-contact-form-flownum">
+            {flowLabels(0, 3).plate}
           </span>{" "}
           — From
-        </span>
-        {/* Registration marks (RUN9-FIELD-PLATES): the plate's top
-            corners carry the sheet's "+" marks, straddling the border
-            like the Elsewhere plate's. */}
-        <span
-          className="journey-sheet-crop journey-sheet-crop--left"
-          aria-hidden="true"
-        >
-          +
-        </span>
-        <span
-          className="journey-sheet-crop journey-sheet-crop--right"
-          aria-hidden="true"
-        >
-          +
         </span>
         <input
           type="text"
@@ -355,22 +338,10 @@ export function ContactForm() {
 
       <label className="journey-contact-form-field">
         <span className="journey-contact-form-label">
-          <span className="journey-contact-form-fieldnum">
-            {contactFieldNumber("email")}
+          <span className="journey-contact-form-flownum">
+            {flowLabels(1, 3).plate}
           </span>{" "}
           — Return address
-        </span>
-        <span
-          className="journey-sheet-crop journey-sheet-crop--left"
-          aria-hidden="true"
-        >
-          +
-        </span>
-        <span
-          className="journey-sheet-crop journey-sheet-crop--right"
-          aria-hidden="true"
-        >
-          +
         </span>
         <input
           type="email"
@@ -393,11 +364,11 @@ export function ContactForm() {
 
       {/* Topic chips (run-3 iter 2): a tap, not a blank field — tapping a
           chip starts the message with a topic prefix without clobbering
-          already-typed text (see lib/contact-topics.ts). Placed inside the
-          terminal frame directly above the message field, so the chip sits
-          next to the field it fills; real buttons, keyboard + screen-reader
-          reachable, and the transmit burst's fire-time origin read is
-          unaffected (the origin is resolved at submit-click time). */}
+          already-typed text (see lib/contact-topics.ts). Placed directly
+          above the message field, so the chip sits next to the field it
+          fills; real buttons, keyboard + screen-reader reachable, and
+          the transmit burst's fire-time origin read is unaffected (the
+          origin is resolved at submit-click time). */}
       <div
         className="journey-contact-form-topics"
         role="group"
@@ -407,7 +378,7 @@ export function ContactForm() {
           Topic
         </span>
         <span className="journey-contact-form-topic-row">
-          {CONTACT_TOPICS.map((topic, index) => (
+          {CONTACT_TOPICS.map((topic) => (
             <button
               key={topic.label}
               type="button"
@@ -421,11 +392,9 @@ export function ContactForm() {
               className="journey-contact-form-topic-chip"
             >
               <span
-                className="journey-contact-form-topicnum"
+                className="journey-contact-form-topicdot"
                 aria-hidden="true"
-              >
-                {contactTopicTab(index)}
-              </span>
+              />
               {topic.label}
             </button>
           ))}
@@ -434,22 +403,10 @@ export function ContactForm() {
 
       <label className="journey-contact-form-field">
         <span className="journey-contact-form-label">
-          <span className="journey-contact-form-fieldnum">
-            {contactFieldNumber("message")}
+          <span className="journey-contact-form-flownum">
+            {flowLabels(2, 3).plate}
           </span>{" "}
           — Message
-        </span>
-        <span
-          className="journey-sheet-crop journey-sheet-crop--left"
-          aria-hidden="true"
-        >
-          +
-        </span>
-        <span
-          className="journey-sheet-crop journey-sheet-crop--right"
-          aria-hidden="true"
-        >
-          +
         </span>
         <textarea
           ref={messageRef}
@@ -477,7 +434,7 @@ export function ContactForm() {
       ) : null}
 
       {/* Pre-built Aceternity Stateful Button: idle -> spinner (sending) ->
-          idle-reset (error). Success is the receipt card above — the
+          idle-reset (error). Success is the receipt panel above — the
           site's intentional success state — so the button never holds a
           "sent" state. */}
       <StatefulSubmitButton
@@ -486,20 +443,6 @@ export function ContactForm() {
       >
         {status === "sending" ? "Transmitting…" : "Transmit →"}
       </StatefulSubmitButton>
-
-      <div className="journey-sheet-titleblock journey-dispatch-titleblock">
-        <p>
-          <span className="journey-sheet-titleblock-label">Form</span>
-          Dispatch — 01
-        </p>
-        <p>
-          <span className="journey-sheet-titleblock-label">Rev</span>A
-        </p>
-        <p>
-          <span className="journey-sheet-titleblock-label">Scale</span>
-          1:1
-        </p>
-      </div>
           </motion.form>
         )}
       </AnimatePresence>
