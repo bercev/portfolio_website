@@ -1598,12 +1598,13 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 /* Journey epilogue (run-9 iter 18, RUN9-EPILOGUE-SIGNOFF; re-skinned
-   run-10 RUN10-RAIL): the loop-back beat below the contact station is
-   the journey's sign-off — a light-framed closing card with a head
-   line, glow dots, the ASCII BERAT mark, the sign-off line, a
-   colophon, and the loop-back as a luminous button. The card sits at
-   the site's widest measure (60rem, same as the featured project
-   card). */
+   run-10 RUN10-RAIL; plate de-drafted run-10 RUN10-EPILOGUE): the
+   loop-back beat below the contact station is the journey's sign-off —
+   a borderless haloed closing card in the contact-form family (card wash
+   + accent halo, no border, no inner frame, no crop marks), with a
+   glow-dot head line under a light rule, the ASCII BERAT mark, a
+   colophon, and the loop-back as a luminous pill. The card sits at the
+   site's widest measure (60rem, same as the featured project card). */
 .journey-epilogue {
   padding: 3rem 1.25rem 4rem;
   border-top: 1px solid var(--journey-rule-soft);
@@ -1616,20 +1617,71 @@ html[data-journey] [data-effect-layer="background"] {
   margin-inline: auto;
   padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.5rem);
   background: color-mix(in srgb, var(--card) 78%, transparent);
-  border: 1px solid var(--border);
+  border: 0;
+  /* Halo (run-10 RUN10-EPILOGUE, fix in-iteration): the contact-form
+     family's 10% / 120px wash does not read on a 60rem-wide plate —
+     the desktop critic measured the panel at mean luminance 20.2 vs 14.2
+     background, essentially identical to the bordered before (19.6).
+     A tighter 90px core glow at 18% plus the wide 200px wash at 8%
+     makes the halo visible without changing the family language. */
+  box-shadow:
+    0 0 90px color-mix(in srgb, var(--accent-neon) 18%, transparent),
+    0 0 200px color-mix(in srgb, var(--accent-neon) 8%, transparent);
   text-align: center;
 }
 
-.journey-epilogue-plate::before {
-  content: "";
-  position: absolute;
-  inset: 7px;
-  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-  pointer-events: none;
+/* Flow head (run-10): the glow dot rides on the first span (inline-flex
+   + gap) so space-between keeps "End of the journey" left and the
+   chapter right — a ::before dot on the head itself would become a third
+   flex item and strand the label in the middle (paper-page sign,
+   run-10 iter 5). The light rule is a 1px gradient background, not a
+   border. */
+.journey-epilogue-flow-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.65rem;
+  margin-bottom: 1.35rem;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--portfolio-accent) 65%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 0%, transparent) 55%
+  );
+  background-size: 100% 1px;
+  background-position: bottom;
+  background-repeat: no-repeat;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  text-align: left;
 }
 
-.journey-epilogue-head {
-  text-align: left;
+.journey-epilogue-flow-head-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.journey-epilogue-flow-head-num::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 10px 1px
+    color-mix(in srgb, var(--portfolio-accent) 75%, transparent);
+}
+
+@media (max-width: 700px) {
+  .journey-epilogue-flow-head {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    gap: 0.25rem 0.5rem;
+  }
 }
 
 .journey-epilogue-mark {
@@ -1658,7 +1710,11 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-epilogue-loop {
   display: inline-block;
   padding: 0.7rem 1.1rem;
-  border: 1px solid var(--border);
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--portfolio-accent) 10%, transparent);
+  box-shadow: 0 0 18px -6px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
@@ -1666,14 +1722,29 @@ html[data-journey] [data-effect-layer="background"] {
   text-transform: uppercase;
   color: var(--foreground);
   text-decoration: none;
+  transition:
+    background-color 200ms ease-out,
+    box-shadow 200ms ease-out,
+    transform 200ms ease-out;
   /* WCAG 2.5.8 (run-3 iter 17 census): the old inline link was 18px
-     tall, so its hit area was padded to 26px. The loop-back is a bordered
+     tall, so its hit area was padded to 26px. The loop-back is a
      button-sized target (~44px tall) and needs no extra padding. */
 }
 
 .journey-epilogue-loop:hover {
-  border-color: var(--portfolio-accent);
+  background: color-mix(in srgb, var(--portfolio-accent) 18%, transparent);
+  box-shadow: 0 0 26px -4px
+    color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
   color: var(--portfolio-accent);
+}
+
+.journey-epilogue-loop:active {
+  transform: scale(0.97);
+}
+
+.journey-epilogue-loop:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
 }
 
 /* Mobile keyboard-focus clearance (run-3 iter 17 census spot-check):
@@ -3275,24 +3346,6 @@ html[data-journey] [data-effect-layer="background"] {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
-}
-
-/* Registration marks (epilogue). */
-.journey-sheet-crop {
-  position: absolute;
-  top: 1px;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  line-height: 1;
-  color: var(--muted-foreground);
-}
-
-.journey-sheet-crop--left {
-  left: 0.55rem;
-}
-
-.journey-sheet-crop--right {
-  right: 0.55rem;
 }
 
 @media (max-width: 700px) {

@@ -1,13 +1,15 @@
 /**
  * Journey epilogue (run-9 iter 18, RUN9-EPILOGUE-SIGNOFF; re-skinned
- * run-10 RUN10-RAIL). The scroll journey used to end dead at the
- * contact station: three bare lines on open background (run-2 iter 49,
- * static by design). It is now the journey's sign-off — a light-framed
- * closing card with a head line ("End of the journey — 07 / 07"),
- * glow dots, the ASCII BERAT mark, the same sign-off line, a colophon
- * of verified facts (typefaces from app/layout.tsx, Next.js from
- * package.json), and the loop-back as a luminous "Back to the top ↑"
- * button.
+ * run-10 RUN10-RAIL; plate de-drafted run-10 RUN10-EPILOGUE). The scroll
+ * journey used to end dead at the contact station: three bare lines on
+ * open background (run-2 iter 49, static by design). It is now the
+ * journey's sign-off — a borderless haloed closing card in the
+ * contact-form family (card wash + accent halo, no border, no inner
+ * frame, no crop marks) with a glow-dot head line ("End of the journey —
+ * 07 / 07") under a light rule, the ASCII BERAT mark, the same sign-off
+ * line, a colophon of verified facts (typefaces from app/layout.tsx,
+ * Next.js from package.json), and the loop-back as a luminous pill
+ * ("Back to the top ↑").
  *
  * Motion (60fps Circle Splash Bubbles Pop, shot 2131, read this
  * iteration): the sign-off's three elements pop in as a cluster on
@@ -57,20 +59,8 @@ export function JourneyEpilogue() {
       className="journey-epilogue"
     >
       <div ref={ref} className="journey-epilogue-plate">
-        <span
-          className="journey-sheet-crop journey-sheet-crop--left"
-          aria-hidden="true"
-        >
-          •
-        </span>
-        <span
-          className="journey-sheet-crop journey-sheet-crop--right"
-          aria-hidden="true"
-        >
-          •
-        </span>
         <motion.div
-          className="journey-sheet-head journey-epilogue-head"
+          className="journey-epilogue-flow-head"
           initial={{ opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 1.25 }}
           animate={
             popped || reduceMotion
@@ -83,7 +73,7 @@ export function JourneyEpilogue() {
               : { duration: PRESS_DURATION, ease: SITE_EASE }
           }
         >
-          <span>End of the journey</span>
+          <span className="journey-epilogue-flow-head-num">End of the journey</span>
           <span>07 / 07</span>
         </motion.div>
         <motion.p
