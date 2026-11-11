@@ -3257,7 +3257,7 @@ html[data-journey] [data-effect-layer="background"] {
   width: min(46rem, calc(100% - 2rem));
   margin: clamp(2rem, 6vw, 4rem) auto;
   padding: clamp(1.25rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.75rem) 2rem;
-  background: color-mix(in srgb, var(--card) 78%, transparent);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
   box-shadow: 0 0 120px
     color-mix(in srgb, var(--accent-neon) 10%, transparent);
 }
@@ -5002,18 +5002,17 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 }
 
-/* Missing sheet (run-9 RUN9-ROUTES): the 404 stops speaking terminal and
- * becomes an empty drawing sheet — bordered plate, inner margin frame, a
- * dashed empty FIG frame where the drawing would be, title-block footer.
- * Server component, no JS; FROST palette, square corners, no glow. */
-.not-found-sheet {
+/* Missing light (run-10 RUN10-404): the 404 stops speaking drafting
+ * and becomes a field of light — a borderless haloed panel in the
+ * contact-form family (card 88% wash + 120px accent halo + inner
+ * luminous wash, no border, no inner frame), a glow-dot flow head,
+ * and a light void where the figure would be. FROST palette, soft glow. */
+.not-found-field {
   flex: 1;
   position: relative;
-  /* Run 9 — missing-sheet spread (RUN9-404-SPREAD): the sheet needs
-     --z-page-content (10) to paint above the fixed ribbon canvas —
-     same rule as the paper pages. The bottom border is gone: the torn
-     edge below replaces it. (Run 10 removed the BlueprintField canvas
-     that used to sit behind it.) */
+  /* The field needs --z-page-content (10) to paint above the fixed
+     ribbon canvas — same rule as the paper pages. (Run 10 removed the
+     BlueprintField canvas that used to sit behind it.) */
   z-index: var(--z-page-content);
   display: flex;
   flex-direction: column;
@@ -5022,136 +5021,133 @@ html[data-journey="active"] [data-hero-name-fallback] {
   width: min(64rem, calc(100% - 2rem));
   margin: clamp(2rem, 6vh, 4rem) auto;
   padding: clamp(1.25rem, 4vw, 2.5rem);
-  background: color-mix(in srgb, var(--card) 78%, transparent);
-  border: 1px solid var(--border);
-  border-bottom: none;
-}
-.not-found-sheet::before {
-  content: "";
-  position: absolute;
-  inset: 7px 7px 16px;
-  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-  pointer-events: none;
-}
-.not-found-sheet-head {
-  margin-bottom: 0;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  /* The halo is the panel's only edge — it has to read. The card
+     token is only ~8 luminance levels above the page in dark theme,
+     so tone alone cannot outline the field: the edge is light, not
+     tone — a stronger outer halo plus an inner luminous wash glowing
+     in from the edges (critics, run-10 iter 11 fix round). */
+  box-shadow:
+    0 0 120px color-mix(in srgb, var(--accent-neon) 14%, transparent),
+    inset 0 0 70px color-mix(in srgb, var(--accent-neon) 10%, transparent);
 }
 .not-found-status {
   margin: 0;
   font-family: var(--font-mono);
-  /* Spread scale (run-9 RUN9-404-SPREAD): the status grows with the wide
-     sheet, so the headline holds the spread instead of floating in it. */
+  /* The status grows with the wide field, so the headline holds the
+     spread instead of floating in it. */
   font-size: clamp(1.75rem, 4.5vw, 2.75rem);
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.25;
   color: var(--foreground);
   /* Balance the wrap (run-9 RUN9-404-COMPOSITION): without it the
-     headline breaks "404 — Sheet not / found" with a lone "found" —
-     the iter-39 orphan note. Balanced, it reads "404 — Sheet / not
-     found" at both widths. */
+     headline breaks "404 — Not / found" with a lone "found" — the
+     iter-39 orphan note. Balanced, it reads "404 — Not / found" at
+     both widths. */
   text-wrap: balance;
 }
-/* Spread measure (run-9 RUN9-404-SPREAD): an oversized exterior
-   dimension line above the ghost figure — the missing figure measured
-   in its own native units. The label sits above the line; the line
-   draws across on first view (see not-found-spread.tsx). */
-.not-found-measure {
-  position: relative;
-  height: 1.875rem;
-  margin-bottom: -0.25rem;
-}
-.not-found-measure-label {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  transform: translateX(-50%);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: var(--muted-foreground);
-  white-space: nowrap;
-}
-.not-found-measure-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-.not-found-measure-svg line {
-  stroke: color-mix(in srgb, var(--foreground) 55%, transparent);
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-/* Torn-sheet edge (run-9 RUN9-404-SPREAD): the sheet's bottom border is
-   replaced by a jagged tear line. Absolutely positioned in the sheet's
-   bottom padding zone, so it can never cover content; the inner frame's
-   bottom inset (16px) clears its 10px strip. */
-.not-found-tear {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 10px;
-  pointer-events: none;
-}
-.not-found-tear svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.not-found-tear polyline {
-  fill: none;
-  stroke: var(--border);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-/* Ghost wireframe (run-9 RUN9-404-GHOST-FIGURE): the missing figure is
- * drawn as a void — diagonal hairlines cross corner to corner, dimension
- * lines with end ticks run just inside the top and left edges, and a
- * "NO DRAWING" stamp presses in over the crossing. */
-.not-found-ghost {
+/* Light void (run-10 RUN10-404): the missing figure is a field of
+ * light, not a drawing of a void — a soft radial glow fills the frame,
+ * one blurred orb drifts across it, a beam draws across the top on
+ * first view, and the verdict is a borderless glow chip pressed in
+ * over the light. No border, no dashed frame, no diagonals, no stamp. */
+.not-found-light {
   position: relative;
   display: grid;
   place-items: center;
   aspect-ratio: 16 / 7;
-  border: 1px dashed color-mix(in srgb, var(--foreground) 45%, transparent);
+  overflow: hidden;
+  background: radial-gradient(
+    60% 90% at 50% 50%,
+    color-mix(in srgb, var(--accent-neon) 16%, transparent),
+    transparent 70%
+  );
 }
-.not-found-ghost-svg {
+/* The beam is a glowing light track at the orb's height — a neon line
+   the orb travels on, not a dimension line (it draws across on entry,
+   scaleX, transform-origin left — see not-found-light.tsx). It fades
+   at both ends, brightest at the center, so it reads as light
+   emanating, not a rule spanning the width. The track + orb ride at
+   35% of the void's height; the chip rests below at 72% — the core
+   must travel in the open, never hidden behind the pill (critics,
+   run-10 iter 11 fix round). */
+.not-found-light-beam {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 0;
+  right: 0;
+  top: 35%;
+  height: 2px;
+  margin-top: -1px;
+  transform-origin: left;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--portfolio-accent) 0%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 75%, transparent) 50%,
+    color-mix(in srgb, var(--portfolio-accent) 0%, transparent)
+  );
+  box-shadow: 0 0 12px 1px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+}
+/* One soft mote with a bright core: a blurred accent disc drifting
+   across the track (motion keyframes in not-found-light.tsx), centered
+   by negative half-margins (% margins are relative to the void's
+   width, and the orb's height equals 30% of the void's width). The
+   core is what the eye tracks — a coreless glow reads as a smudge,
+   not a light source (critics, run-10 iter 11). */
+.not-found-light-orb {
+  position: absolute;
+  left: 50%;
+  top: 35%;
+  width: 30%;
+  aspect-ratio: 1;
+  margin: -15% 0 0 -15%;
   pointer-events: none;
 }
-.not-found-ghost-svg line {
-  stroke: color-mix(in srgb, var(--foreground) 40%, transparent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
+.not-found-light-orb-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent-neon) 55%, transparent),
+    transparent 65%
+  );
+  filter: blur(18px);
 }
-/* The diagonals DROP vector-effect (run-9 RUN9-404-SPREAD fix for a
-   latent iter-31 defect the wide sheet exposed): a pathLength dash
-   under non-scaling-stroke renders in screen px equal to the LOCAL
-   length, so once the SVG scales past 1x (942px figure on a 640
-   viewBox) the draw stops ~68% across — the dash overran the line
-   while the figure was 558px wide, which hid it. Without the effect
-   the dash scales with the transform and the draw reaches the corners
-   at any size; the dimension lines keep the effect (no dash, 1px at
-   every scale). The diagonals render ~1.5px at desktop scale, matching
-   the spread measure line. */
-.not-found-ghost-svg .not-found-ghost-diagonal {
-  vector-effect: none;
+.not-found-light-orb-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34%;
+  aspect-ratio: 1;
+  margin: -17% 0 0 -17%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent-neon) 90%, transparent),
+    transparent 70%
+  );
+  filter: blur(4px);
 }
-@media (max-width: 700px) {
-  /* At 390px the figure renders at ~0.49x, so the unscaled 1px diagonal
-     would read ~0.5px — double it back to a 1px hairline. */
-  .not-found-ghost-svg .not-found-ghost-diagonal {
-    stroke-width: 2;
-  }
+/* The chip's positioning wrapper: the verdict rests below the track
+   (72% of the void's height), centered, so the beam never strikes
+   through the text and the orb core never hides behind the pill. */
+.not-found-light-chip-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 72%;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
 }
-.not-found-ghost-stamp {
+/* The verdict chip: borderless accent wash + glow, pill radius — the
+   contact receipt chip's family, not a stamp. The wash sits over a
+   solid page-background layer so the light track cannot strike
+   through the text: the beam passes behind the pill and re-emerges
+   on either side (fix round, run-10 iter 11). */
+.not-found-light-chip {
   position: relative;
   font-family: var(--font-mono);
   font-size: 0.8rem;
@@ -5159,11 +5155,18 @@ html[data-journey="active"] [data-hero-name-fallback] {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--accent-neon);
-  border: 1px solid color-mix(in srgb, var(--accent-neon) 75%, transparent);
-  background: color-mix(in srgb, var(--card) 88%, transparent);
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--accent-neon) 18%, transparent),
+      color-mix(in srgb, var(--accent-neon) 18%, transparent)
+    ),
+    var(--background);
+  box-shadow: 0 0 24px
+    color-mix(in srgb, var(--accent-neon) 45%, transparent);
   padding: 0.35rem 0.7rem;
+  border-radius: 999px;
 }
-.not-found-ghost-caption {
+.not-found-light-caption {
   margin: -0.5rem 0 0;
 }
 .not-found-line {
@@ -5171,6 +5174,9 @@ html[data-journey="active"] [data-hero-name-fallback] {
   font: 400 1.0625rem/1.6 var(--font-sans);
   color: var(--foreground);
   opacity: 0.72;
+  /* Pretty wrap: the sentence is two lines in the spread column, and
+     a lone "here." on line 2 is a widow (critics, run-10 iter 11). */
+  text-wrap: pretty;
 }
 .not-found-nav {
   display: flex;
@@ -5178,21 +5184,16 @@ html[data-journey="active"] [data-hero-name-fallback] {
   gap: 0.75rem;
   margin-top: 0.25rem;
 }
-.not-found-titleblock {
-  margin-top: 0.5rem;
-}
-
-/* Two-column spread (run-9 RUN9-404-COMPOSITION): the 404 stops reading
- * as one stacked column widened + re-textured (both iter-39 critics'
- * "vastly different" dissent) and becomes a spread — ghost figure left,
- * status + sentence + actions right, title block full-width below.
- * Below 900px the spread flattens to the exact stacked column: the
- * wrapper and both columns are display:contents, so the leaves flow as
- * the sheet's own flex children with the sheet's 1.25rem gap, and the
- * explicit order values restore the headline-first sequence (the DOM
- * order is figure column first, so without them the headline would drop
- * below the figure on mobile). At desktop the same order values are
- * harmless — they sort within each column. */
+/* Two-column spread (run-9 RUN9-404-COMPOSITION, re-skinned run-10):
+ * the 404 reads as a spread — light void left, status + sentence +
+ * actions right. Below 900px the spread flattens to the exact stacked
+ * column: the wrapper and both columns are display:contents, so the
+ * leaves flow as the field's own flex children with the field's
+ * 1.25rem gap, and the explicit order values restore the
+ * headline-first sequence (the DOM order is figure column first, so
+ * without them the headline would drop below the figure on mobile).
+ * At desktop the same order values are harmless — they sort within
+ * each column. */
 .not-found-spread,
 .not-found-spread-figure,
 .not-found-spread-status {
@@ -5201,13 +5202,10 @@ html[data-journey="active"] [data-hero-name-fallback] {
 .not-found-status {
   order: 1;
 }
-.not-found-measure {
-  order: 2;
-}
-.not-found-ghost {
+.not-found-light {
   order: 3;
 }
-.not-found-ghost-caption {
+.not-found-light-caption {
   order: 4;
 }
 .not-found-line {
@@ -5216,16 +5214,20 @@ html[data-journey="active"] [data-hero-name-fallback] {
 .not-found-nav {
   order: 6;
 }
-.not-found-titleblock {
-  order: 7;
-}
 
 @media (min-width: 900px) {
-  /* The spread: figure ~60% / status ~40% (3fr/2fr), 2.5rem gutter.
-     The status column centers vertically against the figure block, so
-     headline + sentence + stacked plates read as one group beside the
-     ghost, not three items stranded down a tall column. The action
-     plates stack full-width (flex column + stretch) instead of sitting
+  /* The status column is narrow (2fr): at the base 2.75rem cap the
+     headline breaks "404 —" / "Not found" and the dash dangles at the
+     end of line 1 (critics, run-10 iter 11). Capped at 2.25rem the
+     whole "404 — Not found" holds one line across the spread range. */
+  .not-found-status {
+    font-size: clamp(1.75rem, 3.2vw, 2.25rem);
+  }
+  /* The spread: void ~60% / status ~40% (3fr/2fr), 2.5rem gutter.
+     The status column centers vertically against the void block, so
+     headline + sentence + stacked links read as one group beside the
+     light, not three items stranded down a tall column. The action
+     links stack full-width (flex column + stretch) instead of sitting
      in a row under the sentence. */
   .not-found-spread {
     display: grid;

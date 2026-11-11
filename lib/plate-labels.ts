@@ -33,3 +33,14 @@ export function figCaptionText(width: number, height: number): string {
   if (w === "—" || h === "—") return "First page";
   return `First page · ${w} × ${h}`;
 }
+
+/**
+ * The 404 void's quiet caption (run-10 RUN10-404): "Empty field" —
+ * a quiet label for the light, nothing more. The run-9 ghost's
+ * "640 × 280" dimension figures were dropped in the fix round: a
+ * pixel readout of the void is dimension language, and the run-10
+ * charter scraps it (critics, run-10 iter 11).
+ */
+export function notFoundLightCaption(): string {
+  return "Empty field";
+}

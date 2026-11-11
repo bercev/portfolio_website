@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 
-import { NotFoundGhostFigure } from "@/components/sections/not-found-figure";
+import { NotFoundLightVoid } from "@/components/sections/not-found-light";
 import { PaperActionPlate } from "@/components/sections/paper-action-plate";
-import {
-  NotFoundSpreadMeasure,
-  NotFoundTearEdge,
-} from "@/components/sections/not-found-spread";
+import { notFoundLightCaption } from "@/lib/plate-labels";
 
 export const metadata: Metadata = {
   title: "404 — segment not found",
@@ -13,22 +10,22 @@ export const metadata: Metadata = {
 };
 
 /**
- * Missing sheet (run-9 RUN9-ROUTES): the 404 stops speaking terminal and
- * becomes an empty drawing sheet — bordered plate, inner margin frame, a
- * ghost wireframe where the drawing would be (run-9 RUN9-404-GHOST-FIGURE:
- * diagonal cross + dimension lines + "NO DRAWING" stamp, so the joke reads
- * as a drawing, not an empty box), and a title-block footer. Server
- * component: no journey/WebGL, no new dependencies, renders inside the
- * root layout (skip link + theme providers). One status line, one plain
- * sentence, two ways out — same as before, in the site's new drafting
- * language. The terminal flyout itself is untouched (frozen).
- *
- * Run-9 RUN9-404-SPREAD: the lone plate becomes a full missing-sheet
- * spread — the sheet goes wide so the ghost figure reads at full-bleed
- * scale, an oversized exterior dimension line measures the figure above
- * it, and the bottom border is replaced by a torn-sheet edge. (Run 10
- * removed the BlueprintField canvas that used to mount behind it; the
- * spread itself is a later run-10 backlog item.)
+ * Missing light (run-10 RUN10-404): the 404 stops speaking drafting
+ * and becomes a field of light — a borderless haloed panel (the
+ * contact-form panel family: card 88% wash + 120px accent halo + inner
+ * luminous wash, no border, no inner frame) holding a light void where
+ * the figure would be (run-10 not-found-light.tsx: a glowing track
+ * with a drifting orb, and a "No light on file" glow chip below it,
+ * quiet caption "Empty field"). The run-9 drafting chrome is gone:
+ * no dimension line, no ghost wireframe, no "NO DRAWING" stamp, no
+ * torn-sheet edge, no title block, no flow head (the "01 / 01" plate
+ * number read as sheet-index residue — the headline carries the
+ * status), no "Sheet not found" headline, no dimension figures.
+ * Server component: no journey/WebGL, no new dependencies, renders
+ * inside the root layout (skip link + theme providers). One status
+ * line, one plain sentence, two ways out — same as before, in the
+ * site's light/flow language. The terminal flyout itself is untouched
+ * (frozen).
  */
 export default function NotFound() {
   return (
@@ -36,23 +33,18 @@ export default function NotFound() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="not-found-sheet"
+        className="not-found-field"
         data-light-chapter="notfound"
       >
-        <div className="journey-sheet-head not-found-sheet-head">
-          <span>Drawing — Sheet not on file</span>
-          <span>Rev —</span>
-        </div>
         <div className="not-found-spread">
           <div className="not-found-spread-figure">
-            <NotFoundSpreadMeasure />
-            <NotFoundGhostFigure />
-            <p className="journey-pub-fig-caption not-found-ghost-caption">
-              Fig. — · No drawing on file
+            <NotFoundLightVoid />
+            <p className="journey-pub-fig-caption not-found-light-caption">
+              {notFoundLightCaption()}
             </p>
           </div>
           <div className="not-found-spread-status">
-            <h1 className="not-found-status">404 — Sheet not found</h1>
+            <h1 className="not-found-status">404 — Not found</h1>
             <p className="not-found-line">
               This address doesn&rsquo;t resolve to anything here.
             </p>
@@ -75,22 +67,7 @@ export default function NotFound() {
             </nav>
           </div>
         </div>
-      <footer className="journey-sheet-titleblock not-found-titleblock">
-        <div>
-          <span className="journey-sheet-titleblock-label">Sheet</span>
-          Not on file
-        </div>
-        <div>
-          <span className="journey-sheet-titleblock-label">Scale</span>
-          1:1
-        </div>
-        <div>
-          <span className="journey-sheet-titleblock-label">Drawn by</span>
-          Berat
-        </div>
-      </footer>
-      <NotFoundTearEdge />
-    </main>
+      </main>
     </>
   );
 }
