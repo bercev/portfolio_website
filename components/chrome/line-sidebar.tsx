@@ -240,6 +240,16 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
         // it settles exactly on the base length.
         startBeamLoop();
         const slots = measureSectionSlots(items.map((item) => item.id));
+        // Traveler cap (run-10 RUN10-RAIL fix): the orb rides scroll
+        // progress, but the last chapter's slot sits above the track
+        // end (the epilogue follows it), so raw progress parked the
+        // orb ~40px below the final chip at the page bottom. Cap it
+        // at the last slot — at the bottom it marks the final chapter.
+        const lastSlot = slots.length > 0 ? (slots[slots.length - 1] ?? 0) : 0;
+        navRef.current?.style.setProperty(
+          "--traveler-progress",
+          String(Math.min(progress, lastSlot)),
+        );
         itemRefs.current.forEach((item, index) => {
           item?.style.setProperty("--slot", String(slots[index] ?? 0));
         });
@@ -282,6 +292,7 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
       style={
         {
           "--progress": 0,
+          "--traveler-progress": 0,
           "--beam-len": RAIL_BEAM_BASE,
         } as CSSProperties
       }
@@ -291,22 +302,22 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
         the client render differ from SSR (hydration mismatch under
         RM). It is hidden under reduced motion by CSS instead. */}
       <span aria-hidden="true" className={styles.beam} />
-      {/* Run-9 Sheet Index: the rail is the drawing's index sheet — a
-        sheet counter crowns it and registration "+" marks cap the
-        rule, top and bottom. Aria-hidden: the active link already
-        carries aria-current for assistive tech. */}
-      <span aria-hidden="true" className={styles.regMarkTop}>
-        +
+      {/* Light index: the rail is the site's light index — a chapter
+        counter crowns it and glow dots cap the rule, top and bottom.
+        Aria-hidden: the active link already carries aria-current for
+        assistive tech. */}
+      <span aria-hidden="true" className={styles.endDotTop}>
+        •
       </span>
-      <span aria-hidden="true" className={styles.regMarkBottom}>
-        +
+      <span aria-hidden="true" className={styles.endDotBottom}>
+        •
       </span>
       <div
         aria-hidden="true"
         className={styles.counter}
-        data-rail-sheet-counter
+        data-rail-counter
       >
-        INDEX · SHEET{" "}
+        INDEX ·{" "}
         <span className={styles.counterNo}>
           {String(activeIndex + 1).padStart(2, "0")} /{" "}
           {String(items.length).padStart(2, "0")}
@@ -331,14 +342,14 @@ export function LineSidebar({ items, resumeHref }: LineSidebarProps) {
               } as CSSProperties
             }
           >
-            {/* Sheet plate, not an arrow: the number is the marker
+            {/* Chapter number, not an arrow: the number is the marker
               (data-line-sidebar-marker kept — e2e pins 7 of them and
               the active one's accent background). It keeps the
               pointer-proximity scale the arrow had. */}
             <span
               aria-hidden="true"
               data-line-sidebar-marker
-              className={styles.sheetNo}
+              className={styles.chapterNo}
             >
               {String(index + 1).padStart(2, "0")}
             </span>

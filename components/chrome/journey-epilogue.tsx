@@ -1,19 +1,19 @@
 /**
- * Journey epilogue (run-9 iter 18, RUN9-EPILOGUE-SIGNOFF). The scroll
- * journey used to end dead at the contact station: three bare lines on
- * open background (run-2 iter 49, static by design). It is now the
- * drawing set's sign-off plate — the closing sheet, in the same
- * drafting language as every other run-9 surface: a bordered plate with
- * a sheet head ("END OF DRAWING — SHEET 07 / 07"), registration marks,
- * the ASCII BERAT mark, the same sign-off line, a colophon of verified
- * facts (typefaces from app/layout.tsx, Next.js from package.json), and
- * the loop-back as a stamped "RETURN TO SHEET 01 ↑" button.
+ * Journey epilogue (run-9 iter 18, RUN9-EPILOGUE-SIGNOFF; re-skinned
+ * run-10 RUN10-RAIL). The scroll journey used to end dead at the
+ * contact station: three bare lines on open background (run-2 iter 49,
+ * static by design). It is now the journey's sign-off — a light-framed
+ * closing card with a head line ("End of the journey — 07 / 07"),
+ * glow dots, the ASCII BERAT mark, the same sign-off line, a colophon
+ * of verified facts (typefaces from app/layout.tsx, Next.js from
+ * package.json), and the loop-back as a luminous "Back to the top ↑"
+ * button.
  *
  * Motion (60fps Circle Splash Bubbles Pop, shot 2131, read this
  * iteration): the sign-off's three elements pop in as a cluster on
  * first view — scale 0.6 with a spring that overshoots, staggered, the
  * way Circle's avatar bubbles spring into existence — then settle and
- * stay. The sheet head presses in (the run-9 220ms press language).
+ * stay. The head presses in (the run-9 220ms press language).
  * Entry-only: a footer should rest, not chatter, so Circle's idle loop
  * is deliberately not carried over. Reduced motion: everything renders
  * settled from the first frame (native hook — motion's useReducedMotion()
@@ -61,13 +61,13 @@ export function JourneyEpilogue() {
           className="journey-sheet-crop journey-sheet-crop--left"
           aria-hidden="true"
         >
-          +
+          •
         </span>
         <span
           className="journey-sheet-crop journey-sheet-crop--right"
           aria-hidden="true"
         >
-          +
+          •
         </span>
         <motion.div
           className="journey-sheet-head journey-epilogue-head"
@@ -83,8 +83,8 @@ export function JourneyEpilogue() {
               : { duration: PRESS_DURATION, ease: SITE_EASE }
           }
         >
-          <span>End of drawing</span>
-          <span>Sheet 07 / 07</span>
+          <span>End of the journey</span>
+          <span>07 / 07</span>
         </motion.div>
         <motion.p
           aria-hidden="true"
@@ -117,7 +117,7 @@ export function JourneyEpilogue() {
               : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(1) }
           }
         >
-          End of the journey — thanks for reading to the bottom.
+          Thanks for reading to the bottom.
         </motion.p>
         <motion.p
           className="journey-epilogue-colophon"
@@ -133,12 +133,12 @@ export function JourneyEpilogue() {
               : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(1) }
           }
         >
-          Set in Bricolage Grotesque + JetBrains Mono · Drawn by Berat ·
+          Set in Bricolage Grotesque + JetBrains Mono · Made by Berat ·
           Built with Next.js
         </motion.p>
         <motion.a
           href="#home"
-          className="journey-epilogue-stamp"
+          className="journey-epilogue-loop"
           initial={{ opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 0.6 }}
           animate={
             popped || reduceMotion
@@ -151,7 +151,7 @@ export function JourneyEpilogue() {
               : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(2) }
           }
         >
-          Return to sheet 01 ↑
+          Back to the top ↑
         </motion.a>
       </div>
     </footer>

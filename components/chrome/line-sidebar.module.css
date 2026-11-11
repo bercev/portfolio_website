@@ -3,10 +3,10 @@
   --progress: 0;
   position: fixed;
   top: 12.5vh;
-  /* Run-9 iter 10 fix: the rail sat at left: 0, so the sheet plates,
-     counter, traveler "+" and registration marks were hard-flush with
-     the viewport edge — the traveler and marks (left: -4px) were
-     genuinely half off-screen and the plates read as clipped. 12px of
+  /* Run-9 iter 10 fix: the rail sat at left: 0, so the chapter chips,
+     counter, traveler and end dots were hard-flush with the
+     viewport edge — the traveler and dots (left: -4px) were
+     genuinely half off-screen and the chips read as clipped. 12px of
      air clears every element; the rail's labels still end well short
      of the content column. */
   left: 0.75rem;
@@ -41,31 +41,22 @@
   transform-origin: top;
 }
 
-/* The traveler is a drafting registration mark now — a "+" that rides
-   the rule — not an arrowhead. Same box, same drop-shadow. */
+/* The traveler is a bead of light now — a glowing orb that rides
+   the rule — not an arrowhead. Same box, same drop-shadow. It rides
+   --traveler-progress (scroll progress capped at the last chapter's
+   slot, so at the page bottom it parks on the final chip instead of
+   overshooting past it); the track fill below still uses raw
+   --progress. */
 .traveler {
   position: absolute;
   left: -4px;
-  top: calc(0.35rem + (100% - 0.7rem) * var(--progress));
+  top: calc(0.35rem + (100% - 0.7rem) * var(--traveler-progress, var(--progress)));
   z-index: 2;
   width: 11px;
-  height: 12px;
+  height: 11px;
   pointer-events: none;
   background: var(--line-sidebar-accent);
-  clip-path: polygon(
-    30% 0,
-    70% 0,
-    70% 30%,
-    100% 30%,
-    100% 70%,
-    70% 70%,
-    70% 100%,
-    30% 100%,
-    30% 70%,
-    0 70%,
-    0 30%,
-    30% 30%
-  );
+  border-radius: 50%;
   transform: translateY(-50%);
   filter: drop-shadow(
     0 0 8px color-mix(in srgb, var(--line-sidebar-accent) 70%, transparent)
@@ -83,7 +74,7 @@
 .beam {
   position: absolute;
   left: 0;
-  top: calc(0.35rem + (100% - 0.7rem) * var(--progress));
+  top: calc(0.35rem + (100% - 0.7rem) * var(--traveler-progress, var(--progress)));
   z-index: 1;
   width: 3px;
   height: calc((100% - 0.7rem) * var(--beam-len, 0.06));
@@ -101,7 +92,7 @@
   transform: translateY(-50%);
 }
 
-/* Sheet Index counter: crowns the rail, above the rule. The numbers
+/* Light index counter: crowns the rail, above the rule. The numbers
    carry the accent; the rest is dim mono. Aria-hidden in the markup —
    the active link already announces the chapter. */
 .counter {
@@ -119,9 +110,9 @@
   color: var(--line-sidebar-accent);
 }
 
-/* Registration "+" marks capping the rule, centered on the 3px track. */
-.regMarkTop,
-.regMarkBottom {
+/* Glow dots capping the rule, centered on the 3px track. */
+.endDotTop,
+.endDotBottom {
   position: absolute;
   left: -4px;
   z-index: 2;
@@ -132,18 +123,26 @@
   line-height: 1;
   text-align: center;
   pointer-events: none;
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--line-sidebar-accent) 70%, transparent)
+  );
 }
 
-.regMarkTop {
+.endDotTop {
   top: 0.05rem;
 }
 
-.regMarkBottom {
+.endDotBottom {
   bottom: 0.05rem;
 }
 
 .list {
   position: relative;
+  /* Run-10 RUN10-RAIL fix: the traveler orb rides the track at left
+     -4px..7px; chips starting at x=0 sat under it, so the orb covered
+     the first digit of the active chip ("05" read as orb + "5"). The
+     list sits 12px right of the track, clearing the orb by 5px. */
+  left: 0.75rem;
   height: 100%;
   margin: 0;
   padding: 0;
@@ -164,12 +163,12 @@
   transition: opacity 100ms ease-out;
 }
 
-/* Sheet plate: the chapter's number in a bordered mono plate. It is the
-   marker (data-line-sidebar-marker) — it keeps the pointer-proximity
-   scale the arrow had, and fills accent for the active / hovered /
-   focused row, exactly as the arrow's background did (e2e pins the
-   active marker's accent background-color). */
-.sheetNo {
+/* Chapter number: the chapter's number in a bordered mono chip. It is
+   the marker (data-line-sidebar-marker) — it keeps the
+   pointer-proximity scale the arrow had, and fills accent for the
+   active / hovered / focused row, exactly as the arrow's background
+   did (e2e pins the active marker's accent background-color). */
+.chapterNo {
   flex: none;
   padding: 1px 4px;
   color: color-mix(in srgb, var(--foreground) 72%, transparent);
@@ -200,8 +199,8 @@
   transition: color 100ms ease-out;
 }
 
-/* Drawn rule under the active label: scaleX 0 → 1, 200ms site ease-out,
-   drawn left to right like a pen stroke. Under reduced motion the
+/* Light rule under the active label: scaleX 0 → 1, 200ms site ease-out,
+   sweeping left to right. Under reduced motion the
    transition is none (see the RM block below), so it renders settled. */
 .rule {
   position: absolute;
@@ -237,7 +236,7 @@
 }
 
 /* Pinned utility link below the rail (resume download): mono uppercase
-   title-block voice, dimmer than the chapter anchors so it reads as
+   mono uppercase voice, dimmer than the chapter anchors so it reads as
    utility, not a chapter. */
 .utility {
   position: absolute;
@@ -266,9 +265,9 @@
   color: var(--foreground);
 }
 
-.item:has(.link:hover) .sheetNo,
-.item:has(.link:focus-visible) .sheetNo,
-.item:has(.link[aria-current="location"]) .sheetNo {
+.item:has(.link:hover) .chapterNo,
+.item:has(.link:focus-visible) .chapterNo,
+.item:has(.link[aria-current="location"]) .chapterNo {
   color: var(--background);
   background: var(--line-sidebar-accent);
   border-color: var(--line-sidebar-accent);
@@ -290,7 +289,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .item,
-  .sheetNo,
+  .chapterNo,
   .link,
   .rule {
     transition: none;

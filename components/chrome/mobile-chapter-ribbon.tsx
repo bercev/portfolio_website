@@ -147,14 +147,14 @@ export function MobileChapterRibbon({ items }: MobileChapterRibbonProps) {
       <span aria-hidden="true" className={styles.track}>
         <span aria-hidden="true" className={styles.fill} />
       </span>
-      {/* Run-9 Sheet Index: the ribbon is the drawing's title strip —
-        sheet counter + chapter name, capped by a registration mark. */}
+      {/* Light index: the ribbon is the rail's mobile light strip —
+        chapter counter + chapter name, capped by a glow dot. */}
       <span aria-hidden="true" className={styles.mark}>
-        +
+        •
       </span>
       <span className={styles.name}>
-        SHEET {String(activeIndex + 1).padStart(2, "0")} /{" "}
-        {String(items.length).padStart(2, "0")} — {active?.label}
+        {String(activeIndex + 1).padStart(2, "0")} /{" "}
+        {String(items.length).padStart(2, "0")} · {active?.label}
       </span>
     </div>
   );

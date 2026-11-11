@@ -39,7 +39,7 @@
   transform-origin: left;
 }
 
-/* Registration "+" mark at the strip's left end, before the name. */
+/* Glow dot at the strip's left end, before the name. */
 .mark {
   position: absolute;
   left: 0.45rem;
@@ -48,6 +48,9 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1;
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--ribbon-accent) 70%, transparent)
+  );
 }
 
 .name {
