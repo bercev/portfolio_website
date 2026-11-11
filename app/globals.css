@@ -277,16 +277,25 @@ html[data-ascii="active"] .journey-panel:not(.journey-panel--open):not(.journey-
 
 /* RUN6-BORDERS (reel 8): publication rows stay quiet rows in ASCII mode
    too — no box border, no scrim panel; the station's own scrim already
-   carries readability, and the hairline below separates the rows. Project
-   cards and diagram panels keep their boxed chrome (out of scope). */
+   carries readability, and the light line below separates the rows
+   (run-10 RUN10-PUBLICATIONS: the ASCII-mode rule used to re-impose the
+   hairline and reset the row's background, which killed the light
+   separator — it now carries the same light line as the base rule). */
 html[data-ascii="active"] .journey-pub-row {
-  background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--journey-rule-soft);
+  background-color: transparent;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 35%, transparent),
+    color-mix(in srgb, var(--accent-neon) 8%, transparent)
+  );
+  background-position: bottom left;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
 }
 
 html[data-ascii="active"] .journey-pub-row:last-child {
-  border-bottom: 0;
+  background-image: none;
 }
 
 /* Body copy gets a stronger halo in ASCII mode. */
@@ -1710,25 +1719,38 @@ html[data-journey] [data-effect-layer="background"] {
   padding: clamp(20px, 2.6vw, 30px) 0;
   background: transparent;
   overflow: visible;
-  /* Quiet row like experience rows (RUN6-BORDERS, reel 8): a hairline
-     between rows, not a bordered card. */
-  border-bottom: 1px solid var(--journey-rule-soft);
+  /* A light row, not a ruled ledger row (run-10 RUN10-PUBLICATIONS):
+     the separator is a beam of light fading along the row, painted as
+     a 1px background line so the row itself keeps border-top 0, a
+     transparent background color, and no box-shadow (e2e frost test). */
+  border-bottom: 0;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 35%, transparent),
+    color-mix(in srgb, var(--accent-neon) 8%, transparent)
+  );
+  background-position: bottom left;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
 }
 
 .journey-pub-row:last-child {
-  border-bottom: 0;
+  background-image: none;
 }
 
-/* Journal plates (run-9 RUN9-SECTION-IDENTITIES, Publications slice):
-   the masthead rule is a child div — the e2e frost test requires the row
-   itself to keep border-top 0, a transparent background, and no
-   box-shadow. */
-.journey-pub-plate-rule {
+/* Light rule (run-10 RUN10-PUBLICATIONS): a single beam of light, not
+   the double masthead rule — shared by the publications list and the
+   paper pages. */
+.journey-pub-light-rule {
   grid-column: 1 / -1;
-  height: 5px;
+  height: 1px;
   margin: 0 0 clamp(18px, 2.4vw, 28px);
-  border-top: 2px solid var(--foreground);
-  border-bottom: 1px solid var(--foreground);
+  border: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
 }
 
 .journey-pub-figure {
@@ -1741,7 +1763,10 @@ html[data-journey] [data-effect-layer="background"] {
 .journey-pub-figure-link {
   position: relative;
   display: block;
-  border: 1px solid var(--foreground);
+  /* Lit, not plated (run-10 RUN10-PUBLICATIONS): a faint accent edge
+     instead of the foreground plate border. */
+  border: 1px solid
+    color-mix(in srgb, var(--accent-neon) 35%, transparent);
   background: #fff;
 }
 
@@ -1764,38 +1789,33 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
-/* Venue stamp: pressed onto the plate's corner on first scroll into view
-   (the press itself lives in publication-plate.tsx, 220ms ease-out). */
-.journey-pub-stamp {
-  position: absolute;
-  z-index: 2;
-  bottom: -12px;
-  right: -8px;
-  max-width: calc(100% - 16px);
-  padding: 5px 9px;
-  border: 2px solid var(--portfolio-accent);
-  background: var(--background);
-  color: var(--portfolio-accent);
+/* Venue glow (run-10 RUN10-PUBLICATIONS): the venue as a luminous
+   line under the figure's caption — a glow dot + accent text, fading
+   in on first scroll into view (the fade itself lives in
+   publication-flow.tsx, 220ms ease-out). No rotation, no border, no
+   press: it sits in flow, so it can never cover the caption at phone
+   widths the way the old rotated stamp did. */
+.journey-pub-venue-glow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.55rem 0 0;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  text-align: center;
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--portfolio-accent) 30%, transparent);
+  color: var(--portfolio-accent);
 }
 
-/* At phone widths the figure is ~358px wide, so the rotated stamp's left
-   end lands on the FIG. caption and covers its tail ("First pa…" — the
-   mobile critic's find, run-9 iter 15; byte-identical in motion mode, so
-   pre-existing, not an RM regression). The stamp's low end dips ~14px
-   below its box (rotation), so it must sit 36px up to clear the ~23px
-   caption band: it then reads as pressed on the plate's bottom-right
-   corner, over the preview's margin, instead of on the caption. */
-@media (max-width: 560px) {
-  .journey-pub-stamp {
-    bottom: 36px;
-  }
+.journey-pub-venue-glow::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-neon);
+  box-shadow: 0 0 8px var(--accent-neon);
 }
 
 .journey-pub-body {
@@ -1803,12 +1823,31 @@ html[data-journey] [data-effect-layer="background"] {
   min-width: 0;
 }
 
-.journey-pub-kicker {
+/* Flow kicker (run-10 RUN10-PUBLICATIONS): the row's number as a
+   glow-dot line ("01 / 02"), not a "PLATE 01 / 02" kicker. The dot
+   rides on the span, same pattern as the paper-page head. */
+.journey-pub-flow-kicker {
   margin: 2px 0 0.7rem;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.14em;
   color: var(--portfolio-accent);
+}
+
+.journey-pub-flow-kicker span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.journey-pub-flow-kicker span::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-neon);
+  box-shadow: 0 0 8px var(--accent-neon);
 }
 
 .journey-pub-authors {
@@ -3242,20 +3281,6 @@ html[data-journey] [data-effect-layer="background"] {
   box-shadow: 0 0 10px var(--accent-neon);
 }
 
-/* The masthead rule on paper pages is a single beam of light, not the
-   double rule — the publications list keeps its own rule until
-   RUN10-PUBLICATIONS. */
-.journey-pub-page .journey-pub-plate-rule {
-  height: 1px;
-  margin: 0 0 clamp(18px, 2.4vw, 28px);
-  border: 0;
-  background: linear-gradient(
-    to right,
-    color-mix(in srgb, var(--accent-neon) 70%, transparent),
-    color-mix(in srgb, var(--accent-neon) 12%, transparent)
-  );
-}
-
 .journey-pub-page-crumb {
   margin: 0 0 1.25rem;
   font-family: var(--font-mono);
@@ -3274,17 +3299,9 @@ html[data-journey] [data-effect-layer="background"] {
   margin-bottom: 1rem;
 }
 
-/* On paper pages the figure link is lit, not plated: a faint accent
-   edge instead of the foreground border — the publications list keeps
-   its plate border until RUN10-PUBLICATIONS. */
-.journey-pub-page-figure .journey-pub-figure-link {
-  border: 1px solid
-    color-mix(in srgb, var(--accent-neon) 35%, transparent);
-}
-
 /* Figure caption (run-10 RUN10-PAPERS): one quiet light line — a glow
    dot + "First page · 817 × 867" — replacing the FIG. title-block
-   strip. */
+   strip. Shared with the publications list since RUN10-PUBLICATIONS. */
 .journey-pub-fig-flow {
   display: flex;
   align-items: center;

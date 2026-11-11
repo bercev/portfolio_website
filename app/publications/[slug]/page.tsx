@@ -143,7 +143,7 @@ export default async function PublicationPage({
         <span aria-hidden="true"> / </span>
         <Link href="/#publications">Publications</Link>
       </nav>
-      <div className="journey-pub-plate-rule" aria-hidden="true" />
+      <div className="journey-pub-light-rule" aria-hidden="true" />
       <h1 className="journey-pub-title">{publication.title}</h1>
       <p className="journey-pub-authors">
         {publication.authors.map((author, i) => (

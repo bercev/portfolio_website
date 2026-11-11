@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { figCaptionText } from "@/lib/plate-labels";
 import {
   PAPER_FIGURE_GLOW_ALPHA_PCT,
   PAPER_FIGURE_GLOW_BLUR_PX,
@@ -7,7 +8,6 @@ import {
   PAPER_FIGURE_GLOW_SPREAD_PX,
   PAPER_FIGURE_GLOW_Y_PX,
   PAPER_FIGURE_SETTLE_SCROLL_PX,
-  figCaptionText,
   paperFigureGlow,
   paperFigureSettle,
 } from "./paper-figure";

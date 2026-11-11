@@ -17,6 +17,7 @@
 
 import { motion, useScroll, useSpring, useTransform } from "motion/react";
 
+import { figCaptionText } from "@/lib/plate-labels";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { Publication } from "@/data/content";
 
@@ -62,24 +63,6 @@ export function paperFigureGlow(glow: number): string {
   const l = clamp01(glow);
   if (l <= 0) return "0 0px 0px 0px rgba(0, 0, 0, 0)";
   return `0 0 ${Math.round(PAPER_FIGURE_GLOW_BLUR_PX * l)}px ${Math.round(PAPER_FIGURE_GLOW_SPREAD_PX * l)}px color-mix(in srgb, var(--accent-neon) ${Math.round(PAPER_FIGURE_GLOW_ALPHA_PCT * l)}%, transparent)`;
-}
-
-/** A pixel count, rounded; anything unusable prints as an em dash. */
-function dimensionText(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "—";
-  return String(Math.round(value));
-}
-
-/**
- * The figure's quiet light caption: "First page" plus the preview's
- * real pixel dims when usable, so the figure still measures something
- * true without a dimension frame.
- */
-export function figCaptionText(width: number, height: number): string {
-  const w = dimensionText(width);
-  const h = dimensionText(height);
-  if (w === "—" || h === "—") return "First page";
-  return `First page · ${w} × ${h}`;
 }
 
 export function PaperFigure({
