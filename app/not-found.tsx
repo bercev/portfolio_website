@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { BlueprintField } from "@/components/effects/blueprint-field";
 import { NotFoundGhostFigure } from "@/components/sections/not-found-figure";
 import { PaperActionPlate } from "@/components/sections/paper-action-plate";
 import {
@@ -25,22 +24,20 @@ export const metadata: Metadata = {
  * language. The terminal flyout itself is untouched (frozen).
  *
  * Run-9 RUN9-404-SPREAD: the lone plate becomes a full missing-sheet
- * spread — the BlueprintField canvas mounts behind it (notfound chapter,
- * ruled paper; the sheet marks itself as the measured column), the sheet
- * goes wide so the ghost figure reads at full-bleed scale, an oversized
- * exterior dimension line measures the figure above it, and the bottom
- * border is replaced by a torn-sheet edge.
+ * spread — the sheet goes wide so the ghost figure reads at full-bleed
+ * scale, an oversized exterior dimension line measures the figure above
+ * it, and the bottom border is replaced by a torn-sheet edge. (Run 10
+ * removed the BlueprintField canvas that used to mount behind it; the
+ * spread itself is a later run-10 backlog item.)
  */
 export default function NotFound() {
   return (
     <>
-      <BlueprintField />
       <main
         id="main-content"
         tabIndex={-1}
         className="not-found-sheet"
         data-light-chapter="notfound"
-        data-blueprint-column
       >
         <div className="journey-sheet-head not-found-sheet-head">
           <span>Drawing — Sheet not on file</span>

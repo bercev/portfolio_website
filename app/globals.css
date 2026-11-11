@@ -990,17 +990,6 @@ html:not(.dark) .crt-texture {
   pointer-events: none;
 }
 
-/* Run 9 — drafting-table background over the ribbons, under the frost. */
-.blueprint-field {
-  position: fixed;
-  inset: 0;
-  z-index: calc(var(--z-journey-scene) + 1);
-  display: block;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
 /* Floating glyph field — replaced the 3D journey scene as the site
    background on 2026-10-22 (user direction: simplify; the scene read as
    a washed ribbon / blurry bands). Same z-layer the scene used. */
@@ -3425,10 +3414,9 @@ html[data-journey] [data-effect-layer="background"] {
    sheet-head strip, masthead rule, FIG plate, citation slip, title block. */
 .journey-pub-page {
   position: relative;
-  /* Run 9 — paper routes join the drafting table (RUN9-PAPER-BACKGROUND):
-     the BlueprintField canvas is fixed at z-journey-scene+1 (3), so the
-     sheet needs --z-page-content (10) to paint above it — same rule as
-     the /plain masthead strip over the fixed backdrop. */
+  /* Run 10 removed the BlueprintField canvas; the sheet still needs
+     --z-page-content (10) to paint above the fixed ribbon canvas —
+     same rule as the /plain masthead strip over the fixed backdrop. */
   z-index: var(--z-page-content);
   width: min(46rem, calc(100% - 2rem));
   margin: clamp(2rem, 6vw, 4rem) auto;
@@ -4678,75 +4666,6 @@ a.skills-plate-note {
   pointer-events: none;
 }
 
-/* Run 9 (RUN9-HERO-SETTLED-BOLDER): the settled particle BERAT carries a
-   drawn measurement frame — dimension lines flanking the letterforms, a
-   baseline rule, and a FIG. 00 caption — so the settled hero reads as a
-   measured drawing plate at a glance. Lines draw in (dashoffset, pathLength
-   normalized) once the scene reports the assembly landed; the caption fades
-   in behind them. Pre-settled the frame is invisible (offset 1 / opacity 0),
-   so there is no flash of undrawn furniture. Pointer-transparent: the
-   canvas underneath keeps its repulsion field. */
-.hero-measure-frame {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.hero-measure-frame svg {
-  position: absolute;
-  inset: 0;
-  display: block;
-  overflow: visible;
-}
-
-.hero-measure-draw {
-  stroke: var(--accent-neon);
-  stroke-width: 1.5;
-  opacity: 0.85;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 0.6s ease-out;
-}
-
-.hero-measure-frame[data-settled="true"] .hero-measure-draw {
-  stroke-dashoffset: 0;
-}
-
-.hero-measure-frame[data-settled="true"] .hero-measure-baseline {
-  transition-delay: 0.15s;
-}
-
-.hero-measure-caption {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.18em;
-  white-space: nowrap;
-  color: var(--muted-foreground);
-  opacity: 0;
-  transition: opacity 0.4s ease-out 0.3s;
-}
-
-.hero-measure-frame[data-settled="true"] .hero-measure-caption {
-  opacity: 1;
-}
-
-.hero-measure-caption-short {
-  display: none;
-}
-
-@media (max-width: 560px) {
-  .hero-measure-caption-full {
-    display: none;
-  }
-
-  .hero-measure-caption-short {
-    display: inline;
-  }
-}
-
 [data-hero-name-fallback] {
   display: grid;
   place-items: start;
@@ -4792,10 +4711,9 @@ html[data-journey="active"] [data-hero-name-fallback] {
   grid-template-columns: repeat(var(--shell-cols), minmax(0, 1fr));
   column-gap: var(--shell-gap);
   align-items: end;
-  /* RUN9-HERO-SIGNALS: tightened from clamp(2rem, 4vh, 3.5rem) — the
-     STATUS plate's head + padding add ~40px to the signals strip, and
-     the fold buy-back has to come from the stack above it (this rule,
-     the lede gap, the row padding). */
+  /* RUN10-HERO-FLOW: the signals strip is three rows of light, not a
+     plate — no head, no padding, no card face. The fold buy-back lives
+     above it (below padding-top, lede gap) as before. */
   padding-top: clamp(1.5rem, 3vh, 2.5rem);
   padding-bottom: clamp(6vh, 8vh, 11vh);
 }
@@ -4808,9 +4726,9 @@ html[data-journey="active"] [data-hero-name-fallback] {
   /* RUN9-HERO-VERB-TICKER: tightened from clamp(1.1rem, 2.4vh, 1.75rem)
      so the new thesis line fits without pushing the third signal row
      below the 844px fold on mobile (before: signals bottom 827).
-     RUN9-HERO-SIGNALS: tightened again to clamp(0.55rem, 1.4vh, 1.15rem)
-     — the STATUS plate's head + padding add ~40px to the strip, and the
-     fold buy-back comes from the stack above it. */
+     RUN10-HERO-FLOW: the plate is gone, so the stack buys back its own
+     room — the tight gap stays as the safe value; the probe is the
+     judge. */
   gap: clamp(0.55rem, 1.4vh, 1.15rem);
 }
 
@@ -4916,71 +4834,56 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 }
 
-/* RUN9-HERO-SIGNALS — the three facts are a stamped STATUS plate, not
-   bare rows: bordered plate with inner margin frame (::before), a compact
-   sheet head ("Status — Sheet 01"), "+" registration marks, and numbered
-   status lines whose numerals press in and whose hairline rules draw on
-   first view (the Elsewhere-plate / REV-letter family). The 78% card face
-   sits above the particle bust, which yields to content anyway (iter 36).
-   The plate adds ~40px to the strip; the fold buy-back lives above it
-   (below padding-top, lede gap, row padding) — see the mobile block. */
+/* RUN10-HERO-FLOW — the three facts are three rows of light, not a
+   stamped STATUS plate: no card face, no border, no inner margin frame,
+   no sheet head, no numerals, no drawn rules. Each row opens with a
+   small glowing dot (the ribbon's light, distilled) and the label/value
+   pair beside it; the dots breathe in sequence (0.7s stagger via the
+   inline animation-delay) and hold still under reduced motion (the
+   global reduced-motion rule kills the animation). Rows fade-rise on
+   first view from the component (0.5s, 60ms stagger). The strip is
+   ~40px shorter than the plate, so the fold buy-back above it stays. */
 [data-hero-signals] {
   position: relative;
   grid-column: 9 / span 4;
-  margin: 0;
-  padding: 0.6rem 0.9rem 0.5rem;
-  background: color-mix(in srgb, var(--card) 78%, transparent);
-  border: 1px solid var(--border);
-}
-
-[data-hero-signals]::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-  pointer-events: none;
-}
-
-.hero-signals-head {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.25rem 1rem;
-  padding-bottom: 0.35rem;
-  margin-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0.15rem 0 0;
+  background: none;
+  border: 0;
 }
 
 [data-hero-signal] {
   position: relative;
   display: grid;
-  grid-template-columns: 1.25rem 5.25rem minmax(0, 1fr);
+  grid-template-columns: 0.75rem 5.25rem minmax(0, 1fr);
   gap: 0.75rem;
-  padding: 0.55rem 0;
   align-items: baseline;
 }
 
-.hero-signals-num {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--portfolio-accent);
+.hero-signals-dot {
+  justify-self: center;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.45rem;
+  border-radius: 999px;
+  background: var(--accent-neon);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-neon) 75%, transparent);
+  animation: hero-signal-breathe 2.8s ease-in-out infinite;
 }
 
-.hero-signals-rule {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 1px;
-  background: var(--journey-rule-soft);
-  transform-origin: left center;
+@keyframes hero-signal-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 [data-hero-signal] dt {
@@ -5030,37 +4933,40 @@ html[data-journey="active"] [data-hero-name-fallback] {
   color: var(--foreground);
 }
 
-/* The hero's single call to action (run-9 RUN9-HERO-CTA-PLATE): a stamped
- * drawing plate, not a bare text link — bordered plate, inner margin frame,
- * sheet kicker, mono label, accent pen trace on load, 0.97 press. */
+/* The hero's single call to action (run-10 RUN10-HERO-FLOW): a bead of
+ * light, not a stamped drawing plate — a luminous pill: soft accent
+ * glow, rounded-full form, breathing halo behind the label, 0.97 press.
+ * The halo is the .hero-cta-glow span (motion component), breathing on
+ * a 3.2s ease-in-out loop; the pill's own box-shadow is the resting
+ * glow. Reduced motion: the global rule kills the animation and the
+ * component renders no glow span. */
 [data-hero-cta] {
   position: relative;
   display: inline-flex;
   align-items: center;
   margin: 0.35rem 0 0;
-  padding: 0.5rem 1.15rem 0.45rem;
-  border: 1px solid var(--border);
-  border-radius: 0;
-  background: color-mix(in srgb, var(--card) 68%, transparent);
+  padding: 0.6rem 1.4rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--accent-neon) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-neon) 16%, transparent);
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--accent-neon) 28%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--accent-neon) 12%, transparent);
   color: var(--foreground);
   text-decoration: none;
   transition:
     border-color 200ms ease-out,
     background-color 200ms ease-out,
+    box-shadow 200ms ease-out,
     transform 220ms ease-out;
 }
 
-[data-hero-cta]::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-  pointer-events: none;
-}
-
 [data-hero-cta]:hover {
-  border-color: color-mix(in srgb, var(--foreground) 55%, transparent);
-  background: color-mix(in srgb, var(--card) 88%, transparent);
+  border-color: color-mix(in srgb, var(--accent-neon) 70%, transparent);
+  background: color-mix(in srgb, var(--accent-neon) 26%, transparent);
+  box-shadow:
+    0 0 36px color-mix(in srgb, var(--accent-neon) 42%, transparent),
+    inset 0 0 16px color-mix(in srgb, var(--accent-neon) 18%, transparent);
 }
 
 [data-hero-cta]:hover .hero-cta-arrow {
@@ -5077,6 +4983,8 @@ html[data-journey="active"] [data-hero-name-fallback] {
 }
 
 .hero-cta-label {
+  position: relative;
+  z-index: 1;
   font-family: var(--font-mono);
   font-size: 0.9rem;
   font-weight: 600;
@@ -5092,23 +5000,30 @@ html[data-journey="active"] [data-hero-name-fallback] {
   transition: transform 200ms ease-out;
 }
 
-.hero-cta-trace {
+.hero-cta-glow {
   position: absolute;
-  inset: 0;
-  z-index: 1;
+  inset: -8px;
+  z-index: 0;
+  border-radius: 999px;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--accent-neon) 32%, transparent),
+    transparent 70%
+  );
   pointer-events: none;
+  animation: hero-cta-glow-breathe 3.2s ease-in-out infinite;
 }
 
-.hero-cta-trace svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.hero-cta-trace rect {
-  fill: none;
-  stroke: var(--portfolio-accent);
-  stroke-width: 1.5;
+@keyframes hero-cta-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5123,14 +5038,14 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 }
 
-/* RUN9-HERO-CTA-PLATE round 2: at phone widths the plate stretches the
-   full content width so it reads as a thumb-sized control, not a
-   half-width island. The MagneticButton wrapper goes block so the
-   anchor's 100% width has something to fill; the drift still works. */
+/* RUN10-HERO-FLOW: at phone widths the pill stretches the full content
+   width so it reads as a thumb-sized control, not a half-width island.
+   The MagneticButton wrapper goes block so the anchor's 100% width has
+   something to fill; the drift still works. */
 @media (max-width: 560px) {
   /* The wrap is a flex item of the lede (align-items: flex-start), so it
      shrink-to-fits its content — the block/100% rules below only stretch
-     the plate if the wrap itself stretches first. */
+     the pill if the wrap itself stretches first. */
   [data-hero-cta-wrap] {
     align-self: stretch;
   }
@@ -5229,10 +5144,11 @@ html[data-journey="active"] [data-hero-name-fallback] {
 .not-found-sheet {
   flex: 1;
   position: relative;
-  /* Run 9 — missing-sheet spread (RUN9-404-SPREAD): the BlueprintField
-     canvas is fixed at z-journey-scene+1 (3), so the sheet needs
-     --z-page-content (10) to paint above it — same rule as the paper
-     pages. The bottom border is gone: the torn edge below replaces it. */
+  /* Run 9 — missing-sheet spread (RUN9-404-SPREAD): the sheet needs
+     --z-page-content (10) to paint above the fixed ribbon canvas —
+     same rule as the paper pages. The bottom border is gone: the torn
+     edge below replaces it. (Run 10 removed the BlueprintField canvas
+     that used to sit behind it.) */
   z-index: var(--z-page-content);
   display: flex;
   flex-direction: column;
@@ -5474,24 +5390,19 @@ html[data-journey="active"] [data-hero-name-fallback] {
   /* RUN9-HERO-VERB-TICKER: the thesis line's ~32px buys its room here —
      the below-block's top padding and the signals' top margin tighten so
      the third signal row still clears the 844px fold (before: 827).
-     RUN9-HERO-SIGNALS: the STATUS plate's head + padding add ~35px to
-     the strip on mobile, so the buy-back grows — below padding-top
-     1.25→0.5rem, plate padding slimmer, rows 0.6→0.4rem, margin-top
-     0.5→0.35rem. The probe is the judge: signals bottom must stay ≤844. */
+     RUN10-HERO-FLOW: the plate is gone, so the strip is shorter — the
+     margin-top stays as the safe value; the probe is the judge: signals
+     bottom must stay ≤844. */
   [data-hero-below] {
     padding-top: 0.5rem;
   }
 
   [data-hero-signals] {
     margin-top: 0.35rem;
-    padding: 0.45rem 0.8rem 0.4rem;
   }
 
-  /* RUN9-HERO-CTA-PLATE round 2: the plate's extra height vs the old text
-     link pushed the third signal row below the 844px fold on mobile — the
-     tighter stack + slimmer rows buy it back. */
   [data-hero-signal] {
-    padding: 0.4rem 0;
+    padding: 0.1rem 0;
   }
 }
 

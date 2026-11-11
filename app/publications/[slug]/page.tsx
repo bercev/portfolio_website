@@ -9,7 +9,6 @@ import { getPaperSheet } from "./paper-sheet";
 import { PaperFigure } from "./paper-figure";
 import { PaperSignature } from "./paper-signature";
 import { PaperActionPlate } from "@/components/sections/paper-action-plate";
-import { BlueprintField } from "@/components/effects/blueprint-field";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -123,22 +122,11 @@ export default async function PublicationPage({
 
   return (
     <>
-      {/*
-        Run 9 — paper routes join the drafting table (RUN9-PAPER-BACKGROUND):
-        the BlueprintField canvas (ruled paper + stipple margins + reg
-        marks) mounts here too, on the publications chapter profile; the
-        sheet marks itself as the measured column so the calm wash and
-        dot exclusion hug it. The canvas is fixed + pointer-events none
-        and hides in print (global print rule); the sheet paints above
-        it via --z-page-content in globals.css.
-      */}
-      <BlueprintField />
       <main
         id="main-content"
         tabIndex={-1}
         className="journey-pub-page"
         data-light-chapter="publications"
-        data-blueprint-column
       >
       <script
         type="application/ld+json"

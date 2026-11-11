@@ -13,8 +13,8 @@ import {
 import { useMotionPreference } from "@/components/providers/motion-provider";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { MagneticButton } from "@/components/ui/magnetic-button";
-import { HeroCtaPlate } from "@/components/sections/hero-cta-plate";
-import { HeroSignalsPlate } from "@/components/sections/hero-signals-plate";
+import { HeroCtaFlow } from "@/components/sections/hero-cta-flow";
+import { HeroSignalsFlow } from "@/components/sections/hero-signals-flow";
 import type { PortfolioContent } from "@/data/content";
 
 type HeroContent = {
@@ -181,10 +181,11 @@ export function Hero({ content }: { content: HeroContent }) {
               </motion.p>
             ) : null}
 
-            {/* One call to action (run-9 RUN9-HERO-CTA-PLATE): a stamped
-                drawing plate — sheet kicker + mono label + pen trace on
-                load. Same anchor, same MagneticButton drift, same 0.21s
-                entrance stagger; held still under reduced motion. */}
+            {/* One call to action (run-10 RUN10-HERO-FLOW): a bead of
+                light, not a stamped plate — a luminous pill with a
+                breathing glow. Same anchor, same MagneticButton drift,
+                same 0.21s entrance stagger; held still under reduced
+                motion. */}
             <motion.div
               data-hero-cta-wrap
               initial={reduceMotion ? false : { opacity: 0, y: 16 }}
@@ -192,16 +193,16 @@ export function Hero({ content }: { content: HeroContent }) {
               transition={reduceMotion ? { duration: 0 } : { duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.21 }}
             >
               <MagneticButton strength={reduceMotion ? 0 : 0.22} maxDistance={36}>
-                <HeroCtaPlate />
+                <HeroCtaFlow />
               </MagneticButton>
             </motion.div>
           </div>
 
-          {/* RUN9-HERO-SIGNALS: the signals strip is a stamped STATUS plate
-              — sheet head, numbered status lines with press-in numerals +
-              drawn rules. Same 0.24s entrance stagger and same copy; held
-              still under reduced motion. */}
-          <HeroSignalsPlate
+          {/* RUN10-HERO-FLOW: the signals strip is three rows of light
+              — glowing dots, no plate, no numerals, no rules. Same 0.24s
+              entrance stagger and same copy; held still under reduced
+              motion. */}
+          <HeroSignalsFlow
             signals={hero.signals}
             reduceMotion={reduceMotion}
           />

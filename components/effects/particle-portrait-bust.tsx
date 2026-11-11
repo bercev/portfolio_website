@@ -69,11 +69,11 @@ const BUST_MAX_PARTICLES = 8_000; // small box; BERAT's 14k cap is overkill
 // ramp that drives the turn-back (so "meets your eyes" still lands at 0).
 const BUST_BASE_YAW = 0.45;
 
-// The BERAT sculpture and its measure frame are background, not content —
-// a sample landing on them must not count as covered (the hero's right
+// The BERAT sculpture is background, not content —
+// a sample landing on it must not count as covered (the hero's right
 // side is clear of text even though the canvas spans it).
 const BUST_YIELD_EXCLUDE =
-  "[data-hero-glyph-band],[data-particle-berat-root],[data-hero-measure-frame],[data-ascii-portrait-bust]";
+  "[data-hero-glyph-band],[data-particle-berat-root],[data-ascii-portrait-bust]";
 
 /**
  * Is the viewport point covered by real page content? Walks from the
