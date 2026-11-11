@@ -8,7 +8,7 @@
  * opened. Each present subsection is now a numbered DETAIL plate in the
  * drawing set's language: a mono accent numeral that presses in and a
  * hairline rule that draws under the head on open (the About field-notes
- * / experience revision-marks 220ms / 0.5s language, 45ms stagger per
+ * / experience flow marks 220ms / 0.5s language, 45ms stagger per
  * plate), the Snapshot restyled as a title-block spec table, and the
  * metrics as a measured-values strip. Copy is verbatim; the height-expand
  * mechanism, aria state, and print branch are untouched.

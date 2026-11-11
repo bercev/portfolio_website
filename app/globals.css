@@ -2511,17 +2511,28 @@ html[data-journey] [data-effect-layer="background"] {
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
   align-items: start;
-  border-bottom: 1px solid var(--journey-rule-soft);
   padding: clamp(20px, 2.6vw, 30px) 0;
+  /* A light row, not a ruled ledger row (run-10 RUN10-EXPERIENCE): the
+     separator is a beam of light fading along the row, painted as a 1px
+     background line — same treatment as the publication rows. */
+  border-bottom: 0;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 35%, transparent),
+    color-mix(in srgb, var(--accent-neon) 8%, transparent)
+  );
+  background-position: bottom left;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
 }
 
 .journey-xp-item:last-child {
-  border-bottom: 0;
+  background-image: none;
 }
 
-/* Revision log: the REV column replaces the bare date outboard — letter,
-   rule, dates stacked in the same 2-column rail. */
-.journey-xp-rev {
+/* Flow mark: the glow dot + flow number replace the REV letter — the
+   date rail stays, the drafting column goes. */
+.journey-xp-flow {
   grid-column: 1 / span 2;
   display: flex;
   flex-direction: column;
@@ -2530,34 +2541,45 @@ html[data-journey] [data-effect-layer="background"] {
   padding-top: 8px;
 }
 
-.journey-xp-rev-mark {
+.journey-xp-flow-mark {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-.journey-xp-rev-tag {
-  font: 500 10px/1.4 var(--font-sans);
-  letter-spacing: 0.14em;
-  color: var(--muted-foreground);
-}
-
-.journey-xp-rev-letter {
+/* Glow dot + flow number ("01 / 04"): mono, muted like the skills-flow
+   index — the dot carries the accent, not the digits. */
+.journey-xp-flow-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-top: 2px;
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 400;
-  line-height: 1;
-  color: var(--foreground);
+  color: var(--muted-foreground);
+  font: 500 0.8rem/1.4 var(--font-mono);
+  letter-spacing: 0.12em;
 }
 
-/* Short accent rule under the letter; motion draws it scaleX 0→1. */
-.journey-xp-rev-rule {
+.journey-xp-flow-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+}
+
+/* Short light rule under the number; motion draws it scaleX 0→1. */
+.journey-xp-flow-rule {
   display: block;
   width: 44px;
-  height: 2px;
+  height: 1px;
   margin-top: 8px;
-  background: var(--portfolio-accent);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
   transform-origin: left center;
 }
 
@@ -2576,7 +2598,7 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 @media (max-width: 900px) {
-  .journey-xp-rev,
+  .journey-xp-flow,
   .journey-xp-main,
   .journey-xp-stack {
     grid-column: 1 / -1;
@@ -2623,48 +2645,33 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--foreground);
 }
 
-/* Revision-table chrome: column labels aligned to the rows' subgrid
-   columns, over a stronger rule than the row separators. */
-.journey-xp-loghead {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--journey-rule);
-  font: 500 11px/1.5 var(--font-sans);
-  letter-spacing: 0.12em;
-  color: var(--muted-foreground);
-}
-
-.journey-xp-loghead-rev {
-  grid-column: 1 / span 2;
-}
-
-.journey-xp-loghead-role {
-  grid-column: 3 / span 5;
-}
-
-.journey-xp-loghead-stack {
-  grid-column: 9 / span 4;
-}
-
-/* Title-block footer for the revision table. */
-.journey-xp-logfoot {
+/* Flow footer (run-10 RUN10-EXPERIENCE): one quiet line under a light
+   top rule — entry count + order, with a glow dot. No title block, no
+   "Drawn by", no REVISIONS. */
+.journey-xp-flowfoot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-top: 18px;
   padding-top: 12px;
-  border-top: 1px solid var(--journey-rule-soft);
-  font: 500 11px/1.5 var(--font-sans);
-  letter-spacing: 0.12em;
+  border-top: 1px solid
+    color-mix(in srgb, var(--accent-neon) 30%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
-/* The stacked mobile rows have no columns for the labels to align to, so
-   the header strip hides there. This must sit AFTER the loghead's own
-   display:grid rule (same specificity — later wins). */
-@media (max-width: 900px) {
-  .journey-xp-loghead {
-    display: none;
-  }
+.journey-xp-flowfoot::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-neon);
+  box-shadow: 0 0 8px var(--accent-neon);
 }
 
 .tech-pills-marquee {
@@ -2701,252 +2708,13 @@ html[data-journey] [data-effect-layer="background"] {
   }
 
   /* li-scoped (run-9 iter 23): the broad [aria-hidden] selector also
-     caught the tape's EX- numerals and tech icons (both aria-hidden
-     decoration inside KEPT pills) and hid them under RM. Only the
-     duplicated loop copy — the aria-hidden li itself — is hidden. */
+     caught the tech icons (aria-hidden decoration inside KEPT pills)
+     and hid them under RM. Only the duplicated loop copy — the
+     aria-hidden li itself — is hidden. */
   .tech-pills-marquee li[aria-hidden="true"] {
     display: none;
   }
 
-  /* Measuring-tape treatment settles under reduced motion: ticks drawn,
-     tags static (the pop animation is off, so no pill can freeze at
-     opacity 0). */
-  .exp-tape .tech-pills::before,
-  .exp-tape .tech-pills::after {
-    transform: none;
-  }
-
-  .exp-tape--in .tech-pill {
-    animation: none;
-  }
-}
-
-/* Measuring tape for the featured experience row (run-9 iter 23,
-   RUN9-EXP-TAPE): the Stealth Startup stack marquee — the last ambient
-   ticker in old-site form — becomes the drawing set's steel tape,
-   reusing the iter-21 skill-tape language: a bordered strip, tick
-   rules riding the moving track, mono engraved tags with EX- part
-   numerals, and the 60fps Duolingo sculpt pop on entry. The 28s loop,
-   hover/focus pause, and reduced-motion static wrap are untouched. */
-.exp-tape {
-  border-top: 1px solid var(--journey-rule);
-  border-bottom: 1px solid var(--journey-rule);
-  background: color-mix(in srgb, var(--card) 68%, transparent);
-}
-
-.exp-tape .tech-pills {
-  position: relative;
-  padding: 0.45rem 0;
-}
-
-/* Tick rules ride on the moving track so they travel with the tape:
-   minor ticks every 8px (7px tall), major ticks every 40px (14px tall),
-   same frost-survival calibration as the skill tape (42%/65%). They
-   draw in (scaleX) on entry; the static variants show them settled. */
-.exp-tape .tech-pills::before,
-.exp-tape .tech-pills::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  pointer-events: none;
-}
-
-.exp-tape .tech-pills::before {
-  height: 7px;
-  background: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--foreground) 42%, transparent) 0 1px,
-    transparent 1px 8px
-  );
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
-.exp-tape .tech-pills::after {
-  height: 14px;
-  background: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--foreground) 65%, transparent) 0 1px,
-    transparent 1px 40px
-  );
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
-.exp-tape--in .tech-pills::before,
-.exp-tape--in .tech-pills::after {
-  transform: scaleX(1);
-  transition: transform 0.6s ease-out;
-}
-
-/* Engraved tags: mono, foreground ink, bordered plate on the tape face.
-   The run-6 quiet-text treatment retires here — the tape's tags are the
-   record, so they read as plates. The negative margin-block of the base
-   pill (the 24px click-target trick) is reset: marquee pills are static
-   labels, and the tape's border + padding set its own box. */
-.exp-tape .tech-pill {
-  padding: 0.3rem 0.55rem;
-  margin-block: 0;
-  border: 1px solid var(--journey-rule);
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  color: var(--foreground);
-  font: 500 0.85rem/1.2 var(--font-mono);
-  letter-spacing: 0;
-}
-
-.exp-tape .tech-pill-icon {
-  color: var(--foreground);
-}
-
-.exp-tape-num {
-  /* --accent-neon, not --accent: --accent is #7dd3fc at 14% alpha
-     (a wash for fills), which renders the 11px numeral nearly
-     invisible; the neon token is the solid bright cyan. */
-  color: var(--accent-neon);
-  font: 600 0.7rem/1.2 var(--font-mono);
-  letter-spacing: 0.08em;
-}
-
-.exp-tape--in .tech-pill {
-  animation: skill-current-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
-}
-
-/* Tape legend: the stack line above the strip, mono uppercase. */
-.exp-tape-legend {
-  margin: 0 0 0.35rem;
-  font: 600 0.7rem/1.5 var(--font-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
-.exp-tape-legend::before {
-  content: "+ ";
-  color: var(--foreground);
-}
-
-/* Static measuring tape (run-9 iter 29, RUN9-TECH-TAPE): the same
-   drawing-set steel tape as the featured experience marquee, for the
-   static stack rows — experience rows 2–4 and both project sheets.
-   No marquee: the strip is still, the tags pop in on first view
-   (self-latched per row), and the tick rules draw across on entry.
-   Linked pills keep their reverse-navigation click delegation — only
-   their dress changes. */
-.tech-tape {
-  border-top: 1px solid var(--journey-rule);
-  border-bottom: 1px solid var(--journey-rule);
-  background: color-mix(in srgb, var(--card) 68%, transparent);
-}
-
-.tech-tape .tech-pills {
-  position: relative;
-  padding: 0.45rem 0;
-}
-
-/* Tick rules across the top edge of the strip: minor every 8px (7px
-   tall), major every 40px (14px tall), same frost-survival calibration
-   as the skill tape (42%/65%). They draw in (scaleX) on entry; the
-   static variants show them settled. */
-.tech-tape .tech-pills::before,
-.tech-tape .tech-pills::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  pointer-events: none;
-}
-
-.tech-tape .tech-pills::before {
-  height: 7px;
-  background: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--foreground) 42%, transparent) 0 1px,
-    transparent 1px 8px
-  );
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
-.tech-tape .tech-pills::after {
-  height: 14px;
-  background: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--foreground) 65%, transparent) 0 1px,
-    transparent 1px 40px
-  );
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
-.tech-tape--in .tech-pills::before,
-.tech-tape--in .tech-pills::after {
-  transform: scaleX(1);
-  transition: transform 0.6s ease-out;
-}
-
-/* Engraved tags: mono, foreground ink, bordered plate on the tape face.
-   The negative margin-block of the base pill (the 24px click-target
-   trick) is reset: the tape's border + padding set its own box. */
-.tech-tape .tech-pill {
-  padding: 0.3rem 0.55rem;
-  margin-block: 0;
-  border: 1px solid var(--journey-rule);
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  color: var(--foreground);
-  font: 500 0.85rem/1.2 var(--font-mono);
-  letter-spacing: 0;
-}
-
-.tech-tape .tech-pill-icon {
-  color: var(--foreground);
-}
-
-.tech-tape-num {
-  /* --accent-neon, not --accent: --accent is #7dd3fc at 14% alpha
-     (a wash for fills), which renders the 11px numeral nearly
-     invisible; the neon token is the solid bright cyan. */
-  color: var(--accent-neon);
-  font: 600 0.7rem/1.2 var(--font-mono);
-  letter-spacing: 0.08em;
-}
-
-.tech-tape--in .tech-pill {
-  animation: skill-current-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
-}
-
-/* Tape legend: the stack line above the strip, mono uppercase. */
-.tech-tape-legend {
-  margin: 0 0 0.35rem;
-  font: 600 0.7rem/1.5 var(--font-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
-.tech-tape-legend::before {
-  content: "+ ";
-  color: var(--foreground);
-}
-
-/* Static tape under reduced motion: ticks drawn, tags static. This
-   block MUST sit after the .tech-tape base rules above — the early
-   reduced-motion block loses the cascade to them (same-specificity
-   base rules come later in the file), which left unentered tapes
-   tick-less under RM in round 1. */
-@media (prefers-reduced-motion: reduce) {
-  .tech-tape .tech-pills::before,
-  .tech-tape .tech-pills::after {
-    transform: none;
-  }
-
-  .tech-tape--in .tech-pill {
-    animation: none;
-  }
 }
 
 /* Run-6 RUN6-PILLS (reel 1): tech stacks are quiet text, not pill
@@ -6044,20 +5812,6 @@ html.dark .plain-backdrop {
   display: none;
 }
 
-/* The blueprint print renders the tape settled: ticks drawn, tags static
-   (the entry latch may never fire in the static print render). */
-[data-plain-root] .exp-tape .tech-pills::before,
-[data-plain-root] .exp-tape .tech-pills::after,
-[data-plain-root] .tech-tape .tech-pills::before,
-[data-plain-root] .tech-tape .tech-pills::after {
-  transform: none;
-}
-
-[data-plain-root] .exp-tape--in .tech-pill,
-[data-plain-root] .tech-tape--in .tech-pill {
-  animation: none;
-}
-
 [data-plain-root] [data-hero-editorial] {
   opacity: 1 !important;
   transform: none !important;
@@ -6411,20 +6165,6 @@ html.dark .plain-backdrop {
   .tech-pills-marquee .tech-pills {
     flex-wrap: wrap;
     width: auto;
-    animation: none;
-  }
-
-  /* The tape prints settled: ticks drawn, tags static — otherwise a
-     print snapshot could freeze the pills mid-pop at opacity 0. */
-  .exp-tape .tech-pills::before,
-  .exp-tape .tech-pills::after,
-  .tech-tape .tech-pills::before,
-  .tech-tape .tech-pills::after {
-    transform: none;
-  }
-
-  .exp-tape--in .tech-pill,
-  .tech-tape--in .tech-pill {
     animation: none;
   }
 

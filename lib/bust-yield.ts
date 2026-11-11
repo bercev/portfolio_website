@@ -4,9 +4,9 @@
  * The fixed particle bust sits at the right of the viewport, vertically
  * centered, above the background but below page content (z-8 vs z-10). At
  * 1440px its 300px box overlaps the content column's right ~130px strip, so
- * the bright dot dome crowds the Experience stack tape ("EX-03" + chips
- * half-swallowed) and the About Education panel's right edge ("Computer
- * Systems Design" ends tight to the dome). Shifting the bust column cannot
+ * the bright dot dome crowds the Experience stack (chips half-swallowed)
+ * and the About Education panel's right edge ("Computer Systems Design"
+ * ends tight to the dome). Shifting the bust column cannot
  * fix this at 1440px — clearing the column would shrink it to a postage
  * stamp — so the bust fades instead: whenever real content scrolls under
  * its box it yields to a faint ghost (0.12) and returns to full presence
@@ -24,7 +24,7 @@
  * Hysteresis keeps the fade from flapping as content edges cross the
  * grid: yield at >= 3 covered points, restore at <= 1, hold in between.
  * Calibrated on HEAD 3ec642e (vf-run9-iter36-density.js): hero 0/16,
- * Experience tape 3/16, About panel 12/16, project sheet 4/16.
+ * Experience stack 3/16, About panel 12/16, project sheet 4/16.
  */
 
 export const BUST_YIELD_GRID = 4;

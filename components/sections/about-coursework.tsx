@@ -9,7 +9,7 @@
  * numeral (CW-01..CW-07) that presses in and a hairline rule that draws
  * across the row on first scroll into view, 45ms stagger — the same
  * 220ms press / 0.5s rule-draw language as the field notes, the
- * experience revision marks, the Elsewhere rows, and the paper action
+ * experience flow marks, the Elsewhere rows, and the paper action
  * plates, so the title block reads as one drawing set. The label carries
  * the computed part count ("Coursework — 07 parts"). Reduced motion:
  * numerals + rules render settled from the first frame (native hook —
