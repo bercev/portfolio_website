@@ -16,7 +16,7 @@ import { flushSync } from "react-dom";
 
 import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
-import { TechPills, techTapeLegend } from "@/components/ui/tech-pills";
+import { TechPills } from "@/components/ui/tech-pills";
 import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
 import type { Project } from "@/data/content";
 import { isProjectHash, projectAnchorId } from "@/lib/project-anchor";
@@ -30,7 +30,7 @@ import {
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
 import { CaseDetailPlate, caseStudyDetails } from "./case-detail";
 import { DispatchPlate, FoldTab } from "./case-fold-tab";
-import { SheetFrame, sheetLabels } from "./project-sheet-frame";
+import { ProjectLightFrame, flowLabels } from "./project-light-frame";
 
 const projectPreviews: Partial<
   Record<
@@ -151,10 +151,9 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
         </CaseDetailPlate>
       ))}
 
-      {/* RUN9-CASE-FOLD-TAB: the conversion line is a stamped dispatch
-          plate (see case-fold-tab.tsx) — a reader who just finished the
-          evidence gets a next step, in the contact slice's dispatch
-          language. */}
+      {/* RUN10-PROJECTS: the conversion line is a next-step light line
+          (see case-fold-tab.tsx) — a reader who just finished the
+          evidence gets a next step, in plain language. */}
       <div className="journey-case-study-section">
         <DispatchPlate />
       </div>
@@ -198,10 +197,11 @@ export function CaseStudyRow({
   const revealRef = useDitherReveal<HTMLElement>(index * DITHER_ROW_STAGGER);
   const preview = projectPreviews[project.title];
   const rowId = projectAnchorId(project.title);
-  // RUN9-SECTION-IDENTITIES: the row is a drafting-table sheet — FIG./SHEET
-  // header, PLATE caption, title-block footer (see the sheet CSS). The
-  // labels duplicate visible text, so the chrome is hidden from AT.
-  const labels = sheetLabels(index, total);
+  // RUN10-PROJECTS: the row is a field of light — a number + count header
+  // with a glow dot, a light beam across the top edge (see
+  // project-light-frame.tsx), and a light-rule footer. The labels
+  // duplicate visible text, so the chrome is hidden from AT.
+  const labels = flowLabels(index, total);
 
   // Reverse skill navigation (run-3 iter 23): the pills live INSIDE
   // this toggle button, so they cannot themselves be <button>s (nested
@@ -299,12 +299,12 @@ export function CaseStudyRow({
       data-dither-reveal
       className={
         featured
-          ? "journey-project-sheet journey-project-featured scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
-          : "journey-project-sheet scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+          ? "journey-project-flow journey-project-featured scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+          : "journey-project-flow scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
       }
       data-work-tech={techKeyList(project.technologies)}
     >
-      <SheetFrame index={index} />
+      <ProjectLightFrame index={index} />
       <button
         type="button"
         className="journey-case-study-toggle"
@@ -312,12 +312,13 @@ export function CaseStudyRow({
         aria-controls={panelId}
         onClick={handleToggleClick}
       >
-        {/* Sheet header strip: the drawing number. */}
-        <span className="journey-sheet-head" aria-hidden="true">
+        {/* Light header strip: the row number and count. */}
+        <span className="journey-project-head" aria-hidden="true">
           <span>
-            {labels.fig} — {project.title.toUpperCase()}
+            <span className="journey-project-head-dot" />
+            {labels.num} — {project.title.toUpperCase()}
           </span>
-          <span>{labels.sheet}</span>
+          <span>{labels.count}</span>
         </span>
         {/* At rest: problem-framed headline + product meta + one pill strip on
             the left, a calm static preview sidecar on the right. The preview
@@ -341,15 +342,12 @@ export function CaseStudyRow({
               <TechPills
                 technologies={project.technologies}
                 linkedNames={skillNames}
-                tape
-                tapeLegend={techTapeLegend(index)}
-                tapePrefix="PR"
               />
             </span>
             {project.caseStudy ? <FoldTab open={open} /> : null}
           </span>
           {preview ? (
-            <span className="journey-sheet-plate">
+            <span className="journey-project-preview">
               {preview.chromatic ? (
                 <ChromaticImage
                   src={preview.src}
@@ -369,9 +367,6 @@ export function CaseStudyRow({
                   />
                 </span>
               )}
-              <span className="journey-sheet-plate-caption" aria-hidden="true">
-                {labels.plate} — {project.title.toUpperCase()}
-              </span>
             </span>
           ) : null}
         </span>
@@ -433,21 +428,11 @@ export function CaseStudyRow({
       </AnimatePresence>
       )}
 
-      {/* Title block: the drawing's footer strip. Decorative chrome repeating
-          visible content (project + dates), so hidden from AT. */}
-      <div className="journey-sheet-titleblock" aria-hidden="true">
-        <span>
-          <span className="journey-sheet-titleblock-label">Project</span>
-          {project.title}
-        </span>
-        <span>
-          <span className="journey-sheet-titleblock-label">Dates</span>
-          {project.dates}
-        </span>
-        <span>
-          <span className="journey-sheet-titleblock-label">Scale</span>
-          1:1 · Rev A
-        </span>
+      {/* Light footer: a glow dot and a light rule closing the row.
+          Decorative chrome, so hidden from AT. */}
+      <div className="journey-project-lightfoot" aria-hidden="true">
+        <span className="journey-project-lightfoot-dot" />
+        <span className="journey-project-lightfoot-rule" />
       </div>
     </article>
   );

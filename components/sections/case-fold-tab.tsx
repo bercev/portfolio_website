@@ -1,38 +1,30 @@
 /**
- * Fold tab + dispatch plate for project case studies (run-9
- * RUN9-CASE-FOLD-TAB).
+ * Fold tab + next-step line for project case studies (run-10
+ * RUN10-PROJECTS).
  *
  * The case-study expand affordance was the last element on the project
- * sheets still in pre-run-9 form — bare accent text ("Read the case
- * study") and a bare underlined conversion line. It is now drawing
- * chrome: the toggle is an "OPEN THE DRAWING" fold tab (bordered plate
- * with a folded corner, an arrow that rotates as the panel expands, and
- * a hairline rule that draws on the panel's own 0.45s ease), and the
- * conversion line is a stamped dispatch plate in the contact slice's
- * language ("DISPATCH — NEXT STEP").
- *
- * Motion reference (research, iter 24): Plasma Duo Style Bottom Sheet
- * Open (60fps shot 2126) — the panel unfolds from the tab edge like a
- * sheet; CRED Ticket Pop on Slider (shot 2121) — the dispatch plate as
- * a stamped ticket. The height-expand mechanism and aria-expanded are
- * untouched; the tab label is aria-hidden (the button's name comes from
- * the sheet content + aria-expanded, as before).
+ * rows still in run-9 drawing form — a bordered plate with a folded
+ * corner reading "OPEN THE DRAWING", and a stamped "DISPATCH — NEXT
+ * STEP" plate below the panel. It is now light: the toggle is a
+ * luminous pill ("OPEN THE STORY" / "CLOSE THE STORY") with an arrow
+ * that rotates as the panel expands and a soft glow that deepens while
+ * open, and the conversion line is a plain next-step line with a glow
+ * dot. The height-expand mechanism and aria-expanded are untouched;
+ * the tab label is aria-hidden (the button's name comes from the row
+ * content + aria-expanded, as before).
  */
 "use client";
 
-/** The tab reads as a drawing instruction: open to unfold, fold to close. */
-export function foldTabLabel(open: boolean): "OPEN THE DRAWING" | "FOLD THE DRAWING" {
-  return open ? "FOLD THE DRAWING" : "OPEN THE DRAWING";
+/** The tab reads as an invitation: open to read the story, close to fold it away. */
+export function foldTabLabel(open: boolean): "OPEN THE STORY" | "CLOSE THE STORY" {
+  return open ? "CLOSE THE STORY" : "OPEN THE STORY";
 }
 
-/** The tab's rule draws on the panel's height-animation timing (0.45s). */
-export const FOLD_TAB_RULE_MS = 450;
-
-/** The dispatch plate presses like the hero CTA (reel-4 press scale). */
+/** The pill presses like the hero CTA (reel-4 press scale). */
 export const FOLD_TAB_PRESS_SCALE = 0.97;
 
-/** Kicker printed on the dispatch plate, in the contact slice's voice. */
-export const DISPATCH_KICKER = "DISPATCH — NEXT STEP";
+/** Kicker on the next-step line, in plain language. */
+export const NEXT_STEP_KICKER = "NEXT STEP";
 
 export function FoldTab({ open }: { readonly open: boolean }) {
   return (
@@ -48,7 +40,6 @@ export function FoldTab({ open }: { readonly open: boolean }) {
       <span className="journey-fold-tab-arrow" aria-hidden="true">
         ↓
       </span>
-      <span className="journey-fold-tab-rule" aria-hidden="true" />
     </span>
   );
 }
@@ -57,7 +48,7 @@ export function DispatchPlate() {
   return (
     <a href="#contact" className="cursor-target" data-case-study-cta>
       <span className="case-study-dispatch-kicker" aria-hidden="true">
-        {DISPATCH_KICKER}
+        {NEXT_STEP_KICKER}
       </span>
       <span className="case-study-dispatch-line">
         Want the full story? Let&rsquo;s talk{" "}

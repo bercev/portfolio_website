@@ -1,22 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  DISPATCH_KICKER,
   FOLD_TAB_PRESS_SCALE,
-  FOLD_TAB_RULE_MS,
+  NEXT_STEP_KICKER,
   foldTabLabel,
 } from "./case-fold-tab";
 
 describe("foldTabLabel", () => {
-  it("opens the drawing when closed, folds it when open", () => {
-    expect(foldTabLabel(false)).toBe("OPEN THE DRAWING");
-    expect(foldTabLabel(true)).toBe("FOLD THE DRAWING");
-  });
-});
-
-describe("FOLD_TAB_RULE_MS", () => {
-  it("matches the panel height-animation duration so tab and panel unfold as one", () => {
-    expect(FOLD_TAB_RULE_MS).toBe(450);
+  it("opens the story when closed, closes it when open", () => {
+    expect(foldTabLabel(false)).toBe("OPEN THE STORY");
+    expect(foldTabLabel(true)).toBe("CLOSE THE STORY");
   });
 });
 
@@ -26,8 +19,8 @@ describe("FOLD_TAB_PRESS_SCALE", () => {
   });
 });
 
-describe("DISPATCH_KICKER", () => {
-  it("speaks in the contact slice's dispatch voice", () => {
-    expect(DISPATCH_KICKER).toBe("DISPATCH — NEXT STEP");
+describe("NEXT_STEP_KICKER", () => {
+  it("speaks in plain language", () => {
+    expect(NEXT_STEP_KICKER).toBe("NEXT STEP");
   });
 });

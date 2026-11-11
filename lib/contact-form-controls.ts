@@ -8,9 +8,9 @@
  * full-width TRANSMIT plate.
  *
  * Constants mirror the fold-tab / case-detail press-and-draw language so
- * the timings stay one family: rule draw 450ms (FOLD_TAB_RULE_MS), numeral
+ * the timings stay one family: panel height 450ms, numeral
  * press 220ms from 1.25 (the Elsewhere / case-detail press), submit press
- * 0.97 (the site-wide plate press). */
+ * 0.97 (the site-wide press). */
 
 /** The three dispatch fields, in sheet order. */
 export type ContactFieldName = "name" | "email" | "message";
