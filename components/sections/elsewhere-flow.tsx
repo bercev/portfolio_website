@@ -1,19 +1,20 @@
 /**
- * Contact directory plate for the Elsewhere rail (run-9 RUN9-ELSEWHERE-PLATE).
- *
- * The rail stops being a bare spec label + plain link list (the last
- * untransformed block on the home page — audit, iter 19) and becomes a
- * bordered directory plate in the drawing set's language: sheet head
- * ("Elsewhere — Sheet 07B"), "+" registration marks, numbered directory
- * rows (01 GitHub / 02 LinkedIn / 03 Resume / 04 View without animations),
- * and a title-block footer (Directory / Entries / Scale). The plate's card
- * background sits above the particle bust, which used to stipple across
- * the bare ↗ arrows.
+ * Contact directory in light/flow (run-10 RUN10-ELSEWHERE): the Elsewhere
+ * rail stops being a bordered directory plate in the drawing set's
+ * language and becomes a borderless haloed flow — a glow-dot head
+ * ("Elsewhere" / "07 / 07", the chapter, under a light rule), numbered
+ * directory rows (01 GitHub / 02 LinkedIn / 03 Resume / 04 View without
+ * animations) whose numerals press in and whose light rules draw on
+ * first scroll into view, and a quiet glow-dot footer ("Directory ·
+ * 04 entries"). No sheet head, no "+" registration marks, no inner
+ * frame, no title block, no Scale — the card background still sits
+ * above the particle bust, which used to stipple across the bare ↗
+ * arrows.
  *
  * Each row's numeral presses in (220ms ease-out, scale 1.25→1) and its
- * hairline rule draws (0.5s scaleX) on first scroll into view, 45ms
- * stagger per row — the same press/draw vocabulary as the REV letters and
- * the field-note numerals, so the sections read as one drawing set.
+ * light rule draws (0.5s scaleX) on first scroll into view, 45ms
+ * stagger per row — the same press/draw vocabulary as the publications
+ * rows and the paper figures, so the sections read as one light set.
  * Link semantics are verbatim: the same ExternalLink / MotionVersionLink
  * elements, hrefs, download flags, and aria-label. Reduced motion: the
  * plate renders settled from the first frame (native hook — motion's
@@ -51,7 +52,7 @@ const SITE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const PRESS_DURATION = 0.22;
 const RULE_DURATION = 0.5;
 
-export function ElsewherePlate({
+export function ElsewhereFlow({
   links,
 }: {
   readonly links: PortfolioContent["contact"]["links"];
@@ -65,24 +66,12 @@ export function ElsewherePlate({
   return (
     <nav
       ref={ref}
-      className="journey-col-rail journey-elsewhere"
+      className="journey-col-rail journey-elsewhere-flow"
       aria-label="Contact links"
     >
-      <span
-        className="journey-sheet-crop journey-sheet-crop--left"
-        aria-hidden="true"
-      >
-        +
-      </span>
-      <span
-        className="journey-sheet-crop journey-sheet-crop--right"
-        aria-hidden="true"
-      >
-        +
-      </span>
-      <div className="journey-sheet-head">
-        <span>Elsewhere</span>
-        <span>Sheet 07B</span>
+      <div className="journey-elsewhere-flow-head">
+        <span className="journey-elsewhere-flow-head-num">Elsewhere</span>
+        <span>07 / 07</span>
       </div>
       <ul className="journey-contact-list">
         {links.map((link, index) => (
@@ -109,19 +98,8 @@ export function ElsewherePlate({
           <MotionVersionLink className="journey-contact-link" />
         </ElsewhereRow>
       </ul>
-      <div className="journey-sheet-titleblock">
-        <div>
-          <span className="journey-sheet-titleblock-label">Directory</span>
-          Elsewhere
-        </div>
-        <div>
-          <span className="journey-sheet-titleblock-label">Entries</span>
-          {entryCount}
-        </div>
-        <div>
-          <span className="journey-sheet-titleblock-label">Scale</span>
-          1:1
-        </div>
+      <div className="journey-elsewhere-flow-footer">
+        Directory · {entryCount} entries
       </div>
     </nav>
   );
@@ -140,10 +118,10 @@ function ElsewhereRow({
 }) {
   const delay = elsewhereDrawDelay(index);
   return (
-    <li className="journey-elsewhere-row">
+    <li className="journey-elsewhere-flow-row">
       <motion.span
         aria-hidden="true"
-        className="journey-elsewhere-num"
+        className="journey-elsewhere-flow-num"
         // Key the press to the DRAW, not to mount: an opacity target of 1
         // in the pre-press branch would animate to settled while the plate
         // is still below the fold (same class of bug as the iter-3 pen
@@ -170,7 +148,7 @@ function ElsewhereRow({
       {children}
       <motion.span
         aria-hidden="true"
-        className="journey-elsewhere-row-rule"
+        className="journey-elsewhere-flow-rule"
         initial={{ scaleX: reduceMotion ? 1 : 0 }}
         animate={{ scaleX: pressed ? 1 : 0 }}
         transition={

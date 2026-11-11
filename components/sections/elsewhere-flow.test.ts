@@ -4,7 +4,7 @@ import {
   elsewhereDrawDelay,
   elsewhereEntryCount,
   elsewhereEntryNumber,
-} from "./elsewhere-plate";
+} from "./elsewhere-flow";
 
 describe("elsewhereEntryNumber", () => {
   it("numbers entries 1-based and zero-padded", () => {

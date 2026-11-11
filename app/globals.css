@@ -1438,7 +1438,7 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .journey-contact-list li {
-  /* No static rule: each directory row draws its own (elsewhere-plate). */
+  /* No static rule: each directory row draws its own (elsewhere-flow). */
 }
 
 .journey-contact-link {
@@ -1457,62 +1457,144 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--portfolio-accent);
 }
 
-/* Contact directory plate (run-9 RUN9-ELSEWHERE-PLATE): the Elsewhere rail
-   stops being a bare spec label + plain link list and becomes a bordered
-   directory plate in the drawing set's language — sheet head, registration
-   marks, numbered rows that press in with a drawn rule, title-block
-   footer. The card background sits above the particle bust, which used to
-   stipple across the bare ↗ arrows (audit, iter 19). align-self keeps the
-   plate hugging the top of the rail instead of stretching to the station
-   height (the old .journey-spec class carried this; the plate replaces it). */
-.journey-elsewhere {
+/* Contact directory as light (run-10 RUN10-ELSEWHERE): the Elsewhere rail
+   stops being a bordered directory plate and becomes a borderless haloed
+   flow — the contact-form family (card wash + accent halo, no border, no
+   inner frame). The head carries a glow dot under a light rule, each row
+   draws a fading light line, and the footer is one quiet glow-dot line.
+   align-self keeps the flow hugging the top of the rail instead of
+   stretching to the station height (the old .journey-spec class carried
+   this; the plate replaced it, the flow keeps it). */
+.journey-elsewhere-flow {
   position: relative;
   align-self: start;
   padding: 1.25rem 1.4rem 1.4rem;
   background: color-mix(in srgb, var(--card) 78%, transparent);
-  border: 1px solid var(--border);
+  border: 0;
+  box-shadow: 0 0 120px
+    color-mix(in srgb, var(--accent-neon) 10%, transparent);
 }
 
-.journey-elsewhere::before {
+/* Flow head (run-10): the glow dot rides on the first span (inline-flex
+   + gap) so space-between keeps "Elsewhere" left and the chapter right
+   — a ::before dot on the head itself would become a third flex item
+   and strand the label in the middle (paper-page sign, run-10 iter 5).
+   The light rule is a 1px gradient background, not a border. */
+.journey-elsewhere-flow-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.65rem;
+  margin-bottom: 1.35rem;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--portfolio-accent) 65%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 0%, transparent) 55%
+  );
+  background-size: 100% 1px;
+  background-position: bottom;
+  background-repeat: no-repeat;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-elsewhere-flow-head-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.journey-elsewhere-flow-head-num::before {
   content: "";
-  position: absolute;
-  inset: 7px;
-  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-  pointer-events: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 10px 1px
+    color-mix(in srgb, var(--portfolio-accent) 75%, transparent);
 }
 
-.journey-elsewhere .journey-contact-list {
+.journey-elsewhere-flow .journey-contact-list {
   margin-top: 0;
 }
 
-.journey-elsewhere-row {
+.journey-elsewhere-flow-row {
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.9rem;
 }
 
-.journey-elsewhere-row .journey-contact-link {
+.journey-elsewhere-flow-row .journey-contact-link {
   flex: 1 1 auto;
   min-width: 0;
   width: auto;
 }
 
-.journey-elsewhere-num {
+.journey-elsewhere-flow-num {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--portfolio-accent);
 }
 
-.journey-elsewhere-row-rule {
+/* The row rule is a fading light line, not a hairline: accent at the
+   left, dissolving to the right, drawn by scaleX from the left. */
+.journey-elsewhere-flow-rule {
   position: absolute;
   right: 0;
   bottom: 0;
   left: 0;
   height: 1px;
-  background: var(--journey-rule-soft);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
   transform-origin: left center;
+}
+
+/* Flow footer (run-10): one quiet line under a light top rule — the
+   directory's real facts (Directory, entry count) with a glow dot, no
+   title block, no Scale. */
+.journey-elsewhere-flow-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.75rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid
+    color-mix(in srgb, var(--accent-neon) 30%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-elsewhere-flow-footer::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-neon);
+  box-shadow: 0 0 8px var(--accent-neon);
+}
+
+@media (max-width: 700px) {
+  .journey-elsewhere-flow-head,
+  .journey-elsewhere-flow-footer {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    gap: 0.25rem 0.5rem;
+  }
 }
 
 /* Journey epilogue (run-9 iter 18, RUN9-EPILOGUE-SIGNOFF; re-skinned
@@ -3165,9 +3247,9 @@ html[data-journey] [data-effect-layer="background"] {
   right: 0.55rem;
 }
 
-/* Shared sheet chrome (elsewhere-plate, contact-form, paper pages, 404,
-   epilogue — owned by their own run-10 items, NOT by RUN10-PROJECTS).
-   Do not restyle here: the projects rows above no longer use these. */
+/* Shared sheet chrome (paper pages, epilogue — owned by their own run-10
+   items, NOT by RUN10-PROJECTS). Do not restyle here: the projects rows
+   above no longer use these. */
 .journey-sheet-head {
   display: flex;
   flex-wrap: wrap;
@@ -3184,17 +3266,6 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
-.journey-sheet-titleblock {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem 1.5rem;
-  margin-top: 1.75rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--border);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
 .journey-sheet-titleblock-label {
   display: block;
   margin-bottom: 0.15rem;
@@ -3206,7 +3277,7 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
-/* Registration marks (elsewhere-plate, contact-form, epilogue). */
+/* Registration marks (epilogue). */
 .journey-sheet-crop {
   position: absolute;
   top: 1px;
@@ -3225,11 +3296,6 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 @media (max-width: 700px) {
-  .journey-sheet-titleblock {
-    grid-template-columns: 1fr;
-    gap: 0.6rem;
-  }
-
   /* Longest header ("02 — AI DISCORD CHATBOT" + "02 / 02") wraps to two
      lines at 390px otherwise; the tighter set keeps both rows' headers
      on one line (mobile-critic note, run-9 iter 3 — the old FIG./SHEET

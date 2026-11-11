@@ -5,7 +5,7 @@ import { TerminalFlyout } from "@/components/terminal/terminal-flyout";
 import { Station } from "@/components/ui/station";
 
 import { ContactForm } from "./contact-form";
-import { ElsewherePlate } from "./elsewhere-plate";
+import { ElsewhereFlow } from "./elsewhere-flow";
 
 export function ContactFooter({
   content,
@@ -27,7 +27,7 @@ export function ContactFooter({
         </div>
       </div>
 
-      <ElsewherePlate links={content.links} />
+      <ElsewhereFlow links={content.links} />
     </Station>
   );
 }
