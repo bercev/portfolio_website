@@ -8,8 +8,8 @@ import { iconForTech } from "@/lib/tech-icons";
 
 /** Part number for a measuring tape (run-9 iter 23, RUN9-EXP-TAPE):
     `<PREFIX>-01…`, wrapping at the tech count so a duplicated loop copy
-    shares the original's rhythm (same wrap as the skill tape's
-    skillTapeStaggerIndex). */
+    shares the original's rhythm (same wrap as the skill current's
+    skillCurrentStaggerIndex). */
 export function techTapePartLabel(
   prefix: string,
   index: number,
@@ -21,8 +21,8 @@ export function techTapePartLabel(
 
 /** Part number for the measuring-tape treatment (run-9 iter 23,
     RUN9-EXP-TAPE): EX-01…, wrapping at the tech count so the duplicated
-    loop copy shares the original's rhythm (same wrap as the skill tape's
-    skillTapeStaggerIndex). */
+    loop copy shares the original's rhythm (same wrap as the skill
+    current's skillCurrentStaggerIndex). */
 export function expTapePartLabel(index: number, count: number): string {
   return techTapePartLabel("EX", index, count);
 }

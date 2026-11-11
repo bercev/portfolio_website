@@ -16,7 +16,7 @@ import {
   skillHasWork,
 } from "@/lib/skill-work";
 
-import { seriesKicker, seriesLetter, SkillPlate } from "@/components/sections/skills-plate";
+import { seriesKicker, SkillFlow } from "@/components/sections/skills-flow";
 
 type SkillsLedgerProps = {
   readonly groups: PortfolioContent["skills"];
@@ -25,14 +25,14 @@ type SkillsLedgerProps = {
 };
 
 /**
- * Skills parts catalog (run-9 RUN9-SECTION-IDENTITIES, fourth slice:
- * Skills — the ledger became plates, run-9 iter 6). The scannable record
- * under the marquee is now a grid of bordered spec plates: continuous
- * part numbers (SK-01..), series kickers, proof notes as spec lines, and
- * the same highlight buttons for linked skills. The marquee stays as
- * ambient brand motion; this is the surface a hiring manager actually
- * reads — visible category headings (the old ones were sr-only), every
- * skill name, and its proof note as visible text (the old rendering kept
+ * Skills light field (run-10 RUN10-SKILLS — the run-9 parts catalog
+ * de-drafted). The scannable record under the marquee is now a field
+ * of borderless light cells: glow-dot flow numbers ("01 / 18"), series
+ * kickers, proof notes as the line under each name, and the same
+ * highlight buttons for linked skills. The marquee stays as ambient
+ * brand motion; this is the surface a hiring manager actually reads —
+ * visible category headings (the old ones were sr-only), every skill
+ * name, and its proof note as visible text (the old rendering kept
  * notes in title tooltips).
  *
  * Skill → work highlight (run-3 iter 7): a skill name that exactly
@@ -42,9 +42,9 @@ type SkillsLedgerProps = {
  * hidden from a hiring visitor. Skills with no exact match stay plain
  * text (no dead affordance). The highlight is a static style, so the
  * reduced-motion poster is identical; the scroll is an instant jump,
- * not an animated one. The active plate additionally carries a coachmark
- * border pulse (run-9 iter 6); reduced motion renders it as a static
- * accent border.
+ * not an animated one. The active cell additionally carries a breathing
+ * glow ring (run-9 iter 6); reduced motion renders it as a static
+ * accent ring.
  */
 export function SkillsLedger({ groups, workEntries }: SkillsLedgerProps) {
   // The stacks, for the exact-match link check (skillHasWork) — derived
@@ -144,27 +144,28 @@ export function SkillsLedger({ groups, workEntries }: SkillsLedgerProps) {
     }
   }, [activeSkill]);
 
-  // Continuous part numbers (SK-01..) across the whole catalog: each
+  // Continuous flow numbers ("01 / 18") across the whole field: each
   // series starts where the previous one ended.
-  let plateCursor = 0;
+  let flowCursor = 0;
+  const totalSkills = groups.reduce((n, group) => n + group.items.length, 0);
   const series = groups.map((group) => {
-    const start = plateCursor;
-    plateCursor += group.items.length;
+    const start = flowCursor;
+    flowCursor += group.items.length;
     return { group, start };
   });
 
   return (
-    <div className="skills-catalog" aria-label="Skills by category, with proof">
-      <p className="skills-catalog-hint">
-        Select a skill to highlight the work that uses it. A dashed bin is
+    <div className="skills-field" aria-label="Skills by category, with proof">
+      <p className="skills-field-hint">
+        Select a skill to highlight the work that uses it. A quiet cell is
         proved by its note, not by a stack.
       </p>
       {activeSkill !== null ? (
-        <p className="skills-catalog-active">
+        <p className="skills-field-active">
           Highlighting work using <strong>{activeSkill}</strong> —{" "}
           <button
             type="button"
-            className="skills-catalog-clear"
+            className="skills-field-clear"
             onClick={() => setActiveSkill(null)}
           >
             Clear highlight
@@ -172,26 +173,24 @@ export function SkillsLedger({ groups, workEntries }: SkillsLedgerProps) {
         </p>
       ) : null}
       {series.map(({ group, start }, groupIndex) => (
-        <section key={group.category} className="skills-catalog-series">
+        <section key={group.category} className="skills-field-series">
           <div className="skills-series-head">
             <div>
               <p className="skills-series-kicker" aria-hidden="true">
-                {seriesKicker(groupIndex, group.items.length)}
+                {seriesKicker(groupIndex, group.items.length, groups.length)}
               </p>
               <h3 className="skills-series-heading">{group.category}</h3>
             </div>
-            <span aria-hidden="true" className="skills-series-letter">
-              {seriesLetter(groupIndex)}
-            </span>
           </div>
-          <ul className="skills-plates">
+          <ul className="skills-flow-grid">
             {group.items.map((item, itemIndex) => {
               const href = skillProofHref(item.note);
               const linked = skillHasWork(item.name, workTech);
               return (
-                <SkillPlate
+                <SkillFlow
                   key={item.name}
                   index={start + itemIndex}
+                  total={totalSkills}
                   name={item.name}
                   note={item.note}
                   noteHref={href}

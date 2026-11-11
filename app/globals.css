@@ -2658,7 +2658,7 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .exp-tape--in .tech-pill {
-  animation: skill-tape-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+  animation: skill-current-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
 }
 
 /* Tape legend: the stack line above the strip, mono uppercase. */
@@ -2763,7 +2763,7 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .tech-tape--in .tech-pill {
-  animation: skill-tape-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+  animation: skill-current-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
 }
 
 /* Tape legend: the stack line above the strip, mono uppercase. */
@@ -3876,114 +3876,58 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
-/* Measuring tape (run-9 iter 21, RUN9-SKILL-TAPE): the skills ticker's
-   quiet text becomes the drawing set's steel tape — two engraved strips
-   with tick marks, the skill names as engraved tags on the tape. The
-   track carries the ticks (they scroll with the tape); the frame is the
-   static strip. Entry is the 60fps Duolingo sculpt pop (shot 2123): the
-   tick rules draw across and the tags pop in with spring overshoot,
-   staggered 30ms. Reduced motion renders the settled tape. */
-.skill-tape {
-  border-top: 1px solid var(--journey-rule);
-  border-bottom: 1px solid var(--journey-rule);
-  background: color-mix(in srgb, var(--card) 68%, transparent);
+/* Light current (run-10 RUN10-SKILLS — the run-9 measuring tape
+   de-drafted): the skills ticker's two engraved steel strips become
+   two currents of light — no strip borders, no tick rules, no engraved
+   tags. The pills flow as bare mono text on a faint accent wash, split
+   by glow dots, and pop in with the 60fps Duolingo sculpt pop (shot
+   2123) on entry, staggered 30ms. Reduced motion renders the settled
+   current. The JS-driven track motion (velocity + skew + pause) is
+   unchanged — only the skin changes. */
+.skill-current {
+  /* A faint wash the pills flow through: accent light, fading to
+     nothing at both ends like the publication light lines. */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--portfolio-accent) 7%, transparent) 50%,
+    transparent 100%
+  );
 }
 
-.skill-tape .skill-marquee-track {
+.skill-current .skill-marquee-track {
   position: relative;
   padding: 0.45rem 0;
 }
 
-/* Tick rules ride on the moving track so they travel with the tape:
-   minor ticks every 8px (5px tall), major ticks every 40px (10px tall).
-   They draw in (scaleX) on entry; the static variant shows them settled. */
-.skill-tape .skill-marquee-track::before,
-.skill-tape .skill-marquee-track::after {
+/* Glow-dot separators ride between the pills — the rhythm the tape's
+   gaps used to give, now as light. */
+.skill-current .skill-marquee-track > li + li::before {
   content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  pointer-events: none;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.65rem;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+  vertical-align: middle;
 }
 
-.skill-tape .skill-marquee-track::before {
-  height: 7px;
-  /* Frost-survival boost (same calibration as iter 14's majorOnly boost):
-     the --journey-rule tokens (12%/24%) crush to invisibility under the
-     content frost; the tape's ticks need 42%/65% to read at a glance.
-     Round 2 (this iteration): the 30%/48% round-1 values still read faint
-     to both critics — the ticks are the weakest element, so they go
-     stronger and a touch taller. */
-  background: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--foreground) 42%, transparent) 0 1px,
-    transparent 1px 8px
-  );
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
-.skill-tape .skill-marquee-track::after {
-  height: 14px;
-  background: repeating-linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--foreground) 65%, transparent) 0 1px,
-    transparent 1px 40px
-  );
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
-.skill-tape--in .skill-marquee-track::before,
-.skill-tape--in .skill-marquee-track::after {
-  transform: scaleX(1);
-  transition: transform 0.6s ease-out;
-}
-
-.skill-marquee--static.skill-tape .skill-marquee-track::before,
-.skill-marquee--static.skill-tape .skill-marquee-track::after {
-  transform: none;
-}
-
-/* Static (reduced-motion) tape: the wrapped rows must not strand a lone
-   tag on its own line — the 12-tag row wrapped 11+1 at 1440px, leaving
-   "Clerk" orphaned (desktop critic, round 1). The static tags run a touch
-   smaller and tighter so the full row fits one line at desktop widths,
-   and wrapped lines center so any residual wrap reads as balanced rows
-   rather than a lone straggler. Motion tags keep the roomier sizing —
-   their width never matters, they scroll. */
-.skill-marquee--static.skill-tape .skill-marquee-track {
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.skill-marquee--static.skill-tape .skill-pill {
-  padding: 0.25rem 0.45rem;
-  font-size: 0.8rem;
-}
-
-/* Engraved tags: mono, foreground ink, bordered plate on the tape face.
-   The run-6 middot separators retire — the tape's gaps are the rhythm. */
-.skill-tape .skill-pill {
+/* Bare light text: mono, foreground ink, no engraved plate. */
+.skill-current .skill-pill {
   padding: 0.3rem 0.55rem;
-  border: 1px solid var(--journey-rule);
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--card) 88%, transparent);
   color: var(--foreground);
   font: 500 0.85rem/1.2 var(--font-mono);
   letter-spacing: 0;
 }
 
-.skill-tape .skill-marquee-track > li + li::before {
-  content: none;
+.skill-current--in .skill-pill {
+  animation: skill-current-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
 }
 
-.skill-tape--in .skill-pill {
-  animation: skill-tape-tag-pop 0.5s cubic-bezier(0.2, 1.4, 0.3, 1) both;
-}
-
-@keyframes skill-tape-tag-pop {
+@keyframes skill-current-tag-pop {
   from {
     opacity: 0;
     transform: scale(0.85) translateY(4px);
@@ -3994,46 +3938,67 @@ html[data-journey] [data-effect-layer="background"] {
   }
 }
 
-/* Tape legend: the category line above each strip, mono uppercase. */
-.skill-tape-legend {
+/* Current legend: the category line above each strip, mono uppercase,
+   led by a glow dot. */
+.skill-current-legend {
   font: 600 0.7rem/1.5 var(--font-mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
-.skill-tape-legend::before {
-  content: "+ ";
-  color: var(--foreground);
+.skill-current-legend::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+  vertical-align: middle;
+}
+
+/* Static (reduced-motion) current: the wrapped rows must not strand a lone
+   tag on its own line — the 12-tag row wrapped 11+1 at 1440px, leaving
+   "Clerk" orphaned (desktop critic, round 1). The static tags run a touch
+   smaller and tighter so the full row fits one line at desktop widths,
+   and wrapped lines center so any residual wrap reads as balanced rows
+   rather than a lone straggler. Motion tags keep the roomier sizing —
+   their width never matters, they scroll. */
+.skill-marquee--static.skill-current .skill-marquee-track {
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.skill-marquee--static.skill-current .skill-pill {
+  padding: 0.25rem 0.45rem;
+  font-size: 0.8rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skill-tape--in .skill-pill {
+  .skill-current--in .skill-pill {
     animation: none;
-  }
-
-  .skill-tape .skill-marquee-track::before,
-  .skill-tape .skill-marquee-track::after {
-    transform: none;
-    transition: none;
   }
 }
 
-/* Skills parts catalog (run-9 iter 6): the ledger rows became spec plates
-   — a bordered grid, one plate per skill, with a continuous part number,
-   a series kicker per category, and the proof note as the spec line. The
-   marquee above stays the ambient motion; the plates are the record a
-   hiring manager reads. Linked notes underline; unlinked notes are
-   identical except for the link. */
-.skills-catalog {
+/* Skills light field (run-10 RUN10-SKILLS — the run-9 parts catalog
+   de-drafted): the ledger rows are a field of borderless light cells —
+   a glow dot + flow number over a fading light line, the name, its
+   proof note, and the USED-IN rail of glow nodes. The marquee above
+   stays the ambient motion; the cells are the record a hiring manager
+   reads. Linked notes underline; unlinked notes are identical except
+   for the link. */
+.skills-field {
   margin-top: 2.5rem;
 }
 
-.skills-catalog-series {
+.skills-field-series {
   min-width: 0;
 }
 
-.skills-catalog-series + .skills-catalog-series {
+.skills-field-series + .skills-field-series {
   margin-top: 2.25rem;
 }
 
@@ -4051,23 +4016,13 @@ html[data-journey] [data-effect-layer="background"] {
   letter-spacing: -0.01em;
 }
 
-/* Parts bins (run-9 iter 40, RUN9-SKILLS-BINS): each series head carries
-   its big series letter, like a bin-row label on a parts wall. */
+/* Each series head is just its kicker + heading now — the big bin-row
+   letter is gone. */
 .skills-series-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
   margin: 0 0 0.9rem;
 }
 
-.skills-series-letter {
-  flex: none;
-  color: color-mix(in srgb, var(--foreground) 16%, transparent);
-  font: 700 2.4rem/0.8 var(--font-mono);
-}
-
-.skills-plates {
+.skills-flow-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
@@ -4077,62 +4032,85 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 @media (max-width: 1100px) {
-  .skills-plates {
+  .skills-flow-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 700px) {
-  .skills-plates {
+  .skills-flow-grid {
     grid-template-columns: 1fr;
   }
 }
 
-.skills-plate {
+.skill-flow {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.8rem 0.95rem 0.85rem;
-  border: 1px solid var(--journey-rule);
-  border-radius: 2px;
-  background: transparent;
-  /* The deal-in writes transform + opacity inline (motion); the plate
-     keeps its own will-change so the compositor stays on the transform. */
+  /* No border, no plate — the cell's top edge is a fading light line,
+     drawn by ::before so the quiet variant can dim it. The rise-in
+     writes transform + opacity inline (motion); the cell keeps its own
+     will-change so the compositor stays on the transform. */
   will-change: transform, opacity;
 }
 
-.skills-plate-head {
+.skill-flow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--portfolio-accent) 42%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 8%, transparent) 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.skill-flow-head {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   margin: 0 0 0.35rem;
 }
 
-.skills-plate-index {
+.skill-flow-index {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--muted-foreground);
   font: 500 0.72rem/1.4 var(--font-mono);
   letter-spacing: 0.12em;
 }
 
-.skills-plate-mark {
-  color: var(--muted-foreground);
-  font: 400 0.85rem/1 var(--font-mono);
+/* The shared glow dot — the index dot and the USED-IN nodes. */
+.skill-flow-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
 }
 
-.skills-plate-name,
-.skills-plate-skill {
+.skill-flow-name,
+.skill-flow-skill {
   color: var(--foreground);
   font: 600 1.02rem/1.35 var(--font-sans);
   letter-spacing: -0.01em;
 }
 
-.skills-plate-note {
+.skill-flow-note {
   color: var(--muted-foreground);
   font: 400 0.85rem/1.45 var(--font-sans);
 }
 
-a.skills-plate-note {
+a.skill-flow-note {
   text-decoration: underline;
   text-underline-offset: 3px;
   /* WCAG 2.5.8 (run-3 iter 17 census): the note text is 19px tall, so
@@ -4142,37 +4120,57 @@ a.skills-plate-note {
   margin-block: -2.5px;
 }
 
-/* Parts bins (run-9 iter 40, RUN9-SKILLS-BINS): a skill filed under
-   >=2 work entries gets a double-width bin; a skill no stack lists is
-   a dashed loose bin, proved by its note. The USED-IN rail is the
-   plate's wiring diagram — one accent node per work entry that lists
-   the skill. The rail is static text, so reduced motion needs no
-   settle block; the deal-in already settles the plate. */
-.skills-plate--wide {
+/* A skill filed under >=2 work entries spans two columns; a skill no
+   stack lists is a quiet cell — a fainter light line, proved by its
+   note. The USED-IN rail is the cell's wiring — one glow node per work
+   entry that lists the skill, under its own fading light line. The rail
+   is static text, so reduced motion needs no settle block; the rise-in
+   already settles the cell. */
+.skill-flow--wide {
   grid-column: span 2;
 }
 
-.skills-plate--loose {
-  border-style: dashed;
+.skill-flow--quiet::before {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--portfolio-accent) 16%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 4%, transparent) 70%,
+    transparent
+  );
 }
 
-.skills-bin-rail {
+.skill-flow-rail {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.3rem 0.6rem;
   margin: 0.55rem 0 0;
   padding-top: 0.55rem;
-  border-top: 1px solid var(--journey-rule);
 }
 
-.skills-bin-rail-label {
+.skill-flow-rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--portfolio-accent) 30%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.skill-flow-rail-label {
   color: var(--muted-foreground);
   font: 500 0.62rem/1.4 var(--font-mono);
   letter-spacing: 0.14em;
 }
 
-.skills-bin-use {
+.skill-flow-use {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -4182,39 +4180,31 @@ a.skills-plate-note {
   text-transform: uppercase;
 }
 
-.skills-bin-dot {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--portfolio-accent);
-}
-
 @media (max-width: 700px) {
-  .skills-plate--wide {
+  .skill-flow--wide {
     grid-column: auto;
   }
 }
 
 /* Skill → work highlight (run-3 iter 7): the hint and active lines sit
-   above the catalog; linked skill names use the same quiet underline as
-   the hero signal links, so the plates still read as facts, not buttons. */
-.skills-catalog-hint,
-.skills-catalog-active {
+   above the field; linked skill names use the same quiet underline as
+   the hero signal links, so the cells still read as facts, not buttons. */
+.skills-field-hint,
+.skills-field-active {
   margin: 0 0 1.75rem;
 }
 
-.skills-catalog-hint {
+.skills-field-hint {
   color: var(--muted-foreground);
   font: 400 0.85rem/1.4 var(--font-sans);
 }
 
-.skills-catalog-active {
+.skills-field-active {
   color: var(--foreground);
   font: 400 0.9rem/1.4 var(--font-sans);
 }
 
-.skills-catalog-clear {
+.skills-field-clear {
   /* WCAG 2.5.8 (run-3 iter 17 census): the text is 20.2px tall, so expand
      the hit area to 24px with padding and neutralize the visual shift with
      a matching negative margin (the iter-43 rail-utility pattern). */
@@ -4229,7 +4219,7 @@ a.skills-plate-note {
   text-underline-offset: 0.22em;
 }
 
-.skills-plate-skill {
+.skill-flow-skill {
   /* WCAG 2.5.8 (run-3 iter 17 census): the text is 21.3px tall and the
      shortest name ("Git") 20.5px wide, so expand the hit area past 24px
      on both axes with padding and neutralize the visual shift with
@@ -4249,24 +4239,23 @@ a.skills-plate-note {
   transition: text-decoration-color 150ms ease-out;
 }
 
-.skills-plate-skill:hover,
-.skills-plate-skill[aria-pressed="true"] {
+.skill-flow-skill:hover,
+.skill-flow-skill[aria-pressed="true"] {
   text-decoration-color: currentColor;
 }
 
-.skills-plate-skill[aria-pressed="true"] {
+.skill-flow-skill[aria-pressed="true"] {
   color: var(--portfolio-accent);
 }
 
-/* Active plate (run-9 iter 6): the 60fps coachmark border pulse — a
+/* Active cell (run-9 iter 6): the 60fps coachmark glow ring — a
    breathing accent ring around the highlighted skill, so the highlight
-   is visible at a glance. Reduced motion: static accent border only. */
-.skills-plate--active {
-  border-color: color-mix(in srgb, var(--portfolio-accent) 65%, transparent);
-  animation: skills-plate-pulse 1.6s ease-in-out infinite;
+   is visible at a glance. Reduced motion: static accent ring only. */
+.skill-flow--active {
+  animation: skill-flow-pulse 1.6s ease-in-out infinite;
 }
 
-@keyframes skills-plate-pulse {
+@keyframes skill-flow-pulse {
   0%,
   100% {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--portfolio-accent) 35%, transparent);
@@ -4277,7 +4266,7 @@ a.skills-plate-note {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skills-plate--active {
+  .skill-flow--active {
     animation: none;
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--portfolio-accent) 35%, transparent);
   }
