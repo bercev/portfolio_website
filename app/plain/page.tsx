@@ -8,13 +8,14 @@ export default function PlainHome() {
     <div data-plain-root>
       <PlainBackdrop />
       <ContentFrost />
-      {/* Print-edition masthead (run-9 RUN9-ROUTES): /plain is the print
-          edition of the site, so it opens with its own sheet-head strip —
+      {/* Light-edition masthead (run-10 RUN10-PLAIN): /plain is the
+          still-light edition of the site, so it opens with its own strip —
           the in-flow marker that makes the route read as a different
-          edition at a glance, with no fixed overlay to collide with copy. */}
+          edition at a glance, with no fixed overlay to collide with copy.
+          No "print", no scale — the edition is light, not paper. */}
       <header className="plain-edition-strip" data-plain-edition>
-        <span>Print edition — No motion</span>
-        <span>All sections · Scale 1:1</span>
+        <span>Light edition — No motion</span>
+        <span>All sections · Still light</span>
       </header>
       <PortfolioMain />
       <PortfolioChrome />

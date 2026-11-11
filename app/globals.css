@@ -5719,9 +5719,10 @@ html[data-journey="active"] [data-hero-name-fallback] {
 
 }
 
-/* Dedicated /plain site: a static blueprint print (run-9 RUN9-ROUTES) —
-   grid, margin frame, registration marks, print stamp. CSS only, zero
-   motion, so /plain keeps its no-animations contract in both themes. */
+/* Dedicated /plain site: a still light field (run-10 RUN10-PLAIN) —
+   soft static accent glows, no grid, no margin frame, no registration
+   marks. CSS only, zero motion, so /plain keeps its no-animations
+   contract in both themes. */
 .plain-backdrop {
   position: fixed;
   inset: 0;
@@ -5729,91 +5730,102 @@ html[data-journey="active"] [data-hero-name-fallback] {
   pointer-events: none;
   background-color: var(--background);
   background-image:
-    linear-gradient(
-      color-mix(in srgb, var(--foreground) 7%, transparent) 1px,
-      transparent 1px
+    radial-gradient(
+      60rem 34rem at 12% -6%,
+      color-mix(in srgb, var(--portfolio-accent) 12%, transparent),
+      transparent 70%
     ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--foreground) 7%, transparent) 1px,
-      transparent 1px
+    radial-gradient(
+      52rem 30rem at 88% 104%,
+      color-mix(in srgb, var(--portfolio-accent) 10%, transparent),
+      transparent 70%
     ),
-    linear-gradient(
-      color-mix(in srgb, var(--foreground) 13%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--foreground) 13%, transparent) 1px,
-      transparent 1px
+    radial-gradient(
+      40rem 22rem at 78% 8%,
+      color-mix(in srgb, var(--portfolio-accent) 6%, transparent),
+      transparent 70%
     );
-  background-size:
-    25px 25px,
-    25px 25px,
-    125px 125px,
-    125px 125px;
 }
 
-.plain-backdrop::before {
-  content: "";
+/* Corner glow dots — the run-10 light language's quietest marker. */
+.plain-backdrop-dot {
   position: absolute;
-  inset: 12px;
-  border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 10px 2px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
 }
 
-.plain-backdrop-crop {
-  position: absolute;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  line-height: 1;
-  color: var(--muted-foreground);
+.plain-backdrop-dot--tl {
+  top: 10px;
+  left: 10px;
 }
 
-.plain-backdrop-crop--tl {
-  top: 2px;
-  left: 6px;
+.plain-backdrop-dot--tr {
+  top: 10px;
+  right: 10px;
 }
 
-.plain-backdrop-crop--tr {
-  top: 2px;
-  right: 6px;
+.plain-backdrop-dot--bl {
+  bottom: 10px;
+  left: 10px;
 }
 
-.plain-backdrop-crop--bl {
-  bottom: 2px;
-  left: 6px;
+.plain-backdrop-dot--br {
+  bottom: 10px;
+  right: 10px;
 }
 
-.plain-backdrop-crop--br {
-  bottom: 2px;
-  right: 6px;
+/* Light theme: the accent resolves to a muted slate, so the dots read as
+   quiet markers — deepen the halo so they still read as glow dots, not
+   specks. The core is already high-contrast (slate ~71 vs field ~235). */
+html:not(.dark) .plain-backdrop-dot {
+  box-shadow: 0 0 14px 4px
+    color-mix(in srgb, var(--portfolio-accent) 60%, transparent);
+}
+
+@media (max-width: 700px) {
+  /* The fixed chapter ribbon is a top bar at phone width (~36px) and
+     covers the top dots at every scroll position — sit below it. The
+     hero signals row sits at the viewport bottom in the 100dvh hero, so
+     the bottom dots ride 64px up to clear it (verified on the fix-check
+     crops: dot halo ends ~789, signals halo starts ~803). */
+  .plain-backdrop-dot--tl,
+  .plain-backdrop-dot--tr {
+    top: 52px;
+  }
+
+  .plain-backdrop-dot--bl,
+  .plain-backdrop-dot--br {
+    bottom: 64px;
+  }
 }
 
 html.dark .plain-backdrop {
   background-image:
-    linear-gradient(
-      color-mix(in srgb, var(--foreground) 9%, transparent) 1px,
-      transparent 1px
+    radial-gradient(
+      60rem 34rem at 12% -6%,
+      color-mix(in srgb, var(--portfolio-accent) 16%, transparent),
+      transparent 70%
     ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--foreground) 9%, transparent) 1px,
-      transparent 1px
+    radial-gradient(
+      52rem 30rem at 88% 104%,
+      color-mix(in srgb, var(--portfolio-accent) 13%, transparent),
+      transparent 70%
     ),
-    linear-gradient(
-      color-mix(in srgb, var(--foreground) 16%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--foreground) 16%, transparent) 1px,
-      transparent 1px
+    radial-gradient(
+      40rem 22rem at 78% 8%,
+      color-mix(in srgb, var(--portfolio-accent) 8%, transparent),
+      transparent 70%
     );
 }
 
-/* Print-edition masthead (run-9 RUN9-ROUTES): the strip that makes /plain
+/* Light-edition masthead (run-10 RUN10-PLAIN): the strip that makes /plain
    read as a different edition at a glance — in-flow, so it can never cover
-   scrolling copy the way a fixed corner stamp did. */
+   scrolling copy the way a fixed corner stamp did. Its rule is a fading
+   light line, not a hairline. */
 .plain-edition-strip {
   position: relative;
   z-index: var(--z-page-content);
@@ -5822,13 +5834,27 @@ html.dark .plain-backdrop {
   justify-content: space-between;
   gap: 0.25rem 1rem;
   padding: 0.9rem 1.5rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 0;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
+}
+
+.plain-edition-strip::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--portfolio-accent) 70%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 12%, transparent)
+  );
 }
 
 @media (max-width: 700px) {
