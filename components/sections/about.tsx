@@ -22,11 +22,17 @@ export function About({ content, heading }: AboutProps) {
     >
       <div className="journey-col-main journey-about-column">
         <p className="journey-about-notes-head">
-          Field notes — {content.bio.length} entries
+          <span className="journey-about-notes-head-num">
+            Notes · {String(content.bio.length).padStart(2, "0")} entries
+          </span>
         </p>
         <div className="journey-copy">
           {content.bio.map((paragraph, index) => (
-            <AboutNote key={paragraph} index={index}>
+            <AboutNote
+              key={paragraph}
+              index={index}
+              total={content.bio.length}
+            >
               {index === 0 ? (
                 <LedeReveal text={paragraph} />
               ) : (
@@ -39,14 +45,11 @@ export function About({ content, heading }: AboutProps) {
 
       <aside
         data-education-panel
-        className="journey-col-rail journey-spec journey-about-titleblock"
+        className="journey-col-rail journey-about-flow"
         aria-label="Education"
       >
-        <p className="journey-about-titleblock-head">
-          <span className="journey-spec-label">Education</span>
-          <span aria-hidden="true" className="journey-about-titleblock-mark">
-            +
-          </span>
+        <p className="journey-about-flow-head">
+          <span className="journey-about-flow-head-num">Education</span>
         </p>
         <dl className="journey-spec-list">
           <div className="journey-spec-row">
@@ -71,10 +74,6 @@ export function About({ content, heading }: AboutProps) {
           Coursework — {courseworkCountLabel(education.coursework.length)}
         </p>
         <CourseworkList courses={education.coursework} />
-
-        <p className="journey-about-titleblock-foot">
-          Scale 1:1 · Drawn by Berat · Rev A
-        </p>
       </aside>
     </Station>
   );

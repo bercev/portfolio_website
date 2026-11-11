@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { noteDrawDelay, noteLabel } from "./about-notes";
 
 describe("noteLabel", () => {
-  it("numbers the field notes 1-based and zero-padded", () => {
-    expect(noteLabel(0)).toBe("NOTE 01");
-    expect(noteLabel(1)).toBe("NOTE 02");
-    expect(noteLabel(3)).toBe("NOTE 04");
+  it("labels the notes 1-based with their total", () => {
+    expect(noteLabel(0, 4)).toBe("Note 1 of 4");
+    expect(noteLabel(1, 4)).toBe("Note 2 of 4");
+    expect(noteLabel(3, 4)).toBe("Note 4 of 4");
   });
 });
 

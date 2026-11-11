@@ -1382,12 +1382,6 @@ html[data-journey] [data-effect-layer="background"] {
  * Specimen rail. Facts a recruiter scans for — school, GPA, links — held in a
  * fixed-width mono column so the page has a hard right edge instead of a void.
  */
-.journey-spec {
-  align-self: start;
-  border-top: 1px solid var(--journey-rule);
-  padding-top: 0.85rem;
-}
-
 .journey-spec-label {
   margin: 0;
   font: 600 0.95rem/1.5 var(--font-sans);
@@ -4204,73 +4198,171 @@ a.skill-flow-note {
   }
 }
 
-/* About as field notes + title block (run-9 iter 7, RUN9-SECTION-IDENTITIES,
-   fifth slice: About). The bio becomes numbered field notes — a mono
-   numeral in the left margin that presses in, a hairline rule that draws
-   across the top of each note — and the education rail becomes a bordered
-   title block. Same 220ms press / 0.5s rule-draw language as the
-   experience revision marks, so the section identities read as one
-   drawing set. */
+/* About as light (run-9 iter 7, RUN9-SECTION-IDENTITIES, fifth slice;
+   re-skinned to light/flow in run-10 RUN10-ABOUT). The bio paragraphs
+   are notes — a glow dot + flow number ("01 / 04", shared flowLabels)
+   in the left margin that presses in, a fading light line that draws
+   across the top of each note — and the education rail is a borderless
+   haloed panel in the contact-form family (card wash + accent halo, no
+   border, no inner frame), its head a glow dot + light rule. Same
+   220ms press / 0.5s rule-draw language as the experience flow marks,
+   so the section identities read as one light set. */
 .journey-about-notes-head {
   margin: 0 0 1.5rem;
   padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--journey-rule);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--portfolio-accent) 65%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 0%, transparent) 55%
+  );
+  background-size: 100% 1px;
+  background-position: bottom;
+  background-repeat: no-repeat;
   font: 600 0.7rem/1.5 var(--font-mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
+/* The glow dot rides on the head's own span (inline-flex + gap) — a
+   ::before dot on the head itself would become a flex item and strand
+   the label (paper-page sign, run-10 iter 5). */
+.journey-about-notes-head-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.journey-about-notes-head-num::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 10px 1px
+    color-mix(in srgb, var(--portfolio-accent) 75%, transparent);
+}
+
 .journey-about-note {
   display: grid;
-  grid-template-columns: 2.75rem minmax(0, 1fr);
+  grid-template-columns: 6.25rem minmax(0, 1fr);
   gap: 0 1rem;
 }
 
+/* Glow dot + flow number ("01 / 04"): mono, muted like the
+   experience-flow index — the dot carries the accent, not the digits. */
 .journey-about-note-num {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding-top: 0.4rem;
-  font: 600 0.8rem/1.5 var(--font-mono);
-  letter-spacing: 0.08em;
-  color: var(--portfolio-accent);
+  font: 500 0.8rem/1.5 var(--font-mono);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+
+.journey-about-note-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
 }
 
 .journey-about-note-body {
   min-width: 0;
 }
 
+/* The note rule is a fading light line, not a hairline: accent at the
+   left, dissolving to the right, drawn by scaleX from the left. */
 .journey-about-note-rule {
   display: block;
   height: 1px;
   margin-bottom: 0.85rem;
-  background: var(--journey-rule);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
   transform-origin: left center;
 }
 
-.journey-about-titleblock {
-  border: 1px solid var(--journey-rule);
-  padding: 0.9rem 1rem 1rem;
+/* Education rail as light (run-10 RUN10-ABOUT): the bordered title
+   block becomes a borderless haloed panel in the contact-form family
+   (card wash + accent halo, no border, no inner frame, no "+" mark,
+   no "Scale 1:1 · Drawn by Berat · Rev A" foot — dimension language
+   is gone; the panel ends on the coursework list). */
+.journey-about-flow {
+  position: relative;
+  align-self: start;
+  padding: 1.25rem 1.4rem 1.4rem;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  border: 0;
+  box-shadow: 0 0 120px
+    color-mix(in srgb, var(--accent-neon) 10%, transparent);
 }
 
-.journey-about-titleblock-head {
+.journey-about-flow-head {
   display: flex;
-  align-items: baseline;
+  flex-wrap: wrap;
   justify-content: space-between;
+  gap: 0.25rem 1rem;
   margin: 0;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid var(--journey-rule);
+  padding-bottom: 0.65rem;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--portfolio-accent) 65%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 0%, transparent) 55%
+  );
+  background-size: 100% 1px;
+  background-position: bottom;
+  background-repeat: no-repeat;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
-.journey-about-titleblock-mark {
-  font: 600 0.9rem/1 var(--font-mono);
-  color: var(--portfolio-accent);
+.journey-about-flow-head-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* Coursework as a drafted parts list (run-9 iter 30,
-   RUN9-ABOUT-COURSEWORK): each course is a numbered part — a mono accent
-   numeral that presses in, a hairline rule that draws across the row —
-   the same 220ms press / 0.5s rule-draw language as the field notes and
-   the experience revision marks. */
+.journey-about-flow-head-num::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 10px 1px
+    color-mix(in srgb, var(--portfolio-accent) 75%, transparent);
+}
+
+/* The spec rows keep their <dl> semantics; their hairline separators
+   become fading light lines under the flow panel's scope. */
+.journey-about-flow .journey-spec-row {
+  border-bottom: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
+  background-size: 100% 1px;
+  background-position: bottom;
+  background-repeat: no-repeat;
+}
+
+/* Coursework as a light list (run-9 iter 30, RUN9-ABOUT-COURSEWORK;
+   re-skinned in run-10 RUN10-ABOUT): each course carries a glow dot +
+   flow number ("01 / 07") that presses in, a fading light line that
+   draws across the row — the same 220ms press / 0.5s rule-draw language
+   as the field notes and the experience flow marks. */
 .journey-coursework-list {
   margin: 0.9rem 0 0;
   padding: 0;
@@ -4279,15 +4371,29 @@ a.skill-flow-note {
 
 .journey-coursework-row {
   display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
+  grid-template-columns: 4.5rem minmax(0, 1fr);
   gap: 0 0.75rem;
   padding: 0.5rem 0 0;
 }
 
 .journey-coursework-num {
-  font: 600 0.72rem/1.6 var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font: 500 0.72rem/1.6 var(--font-mono);
   letter-spacing: 0.08em;
-  color: var(--portfolio-accent);
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+
+.journey-coursework-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
 }
 
 .journey-coursework-name {
@@ -4300,23 +4406,17 @@ a.skill-flow-note {
   grid-column: 1 / -1;
   height: 1px;
   margin-top: 0.5rem;
-  background: var(--journey-rule-soft);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
   transform-origin: left center;
-}
-
-.journey-about-titleblock-foot {
-  margin: 1rem 0 0;
-  padding-top: 0.6rem;
-  border-top: 1px solid var(--journey-rule);
-  font: 500 0.65rem/1.6 var(--font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
 }
 
 @media (max-width: 700px) {
   .journey-about-note {
-    grid-template-columns: 2.25rem minmax(0, 1fr);
+    grid-template-columns: 6rem minmax(0, 1fr);
     gap: 0 0.75rem;
   }
 }

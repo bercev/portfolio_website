@@ -1,16 +1,17 @@
 /**
- * Field-notes chrome for the About section (run-9 RUN9-SECTION-IDENTITIES,
- * fifth slice: About).
+ * Light/flow chrome for the About section (run-9 RUN9-SECTION-IDENTITIES,
+ * fifth slice: About; re-skinned to light/flow in run-10 RUN10-ABOUT).
  *
- * About stops being bare stacked paragraphs + a bare spec list and becomes
- * the drafting table's field notes + title block (iter 2's blueprint
- * background): each bio paragraph is a numbered field note — a mono numeral
- * in the left margin that presses in and a hairline rule that draws across
- * the top of the note on first scroll into view — and the education rail
- * becomes a bordered title block (Education / School / Degree / GPA / Term /
- * Coursework, footer "SCALE 1:1 · DRAWN BY BERAT · REV A"). The press +
- * draw reuse the experience slice's 220ms / 0.5s language so the five
- * section identities read as one drawing set, not five inventions.
+ * Run 9 made About the drafting table's field notes + title block: each
+ * bio paragraph a numbered field note — a mono numeral in the left margin
+ * that presses in and a hairline rule that draws across the top of the
+ * note on first scroll into view — and the education rail a bordered
+ * title block. Run 10 keeps the motion contract (220ms press / 0.5s rule
+ * draw, 0.1s + stagger) and changes only the language: the numerals are
+ * the shared flow labels ("01 / 04", lib/plate-labels.ts) with a glow
+ * dot, and the rule is a fading light line, not a hairline — the same
+ * language as the experience flow marks, so the section reads as light,
+ * not paper.
  *
  * The bio paragraphs have no dither reveal (unlike projects/publications),
  * so the press + draw start soon after the note enters view (0.1s +
@@ -24,11 +25,12 @@ import { motion, useInView } from "motion/react";
 import type { ReactNode } from "react";
 import { useRef } from "react";
 
+import { flowLabels } from "@/lib/plate-labels";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
-/** Field-note number, 1-based and zero-padded: "01". */
-export function noteLabel(index: number) {
-  return `NOTE ${String(index + 1).padStart(2, "0")}`;
+/** Screen-reader note label: "Note 1 of 4". */
+export function noteLabel(index: number, total: number) {
+  return `Note ${index + 1} of ${Math.max(total, 1)}`;
 }
 
 /** The note press + rule draw start just after the note enters view. */
@@ -43,9 +45,11 @@ const RULE_DURATION = 0.5;
 
 export function AboutNote({
   index,
+  total,
   children,
 }: {
   readonly index: number;
+  readonly total: number;
   readonly children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -79,10 +83,11 @@ export function AboutNote({
             : { duration: PRESS_DURATION, delay, ease: SITE_EASE }
         }
       >
-        {String(index + 1).padStart(2, "0")}
+        <span aria-hidden="true" className="journey-about-note-dot" />
+        {flowLabels(index, total).plate}
       </motion.span>
       <div className="journey-about-note-body">
-        <span className="sr-only">{noteLabel(index)}: </span>
+        <span className="sr-only">{noteLabel(index, total)}: </span>
         <motion.span
           aria-hidden="true"
           className="journey-about-note-rule"

@@ -1,19 +1,24 @@
 /**
- * Coursework as a drafted parts list (run-9 RUN9-ABOUT-COURSEWORK,
- * iter 30).
+ * Coursework as a light list (run-9 RUN9-ABOUT-COURSEWORK, iter 30;
+ * re-skinned to light/flow in run-10 RUN10-ABOUT).
  *
  * The audit (iter 30) ranked the Coursework list the biggest plain-content
  * pocket left on the site: seven course names as bare muted wrapped text
  * inside an otherwise drafted Education title block — no numbers, no
- * rules, no draw. Each course becomes a numbered part — a mono accent
+ * rules, no draw. Each course became a numbered part — a mono accent
  * numeral (CW-01..CW-07) that presses in and a hairline rule that draws
- * across the row on first scroll into view, 45ms stagger — the same
- * 220ms press / 0.5s rule-draw language as the field notes, the
- * experience flow marks, the Elsewhere rows, and the paper action
- * plates, so the title block reads as one drawing set. The label carries
- * the computed part count ("Coursework — 07 parts"). Reduced motion:
- * numerals + rules render settled from the first frame (native hook —
- * motion's useReducedMotion() is unreliable in this app, run-9 iter 1).
+ * across the row on first scroll into view, 45ms stagger.
+ *
+ * Run 10 keeps the motion contract (220ms press / 0.5s rule draw,
+ * 45ms stagger) and changes only the language: the part numbers are the
+ * shared flow labels ("01 / 07", lib/plate-labels.ts) with a glow dot,
+ * and the rule is a fading light line, not a hairline — the same
+ * language as the field notes, the experience flow marks, the Elsewhere
+ * rows, and the paper action plates, so the education panel reads as
+ * light, not paper. The label carries the computed course count
+ * ("Coursework — 07 courses"). Reduced motion: numerals + rules render
+ * settled from the first frame (native hook — motion's useReducedMotion()
+ * is unreliable in this app, run-9 iter 1).
  *
  * Copy is verbatim from content.ts; the list keeps its <ul> semantics.
  */
@@ -22,19 +27,13 @@
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
-import {
-  courseworkDrawDelay,
-  courseworkPartLabel,
-} from "@/lib/about-coursework";
+import { courseworkDrawDelay } from "@/lib/about-coursework";
+import { flowLabels } from "@/lib/plate-labels";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 // Re-exported for the component's own importers (same pattern as
 // lib/plate-labels.ts): the pure helpers live in the server-safe module.
-export {
-  courseworkCountLabel,
-  courseworkDrawDelay,
-  courseworkPartLabel,
-} from "@/lib/about-coursework";
+export { courseworkCountLabel, courseworkDrawDelay } from "@/lib/about-coursework";
 
 /** Reel-4 rule 1: entrances ease out. */
 const SITE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -81,7 +80,8 @@ export function CourseworkList({
                   : { duration: PRESS_DURATION, delay, ease: SITE_EASE }
               }
             >
-              {courseworkPartLabel(index)}
+              <span aria-hidden="true" className="journey-coursework-dot" />
+              {flowLabels(index, courses.length).plate}
             </motion.span>
             <span className="journey-coursework-name">{course}</span>
             <motion.span
