@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ProjectCaseStudy } from "@/data/content";
 
-import { caseDetailDelay, caseStudyDetails, detailLabel } from "./case-detail";
+import { caseDetailDelay, caseStudyDetails } from "./case-detail";
 
 const FULL: ProjectCaseStudy = {
   problem: "P",
@@ -19,15 +19,8 @@ const FULL: ProjectCaseStudy = {
   tradeoffs: "T",
 };
 
-describe("detailLabel", () => {
-  it("zero-pads the 1-based detail number", () => {
-    expect(detailLabel(0)).toBe("DETAIL 01");
-    expect(detailLabel(9)).toBe("DETAIL 10");
-  });
-});
-
 describe("caseDetailDelay", () => {
-  it("staggers 45ms per plate", () => {
+  it("staggers 45ms per section", () => {
     expect(caseDetailDelay(0)).toBe(0);
     expect(caseDetailDelay(2)).toBeCloseTo(0.09, 10);
   });

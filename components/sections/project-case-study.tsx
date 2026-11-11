@@ -28,7 +28,7 @@ import {
 } from "@/lib/skill-work";
 
 import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diagram";
-import { CaseDetailPlate, caseStudyDetails } from "./case-detail";
+import { CaseDetailSection, caseStudyDetails } from "./case-detail";
 import { DispatchPlate, FoldTab } from "./case-fold-tab";
 import { ProjectLightFrame, flowLabels } from "./project-light-frame";
 
@@ -66,11 +66,11 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
   const sourceHref = project.source;
   const legacyHref =
     !liveHref && !sourceHref ? project.href : undefined;
-  // RUN9-CASE-DETAIL: the interior is the drawing's detail callouts — each
-  // present subsection a numbered DETAIL plate (press-in numeral + rule
-  // draw on open), the Snapshot a title-block spec table, the metrics a
-  // measured-values strip. Copy verbatim; the numbering closes up around
-  // sections a project doesn't have (see case-detail.ts).
+  // RUN10-CASE: the interior is the case study's detail sections — each
+  // present subsection a numbered light section (glow dot + flow number,
+  // press-in + rule draw on open), the Snapshot a quiet light field, the
+  // metrics a glowing-values strip. Copy verbatim; the numbering closes
+  // up around sections a project doesn't have (see case-detail.tsx).
   const details = caseStudyDetails(
     caseStudy,
     hasArchitectureDiagram(project.title),
@@ -80,7 +80,7 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
   return (
     <div className="journey-case-study">
       {details.map((detail, index) => (
-        <CaseDetailPlate key={detail.key} index={index} label={detail.label}>
+        <CaseDetailSection key={detail.key} index={index} total={details.length} label={detail.label}>
           {detail.kind === "prose" ? (
             <p className="journey-body journey-case-study-text">{detail.text}</p>
           ) : detail.kind === "architecture" ? (
@@ -148,7 +148,7 @@ function CaseStudyPanel({ project }: { readonly project: Project }) {
               ) : null}
             </div>
           )}
-        </CaseDetailPlate>
+        </CaseDetailSection>
       ))}
 
       {/* RUN10-PROJECTS: the conversion line is a next-step light line
@@ -172,7 +172,7 @@ export function CaseStudyRow({
   readonly featured?: boolean;
   /** Position in the project list — staggers the dither reveal (R3). */
   readonly index?: number;
-  /** Project count — the sheet header reads "SHEET 01 / 02". */
+  /** Project count — the light header reads "01 / 02". */
   readonly total?: number;
   /** Ledger skill names, for the reverse-navigation pill links. */
   readonly skillNames: readonly string[];

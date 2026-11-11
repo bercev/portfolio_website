@@ -2875,9 +2875,12 @@ html[data-journey] [data-effect-layer="background"] {
   min-width: 0;
 }
 
+/* The rest preview is a bare light frame for the image — no border, the
+   image's own edge does the work (run-10 RUN10-CASE fix: the 1px
+   --border frame the critics flagged was leftover plate chrome). */
 .journey-project-rest-preview {
   display: block;
-  border: 1px solid var(--border);
+  border: 0;
   background: var(--card);
 }
 
@@ -3520,22 +3523,22 @@ html[data-journey] [data-effect-layer="background"] {
   max-width: 64rem;
 }
 
-/* The dispatch plate is the panel's last section, below the detail
-   plates. */
+/* The next-step line is the panel's last section, below the detail
+   sections. */
 .journey-case-study > .journey-case-study-section {
   margin-top: 1.6rem;
 }
 
-/* Case-study detail plates (run-9 RUN9-CASE-DETAIL): the expanded panel
-   stops being bare prose and becomes the drawing's detail callouts — each
-   subsection a bordered plate with a press-in DETAIL numeral + a hairline
-   rule that draws under the head on open. Same 220ms / 0.5s language as
-   the About field notes and the experience revision marks, 45ms stagger
-   per plate (see case-detail.tsx); reduced motion renders everything
-   settled via the native hook there. */
+/* Case-study detail sections (run-10 RUN10-CASE): the expanded panel
+   stops being bordered plates and becomes a field of light — each
+   subsection a borderless section with a glow-dot flow number that
+   presses in + a light rule that draws under the head on open. Same
+   220ms / 0.5s language as the About field notes and the experience
+   flow marks, 45ms stagger per section (see case-detail.tsx); reduced
+   motion renders everything settled via the native hook there. */
 .journey-case-detail {
-  border: 1px solid var(--journey-rule);
-  padding: 0.85rem 1rem 1rem;
+  border: 0;
+  padding: 0;
 }
 
 .journey-case-detail + .journey-case-detail {
@@ -3549,10 +3552,23 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .journey-case-detail-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font: 600 0.8rem/1.5 var(--font-mono);
   letter-spacing: 0.08em;
   color: var(--portfolio-accent);
   white-space: nowrap;
+}
+
+.journey-case-detail-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
 }
 
 .journey-case-detail-title {
@@ -3566,7 +3582,11 @@ html[data-journey] [data-effect-layer="background"] {
   display: block;
   height: 1px;
   margin: 0.6rem 0 0.85rem;
-  background: var(--journey-rule);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
   transform-origin: left center;
 }
 
@@ -3625,32 +3645,49 @@ html[data-journey] [data-effect-layer="background"] {
   max-width: 68ch;
 }
 
-/* Measured-values strip: the outcome's metrics read as the drawing's
-   measurements — mono, "+" registration marks, ruled off from the prose
-   above. */
+/* Glowing-values strip: the outcome's metrics read as points of light —
+   mono, glow-dot markers, lit off from the prose above by a fading
+   light line. */
 .journey-case-study-metrics {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem 1.75rem;
   margin: 0.85rem 0 0;
   padding: 0.7rem 0 0;
-  border-top: 1px solid var(--journey-rule);
+  border-top: 0;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 70%, transparent),
+    color-mix(in srgb, var(--accent-neon) 12%, transparent)
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top;
   list-style: none;
 }
 
 .journey-case-study-metrics li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   font: 600 0.85rem/1.6 var(--font-mono);
   letter-spacing: 0.02em;
   color: var(--foreground);
 }
 
 .journey-case-study-metrics li::before {
-  content: "+ ";
-  color: var(--portfolio-accent);
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
 }
 
-/* Snapshot as a title-block spec table: mono uppercase terms, hairline
-   rules between the rows on the stacked mobile layout. */
+/* Snapshot as a quiet light field: mono uppercase terms, light lines
+   between the rows on the stacked mobile layout. */
 .journey-case-study-roles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3686,7 +3723,15 @@ html[data-journey] [data-effect-layer="background"] {
 
   .journey-case-study-roles > div + div {
     padding-top: 0.7rem;
-    border-top: 1px solid var(--journey-rule);
+    border-top: 0;
+    background-image: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--accent-neon) 70%, transparent),
+      color-mix(in srgb, var(--accent-neon) 12%, transparent)
+    );
+    background-size: 100% 1px;
+    background-repeat: no-repeat;
+    background-position: top;
   }
 }
 
@@ -6229,7 +6274,7 @@ html.dark .plain-backdrop {
     break-after: avoid;
   }
 
-  /* Detail plates mount with a press + rule draw when the panel opens;
+  /* Detail sections mount with a press + rule draw when the panel opens;
      a beforeprint expansion must not catch them mid-animation. */
   .journey-case-detail-num,
   .journey-case-detail-rule {

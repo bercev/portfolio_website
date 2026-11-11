@@ -1,25 +1,25 @@
 /**
- * Drawing detail callouts for the expanded case-study panels (run-9
- * RUN9-CASE-DETAIL).
+ * Light detail sections for the expanded case-study panels (run-10
+ * RUN10-CASE; re-skinned from run-9 RUN9-CASE-DETAIL).
  *
  * The panel interior was the last untransformed block on the home page:
- * behind the transformed "OPEN THE DRAWING" fold tab sat plain bold
- * mini-headings + muted paragraphs — the old site, the moment a panel
- * opened. Each present subsection is now a numbered DETAIL plate in the
- * drawing set's language: a mono accent numeral that presses in and a
- * hairline rule that draws under the head on open (the About field-notes
- * / experience flow marks 220ms / 0.5s language, 45ms stagger per
- * plate), the Snapshot restyled as a title-block spec table, and the
- * metrics as a measured-values strip. Copy is verbatim; the height-expand
- * mechanism, aria state, and print branch are untouched.
+ * behind the transformed "OPEN THE STORY" fold tab sat bordered DETAIL
+ * plates — the old drawing set, the moment a panel opened. Each present
+ * subsection is now a borderless light section in the flow language: a
+ * glow dot + flow number ("01 / 09") that presses in and a light rule
+ * that draws under the head on open (the About field-notes /
+ * experience flow marks 220ms / 0.5s language, 45ms stagger per
+ * section), the Snapshot as a quiet light field, and the metrics as a
+ * glowing-values strip. Copy is verbatim; the height-expand mechanism,
+ * aria state, and print branch are untouched.
  *
- * The plates mount when the panel opens, so the press + draw are keyed to
- * mount (not to scroll into view — the lower plates settle unseen below
- * the fold, which is fine: the reader scrolls to settled plates). Reduced
+ * The sections mount when the panel opens, so the press + draw are keyed to
+ * mount (not to scroll into view — the lower sections settle unseen below
+ * the fold, which is fine: the reader scrolls to settled sections). Reduced
  * motion renders everything settled from the first frame via the native
  * hook (motion's useReducedMotion() is unreliable in this app, run-9
  * iter 1); the animate targets are the settled values in both branches,
- * so no hydration race can leave a plate hidden.
+ * so no hydration race can leave a section hidden.
  */
 "use client";
 
@@ -28,6 +28,8 @@ import type { ReactNode } from "react";
 
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { ProjectCaseStudy } from "@/data/content";
+
+import { flowLabels } from "./project-light-frame";
 
 export type CaseDetailKind =
   | "prose"
@@ -44,23 +46,19 @@ export type CaseDetail = {
   readonly text?: string;
 };
 
-/** Detail number, 1-based and zero-padded: "DETAIL 01". */
-export function detailLabel(index: number) {
-  return `DETAIL ${String(index + 1).padStart(2, "0")}`;
-}
+/**
+ * The ordered detail sections for a case study, in render order, skipping
+ * sections the project doesn't have. The numbering is computed here so
+ * both projects stay dense (Vitae's Architecture section shifts its later
+ * sections by one; the chatbot's list closes up without it) and the order
+ * is pinned by test instead of by JSX accident.
+ */
 
-/** Press + rule-draw stagger across the plates on panel open. */
+/** Press + rule-draw stagger across the sections on panel open. */
 export function caseDetailDelay(index: number) {
   return index * 0.045;
 }
 
-/**
- * The ordered detail plates for a case study, in render order, skipping
- * sections the project doesn't have. The numbering is computed here so
- * both projects stay dense (Vitae's Architecture plate shifts its later
- * plates by one; the chatbot's list closes up without it) and the order
- * is pinned by test instead of by JSX accident.
- */
 export function caseStudyDetails(
   caseStudy: ProjectCaseStudy,
   hasDiagram: boolean,
@@ -103,12 +101,15 @@ const SITE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const PRESS_DURATION = 0.22;
 const RULE_DURATION = 0.5;
 
-export function CaseDetailPlate({
+export function CaseDetailSection({
   index,
+  total,
   label,
   children,
 }: {
   readonly index: number;
+  /** Section count — the head reads "01 / 09" via the shared flow labels. */
+  readonly total: number;
   readonly label: string;
   readonly children: ReactNode;
 }) {
@@ -129,7 +130,8 @@ export function CaseDetailPlate({
               : { duration: PRESS_DURATION, delay, ease: SITE_EASE }
           }
         >
-          {detailLabel(index)}
+          <span className="journey-case-detail-dot" aria-hidden="true" />
+          {flowLabels(index, total).count}
         </motion.span>
         <span className="journey-case-detail-title">{label}</span>
       </div>
