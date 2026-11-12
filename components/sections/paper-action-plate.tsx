@@ -5,7 +5,7 @@
  * the 404 links ("back home" / "get in touch") were drawing plates —
  * bordered plate + inner margin frame. They are now light controls in
  * the same family as the fold-tab pill and the BibTeX COPY pill: a
- * borderless accent wash, a numbered accent-neon numeral that presses
+ * borderless accent wash, a numbered accent numeral that presses
  * in (220ms ease-out, 1.25→1) and a hairline light rule that draws
  * (0.5s scaleX) on first scroll into view, 45ms stagger per button, an
  * arrow that slides on hover, and the reel-4 0.97 press, with a soft

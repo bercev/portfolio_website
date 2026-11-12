@@ -23,7 +23,11 @@ function blockOf(selector: RegExp): string {
 }
 
 function decl(block: string, name: string): string {
-  const m = new RegExp(`${name}\\s*:\\s*([^;]+);`).exec(block);
+  // Guard against hyphenated lookalikes: a bare `color` pattern also
+  // matches inside `border-color`. The char before the property must not
+  // be a word char or a hyphen (run-10 iter 52: the BibTeX copy rule's
+  // `border-color` shadowed its `color` until this guard landed).
+  const m = new RegExp(`(?:^|[^\\w-])${name}\\s*:\\s*([^;]+);`).exec(block);
   if (!m) throw new Error(`contrast guard: declaration not found: ${name}`);
   return m[1].trim();
 }
@@ -114,6 +118,12 @@ function mixOklch(first: RGB, firstPct: number, second: RGB): RGB {
 }
 
 const lightBg = hexToRgb(decl(blockOf(/:root\s*\{([^}]*)\}/), "--background"));
+const lightCard = hexToRgb(decl(blockOf(/:root\s*\{([^}]*)\}/), "--card"));
+
+function resolvePaletteNeon(palette: string): RGB {
+  const neonBlock = blockOf(new RegExp(`\\[data-palette="${palette}"\\]\\s*\\{([^}]*)\\}`));
+  return hexToRgb(decl(neonBlock, "--accent-neon"));
+}
 
 function resolveLightAccent(palette: string): RGB {
   const lightBlock = blockOf(/html:not\(\.dark\)\s*\{([^}]*)\}/);
@@ -221,5 +231,66 @@ describe("design-token contrast", () => {
   it("keeps the light-mode ring at the 3:1 UI-component floor", () => {
     const root = blockOf(/:root\s*\{([^}]*)\}/);
     expect(contrast(hexToRgb(decl(root, "--ring")), lightBg)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("wires every small accent text to --portfolio-accent, never the raw neon", () => {
+    // RUN10-LIGHT-ACCENT (run-10 iter 52): --accent-neon is the glow /
+    // cursor color — raw it reads 1.4–1.6:1 on light backgrounds (404
+    // chip, plate numerals/arrows, hero verb word, author-dial ordinal,
+    // BibTeX copy label). --portfolio-accent is the same hue darkened in
+    // light mode (the test above pins it at 4.5:1 per palette) and
+    // identical to the neon in dark/ASCII modes, so this wiring is the
+    // whole fix. If a selector below stops matching, the test throws
+    // instead of silently passing.
+    const wired: [RegExp, string][] = [
+      [/\.not-found-light-chip\s*\{([^}]*)\}/, "404 chip"],
+      [/\.paper-action-plate-num\s*\{([^}]*)\}/, "plate numeral"],
+      [/\.paper-action-plate-arrow\s*\{([^}]*)\}/, "plate arrow"],
+      [/\[data-hero-verb-word\]\s*\{([^}]*)\}/, "hero verb word"],
+      [/\.author-dial-ord\s*\{([^}]*)\}/, "author-dial ordinal"],
+      [
+        /\.bibtex-flow-copy:hover,\s*\.bibtex-flow-copy\[data-copied="true"\]\s*\{([^}]*)\}/,
+        "BibTeX copy label",
+      ],
+    ];
+    for (const [selector, name] of wired) {
+      expect(decl(blockOf(selector), "color"), name).toBe(
+        "var(--portfolio-accent)",
+      );
+    }
+  });
+
+  it("keeps accent text at 4.5:1 on its real background in light mode", () => {
+    // RUN10-LIGHT-ACCENT: the text sits on tinted washes, not the bare
+    // page — resolve each surface the same way the CSS composes it:
+    // chip = the solid card face (run-10 iter 52: the old 18% neon wash
+    // darkened it to 4.23:1, so the wash is gone); plate numeral/arrow =
+    // 8% neon wash over the card (14% on hover, a transient state held
+    // to the 3:1 floor); BibTeX copy = 68% card panel over the page. The
+    // hero verb word and dial ordinal sit on the bare page, covered by
+    // the --portfolio-accent test above.
+    for (const palette of Object.keys(THEME_PALETTES)) {
+      const accent = resolveLightAccent(palette);
+      const neon = resolvePaletteNeon(palette);
+      expect(
+        contrast(accent, lightCard),
+        `404 chip (${palette}) on its card face`,
+      ).toBeGreaterThanOrEqual(4.5);
+      const plateBg = composite(neon, 0.08, lightCard);
+      expect(
+        contrast(accent, plateBg),
+        `plate numeral/arrow (${palette}) on its 8% wash`,
+      ).toBeGreaterThanOrEqual(4.5);
+      const plateHoverBg = composite(neon, 0.14, lightCard);
+      expect(
+        contrast(accent, plateHoverBg),
+        `plate numeral/arrow (${palette}) on its 14% hover wash`,
+      ).toBeGreaterThanOrEqual(3);
+      const bibtexBg = composite(lightCard, 0.68, lightBg);
+      expect(
+        contrast(accent, bibtexBg),
+        `BibTeX copy (${palette}) on its 68% card panel`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });

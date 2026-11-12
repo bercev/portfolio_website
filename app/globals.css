@@ -453,6 +453,12 @@ html:not(.dark) {
    * 56% measures 4.59:1 for the default ice accent, the other four palettes
    * clear it with margin. ASCII mode is unaffected: the palette lock above
    * (higher specificity) keeps #7dd3fc on the dark canvas.
+   *
+   * Small accent TEXT anywhere on the site must use --portfolio-accent,
+   * never --accent-neon directly (run-10 iter 52): the raw neon is the
+   * glow/cursor color and reads 1.4–1.6:1 on light backgrounds (404 chip,
+   * plate numerals/arrows, hero verb word, author-dial ordinal, BibTeX
+   * copy label). Glows, washes, borders, and light lines keep the neon.
    */
   --portfolio-accent: color-mix(in oklch, var(--accent-neon) 56%, #111111);
   --effect-cursor: var(--accent-neon);
@@ -2345,7 +2351,7 @@ html[data-journey] [data-effect-layer="background"] {
   transform: translateX(-50%);
   font-size: 14px;
   line-height: 1;
-  color: var(--accent-neon);
+  color: var(--portfolio-accent);
   white-space: nowrap;
   opacity: 0;
   transition: opacity 200ms ease-out;
@@ -3881,13 +3887,13 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .paper-action-plate-num {
-  color: var(--accent-neon);
+  color: var(--portfolio-accent);
   font-weight: 700;
 }
 
 .paper-action-plate-arrow {
   display: inline-block;
-  color: var(--accent-neon);
+  color: var(--portfolio-accent);
   transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -3994,7 +4000,7 @@ html[data-journey] [data-effect-layer="background"] {
 .bibtex-flow-copy:hover,
 .bibtex-flow-copy[data-copied="true"] {
   border-color: var(--accent-neon);
-  color: var(--accent-neon);
+  color: var(--portfolio-accent);
   box-shadow: 0 0 12px
     color-mix(in srgb, var(--accent-neon) 40%, transparent);
 }
@@ -5556,7 +5562,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
 }
 
 [data-hero-verb-word] {
-  color: var(--accent-neon);
+  color: var(--portfolio-accent);
   font-weight: 600;
 }
 
@@ -6213,11 +6219,13 @@ html[data-journey="active"] [data-hero-name-fallback] {
   place-items: center;
   pointer-events: none;
 }
-/* The verdict chip: borderless accent wash + glow, pill radius — the
-   contact receipt chip's family, not a stamp. The wash sits over a
-   solid page-background layer so the light track cannot strike
-   through the text: the beam passes behind the pill and re-emerges
-   on either side (fix round, run-10 iter 11). */
+/* The verdict chip: borderless pill + glow, the contact receipt chip's
+   family, not a stamp. The face is the solid card surface (run-10 iter
+   52: the old 18% accent wash darkened the face enough that the text
+   read 4.23:1 in light mode; the card face clears 4.5:1 while the 45%
+   glow still halos it) so the light track cannot strike through the
+   text: the beam passes behind the pill and re-emerges on either side
+   (fix round, run-10 iter 11). */
 .not-found-light-chip {
   position: relative;
   font-family: var(--font-mono);
@@ -6225,13 +6233,8 @@ html[data-journey="active"] [data-hero-name-fallback] {
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent-neon);
-  background:
-    linear-gradient(
-      color-mix(in srgb, var(--accent-neon) 18%, transparent),
-      color-mix(in srgb, var(--accent-neon) 18%, transparent)
-    ),
-    var(--background);
+  color: var(--portfolio-accent);
+  background: var(--card);
   box-shadow: 0 0 24px
     color-mix(in srgb, var(--accent-neon) 45%, transparent);
   padding: 0.35rem 0.7rem;
