@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { NotFoundLightVoid } from "@/components/sections/not-found-light";
+import { NotFoundPluck } from "@/components/sections/not-found-pluck";
 import { PaperActionPlate } from "@/components/sections/paper-action-plate";
 import { notFoundLightCaption } from "@/lib/plate-labels";
 
@@ -26,6 +27,11 @@ export const metadata: Metadata = {
  * line, one plain sentence, two ways out — same as before, in the
  * site's light/flow language. The terminal flyout itself is untouched
  * (frozen).
+ *
+ * The heading sits on a pluckable light string (run-10 RUN10-PLUCK,
+ * not-found-pluck.tsx): drag it and let it ring, or sweep across it
+ * to strum it — the heading stays verbatim and legible, the string
+ * is the only thing that moves.
  */
 export default function NotFound() {
   return (
@@ -44,7 +50,7 @@ export default function NotFound() {
             </p>
           </div>
           <div className="not-found-spread-status">
-            <h1 className="not-found-status">404 — Not found</h1>
+            <NotFoundPluck />
             <p className="not-found-line">
               This address doesn&rsquo;t resolve to anything here.
             </p>

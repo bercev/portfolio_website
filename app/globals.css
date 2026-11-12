@@ -5821,6 +5821,82 @@ html[data-journey="active"] [data-hero-name-fallback] {
      both widths. */
   text-wrap: balance;
 }
+/* Pluckable heading (run-10 RUN10-PLUCK): the "lost" heading sits
+ * on a light string — Kokonut PluckedText rebuilt in our own stack
+ * and restyled to FROST. The string is an accent line with a glow
+ * ghost (the previous frame stays behind faintly, so a vibrating
+ * string blurs), pinned at both ends by glow dots; the letters ride
+ * the string. The stage is the grab area: cursor-grab, touch-none
+ * so a drag doesn't scroll the page, select-none so a pull doesn't
+ * select the heading. The letters row is `white-space: pre` so the
+ * spaces between words keep their width inside the inline-block
+ * letter spans. */
+.not-found-pluck-stage {
+  position: relative;
+  display: inline-block;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  padding: 0.5em;
+}
+.not-found-pluck-stage[data-grabbing] {
+  cursor: grabbing;
+}
+.not-found-pluck-letters {
+  position: relative;
+  display: block;
+  white-space: pre;
+}
+.not-found-pluck-letter {
+  display: inline-block;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+.not-found-pluck-probe {
+  display: inline-block;
+  height: 0;
+  width: 0;
+}
+.not-found-pluck-string {
+  position: absolute;
+  left: 0.25em;
+  height: 1px;
+  width: calc(100% - 0.5em);
+  overflow: visible;
+  pointer-events: none;
+  color: var(--accent-neon);
+}
+.not-found-pluck-path {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--accent-neon) 65%, transparent)
+  );
+}
+.not-found-pluck-ghost {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  opacity: 0.3;
+}
+.not-found-pluck-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-neon);
+  box-shadow: 0 0 8px 2px
+    color-mix(in srgb, var(--accent-neon) 60%, transparent);
+  pointer-events: none;
+}
+.not-found-pluck-dot-left {
+  left: 0.25em;
+  transform: translate(-50%, -50%);
+}
+.not-found-pluck-dot-right {
+  right: 0.25em;
+  transform: translate(50%, -50%);
+}
 /* Light void (run-10 RUN10-404): the missing figure is a field of
  * light, not a drawing of a void — a soft radial glow fills the frame,
  * one blurred orb drifts across it, a beam draws across the top on
