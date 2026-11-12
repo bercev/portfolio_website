@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 
 import ASCIIText from "@/components/effects/react-bits-ascii-text";
 import { ParticleBerat } from "@/components/effects/particle-berat";
+import { HeroMetaballs } from "@/components/effects/hero-metaballs";
 import { HeroTaglineFlip } from "@/components/sections/hero-tagline-flip";
 import {
   HeroVerbTicker,
@@ -99,6 +100,29 @@ export function Hero({ content }: { content: HeroContent }) {
           initial={false}
           animate={{ opacity: 1, y: 0 }}
         >
+          {/* RUN10-METABALLS: 2–3 soft light orbs drifting/merging/splitting
+              behind the wordmark. The layer is sized exactly like the BERAT
+              box (min(100%, 68rem) × clamp(13rem, 32vw, 24rem)) and anchored
+              to the band's bottom edge (the band's own padding-bottom), so
+              it overlays the wordmark box in both modes; it paints first,
+              so the BERAT (positioned, later in DOM) stays on top. */}
+          <div
+            data-hero-metaballs-wrap
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: "clamp(1.1rem, 2.4vh, 1.85rem)",
+              width: "min(100%, 68rem)",
+              height: "clamp(13rem, 32vw, 24rem)",
+              marginInline: "auto",
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          >
+            <HeroMetaballs reduceMotion={reduceMotion} />
+          </div>
           {particleMode ? (
             <ParticleBerat />
           ) : (
