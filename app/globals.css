@@ -2891,6 +2891,77 @@ html[data-journey] [data-effect-layer="background"] {
   height: 100%;
 }
 
+/* RUN10-LIQUID — the liquid preview morph: while its row is hovered/
+   focused (desktop) or inside a tap pulse (mobile), the rest preview's
+   frame morphs into a wobbling blob with an elastic overshoot (motion
+   animates the radius/scale inline — no CSS animation here at all, so
+   reduced motion renders the plain static preview instead). The shared
+   liquid blob lives outside the morphing frame: the frame clips its
+   contents (overflow hidden + blob radius), so a blob inside it would
+   be cut off at the frame's edge. The glow wash blooms over the image
+   while morphed; the blob is the soft light that travels between rows.
+   Fix round (iter 25): the blob is BIG and BRIGHT on purpose — at
+   -16px / 55% it was invisible mid-flight (pixel-identical to the
+   settled frame) and left no halo around the settled preview. At
+   -48px / 80% core it reads as a discrete travelling form and a clear
+   halo. The inset is -20px below the 46rem sidecar breakpoint so the
+   halo never spills past the viewport at 390px (no h-overflow). */
+.journey-project-preview-liquid {
+  position: relative;
+}
+
+.journey-project-preview-liquid-frame {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.journey-project-liquid-blob {
+  position: absolute;
+  inset: -20px;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--portfolio-accent) 80%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 35%, transparent) 55%,
+    transparent 85%
+  );
+  filter: blur(14px);
+}
+
+@media (min-width: 46rem) {
+  .journey-project-liquid-blob {
+    inset: -48px;
+  }
+}
+
+.journey-project-liquid-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--portfolio-accent) 22%, transparent),
+    transparent 55%,
+    color-mix(in srgb, var(--portfolio-accent) 14%, transparent)
+  );
+  mix-blend-mode: screen;
+}
+
+/* Light rim just inside the morphing frame's edge — the one glow that
+   reads on ANY image: the screen-blend wash above vanishes on the
+   near-white Vitae screenshot, but an inset accent rim is visible on
+   light and dark previews alike. border-radius inherits the frame's
+   animated blob radius, so the rim follows the wobble. */
+.journey-project-liquid-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 28px 2px
+    color-mix(in srgb, var(--portfolio-accent) 45%, transparent);
+}
+
 @media (min-width: 46rem) {
   .journey-project-rest {
     grid-template-columns: minmax(0, 1fr) minmax(0, 21rem);

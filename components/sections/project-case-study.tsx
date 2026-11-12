@@ -11,15 +11,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useId, useState, type MouseEvent } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import { flushSync } from "react-dom";
 
-import { ChromaticImage } from "@/components/ui/chromatic-image";
 import { ExternalLink } from "@/components/ui/external-link";
 import { TechPills } from "@/components/ui/tech-pills";
 import { DITHER_ROW_STAGGER, useDitherReveal } from "@/components/effects/use-dither-reveal";
 import type { Project } from "@/data/content";
 import { isProjectHash, projectAnchorId } from "@/lib/project-anchor";
+import { LIQUID_TAP_PULSE_MS } from "@/lib/project-liquid";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import {
   dispatchSkillHighlight,
@@ -31,18 +31,12 @@ import { ArchitectureDiagram, hasArchitectureDiagram } from "./architecture-diag
 import { CaseDetailSection, caseStudyDetails } from "./case-detail";
 import { DispatchPlate, FoldTab } from "./case-fold-tab";
 import { ProjectLightFrame, flowLabels } from "./project-light-frame";
+import {
+  ProjectPreviewLiquid,
+  type ProjectPreview,
+} from "./project-preview-liquid";
 
-const projectPreviews: Partial<
-  Record<
-    Project["title"],
-    {
-      readonly src: string;
-      readonly alt: string;
-      /** Raster proofs get the Aceternity Chromatic Image treatment. */
-      readonly chromatic?: boolean;
-    }
-  >
-> = {
+const projectPreviews: Partial<Record<Project["title"], ProjectPreview>> = {
   Vitae: {
     src: "/assets/projects/vitae.webp",
     alt: "Vitae landing page: resume version control with Get Started and Why Vitae.",
@@ -178,6 +172,29 @@ export function CaseStudyRow({
   readonly skillNames: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
+  // RUN10-LIQUID: the preview morphs while its row is hovered/focused
+  // (desktop) or inside a tap pulse (mobile). Each row owns its own
+  // flag; the shared liquid blob (one layoutId) glides between rows on
+  // its own. Reduced motion renders the plain static preview instead.
+  const [liquid, setLiquid] = useState(false);
+  const liquidTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (liquidTapTimerRef.current !== null) {
+        clearTimeout(liquidTapTimerRef.current);
+      }
+    },
+    [],
+  );
+  const startLiquidTapPulse = () => {
+    setLiquid(true);
+    if (liquidTapTimerRef.current !== null) {
+      clearTimeout(liquidTapTimerRef.current);
+    }
+    liquidTapTimerRef.current = setTimeout(() => {
+      setLiquid(false);
+    }, LIQUID_TAP_PULSE_MS);
+  };
   // Print record (run-3 iter 27): expanded panels are unmounted when
   // closed, so no print stylesheet can reveal them (iter 12 documented the
   // CSS-only impossibility). beforeprint expands every case-study row for
@@ -311,6 +328,22 @@ export function CaseStudyRow({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={handleToggleClick}
+        onPointerEnter={() => setLiquid(true)}
+        onPointerLeave={() => setLiquid(false)}
+        onFocusCapture={() => setLiquid(true)}
+        onBlurCapture={(event) => {
+          const nextTarget = event.relatedTarget;
+          if (
+            nextTarget instanceof Node &&
+            event.currentTarget.contains(nextTarget)
+          ) {
+            return;
+          }
+          setLiquid(false);
+        }}
+        onPointerDown={(event) => {
+          if (event.pointerType === "touch") startLiquidTapPulse();
+        }}
       >
         {/* Light header strip: the row number and count. */}
         <span className="journey-project-head" aria-hidden="true">
@@ -322,8 +355,9 @@ export function CaseStudyRow({
         </span>
         {/* At rest: problem-framed headline + product meta + one pill strip on
             the left, a calm static preview sidecar on the right. The preview
-            stays a static frame (not the hover popover) so it reads at rest
-            and on touch devices. */}
+            stays a static frame at rest (not the hover popover) so it reads
+            at rest and on touch devices — it only turns liquid while its
+            row is hovered/focused or inside a tap pulse (RUN10-LIQUID). */}
         <span className="journey-project-rest">
           <span className="journey-project-rest-text">
             <span
@@ -347,27 +381,7 @@ export function CaseStudyRow({
             {project.caseStudy ? <FoldTab open={open} /> : null}
           </span>
           {preview ? (
-            <span className="journey-project-preview">
-              {preview.chromatic ? (
-                <ChromaticImage
-                  src={preview.src}
-                  alt={preview.alt}
-                  width={800}
-                  height={560}
-                  className="journey-project-rest-preview"
-                />
-              ) : (
-                <span className="journey-project-rest-preview">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- local static preview crop */}
-                  <img
-                    src={preview.src}
-                    alt={preview.alt}
-                    width={800}
-                    height={560}
-                  />
-                </span>
-              )}
-            </span>
+            <ProjectPreviewLiquid preview={preview} active={liquid} />
           ) : null}
         </span>
       </button>
