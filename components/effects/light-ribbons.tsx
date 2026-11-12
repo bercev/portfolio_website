@@ -104,6 +104,11 @@ import {
  *   cancellation), exactly reversible on scroll-up since detection is
  *   positional. Reduced motion repaints one static frame of the active
  *   chapter on scroll (discrete switch, no animation).
+ *   Run-10 iter 35 (RUN10-PRESETS) extends each chapter with a Wayloom
+ *   preset palette (small hue rotation + tint mix, same cyan-family
+ *   discipline) and a field mode (Halo/Central/Edge Glass/Diagonal
+ *   geometry) — both lerped through the same ~600ms crossfade, so a
+ *   chapter change visibly shifts the light's color AND shape.
  * - Dither seam (run-7 iter 10, RUN7-EXP-DITHER): a blue-noise
  *   dissolve at the hero's lower edge — the ribbon light halftones
  *   out across a 96px band centered on the hero's bottom edge, so the
@@ -406,6 +411,10 @@ const WHITE: Rgb = { r: 255, g: 255, b: 255 };
  * as you move through the page, not as a new background per section.
  * Hero is the identity (the approved reference look); contact/epilogue
  * dim to close the journey.
+ * Run-10 iter 35 (RUN10-PRESETS) adds a preset palette + field mode
+ * per chapter (see LIGHT_PRESETS / FIELD_MODES below): the preset is a
+ * small hue/tint shift in the same cyan-family discipline, the mode is
+ * a lerpable geometry change — both crossfade with the chapter tween.
  */
 export interface ChapterProfile {
   /** Added to every band's slope (px drop per px across). */
@@ -422,17 +431,213 @@ export interface ChapterProfile {
   deep: number;
   /** Bright-role alpha multiplier — lifts the peak carrier band. */
   bright: number;
+  /** Wayloom preset palette name (RUN10-PRESETS) — label only; the
+   * numbers below are what render, so the chapter crossfade lerps
+   * them instead of snapping the palette. */
+  preset: LightPresetName;
+  /** Field-mode name (RUN10-PRESETS) — label only, same as preset. */
+  mode: FieldModeName;
+  /** Preset hue rotation in degrees, applied to every role color. */
+  hue: number;
+  /** Preset tint the role colors mix toward. */
+  tint: Rgb;
+  /** Preset tint mix in [0, 1]. */
+  tintMix: number;
+  /** Field-mode pull of band y0 toward the vertical center: 1 puts
+   * every band at the center, -1 pushes them to the edges. */
+  centerPull: number;
+  /** Field-mode slope spread multiplier: 1 keeps the base slopes. */
+  fan: number;
+  /** Field-mode y0 spread multiplier around the center. */
+  spread: number;
+  /** Field-mode mirror weight for the lowest band (see FieldMode). */
+  mirror: number;
+  /** Field-mode bottom pull for the lowest band (see FieldMode):
+   * 1 pulls the folded band to the 0.85H anchor, 0 leaves the
+   * center mirror alone. */
+  bottomPull: number;
+}
+
+/**
+ * Per-chapter Wayloom light presets (run-10 iter 35, RUN10-PRESETS).
+ * The reel's named presets (Aurora, Ice Halo, Golden Hour, Cobalt
+ * Wave) rebuilt as small tints inside the live cyan family — the same
+ * discipline as the daylight sets (modest multipliers, no new hue):
+ * a hue rotation of at most ±16° plus a ≤0.6 mix toward a tint color.
+ * The tint carries the preset's character (Golden Hour warms toward
+ * gold, Cobalt Wave deepens toward blue); the mix is small enough that
+ * every chapter still reads as the site's FROST cyan, just warmer,
+ * cooler, greener, or deeper. (Fix1: the first values — ±10° / ≤0.25
+ * — were pixel-measurable but invisible to the eye at 390px behind
+ * the column suppression and the content panels; both critics failed
+ * them. Fix2: Golden Hour's mix goes to 0.6 toward a deeper amber
+ * gold (255,170,80) because at 0.45 the base cyan's green channel
+ * still dominated and the chapter read olive, not golden — gold needs
+ * red to lead green, and the -10° hue rotation itself raises green,
+ * so the tint has to be red enough to outrun it (a (255,190,100)
+ * tint still left green ahead 207–203). Aurora goes to 0.4 so
+ * the green-vs-ice distinction reads; iceHalo goes to 0.6 (fix5:
+ * at 0.4 the desktop critic + two phase samples read experience /
+ * epilogue as lights-off — the pale tint over the dim chapter
+ * profiles fell below the glance threshold, the same fix2 lesson as
+ * gold. 0.6 lets the ice-white tint carry the identity; the
+ * aurora-vs-ice blue-lead test still holds with margin). The tints stay inside the cyan family — blue and
+ * green still dominate every role color except goldenHour's accent,
+ * whose red lead IS the golden hour — but now move the channels far
+ * enough to read at a glance.) `frost` is the identity preset — the
+ * hero keeps the approved reference colors exactly and takes only the
+ * Halo field mode (the item names "hero Halo", not a hero recolor).
+ * wayloom.com itself is DOWN (verified iter 6) — the reel's preset/mode
+ * names + this engine are the source; nothing is fetched from the site.
+ */
+export type LightPresetName =
+  | "frost"
+  | "aurora"
+  | "iceHalo"
+  | "goldenHour"
+  | "cobaltWave";
+
+export interface LightPreset {
+  /** Hue rotation in degrees applied to every role color. */
+  hue: number;
+  /** Tint the role colors mix toward. */
+  tint: Rgb;
+  /** Mix amount in [0, 1]. */
+  tintMix: number;
+}
+
+export const LIGHT_PRESETS: Record<LightPresetName, LightPreset> = {
+  // Identity: hue 0, mix 0 — the tint value is unused, it only fills
+  // the shape so the hero profile stays a plain preset spread.
+  frost: { hue: 0, tint: { r: 125, g: 211, b: 252 }, tintMix: 0 },
+  aurora: { hue: -14, tint: { r: 110, g: 255, b: 205 }, tintMix: 0.4 },
+  iceHalo: { hue: 12, tint: { r: 220, g: 240, b: 255 }, tintMix: 0.6 },
+  goldenHour: { hue: -10, tint: { r: 255, g: 170, b: 80 }, tintMix: 0.6 },
+  cobaltWave: { hue: 16, tint: { r: 80, g: 130, b: 255 }, tintMix: 0.38 },
+};
+
+/**
+ * Field modes (run-10 iter 35, RUN10-PRESETS) — the reel's named
+ * modes (Central, Edge Glass, Halo, Diagonal) as lerpable geometry
+ * numbers over the base ribbon defs. Central gathers the bands toward
+ * the middle; Edge Glass pushes them to the top/bottom edges so the
+ * middle reads as glass; Halo gathers them into a loose ring band
+ * around the center; Diagonal fans the slopes into strong diagonals.
+ * All three numbers lerp through the chapter crossfade, so a mode
+ * change is a visible reconfiguration, not a snap.
+ */
+export type FieldModeName = "halo" | "central" | "edgeGlass" | "diagonal";
+
+export interface FieldMode {
+  /** Pull of band y0 toward the vertical center (1 = all at center,
+   * -1 = pushed to the edges). */
+  centerPull: number;
+  /** Slope spread multiplier (1 = base slopes, 2 = strong diagonals). */
+  fan: number;
+  /** y0 spread multiplier around the center (1 = base spread). */
+  spread: number;
+  /** Mirror weight in [0, 1] for the LOWEST band (run-10 iter 35
+   * fix1): when the mode's transform still leaves that band above
+   * the center, the band folds across the center toward its mirror
+   * position — lerped, so a chapter crossfade sweeps the band down
+   * instead of snapping it. Halo and Edge Glass mirror (a ring and a
+   * frame both need light below the center); Central and Diagonal do
+   * not. Without it the desktop profile — whose bands all start in
+   * the top half — could never put light at the bottom edge, and
+   * Edge Glass read as a missing background (both critics, fix1). */
+  mirror: number;
+  /** Bottom pull in [0, 1] for the LOWEST band (run-10 iter 35
+   * fix3): after the center mirror, pulls the folded band toward
+   * the 0.85H anchor — the frame's bottom band must REST in the
+   * bottom third. Only Edge Glass pulls (a frame needs its bottom
+   * edge lit); Halo's ring stays at the center mirror. Lerped, so
+   * a halo→edgeGlass crossfade sweeps the band down smoothly. */
+  bottomPull: number;
+}
+
+export const FIELD_MODES: Record<FieldModeName, FieldMode> = {
+  halo: { centerPull: 0.45, fan: 0.9, spread: 0.75, mirror: 1, bottomPull: 0 },
+  central: { centerPull: 0.65, fan: 0.4, spread: 0.7, mirror: 0, bottomPull: 0 },
+  edgeGlass: { centerPull: -0.55, fan: 0.5, spread: 1.15, mirror: 1, bottomPull: 1 },
+  diagonal: { centerPull: 0, fan: 2.4, spread: 1.0, mirror: 0, bottomPull: 0 },
+};
+
+/** Rotate an RGB color's hue by `degrees` (HSL round-trip). Pure. */
+export function rotateHue(c: Rgb, degrees: number): Rgb {
+  const r = c.r / 255;
+  const g = c.g / 255;
+  const b = c.b / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { ...c };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h: number;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+  else if (max === g) h = ((b - r) / d + 2) * 60;
+  else h = ((r - g) / d + 4) * 60;
+  h = (((h + degrees) % 360) + 360) % 360;
+  const hue2rgb = (p: number, q: number, t: number): number => {
+    const tt = ((t % 1) + 1) % 1;
+    if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+    if (tt < 1 / 2) return q;
+    if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const hk = h / 360;
+  return {
+    r: Math.round(hue2rgb(p, q, hk + 1 / 3) * 255),
+    g: Math.round(hue2rgb(p, q, hk) * 255),
+    b: Math.round(hue2rgb(p, q, hk - 1 / 3) * 255),
+  };
+}
+
+/**
+ * Apply a preset palette to the theme-derived role colors: rotate the
+ * hue, then mix toward the preset tint. Mix 0 + hue 0 is the identity
+ * (the frost preset), so the hero's approved colors pass through
+ * untouched. Pure.
+ */
+export function applyLightPreset(
+  colors: Record<RibbonRole, Rgb>,
+  preset: LightPreset,
+): Record<RibbonRole, Rgb> {
+  const out = {} as Record<RibbonRole, Rgb>;
+  for (const role of ["deep", "bright", "pale", "accent"] as const) {
+    out[role] = mix(rotateHue(colors[role], preset.hue), preset.tint, preset.tintMix);
+  }
+  return out;
+}
+
+/**
+ * Field-mode transform of a band's y0 (fraction of viewport height):
+ * spread around the center first, then pull toward (or away from) it.
+ * Identity at centerPull 0 / spread 1. Clamped so a pushed band can
+ * leave the viewport by a little (glassy edge) but never vanish far
+ * outside it. Pure.
+ */
+export function modeBandY0(
+  y0: number,
+  centerPull: number,
+  spread: number,
+): number {
+  const s = 0.5 + (y0 - 0.5) * spread;
+  const p = s + (0.5 - s) * centerPull;
+  return Math.min(1.15, Math.max(-0.15, p));
 }
 
 export const CHAPTER_PROFILES: Record<string, ChapterProfile> = {
-  hero: { slope: 0, thick: 1, alpha: 1, speed: 1, pale: 1, deep: 1, bright: 1 },
-  about: { slope: -0.04, thick: 0.9, alpha: 0.85, speed: 0.8, pale: 1.1, deep: 1, bright: 1 },
-  publications: { slope: 0.05, thick: 1.1, alpha: 1, speed: 0.9, pale: 1.25, deep: 0.9, bright: 1 },
-  experience: { slope: -0.03, thick: 1, alpha: 0.9, speed: 1, pale: 1, deep: 1.1, bright: 1 },
-  projects: { slope: 0.06, thick: 1.15, alpha: 1.25, speed: 1.15, pale: 1, deep: 0.9, bright: 1.5 },
-  skills: { slope: 0, thick: 0.85, alpha: 0.8, speed: 0.9, pale: 1, deep: 1, bright: 1 },
-  contact: { slope: -0.05, thick: 0.9, alpha: 0.7, speed: 0.7, pale: 1.1, deep: 1, bright: 1 },
-  epilogue: { slope: -0.05, thick: 0.9, alpha: 0.65, speed: 0.7, pale: 1.1, deep: 1, bright: 1 },
+  hero: { slope: 0, thick: 1, alpha: 1, speed: 1, pale: 1, deep: 1, bright: 1, preset: "frost", mode: "halo", ...LIGHT_PRESETS.frost, ...FIELD_MODES.halo },
+  about: { slope: -0.04, thick: 0.9, alpha: 0.85, speed: 0.8, pale: 1.1, deep: 1, bright: 1, preset: "aurora", mode: "central", ...LIGHT_PRESETS.aurora, ...FIELD_MODES.central },
+  publications: { slope: 0.05, thick: 1.1, alpha: 1, speed: 0.9, pale: 1.25, deep: 0.9, bright: 1.25, preset: "cobaltWave", mode: "diagonal", ...LIGHT_PRESETS.cobaltWave, ...FIELD_MODES.diagonal },
+  experience: { slope: -0.03, thick: 1, alpha: 1, speed: 1, pale: 1, deep: 1.1, bright: 1, preset: "iceHalo", mode: "diagonal", ...LIGHT_PRESETS.iceHalo, ...FIELD_MODES.diagonal }, // fix5: alpha 0.9→1.0. fix6: mode edgeGlass→diagonal — edgeGlass empties the middle by design and the fix5 desktop critic measured the content zone the darkest in the set (mean 13.6) with light only in a top strip; diagonal carries bands across the middle, as publications proves at desktop. Pair stays unique (iceHalo/diagonal).
+  projects: { slope: 0.06, thick: 1.15, alpha: 1.25, speed: 1.15, pale: 1, deep: 0.9, bright: 1.5, preset: "goldenHour", mode: "central", ...LIGHT_PRESETS.goldenHour, ...FIELD_MODES.central },
+  skills: { slope: 0, thick: 0.85, alpha: 0.8, speed: 0.9, pale: 1, deep: 1, bright: 1, preset: "aurora", mode: "edgeGlass", ...LIGHT_PRESETS.aurora, ...FIELD_MODES.edgeGlass },
+  contact: { slope: -0.05, thick: 0.9, alpha: 0.9, speed: 0.7, pale: 1.1, deep: 1, bright: 1, preset: "goldenHour", mode: "edgeGlass", ...LIGHT_PRESETS.goldenHour, ...FIELD_MODES.edgeGlass },
+  epilogue: { slope: -0.05, thick: 0.9, alpha: 0.8, speed: 0.7, pale: 1.1, deep: 1, bright: 1, preset: "iceHalo", mode: "central", ...LIGHT_PRESETS.iceHalo, ...FIELD_MODES.central }, // fix5: alpha 0.65→0.8 — same lights-off read as experience at desktop; still below contact's 0.9, inside the test margin.
 };
 
 export function getChapterProfile(name: string | null): ChapterProfile {
@@ -444,6 +649,8 @@ export function lerpChapterProfile(
   b: ChapterProfile,
   k: number,
 ): ChapterProfile {
+  const lerpTint = (channel: "r" | "g" | "b"): number =>
+    a.tint[channel] + (b.tint[channel] - a.tint[channel]) * k;
   return {
     slope: a.slope + (b.slope - a.slope) * k,
     thick: a.thick + (b.thick - a.thick) * k,
@@ -452,6 +659,24 @@ export function lerpChapterProfile(
     pale: a.pale + (b.pale - a.pale) * k,
     deep: a.deep + (b.deep - a.deep) * k,
     bright: a.bright + (b.bright - a.bright) * k,
+    // Names are labels: they follow the target only at the exact
+    // endpoint (k = 1), so lerp(a, b, 0) === a and lerp(a, b, 1) === b
+    // stay exact — the probe hook reports the target's names on
+    // chapter change, so the lerped names are never read live.
+    preset: k >= 1 ? b.preset : a.preset,
+    mode: k >= 1 ? b.mode : a.mode,
+    hue: a.hue + (b.hue - a.hue) * k,
+    tint: {
+      r: lerpTint("r"),
+      g: lerpTint("g"),
+      b: lerpTint("b"),
+    },
+    tintMix: a.tintMix + (b.tintMix - a.tintMix) * k,
+    centerPull: a.centerPull + (b.centerPull - a.centerPull) * k,
+    fan: a.fan + (b.fan - a.fan) * k,
+    spread: a.spread + (b.spread - a.spread) * k,
+    mirror: a.mirror + (b.mirror - a.mirror) * k,
+    bottomPull: a.bottomPull + (b.bottomPull - a.bottomPull) * k,
   };
 }
 
@@ -1039,11 +1264,47 @@ export function ribbonCenterY(
   H: number,
   scrubPhase = 0,
   driftScale = 1,
+  mode: FieldMode = { centerPull: 0, fan: 1, spread: 1, mirror: 0, bottomPull: 0 },
+  // Set ONLY for the profile's lowest band (the caller knows which
+  // band that is): the mirror folds that band across the center when
+  // the mode's transform still leaves it above it, so Halo/Edge Glass
+  // put light below the center too. Gated per-band — mirroring every
+  // band would flip the whole field to the bottom.
+  mirrorLow = false,
 ): number {
   const ph = r.drift * driftScale * Math.sin((ct * 6.2832) / r.dp);
+  // Field mode (RUN10-PRESETS): the mode gathers/spreads the band's
+  // base y0 and fans its slope — the chapter's geometry, lerped by the
+  // chapter crossfade. Defaults are the identity (old behavior).
+  let y0 = modeBandY0(r.y0, mode.centerPull, mode.spread);
+  if (mirrorLow && mode.mirror > 0 && y0 < 0.5) {
+    // Fold toward the mirror position, weighted by the lerped mirror
+    // weight: at weight 1 the band sits at 1 - y0, at weight 0 it
+    // stays put, and a crossfade sweeps it across the center instead
+    // of snapping. No-op when the band is already below center (the
+    // narrow profile's low band is there on its own).
+    y0 = y0 + (1 - 2 * y0) * mode.mirror;
+  }
+  if (mirrorLow && mode.bottomPull > 0 && mode.mirror > 0) {
+    // Edge-glass bottom pull (fix3): after the center mirror, pull
+    // the folded band toward the bottom anchor (0.85H) — the frame's
+    // bottom band must REST in the bottom third, and a center mirror
+    // leaves the narrow profile's low band (already below center at
+    // ~0.71H, so the mirror above never fires) sitting there with
+    // only its faint tail in the bottom third: two critics measured
+    // the DOM bottom third black while the canvas claimed light, and
+    // no alpha multiplier can fix where the light sits. bottomPull
+    // is a lerped number, so a halo→edgeGlass crossfade sweeps the
+    // band down smoothly instead of snapping its target at k = 1
+    // (a mode-name branch would snap — names follow "from" until
+    // the exact endpoint). Gated on mirror so modes without a fold
+    // never pull.
+    y0 = y0 + (0.85 - y0) * mode.bottomPull * mode.mirror;
+  }
+  const slope = r.slope * mode.fan;
   return (
-    r.y0 * H +
-    (r.slope + chapterSlope) * x +
+    y0 * H +
+    (slope + chapterSlope) * x +
     r.ga * Math.sin((ct * 6.2832) / r.gp + r.gph) +
     r.a1 * Math.sin((x + ph) * r.f1 + (ct * 6.2832) / r.p1 + scrubPhase) +
     r.a2 *
@@ -1060,6 +1321,17 @@ export function LightRibbons() {
   const pulseCoreSpriteRef = useRef<HTMLCanvasElement | null>(null);
   const bgRef = useRef<Rgb>({ r: 5, g: 7, b: 12 });
   const accentRef = useRef<Rgb>({ r: 125, g: 211, b: 252 });
+  const glowRef = useRef<Rgb>({ r: 186, g: 230, b: 253 });
+  // Preset sprites (RUN10-PRESETS): the chapter's preset tints the
+  // theme-derived role colors, so the sprites are rebuilt from the
+  // probed tokens + the current (lerped) preset whenever the quantized
+  // preset key changes — a few tiny 2x128 canvases per tween, never
+  // per frame. Null until the first draw builds them.
+  const presetSpritesRef = useRef<Record<RibbonRole, HTMLCanvasElement> | null>(
+    null,
+  );
+  const presetFlareRef = useRef<HTMLCanvasElement | null>(null);
+  const presetAccentRef = useRef<Rgb | null>(null);
   // Under reduced motion there is no loop to pick up rebuilt sprites, so
   // the canvas effect registers a static-frame repaint here that the
   // probe effect below calls after every theme/palette change.
@@ -1093,6 +1365,7 @@ export function LightRibbons() {
     const bg = probeTokenColor("--background") ?? { r: 5, g: 7, b: 12 };
     accentRef.current = accent;
     bgRef.current = bg;
+    glowRef.current = glow;
     const colors = resolveRibbonColors(accent, glow);
     spritesRef.current = {
       deep: makeSprite(colors.deep),
@@ -1207,6 +1480,12 @@ export function LightRibbons() {
     let scrubCur = 0;
     let scrubTarget = 0;
     let lastScrubProbe = "";
+    // Preset sprite key (RUN10-PRESETS): the quantized lerped preset
+    // (hue to 1°, tint channels, tintMix to 0.02) — the draw loop
+    // rebuilds the preset sprites only when this changes, so a 600ms
+    // chapter crossfade rebuilds a few tiny sprites instead of one
+    // per frame, and a settled chapter rebuilds none.
+    let lastPresetKey = "";
     // Scroll velocity (RUN7-EXP-SCROLL-VELOCITY): the transient
     // envelope in [0,1] — 0 at rest, surging toward 1 while the page
     // moves. Sampled per frame from scrollY; reduced motion never
@@ -1306,8 +1585,19 @@ export function LightRibbons() {
       chapterTarget = getChapterProfile(active);
       chapterTweenStart = now;
       // Probe hook for verification (and for any future chapter-aware
-      // chrome): the canvas always names its active chapter.
+      // chrome): the canvas always names its active chapter, preset,
+      // and field mode. Fix4 (RUN10-PRESETS): the preset ALSO reaches
+      // the DOM — `data-light-preset` on <html> lets the active
+      // chapter's own light surfaces (the contact wave, glow dots,
+      // light rules, submit glow) take the preset palette, because the
+      // canvas gold is occluded by the form panel at contact and never
+      // reads in the DOM frame (both critics, fix3). The canvas lerps
+      // its colors over the same 600ms; the DOM surfaces crossfade
+      // with it (CSS transitions / the wave's own tween).
       canvas.dataset.activeChapter = active;
+      canvas.dataset.preset = chapterTarget.preset;
+      canvas.dataset.fieldMode = chapterTarget.mode;
+      root.dataset.lightPreset = chapterTarget.preset;
       // Reduced motion has no tween: the static frame snaps to the
       // active chapter's profile immediately. `from` snaps too, so the
       // stepChapter lerp below (k = 0 on this frame) cannot pull the
@@ -1390,7 +1680,14 @@ export function LightRibbons() {
       return sx * vf;
     };
 
-    const centerY = (r: RibbonDef, x: number, ct: number): number =>
+    const centerY = (
+      r: RibbonDef,
+      x: number,
+      ct: number,
+      // Set ONLY for the profile's lowest band (the band loop knows
+      // which band that is) — see ribbonCenterY's mirrorLow.
+      mirrorLow = false,
+    ): number =>
       ribbonCenterY(
         r,
         x,
@@ -1399,6 +1696,16 @@ export function LightRibbons() {
         H,
         scrubCur,
         1 + velEnv * VELOCITY_DRIFT_BOOST,
+        // Field mode (RUN10-PRESETS): the chapter's geometry — the
+        // bands gather/spread/fan as the chapter crossfades.
+        {
+          centerPull: chapterCur.centerPull,
+          fan: chapterCur.fan,
+          spread: chapterCur.spread,
+          mirror: chapterCur.mirror,
+          bottomPull: chapterCur.bottomPull,
+        },
+        mirrorLow,
       );
 
     const thick = (r: RibbonDef, x: number, ct: number): number =>
@@ -1411,8 +1718,10 @@ export function LightRibbons() {
           ));
 
     const draw = (t: number) => {
-      const sprites = spritesRef.current;
-      if (!sprites) return;
+      // Base sprites are the guard: preset sprites build lazily from
+      // them in the preset block below, so the first frame has a set
+      // to fall back to.
+      if (!spritesRef.current) return;
       // Chapter clock: advance the ribbon phase at the current
       // chapter's speed, and crossfade toward the active chapter's
       // profile. dt is clamped so a hidden-tab gap never jumps the
@@ -1559,7 +1868,51 @@ export function LightRibbons() {
         }
       }
       const bg = bgRef.current;
-      const accent = accentRef.current;
+      // Preset palette (RUN10-PRESETS): the chapter's preset tints the
+      // probed role colors; the lerped hue/tintMix crossfade with the
+      // chapter tween, and the sprites rebuild only when the quantized
+      // key moves. The top glow, glyph stream, and reveal ring below
+      // all read this same `accent`, so the whole light layer shifts
+      // palette as one. The flare sprite is rebuilt with the same key
+      // (its block reads presetFlareRef with a base fallback).
+      let accent = accentRef.current;
+      const presetKey = [
+        Math.round(chapterCur.hue),
+        Math.round(chapterCur.tint.r),
+        Math.round(chapterCur.tint.g),
+        Math.round(chapterCur.tint.b),
+        chapterCur.tintMix.toFixed(2),
+      ].join("|");
+      if (presetKey !== lastPresetKey) {
+        lastPresetKey = presetKey;
+        const presetColors = applyLightPreset(
+          resolveRibbonColors(accentRef.current, glowRef.current),
+          {
+            hue: chapterCur.hue,
+            tint: chapterCur.tint,
+            tintMix: chapterCur.tintMix,
+          },
+        );
+        presetSpritesRef.current = {
+          deep: makeSprite(presetColors.deep),
+          bright: makeSprite(presetColors.bright),
+          pale: makeSprite(presetColors.pale),
+          accent: makeSprite(presetColors.accent),
+        };
+        presetFlareRef.current = makeFlareSprite(
+          presetColors.bright,
+          presetColors.accent,
+        );
+        presetAccentRef.current = presetColors.accent;
+        canvas.dataset.presetHue = String(Math.round(chapterCur.hue));
+      }
+      if (presetSpritesRef.current) {
+        accent = presetAccentRef.current ?? accent;
+      }
+      // The band loop reads the preset set (or the base set before the
+      // first rebuild) — sprites and accent update in the same frame.
+      const sprites = presetSpritesRef.current ?? spritesRef.current;
+      if (!sprites) return;
       // Composite off the PROBED background luminance, not the theme
       // setting: the FROST remap forces a dark page while the ribbons
       // animate even when the visitor chose light mode, and that page
@@ -1587,6 +1940,9 @@ export function LightRibbons() {
       // Narrow screens use the faster, wider-travel profile (+ low band);
       // desktop uses the boosted profile (in-iteration tuning, iter 2).
       const list = W < 700 ? NARROW_RIBBONS : DESKTOP_RIBBONS;
+      // The lowest band's base y0 — only that band ever mirrors (the
+      // Halo/Edge Glass fold, see ribbonCenterY's mirrorLow).
+      const lowestY0 = Math.max(...list.map((b) => b.y0));
       octx.clearRect(0, 0, off.width, off.height);
       octx.globalCompositeOperation = dark ? "lighter" : "source-over";
       const step = 1; // offscreen px (~2 css px) — dense slices, no striping
@@ -1614,6 +1970,32 @@ export function LightRibbons() {
               : r.role === "deep"
                 ? daylightCur.deep
                 : 1;
+        // Edge-glass edge boost (run-10 iter 35 fix2): the frame's
+        // bands live on the viewport's edges, and both edges are
+        // disadvantaged in the RENDERED frame — the top bands only
+        // show their gradient tails (centers above the viewport) and
+        // the folded lowest band sits behind the content, so the
+        // canvas probe overstates them (both critics, fix1: the
+        // bottom light measured 25–35 on the canvas but read black in
+        // the DOM frame). In edgeGlass mode only, the tail bands get
+        // 1.6x and the folded band 2.2x, so the frame reads at a
+        // glance. Fix3: the folded band is the lowest band whenever
+        // the mirror is on — in edgeGlass it always folds (center
+        // mirror above the center, bottom pull to the 0.85H anchor
+        // below it), so the y0t < 0.5 gate is gone. Halo's ring is
+        // already visible without a boost, so it stays unboosted
+        // (the hero's approved look).
+        let edgeBoost = 1;
+        if (chapterCur.mode === "edgeGlass") {
+          const y0t = modeBandY0(
+            r.y0,
+            chapterCur.centerPull,
+            chapterCur.spread,
+          );
+          if (y0t < 0) edgeBoost = 1.6;
+          else if (r.y0 === lowestY0 && chapterCur.mirror > 0)
+            edgeBoost = 2.2;
+        }
         const ba =
           r.alpha *
           alphaScale *
@@ -1621,10 +2003,11 @@ export function LightRibbons() {
           daylightCur.alpha *
           roleScale *
           daylightRoleScale *
+          edgeBoost *
           (1 + r.bd * Math.sin((tChapter * 6.2832) / r.bp + r.bph));
         for (let ox = 0; ox < off.width; ox += step) {
           const xCss = (ox + step / 2) / S;
-          const cCss = centerY(r, xCss, tChapter);
+          const cCss = centerY(r, xCss, tChapter, r.y0 === lowestY0);
           // Opening reveal (RUN7-EXP-REVEAL): each slice fades in
           // as the ring front passes it — the light blooms outward
           // from the hero center instead of snapping on. Identity
@@ -1848,7 +2231,10 @@ export function LightRibbons() {
       // the mobile FAIL drew. Under reduced motion the flare
       // is ABSENT — the static frame shows only the sheets.
       if (!reduced) {
-        const flareSprite = flareSpriteRef.current;
+        // Preset-tinted flare (RUN10-PRESETS) with the base sprite as
+        // the fallback before the first preset rebuild.
+        const flareSprite =
+          presetFlareRef.current ?? flareSpriteRef.current;
         const host = list.find((b) => b.role === "bright") ?? list[0];
         if (flareSprite && host) {
           const narrow = W < 700;
@@ -2019,7 +2405,9 @@ export function LightRibbons() {
       const spawned = clickPulseSpawn(pulses, {
         x0: e.clientX,
         y0: e.clientY,
-        slope: (host?.slope ?? 0.2) + chapterCur.slope,
+        // Field-mode fan (RUN10-PRESETS): the pulse rides the bright
+        // band's fanned slope, so it stays on the band in Diagonal.
+        slope: (host?.slope ?? 0.2) * chapterCur.fan + chapterCur.slope,
         startT: performance.now(),
         narrow,
       });
@@ -2086,6 +2474,9 @@ export function LightRibbons() {
       window.removeEventListener("pointerdown", onPointerDown);
       if (root.getAttribute("data-ascii") === "active") {
         root.removeAttribute("data-ascii");
+      }
+      if (root.dataset.lightPreset) {
+        delete root.dataset.lightPreset;
       }
       if (root.dataset.journey === "active") {
         delete root.dataset.journey;

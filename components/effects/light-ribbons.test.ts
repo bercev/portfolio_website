@@ -8,11 +8,13 @@ import {
   DAYLIGHT_IDENTITY,
   DAYLIGHT_PROFILES,
   DITHER_SEAM_HEIGHT,
+  FIELD_MODES,
   GLYPH_STREAM_FLOOR,
   GLYPH_STREAM_MIN_BAND_PX,
   GLYPH_STREAM_SIZE_PX,
   GLYPH_STREAM_SPACING_PX,
   GLYPH_STREAM_SPEED_PX_S,
+  LIGHT_PRESETS,
   REVEAL_DURATION_MS,
   REVEAL_FEATHER_PX,
   REVEAL_RING_THICKNESS_PX,
@@ -23,6 +25,7 @@ import {
   VELOCITY_DRIFT_BOOST,
   VELOCITY_FULL_SPEED,
   VELOCITY_SPEED_BOOST,
+  applyLightPreset,
   bootExpected,
   chaseValue,
   daylightSetForHour,
@@ -36,12 +39,14 @@ import {
   lerpChapterProfile,
   lerpDaylightProfile,
   measureScrollVelocity,
+  modeBandY0,
   resolveActiveChapter,
   revealAt,
   revealMaxRadius,
   revealRadiusProgress,
   revealRingAlpha,
   ribbonCenterY,
+  rotateHue,
   scrubPhaseOffset,
   scrollProgress,
   seamDrawY,
@@ -66,6 +71,10 @@ describe("light-ribbon chapters", () => {
   });
 
   it("keeps the hero profile as the identity (the approved reference look)", () => {
+    // RUN10-PRESETS: the hero keeps the frost identity PRESET (hue 0,
+    // tintMix 0 — its colors pass through untouched) and takes the Halo
+    // FIELD MODE (the item names "hero Halo"); the mode numbers are
+    // part of the identity now, so they are pinned here too.
     expect(CHAPTER_PROFILES.hero).toEqual({
       slope: 0,
       thick: 1,
@@ -74,6 +83,16 @@ describe("light-ribbon chapters", () => {
       pale: 1,
       deep: 1,
       bright: 1,
+      preset: "frost",
+      mode: "halo",
+      hue: 0,
+      tint: { r: 125, g: 211, b: 252 },
+      tintMix: 0,
+      centerPull: 0.45,
+      fan: 0.9,
+      spread: 0.75,
+      mirror: 1,
+      bottomPull: 0,
     });
   });
 
@@ -106,10 +125,14 @@ describe("light-ribbon chapters", () => {
     // at 390px even though its mean luma led every run — the eye ranks
     // chapters by peak local brightness, not the mean, and a plain alpha
     // lift only raises the mean. The bright role is the peak carrier,
-    // so projects lifts it 1.5x while every other chapter stays at 1.
+    // so projects lifts it 1.5x while every other chapter stays at 1 —
+    // except publications (fix4): its diagonal band read faint at
+    // desktop (+43% luminance vs before, but dim in absolute terms),
+    // so it lifts to 1.25, still below projects.
     expect(CHAPTER_PROFILES.projects.bright).toBe(1.5);
+    expect(CHAPTER_PROFILES.publications.bright).toBe(1.25);
     for (const [name, profile] of Object.entries(CHAPTER_PROFILES)) {
-      if (name === "projects") continue;
+      if (name === "projects" || name === "publications") continue;
       expect(profile.bright).toBe(1);
     }
     const mid = lerpChapterProfile(
@@ -183,6 +206,342 @@ describe("light-ribbon chapters", () => {
     expect(resolveActiveChapter(rects, 400, true)).toBe("epilogue");
     expect(resolveActiveChapter(rects, 400, false)).toBe("contact");
     expect(resolveActiveChapter(rects, 650, false)).toBe("epilogue");
+  });
+});
+
+describe("light presets (RUN10-PRESETS)", () => {
+  it("keeps every preset a modest tint inside the cyan family", () => {
+    for (const preset of Object.values(LIGHT_PRESETS)) {
+      expect(Math.abs(preset.hue)).toBeLessThanOrEqual(20);
+      expect(preset.tintMix).toBeGreaterThanOrEqual(0);
+      expect(preset.tintMix).toBeLessThanOrEqual(0.65);
+      for (const v of [preset.tint.r, preset.tint.g, preset.tint.b]) {
+        expect(v).toBeGreaterThanOrEqual(0);
+        expect(v).toBeLessThanOrEqual(255);
+      }
+    }
+    // Frost is the identity preset: hue 0, no tint.
+    expect(LIGHT_PRESETS.frost.hue).toBe(0);
+    expect(LIGHT_PRESETS.frost.tintMix).toBe(0);
+  });
+
+  it("gives the hero the frost preset + halo mode, contact the golden hour + edge glass", () => {
+    expect(CHAPTER_PROFILES.hero.preset).toBe("frost");
+    expect(CHAPTER_PROFILES.hero.mode).toBe("halo");
+    expect(CHAPTER_PROFILES.contact.preset).toBe("goldenHour");
+    // Fix3: contact takes edgeGlass (not halo) so its gold gets the
+    // top-tail boost and a bottom-anchored band — its halo ring sat
+    // mid-frame behind the panel, invisible, while the warmth never
+    // reached the mid/bottom of the frame.
+    expect(CHAPTER_PROFILES.contact.mode).toBe("edgeGlass");
+  });
+
+  it("keeps iceHalo legible at a glance (fix5)", () => {
+    // Takeover-3 reconciliation: the desktop critic + two phase
+    // samples read experience / epilogue as lights-off at desktop —
+    // the pale tint at 0.4 over the dim chapter profiles fell below
+    // the glance threshold (the same fix2 lesson as gold). The mix
+    // goes to 0.6 so the ice-white tint carries the identity, and the
+    // two ice chapters get more light; projects still leads every
+    // other chapter's alpha by at least 0.2, and epilogue stays
+    // below contact.
+    expect(LIGHT_PRESETS.iceHalo.tintMix).toBe(0.6);
+    expect(CHAPTER_PROFILES.experience.alpha).toBe(1);
+    expect(CHAPTER_PROFILES.epilogue.alpha).toBe(0.8);
+  });
+
+  it("carries experience's bands across the middle (fix6)", () => {
+    // Fix5's parameter bump moved experience only from "invisible" to
+    // "a visible edge strip" — the fix5 desktop critic measured the
+    // content zone the darkest in the set (mean 13.6) with light only
+    // in a top strip. That is edgeGlass doing its job: it pushes bands
+    // to the top/bottom edges so the middle reads as glass — but
+    // experience's viewport IS the middle (dense text column). Diagonal
+    // fans the slopes into bands across the middle, the shape
+    // publications already proves at desktop. Pair stays unique.
+    expect(CHAPTER_PROFILES.experience.mode).toBe("diagonal");
+    expect(CHAPTER_PROFILES.experience.preset).toBe("iceHalo");
+  });
+
+  it("gives every chapter a unique preset/mode pair", () => {
+    const pairs = Object.values(CHAPTER_PROFILES).map(
+      (p) => `${p.preset}/${p.mode}`,
+    );
+    expect(new Set(pairs).size).toBe(Object.keys(CHAPTER_PROFILES).length);
+  });
+
+  it("rotates hue around the wheel and leaves greys alone", () => {
+    const red = { r: 255, g: 0, b: 0 };
+    expect(rotateHue(red, 0)).toEqual(red);
+    expect(rotateHue(red, 360)).toEqual(red);
+    const green = rotateHue(red, 120);
+    expect(green.g).toBeGreaterThan(245);
+    expect(green.r).toBeLessThan(10);
+    expect(green.b).toBeLessThan(10);
+    const blue = { r: 0, g: 0, b: 255 };
+    const cyan = rotateHue(blue, -60);
+    expect(cyan.g).toBeGreaterThan(245);
+    expect(cyan.b).toBeGreaterThan(245);
+    expect(cyan.r).toBeLessThan(10);
+    expect(rotateHue({ r: 128, g: 128, b: 128 }, 90)).toEqual({
+      r: 128,
+      g: 128,
+      b: 128,
+    });
+  });
+
+  it("applies a preset as hue rotation + tint mix, identity at frost", () => {
+    const colors = {
+      deep: { r: 69, g: 116, b: 139 },
+      bright: { r: 163, g: 222, b: 253 },
+      pale: { r: 186, g: 230, b: 253 },
+      accent: { r: 125, g: 211, b: 252 },
+    };
+    expect(applyLightPreset(colors, LIGHT_PRESETS.frost)).toEqual(colors);
+    const tinted = applyLightPreset(colors, {
+      hue: 0,
+      tint: { r: 10, g: 20, b: 30 },
+      tintMix: 1,
+    });
+    for (const role of ["deep", "bright", "pale", "accent"] as const) {
+      expect(tinted[role]).toEqual({ r: 10, g: 20, b: 30 });
+    }
+    // Golden hour warms the accent: red up, blue down, still cyan.
+    // Fix2: at a 0.45 mix the base cyan's green still led and the
+    // chapter read olive, not golden — at 0.6 toward the redder gold
+    // tint, red leads green leads blue: actual gold.
+    const golden = applyLightPreset(colors, LIGHT_PRESETS.goldenHour);
+    expect(golden.accent.r).toBeGreaterThan(colors.accent.r);
+    expect(golden.accent.b).toBeLessThan(colors.accent.b);
+    expect(golden.accent.r).toBeGreaterThan(golden.accent.g);
+    expect(golden.accent.g).toBeGreaterThan(golden.accent.b);
+    // Aurora vs iceHalo must read as different chapters: aurora is
+    // near-balanced teal-green (blue barely leads green), iceHalo is
+    // clearly blue-led. The gap between their blue-green leads is
+    // the distinction.
+    const aurora = applyLightPreset(colors, LIGHT_PRESETS.aurora);
+    const ice = applyLightPreset(colors, LIGHT_PRESETS.iceHalo);
+    expect(ice.accent.b - ice.accent.g).toBeGreaterThan(
+      aurora.accent.b - aurora.accent.g + 15,
+    );
+  });
+
+  it("moves band y0 toward the center, away from it, or not at all", () => {
+    expect(modeBandY0(0.1, 0, 1)).toBeCloseTo(0.1);
+    expect(modeBandY0(0.1, 1, 1)).toBeCloseTo(0.5);
+    expect(modeBandY0(0.9, 1, 1)).toBeCloseTo(0.5);
+    // Pushed to the edges: 0.1 goes below the viewport top (clamped),
+    // 0.9 goes past the bottom (clamped).
+    expect(modeBandY0(0.1, -1, 1)).toBe(-0.15);
+    expect(modeBandY0(0.9, -1, 1)).toBe(1.15);
+    // No spread collapses every band onto the center.
+    expect(modeBandY0(0.1, 0, 0)).toBeCloseTo(0.5);
+    expect(modeBandY0(0.9, 0, 0)).toBeCloseTo(0.5);
+  });
+
+  it("lerps the preset + mode numbers through the chapter crossfade", () => {
+    const mid = lerpChapterProfile(
+      CHAPTER_PROFILES.hero,
+      CHAPTER_PROFILES.publications,
+      0.5,
+    );
+    expect(mid.hue).toBeCloseTo(
+      (CHAPTER_PROFILES.hero.hue + CHAPTER_PROFILES.publications.hue) / 2,
+    );
+    expect(mid.tintMix).toBeCloseTo(
+      (CHAPTER_PROFILES.hero.tintMix +
+        CHAPTER_PROFILES.publications.tintMix) /
+        2,
+    );
+    expect(mid.tint.r).toBeCloseTo(
+      (CHAPTER_PROFILES.hero.tint.r +
+        CHAPTER_PROFILES.publications.tint.r) /
+        2,
+    );
+    expect(mid.centerPull).toBeCloseTo(
+      (CHAPTER_PROFILES.hero.centerPull +
+        CHAPTER_PROFILES.publications.centerPull) /
+        2,
+    );
+    expect(mid.fan).toBeCloseTo(
+      (CHAPTER_PROFILES.hero.fan + CHAPTER_PROFILES.publications.fan) / 2,
+    );
+    expect(mid.spread).toBeCloseTo(
+      (CHAPTER_PROFILES.hero.spread +
+        CHAPTER_PROFILES.publications.spread) /
+        2,
+    );
+    expect(mid.mirror).toBeCloseTo(
+      (CHAPTER_PROFILES.hero.mirror +
+        CHAPTER_PROFILES.publications.mirror) /
+        2,
+    );
+    // Names follow the "from" chapter until the exact endpoint —
+    // the lerp endpoint invariant (k=0 → a, k=1 → b) stays exact.
+    expect(mid.preset).toBe(CHAPTER_PROFILES.hero.preset);
+    expect(mid.mode).toBe(CHAPTER_PROFILES.hero.mode);
+    expect(
+      lerpChapterProfile(CHAPTER_PROFILES.hero, CHAPTER_PROFILES.contact, 0),
+    ).toEqual(CHAPTER_PROFILES.hero);
+    expect(
+      lerpChapterProfile(CHAPTER_PROFILES.hero, CHAPTER_PROFILES.contact, 1),
+    ).toEqual(CHAPTER_PROFILES.contact);
+  });
+
+  it("keeps the identity mode equal to the old centerline, and gathers/fans with a mode", () => {
+    const band = {
+      y0: -0.04,
+      slope: 0.14,
+      th: 205,
+      alpha: 0.48,
+      role: "deep" as const,
+      a1: 50,
+      f1: 0.0042,
+      p1: 6050,
+      a2: 25,
+      f2: 0.0095,
+      p2: 7425,
+      drift: 105,
+      dp: 7150,
+      ga: 31,
+      gp: 7350,
+      gph: 0.0,
+      bd: 0.22,
+      bp: 5670,
+      bph: 0.0,
+    };
+    const identity = { centerPull: 0, fan: 1, spread: 1, mirror: 0, bottomPull: 0 };
+    expect(
+      ribbonCenterY(band, 720, 3500, 0.05, 800, 0, 1, identity),
+    ).toBeCloseTo(ribbonCenterY(band, 720, 3500, 0.05, 800, 0, 1), 9);
+    // Halo gathers the off-screen-top band down into the viewport.
+    const halo = ribbonCenterY(
+      band,
+      0,
+      1000,
+      0,
+      800,
+      0,
+      1,
+      FIELD_MODES.halo,
+    );
+    const plain = ribbonCenterY(band, 0, 1000, 0, 800, 0, 1, identity);
+    expect(halo - plain).toBeGreaterThan(100);
+    // Diagonal fans the slope: at x=720 the centerline sits a full
+    // slope-step lower than the identity mode (wobble terms cancel —
+    // same ct and x in both calls).
+    const diagonal = ribbonCenterY(
+      band,
+      720,
+      3500,
+      0,
+      800,
+      0,
+      1,
+      FIELD_MODES.diagonal,
+    );
+    const base = ribbonCenterY(band, 720, 3500, 0, 800, 0, 1, identity);
+    expect(diagonal - base).toBeGreaterThan(50);
+  });
+
+  it("folds the lowest band to the bottom anchor in edge-glass modes", () => {
+    // The lowest desktop band (accent, y0 0.36) — values verbatim
+    // from DESKTOP_RIBBONS[3].
+    const lowBand = {
+      y0: 0.36,
+      slope: 0.28,
+      th: 225,
+      alpha: 0.3,
+      role: "accent" as const,
+      a1: 65,
+      f1: 0.0031,
+      p1: 7700,
+      a2: 33,
+      f2: 0.007,
+      p2: 5940,
+      drift: 120,
+      dp: 6875,
+      ga: 39,
+      gp: 9450,
+      gph: 1.2,
+      bd: 0.23,
+      bp: 5460,
+      bph: 5.1,
+    };
+    const edge = FIELD_MODES.edgeGlass;
+    // Fix3: edge-glass folds in two steps — center mirror, then the
+    // bottom pull to the 0.85H anchor. Without the mirror the band
+    // sits above the center (0.25 * 800); with it, it rests at
+    // 0.85 * 800 — the wobble terms cancel in the difference, so the
+    // fold is exactly 0.6 * 800.
+    const plain = ribbonCenterY(lowBand, 0, 1000, 0, 800, 0, 1, edge, false);
+    const folded = ribbonCenterY(lowBand, 0, 1000, 0, 800, 0, 1, edge, true);
+    expect(plain).toBeLessThan(400);
+    expect(folded).toBeGreaterThan(600);
+    // The fold: (0.85 - y0t) * H, with y0t the edge-glass transform
+    // of 0.36 — the wobble terms cancel in the difference, so it is
+    // ~480px, not a rounding error.
+    const fold = folded - plain;
+    expect(fold).toBeGreaterThan(430);
+    expect(fold).toBeLessThan(530);
+    // A half mirror weight sweeps the band partway down — the
+    // two-step fold is not linear in the weight (center mirror, then
+    // bottom pull), but it must be strictly between plain and folded,
+    // never a snap.
+    const half = ribbonCenterY(
+      lowBand,
+      0,
+      1000,
+      0,
+      800,
+      0,
+      1,
+      { ...edge, mirror: 0.5 },
+      true,
+    );
+    expect(half).toBeGreaterThan(plain + 300);
+    expect(half).toBeLessThan(folded);
+    // The narrow profile's low band (y0 0.62) now folds too — fix3:
+    // it sits at ~0.71H on its own, below the center, so the old
+    // center mirror never fired and the bottom third had no band at
+    // all. The bottom pull moves it to the 0.85H anchor (~109px).
+    const narrowLow = { ...lowBand, y0: 0.62 };
+    const nPlain = ribbonCenterY(
+      narrowLow,
+      0,
+      1000,
+      0,
+      800,
+      0,
+      1,
+      edge,
+      false,
+    );
+    const nFolded = ribbonCenterY(
+      narrowLow,
+      0,
+      1000,
+      0,
+      800,
+      0,
+      1,
+      edge,
+      true,
+    );
+    expect(nPlain).toBeGreaterThan(400);
+    expect(nFolded).toBeGreaterThan(nPlain);
+    expect(nFolded - nPlain).toBeGreaterThan(80);
+    expect(nFolded - nPlain).toBeLessThan(140);
+    // Halo keeps the center mirror (no bottom pull): the same band
+    // folds to 1 - y0t ≈ 0.56H — the ring around the name, not the
+    // bottom anchor. (Absolute positions carry the ±65px wobble at
+    // this x/t, so the bound is wide; the edge-glass comparison
+    // below it is the sharp one.)
+    const halo = FIELD_MODES.halo;
+    const hFolded = ribbonCenterY(lowBand, 0, 1000, 0, 800, 0, 1, halo, true);
+    expect(hFolded).toBeGreaterThan(400);
+    expect(hFolded).toBeLessThan(560);
+    expect(hFolded).toBeLessThan(folded);
   });
 });
 

@@ -5827,6 +5827,34 @@ html[data-journey="active"] [data-hero-name-fallback] {
   box-shadow: 0 0 10px 1px
     color-mix(in srgb, var(--portfolio-accent) 75%, transparent);
 }
+/* Preset reaches the DOM (run-10 RUN10-PRESETS fix4): under the
+   goldenHour preset the contact chapter's own light surfaces take
+   the preset's gold. The canvas gold is occluded by the form panel
+   at contact (both critics, fix3 — the canvas probe claims gold the
+   DOM frame never shows), so the chapter's palette has to live on
+   the surfaces the eye actually sees. One token override, scoped to
+   #contact only, recolors the glow dots, flow numbers, light rules,
+   labels, submit wash/glow and the Elsewhere directory together;
+   the wave canvas follows the same token through its own element
+   (contact-light-flow.tsx). Gold is the preset tint #ffaa50; the
+   neon gold keeps the glows bright. The dots crossfade with the
+   ribbon's 600ms tween (no-preference only — reduced motion snaps,
+   like the ribbon's static frame). */
+html[data-light-preset="goldenHour"] #contact {
+  --portfolio-accent: #ffaa50;
+  --accent-neon: #ffbe6e;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .journey-contact-flow-head-num::before,
+  .journey-contact-form-flownum::before,
+  .journey-elsewhere-flow-head-num::before,
+  .journey-elsewhere-flow-footer::before {
+    transition: background-color 0.6s ease, box-shadow 0.6s ease;
+  }
+  .journey-contact-form-flownum {
+    transition: transform 0.22s ease-out, color 0.6s ease;
+  }
+}
 @media (max-width: 700px) {
   .journey-contact-flow-head {
     font-size: 0.68rem;
