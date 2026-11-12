@@ -21,6 +21,15 @@ import {
   clickPulseTail,
   type ClickPulse,
 } from "@/lib/click-pulse";
+import {
+  CHAPTER_RIPPLE_RING_COUNT,
+  chapterRippleActive,
+  chapterRippleEnergyAt,
+  chapterRippleFlash,
+  chapterRippleRing,
+  chapterRippleSpawn,
+  type ChapterRipple,
+} from "@/lib/chapter-ripple";
 
 /**
  * LightRibbons — run 7: the user-approved Waylume-style animated light
@@ -1500,6 +1509,15 @@ export function LightRibbons() {
     const pulses: ClickPulse[] = [];
     let lastPulseProbe = "";
 
+    // Chapter ripple (run-10 iter 37, RUN10-RIPPLE): expanding
+    // light rings spawned on a chapter change (viewport center —
+    // the boundary band where resolveActiveChapter measures) and on
+    // pointerdown (at the click point), drawn in draw() after the
+    // click pulse. Same spawn clock rules as the pulse (see the
+    // lib); reduced motion never spawns one.
+    const ripples: ChapterRipple[] = [];
+    let lastRippleProbe = "";
+
     // Daylight (RUN7-EXP-DAYLIGHT): the time-of-day set currently
     // rendered, chased toward the set for the visitor's local hour.
     // Starts at identity so the mount crossfades in gradually; the
@@ -1584,6 +1602,22 @@ export function LightRibbons() {
       chapterFrom = { ...chapterCur };
       chapterTarget = getChapterProfile(active);
       chapterTweenStart = now;
+      // Chapter ripple (run-10 iter 37, RUN10-RIPPLE): the chapter
+      // handover sends an expanding light wave across the boundary
+      // band — born at the viewport center, the line
+      // resolveActiveChapter measures on. Full-motion only: under
+      // reduced motion the static frame is untouched (no listener,
+      // no spawn, no draw).
+      if (!reduced) {
+        const spawnedRipples = chapterRippleSpawn(ripples, {
+          x0: W / 2,
+          y0: H / 2,
+          startT: now,
+          narrow: W < 700,
+        });
+        ripples.length = 0;
+        ripples.push(...spawnedRipples);
+      }
       // Probe hook for verification (and for any future chapter-aware
       // chrome): the canvas always names its active chapter, preset,
       // and field mode. Fix4 (RUN10-PRESETS): the preset ALSO reaches
@@ -2371,6 +2405,88 @@ export function LightRibbons() {
             canvas.dataset.clickPulse = pulseProbe;
           }
         }
+        // Chapter ripple (run-10 iter 37, RUN10-RIPPLE): the
+        // expanding rings a chapter change or a click sent across
+        // the boundary band. Drawn AFTER the click pulse so the
+        // rings sit on top of the traveling head, sharp on the main
+        // canvas (never through the blur pass), additive in dark
+        // mode — the same treatment as the flare and the pulse.
+        // Each ring is two strokes: a wide faint accent glow under
+        // a narrow bright core (accent mixed toward white, the
+        // flare sprite's own recipe). Energy is floored at the
+        // spawn point (same lesson as the pulse): the rings must
+        // read on their own in dark gaps. Expired ripples are
+        // pruned here so the probe below reads the live set.
+        // Under reduced motion there is no listener and no ripple
+        // — the static frame is untouched.
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          if (!chapterRippleActive(t - ripples[i].startT)) {
+            ripples.splice(i, 1);
+          }
+        }
+        if (ripples.length > 0) {
+          ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
+          for (const r of ripples) {
+            const age = t - r.startT;
+            const e = chapterRippleEnergyAt(energy(r.x0, r.y0));
+            const flash = chapterRippleFlash(r, age);
+            if (flash.alpha >= 0.004) {
+              const sprite = flareSpriteRef.current;
+              if (sprite) {
+                const fa =
+                  flash.alpha * e * revealFactorAt(r.x0, r.y0);
+                if (fa >= 0.004) {
+                  const d = flash.radius * 2;
+                  ctx.globalAlpha = Math.min(1, fa);
+                  ctx.drawImage(sprite, r.x0 - d / 2, r.y0 - d / 2, d, d);
+                }
+              }
+            }
+            for (let k = 0; k < CHAPTER_RIPPLE_RING_COUNT; k++) {
+              const ring = chapterRippleRing(r, age, k);
+              if (ring.alpha < 0.004) continue;
+              const ra =
+                ring.alpha * e * revealFactorAt(r.x0, r.y0);
+              if (ra < 0.004) continue;
+              ctx.beginPath();
+              ctx.arc(r.x0, r.y0, ring.r, 0, Math.PI * 2);
+              ctx.globalAlpha = Math.min(1, ra * 0.35);
+              ctx.strokeStyle = rgba(accent, 1);
+              ctx.lineWidth = ring.widthGlow;
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(r.x0, r.y0, ring.r, 0, Math.PI * 2);
+              ctx.globalAlpha = Math.min(1, ra);
+              ctx.strokeStyle = rgba(mix(accent, WHITE, 0.55), 1);
+              ctx.lineWidth = ring.widthCore;
+              ctx.stroke();
+            }
+          }
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = "source-over";
+        }
+        // Probe hook for verification: the newest active ripple
+        // as "n:x,y,r0,r1,r2" (n = active count, radii rounded,
+        // unborn rings 0), "0" when none.
+        const newestRipple = ripples[ripples.length - 1];
+        const rippleProbe = newestRipple
+          ? (() => {
+              const age = t - newestRipple.startT;
+              const radii = [];
+              for (let k = 0; k < CHAPTER_RIPPLE_RING_COUNT; k++) {
+                radii.push(
+                  Math.round(chapterRippleRing(newestRipple, age, k).r),
+                );
+              }
+              return `${ripples.length}:${Math.round(
+                newestRipple.x0,
+              )},${Math.round(newestRipple.y0)},${radii.join(",")}`;
+            })()
+          : "0";
+        if (rippleProbe !== lastRippleProbe) {
+          lastRippleProbe = rippleProbe;
+          canvas.dataset.chapterRipple = rippleProbe;
+        }
       }
     };
 
@@ -2413,6 +2529,18 @@ export function LightRibbons() {
       });
       pulses.length = 0;
       pulses.push(...spawned);
+      // Chapter ripple (run-10 iter 37, RUN10-RIPPLE): the same
+      // click also sends expanding rings from the click point — a
+      // different shape from the traveling pulse (radial wave vs
+      // comet), so the two read as one reaction, not two effects.
+      const spawnedRipples = chapterRippleSpawn(ripples, {
+        x0: e.clientX,
+        y0: e.clientY,
+        startT: performance.now(),
+        narrow,
+      });
+      ripples.length = 0;
+      ripples.push(...spawnedRipples);
     };
 
     let resizeTimer = 0;
