@@ -1888,8 +1888,7 @@ html[data-journey] [data-effect-layer="background"] {
 /* Light rule (run-10 RUN10-PUBLICATIONS): a single beam of light, not
    the double masthead rule — shared by the publications list and the
    paper pages. */
-.journey-pub-light-rule {
-  grid-column: 1 / -1;
+.journey-pub-light-rule {  grid-column: 1 / -1;
   height: 1px;
   margin: 0 0 clamp(18px, 2.4vw, 28px);
   border: 0;
@@ -1898,6 +1897,73 @@ html[data-journey] [data-effect-layer="background"] {
     color-mix(in srgb, var(--accent-neon) 70%, transparent),
     color-mix(in srgb, var(--accent-neon) 12%, transparent)
   );
+}
+
+/* RUN10-SWEEP: the diagonal light sweep across a hovered/focused
+   publication row — the Revolut sweep morph (60fps shot #2114) + React
+   Bits Glare Hover, in the row's own light language. The span clips the
+   band to the row (the row itself must keep overflow visible for the
+   hover-preview popup); the band is parked fully off the left edge at
+   rest (-320px covers its 140px width plus the skew's horizontal shift
+   on a ~900px row) and ends 240px past the right edge for the same
+   reason. One 650ms pass per hover/focus entry, then it dissolves and
+   the row returns to its resting state. The transit is LINEAR on
+   purpose: the site ease-out (cubic-bezier(0.16, 1, 0.3, 1)) is so
+   front-loaded it puts the band at ~82% travel by 25% of the duration,
+   so over a 1072px row it crossed the figure in ~150ms and never read
+   as a shaft (desktop critic, iter 26). Linear keeps the band
+   trackable across the whole row; the hold-then-fade still comes from
+   the keyframes, and wall-clock progress matches lib/publication-sweep.ts
+   exactly. Geometry lives in lib/publication-sweep.ts — keep the
+   numbers in sync. */
+.journey-pub-row-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.journey-pub-row-sweep-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -320px;
+  width: 140px;
+  opacity: 0;
+  transform: skewX(-12deg);
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent-neon) 32%, transparent) 50%,
+    transparent 100%
+  );
+}
+
+.journey-pub-row:hover .journey-pub-row-sweep-band,
+.journey-pub-row:focus-within .journey-pub-row-sweep-band {
+  animation: journey-pub-sweep 650ms linear;
+}
+
+@keyframes journey-pub-sweep {
+  0% {
+    left: -320px;
+    opacity: 0.95;
+  }
+  70% {
+    opacity: 0.95;
+  }
+  100% {
+    left: calc(100% + 240px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-pub-row:hover .journey-pub-row-sweep-band,
+  .journey-pub-row:focus-within .journey-pub-row-sweep-band {
+    animation: none;
+  }
 }
 
 .journey-pub-figure {

@@ -115,6 +115,19 @@ function PublicationRow({
           test requires the row itself to keep border-top 0, a
           transparent background, and no box-shadow. */}
       <div className="journey-pub-light-rule" aria-hidden="true" />
+      {/* RUN10-SWEEP: a diagonal band of light passes over the row on
+          hover/focus, then dissolves — the Revolut sweep morph (60fps
+          shot #2114) in the row's own light language. The span clips
+          the band to the row; it never intercepts the pointer and sits
+          below the hover-preview popup (z-index 1 vs nav+8). Reduced
+          motion: no band (CSS media query). */}
+      <span className="journey-pub-row-sweep" data-pub-sweep aria-hidden="true">
+        <span
+          className="journey-pub-row-sweep-band"
+          data-pub-sweep-band
+          aria-hidden="true"
+        />
+      </span>
       <figure className="journey-pub-figure">
         <a href={publication.href} className="journey-pub-figure-link">
           {/* eslint-disable-next-line @next/next/no-img-element -- local paper preview, same as HoverPreview's img */}
