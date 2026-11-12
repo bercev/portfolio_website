@@ -157,10 +157,21 @@ void main() {
   if (content > 0.0 && decoding > 0.0) index = randomGlyph;
 
   float mask = texture(uGlyphs, vec2((index + local.x) / uGlyphCount, local.y)).a;
-  float glyphAlpha = mask * max(content * (1.0 - decoding * 0.35), ring * 0.75);
 
   float spread = length((pixel - uSize * 0.5) / (uSize * 0.5)) * 0.7071;
   vec3 tint = mix(mix(uColors[0], uColors[1], smoothstep(0.0, 0.5, spread)), uColors[2], smoothstep(0.5, 1.0, spread));
+  float glyphAlpha = mask * max(content * (1.0 - decoding * 0.35), ring * 0.75);
+  // RUN10-LIGHT-BERAT: at the 5px cell size the glyph atlas minifies to a
+  // fractional average coverage, so a dark tint composites mostly as the
+  // page background (premultiplied wash) and the wordmark reads as faint
+  // dotted outlines on light pages — the round-4/round-5 palette swaps
+  // proved the color is not the lever (cores moved only 139→125). Lift
+  // partial coverage toward solid, gated on a dark tint so bright tints
+  // (dark mode) keep their exact alpha: empty stays empty, mid coverage
+  // reads as a letter, full stays full.
+  float tintLuma = dot(tint, vec3(0.3, 0.6, 0.1));
+  float darkTint = 1.0 - smoothstep(0.15, 0.5, tintLuma);
+  glyphAlpha = mix(glyphAlpha, smoothstep(0.0, 0.5, glyphAlpha), darkTint);
   float blockAlpha = base.a * uBlocks * (1.0 - uIntro);
   vec3 under = base.rgb * blockAlpha;
   vec3 color = mix(under, abs(tint - under), glyphAlpha);
@@ -173,6 +184,12 @@ void main() {
   if (uLight > 0.5) color = vec3(alpha) - color;
   fragColor = vec4(color, alpha);
 }`;
+
+// Exported so the suite can pin the shader's legibility mechanism
+// (RUN10-LIGHT-BERAT): the dark-tint-gated glyph-alpha lift must survive
+// future edits to this string — the visual proof is the RM-light frames,
+// the test is the tripwire.
+export const ASCII_TEXT_FRAGMENT_SHADER = FRAGMENT;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 

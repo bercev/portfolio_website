@@ -61,6 +61,10 @@ export function Hero({ content }: { content: HeroContent }) {
   // readable, faint blue identity kept. A real fix needs a shader-level
   // glyph-alpha change in the shared ASCIIText component — out of
   // run-7's background-only scope; filed as RUN7-LIGHT-BERAT-SOFT.
+  // RUN10-LIGHT-BERAT (run-10 iter 50): that shader fix LANDED — the
+  // fragment shader now lifts partial glyph coverage toward solid,
+  // gated on a dark tint (bright tints keep their exact alpha, so dark
+  // mode is unchanged). The navy set stays; the alpha is the lever.
   const lightBerat = isLight && reduceMotion;
   // Run 9 (RUN9-HERO-TRANSFORM): in motion mode the wordmark is a live
   // particle sculpture (GATHER technique) instead of the ASCII glyph field
