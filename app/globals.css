@@ -1702,6 +1702,101 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--muted-foreground);
 }
 
+/* Archive strip (run-10 RUN10-ARCHIVE): one quiet light line of previous
+   versions, centered under the colophon. The light rule above it fades
+   at both ends (a centered strip, unlike the left-fading head rule);
+   the label carries the family glow dot, and the entries are separated
+   by glow dots — no borders, no plates. Names read in the foreground
+   color, statuses stay muted. */
+.journey-epilogue-archive {
+  margin: 0 0 1.5rem;
+  padding-top: 1rem;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--portfolio-accent) 45%, transparent) 25%,
+    color-mix(in srgb, var(--portfolio-accent) 45%, transparent) 75%,
+    transparent
+  );
+  background-size: 100% 1px;
+  background-position: top;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.journey-epilogue-archive-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* Muted, so the label reads as a label — the entry names stay
+     foreground (run-10 iter 34 fix: the label merged with the first
+     item at identical weight/size/color). */
+  color: var(--muted-foreground);
+}
+
+.journey-epilogue-archive-label::before {
+  content: "";
+  /* One dot system in the strip: 5px everywhere (run-10 iter 34 fix —
+     the 7px label dot read as a different element from the 5px entry
+     dots). */
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
+}
+
+.journey-epilogue-archive-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--foreground);
+}
+
+/* Every entry carries its own leading dot (run-10 iter 34 fix): the
+   separator-only dot left the first entry dotless, so the label merged
+   with it on desktop and the strip read as a bulleted list missing its
+   first bullet on mobile. */
+.journey-epilogue-archive-item::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
+}
+
+.journey-epilogue-archive-status {
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 700px) {
+  .journey-epilogue-archive {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    /* A left-aligned column, centered as a block (run-10 iter 34 fix):
+       centered wrapped lines left the entry dots at ragged left edges,
+       reading as a misaligned bullet column. As a column the dots form
+       one straight vertical line. */
+    flex-direction: column;
+    align-items: flex-start;
+    width: max-content;
+    margin-inline: auto;
+  }
+}
+
 .journey-epilogue-loop {
   display: inline-block;
   padding: 0.7rem 1.1rem;

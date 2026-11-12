@@ -20,6 +20,14 @@
  * is deliberately not carried over. Reduced motion: everything renders
  * settled from the first frame (native hook — motion's useReducedMotion()
  * is unreliable in this app, run-9 iter 1).
+ *
+ * Archive strip (run-10 RUN10-ARCHIVE, Brittany Chiang move from the
+ * CS-portfolio note): one quiet light line of previous versions —
+ * earlier site → current site → this direction. Lineage only, no dates,
+ * no links: no archived edition URL was ever verified, so none is
+ * claimed or linked (same discipline as the run-5 mockup lineage
+ * strips). It pops with the cluster at delay index 2; the loop-back
+ * follows at index 3.
  */
 "use client";
 
@@ -40,6 +48,15 @@ export const EPILOGUE_POP_SPRING = {
   stiffness: 300,
   damping: 16,
 } as const;
+
+/** The lineage strip (run-10 RUN10-ARCHIVE): earlier site → current
+ * site → this direction. Names + statuses only — no dates, no links,
+ * no invented versions; pinned by test. */
+export const EPILOGUE_ARCHIVE = [
+  { name: "Earlier site", status: "Superseded" },
+  { name: "Current site", status: "Live" },
+  { name: "Light and flow", status: "This edition" },
+] as const;
 
 /** Reel-4 rule 1: entrances ease out. */
 const SITE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -126,6 +143,40 @@ export function JourneyEpilogue() {
           Set in Bricolage Grotesque + JetBrains Mono · Made by Berat ·
           Built with Next.js
         </motion.p>
+        <motion.div
+          data-epilogue-archive
+          role="group"
+          aria-label="Previous versions"
+          className="journey-epilogue-archive"
+          initial={{ opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 0.6 }}
+          animate={
+            popped || reduceMotion
+              ? { opacity: 1, scale: 1 }
+              : { opacity: 0, scale: 0.6 }
+          }
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(2) }
+          }
+        >
+          <span className="journey-epilogue-archive-label">
+            Previous versions
+          </span>
+          {EPILOGUE_ARCHIVE.map((entry) => (
+            <span
+              key={entry.name}
+              data-epilogue-archive-item
+              className="journey-epilogue-archive-item"
+            >
+              <span>{entry.name}</span>
+              <span aria-hidden="true">·</span>
+              <span className="journey-epilogue-archive-status">
+                {entry.status}
+              </span>
+            </span>
+          ))}
+        </motion.div>
         <motion.a
           href="#home"
           className="journey-epilogue-loop"
@@ -138,7 +189,7 @@ export function JourneyEpilogue() {
           transition={
             reduceMotion
               ? { duration: 0 }
-              : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(2) }
+              : { ...EPILOGUE_POP_SPRING, delay: epiloguePopDelay(3) }
           }
         >
           Back to the top ↑
