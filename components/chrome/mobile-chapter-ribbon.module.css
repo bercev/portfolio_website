@@ -53,6 +53,47 @@
   );
 }
 
+/* RUN10-PULSE: the ribbon dot is the rail's mobile active-chapter
+ * marker, so it carries the same coachmark ring as the rail chip and
+ * the hero CTA. The dot is a 9px glyph, so the ring is an 11px circle
+ * centered on it that expands 1.6× → 2.2× (see lib/hero-pulse.ts).
+ * The mark's drop-shadow filter also glows the ring — same light. */
+.mark::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  border: 1px solid
+    color-mix(in srgb, var(--ribbon-accent) 60%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: ribbon-mark-pulse-ring 2.8s infinite;
+}
+
+@keyframes ribbon-mark-pulse-ring {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  7.14% {
+    opacity: 0.55;
+    transform: scale(1.6);
+    animation-timing-function: linear;
+  }
+  35% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
 .name {
   display: block;
   padding: 0.375rem max(1.25rem, env(safe-area-inset-left)) 0.5rem 1.75rem;
@@ -76,5 +117,12 @@
 @media (max-width: 899px) {
   .ribbon {
     display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* RUN10-PULSE: no ring under reduced motion. */
+  .mark::after {
+    display: none;
   }
 }

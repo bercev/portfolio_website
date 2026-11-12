@@ -5057,6 +5057,76 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 }
 
+/* RUN10-PULSE: the coachmark ring around the hero CTA pill — a soft
+ * expanding border ring in FROST cyan (60fps Revolut RevPoints
+ * coachmark pulse). One 2.8s cycle: the ring snaps out in the reel-4
+ * 200ms ease-out (7.14% of the cycle), fades over the next 780ms
+ * (to 35%), then rests invisible until the next cycle. The per-keyframe
+ * timing functions are the model: easeOutCubic for the expansion,
+ * linear for the fade — see lib/hero-pulse.ts, which a WAAPI freeze
+ * at any currentTime must match. The ring sits at inset -4px so it
+ * starts just outside the pill's own border; pointer-events none so
+ * it can never intercept the click. */
+.hero-cta-pulse {
+  position: absolute;
+  inset: -4px;
+  z-index: 0;
+  border: 2px solid color-mix(in srgb, var(--accent-neon) 55%, transparent);
+  border-radius: 999px;
+  pointer-events: none;
+  animation: hero-cta-pulse-ring 2.8s infinite;
+}
+
+@keyframes hero-cta-pulse-ring {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  7.14% {
+    opacity: 0.55;
+    transform: scale(1.12);
+    animation-timing-function: linear;
+  }
+  35% {
+    opacity: 0;
+    transform: scale(1.16);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.16);
+  }
+}
+
+/* RUN10-PULSE (iter-28 fix): under 560px the pill is full-width, so
+ * the uniform 1.16× ring would clip past the viewport sides and read
+ * as two horizontal bars instead of a ring (mobile critic). The
+ * narrow ring expands elliptically — barely wider (1.03 → 1.05, so
+ * its 359px box peaks at 377px inside a 390px viewport) but much
+ * taller (1.28 → 1.45), so the closed outline stays visible and the
+ * eye tracks the top/bottom arcs. Same 200ms / 780ms timing as the
+ * main ring — see lib/hero-pulse.ts (HERO_CTA_PULSE_NARROW_*). */
+@keyframes hero-cta-pulse-ring-narrow {
+  0% {
+    opacity: 0;
+    transform: scale(1, 1);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  7.14% {
+    opacity: 0.55;
+    transform: scale(1.03, 1.28);
+    animation-timing-function: linear;
+  }
+  35% {
+    opacity: 0;
+    transform: scale(1.05, 1.45);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.05, 1.45);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-hero-cta],
   [data-hero-cta]:hover .hero-cta-arrow,
@@ -5066,6 +5136,13 @@ html[data-journey="active"] [data-hero-name-fallback] {
 
   [data-hero-cta]:hover .hero-cta-arrow {
     transform: none;
+  }
+
+  /* RUN10-PULSE: no ring under reduced motion (the component also
+     renders no pulse span there — this is belt-and-braces). */
+  .hero-cta-pulse {
+    animation: none;
+    display: none;
   }
 }
 
@@ -5088,6 +5165,12 @@ html[data-journey="active"] [data-hero-name-fallback] {
   [data-hero-cta] {
     width: 100%;
     justify-content: center;
+  }
+
+  /* RUN10-PULSE (iter-28 fix): the full-width pill leaves no room
+     for a uniform ring — switch to the elliptical narrow ring. */
+  .hero-cta-pulse {
+    animation-name: hero-cta-pulse-ring-narrow;
   }
 }
 

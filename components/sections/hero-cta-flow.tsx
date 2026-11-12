@@ -9,6 +9,14 @@
  * lifts on hover. Reduced motion: settled pill from the first frame,
  * no breathing (the global reduced-motion rule kills the animation).
  *
+ * RUN10-PULSE: a soft expanding ring rides the pill's border — the
+ * 60fps Revolut RevPoints coachmark pulse. One 2.8s cycle: the ring
+ * snaps out in the reel-4 200ms ease-out, fades over the next 780ms,
+ * then rests invisible (see lib/hero-pulse.ts for the shared model).
+ * The ring is a separate aria-hidden span so it can animate
+ * independently of the breathing glow; like the glow it renders only
+ * in full motion.
+ *
  * Semantics unchanged: the same anchor (href #projects, data-hero-cta,
  * "See my work" + arrow), the same MagneticButton drift around it, the
  * same 0.21s entrance stagger from hero.tsx.
@@ -36,6 +44,11 @@ export function HeroCtaFlow() {
           pill's own box-shadow is the resting glow. */}
       {!reduceMotion ? (
         <span aria-hidden="true" className="hero-cta-glow" />
+      ) : null}
+      {/* RUN10-PULSE: the coachmark ring — an expanding border ring
+          around the pill (see lib/hero-pulse.ts). Full motion only. */}
+      {!reduceMotion ? (
+        <span aria-hidden="true" className="hero-cta-pulse" data-hero-cta-pulse />
       ) : null}
     </a>
   );
