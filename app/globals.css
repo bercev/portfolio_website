@@ -5668,6 +5668,38 @@ html[data-journey="active"] [data-hero-name-fallback] {
   }
 }
 
+/* RUN10-LASER: the Laser Flow canvas over the hero CTA pill — a beam
+ * of FROST light falls onto the pill, splashes, and pours over its
+ * corners (components/effects/hero-laser.tsx). The canvas hangs off
+ * the pill: 16px side pads, 112px above for the beam's fall (the
+ * ticker sits only 14px above the pill, so the settled beam is a
+ * short stub — the model drains the column after impact), 20px below
+ * for the corner spill. It paints under the label (z-index 0 vs the
+ * label's 1) and never intercepts the click. Under 560px the pill is
+ * full-width, so the fall is shorter (88px) and the canvas stays
+ * inside the 390px viewport (351px pill + 2×16px pads = 383px). */
+.hero-cta-laser {
+  position: absolute;
+  left: -16px;
+  top: -112px;
+  z-index: 0;
+  display: block;
+  /* Explicit size: a canvas is a REPLACED element, so width/height
+     auto would resolve to its intrinsic 300×150 instead of stretching
+     to the offsets (that bug made the beam geometry wrong — the pour
+     fronts overshot the pill's real reach). */
+  width: calc(100% + 32px);
+  height: calc(100% + 132px);
+  pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  .hero-cta-laser {
+    top: -88px;
+    height: calc(100% + 108px);
+  }
+}
+
 /* RUN10-HERO-FLOW: at phone widths the pill stretches the full content
    width so it reads as a thumb-sized control, not a half-width island.
    The MagneticButton wrapper goes block so the anchor's 100% width has

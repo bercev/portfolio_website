@@ -20,10 +20,21 @@
  * Semantics unchanged: the same anchor (href #projects, data-hero-cta,
  * "See my work" + arrow), the same MagneticButton drift around it, the
  * same 0.21s entrance stagger from hero.tsx.
+ *
+ * RUN10-LASER: a beam of FROST light falls onto the pill on load,
+ * splashes on its top edge, and pours over both corners (see
+ * components/effects/hero-laser.tsx + lib/hero-laser.ts — rebuilt in
+ * our own Canvas2D stack from the React Bits LaserFlow source, MIT +
+ * Commons Clause, read in full). Hover (or keyboard focus) re-runs
+ * the pour. The laser canvas sits under the label (z-index 0) so the
+ * light touches the pill's edge, never the text; reduced motion draws
+ * one settled frame.
  */
 "use client";
 
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+
+import { HeroLaser } from "@/components/effects/hero-laser";
 
 /** Reel-4 press rule: buttons scale 0.97 on press. */
 export const HERO_CTA_PRESS_SCALE = 0.97;
@@ -50,6 +61,9 @@ export function HeroCtaFlow() {
       {!reduceMotion ? (
         <span aria-hidden="true" className="hero-cta-pulse" data-hero-cta-pulse />
       ) : null}
+      {/* RUN10-LASER: the light pour — beam, splash, rim, corner pools.
+          Always mounted: reduced motion draws one settled frame. */}
+      <HeroLaser reduceMotion={reduceMotion} />
     </a>
   );
 }
