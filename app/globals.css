@@ -2838,6 +2838,158 @@ html[data-journey] [data-effect-layer="background"] {
   color: var(--foreground);
 }
 
+/* Corpus gauge (run-10 RUN10-GAUGE): the @GrokSet corpus as a glass
+   of light in the Algoverse row. The vessel is a rounded glass, not
+   a plate — its edge is a faint accent line (the iter-5 paper-figure
+   precedent: a 35% accent edge, no border box), the liquid is a deep
+   cyan ramp so the white figure stays legible where it is submerged,
+   and the meniscus is a bright rim riding the surface. The drag is
+   horizontal, so touch-action keeps vertical page scroll. */
+.corpus-gauge {
+  margin: 20px 0 0;
+}
+
+.corpus-gauge-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 10px;
+  font: 500 0.8rem/1.4 var(--font-mono);
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+}
+
+.corpus-gauge-label-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+}
+
+.corpus-gauge-vessel {
+  position: relative;
+  height: clamp(150px, 22vw, 190px);
+  overflow: hidden;
+  border-radius: 18px;
+  /* A glass wall, not a plate border: one faint accent edge. */
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent-neon) 35%, transparent),
+    inset 0 18px 32px -18px
+      color-mix(in srgb, var(--portfolio-accent) 25%, transparent);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.corpus-gauge-vessel:active {
+  cursor: grabbing;
+}
+
+/* The liquid: deep cyan top to bottom so white text reads where it
+   is submerged (mid-glass ≈ #0284c7, ~4:1); the brightness lives in
+   the meniscus rim and the glow, not in the body. */
+.corpus-gauge-liquid {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 45%, #075985 100%);
+  /* clip-path is written live by the simulation; the resting fill is
+     the full glass, set inline on first paint. */
+  clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
+}
+
+.corpus-gauge-rim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #bae6fd 90%, transparent),
+    color-mix(in srgb, #7dd3fc 55%, transparent)
+  );
+  filter: blur(1px);
+  clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
+  pointer-events: none;
+}
+
+.corpus-gauge-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    rgba(255, 255, 255, 0.95),
+    rgba(186, 230, 253, 0.55) 60%,
+    rgba(186, 230, 253, 0) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+.corpus-gauge-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.corpus-gauge-ticks span {
+  position: absolute;
+  right: 10px;
+  width: 8px;
+  height: 1px;
+  background: color-mix(in srgb, var(--accent-neon) 35%, transparent);
+}
+
+.corpus-gauge-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.corpus-gauge-figure {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.corpus-gauge-subline {
+  font: 500 0.75rem/1.5 var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+}
+
+/* The light copy, clipped to the liquid's surface polygon by the
+   simulation — visible only where the glass is full. */
+.corpus-gauge-text--in-liquid .corpus-gauge-figure {
+  color: #ffffff;
+  text-shadow: 0 1px 12px rgba(7, 89, 133, 0.55);
+}
+
+.corpus-gauge-text--in-liquid .corpus-gauge-subline {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .corpus-gauge-vessel {
+    cursor: default;
+  }
+}
+
 /* Flow footer (run-10 RUN10-EXPERIENCE): one quiet line under a light
    top rule — entry count + order, with a glow dot. No title block, no
    "Drawn by", no REVISIONS. */

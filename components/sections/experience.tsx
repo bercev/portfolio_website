@@ -7,6 +7,7 @@ import type { PortfolioContent } from "@/data/content";
 import { roleAnchorId } from "@/lib/role-anchor";
 import { Station } from "@/components/ui/station";
 import { TechPills } from "@/components/ui/tech-pills";
+import { CorpusGauge } from "@/components/sections/corpus-gauge";
 import { ExperienceFlowMark } from "@/components/sections/experience-flow";
 import {
   dispatchSkillHighlight,
@@ -102,6 +103,13 @@ export function Experience({ content, heading, skillNames }: ExperienceProps) {
               <p className="journey-body journey-xp-summary">
                 {renderSummary(experience.summary)}
               </p>
+              {/* RUN10-GAUGE: the Algoverse row is the @GrokSet case
+                  study — the entry whose copy holds the verbatim
+                  "1M+ tweets" figure — so the corpus gauge lives
+                  here, under its summary, nowhere else. */}
+              {experience.organization === "Algoverse" ? (
+                <CorpusGauge />
+              ) : null}
             </div>
             <div className="journey-xp-stack">
               <TechPills
