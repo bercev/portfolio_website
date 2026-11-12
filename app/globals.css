@@ -3028,6 +3028,89 @@ html[data-journey] [data-effect-layer="background"] {
     color-mix(in srgb, var(--portfolio-accent) 45%, transparent);
 }
 
+/* RUN10-SPARKLE — the light-burst layer: zero-size, absolutely
+   positioned at the burst origin (preview's top-right corner, or a
+   skill cell's top-right corner), pointer-events none so it can never
+   shift layout or swallow a click. The particles spill past the
+   origin's edge — the page clips horizontal overflow (html/body
+   overflow-x: clip), so a 54px outward flight never widens the page.
+   Dots are 4px glowing discs; dashes are 10x2px streaks rotated along
+   their travel direction by the component (motion `rotate`). */
+.journey-sparkle-burst {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.skill-flow .journey-sparkle-burst {
+  top: 0.9rem;
+  right: 1rem;
+}
+
+/* Project rows burst from the header's glow dot (the row's light
+   source, on the dark header band) — not from the preview corner,
+   where most particles landed on the white screenshot and washed out
+   (iter-29 own-eyes). The dot sits at the head's left edge. */
+.journey-project-head .journey-sparkle-burst {
+  top: 50%;
+  left: 3px;
+  right: auto;
+}
+
+.journey-sparkle-particle {
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  /* White-hot core + cyan halo: the core reads on dark, the halo
+     carries the color. 4px dots with a soft glow did not register at
+     full-viewport scale (iter-29 critics, round 1). */
+  background: radial-gradient(
+    circle,
+    #ffffff 0%,
+    color-mix(in srgb, var(--portfolio-accent) 85%, white) 55%,
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent) 100%
+  );
+  box-shadow: 0 0 12px 3px
+    color-mix(in srgb, var(--portfolio-accent) 80%, transparent);
+  pointer-events: none;
+}
+
+.journey-sparkle-particle[data-sparkle-kind="dash"] {
+  left: -7px;
+  top: -1.5px;
+  width: 14px;
+  height: 3px;
+  border-radius: 999px;
+}
+
+/* Origin flash: a 28px glow disc at the burst origin that expands
+   and fades within 350ms (motion drives scale/opacity) — the anchor
+   that makes the burst read as one event at full-viewport scale. */
+.journey-sparkle-flash {
+  position: absolute;
+  left: -14px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--portfolio-accent) 85%, white) 0%,
+    color-mix(in srgb, var(--portfolio-accent) 45%, transparent) 55%,
+    transparent 100%
+  );
+  box-shadow: 0 0 24px 6px
+    color-mix(in srgb, var(--portfolio-accent) 60%, transparent);
+  pointer-events: none;
+}
+
 @media (min-width: 46rem) {
   .journey-project-rest {
     grid-template-columns: minmax(0, 1fr) minmax(0, 21rem);
@@ -3113,6 +3196,7 @@ html[data-journey] [data-effect-layer="background"] {
 }
 
 .journey-project-head {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -4132,6 +4216,27 @@ html[data-journey] [data-effect-layer="background"] {
     color-mix(in srgb, var(--portfolio-accent) 8%, transparent) 70%,
     transparent
   );
+  pointer-events: none;
+}
+
+/* Corner dot: the burst's origin, made visible. Without it the
+   skill burst fanned from empty dark space and read as ambient dust
+   at 390px (iter-29 critics, round 2); the project burst reads
+   because its header dot anchors it. Same 6px glow dot as
+   .journey-project-head-dot, centered on the burst origin
+   (top 0.9rem, right 1rem). */
+.skill-flow::after {
+  content: "";
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translate(50%, -50%);
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 8px 1px
+    color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
   pointer-events: none;
 }
 

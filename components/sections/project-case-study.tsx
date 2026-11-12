@@ -35,6 +35,7 @@ import {
   ProjectPreviewLiquid,
   type ProjectPreview,
 } from "./project-preview-liquid";
+import { SparkleBurst } from "./sparkle-burst";
 
 const projectPreviews: Partial<Record<Project["title"], ProjectPreview>> = {
   Vitae: {
@@ -177,6 +178,13 @@ export function CaseStudyRow({
   // flag; the shared liquid blob (one layoutId) glides between rows on
   // its own. Reduced motion renders the plain static preview instead.
   const [liquid, setLiquid] = useState(false);
+  // RUN10-SPARKLE: every hover-enter / focus / tap replays the light
+  // burst from the preview's corner. A counter, not a boolean — the
+  // burst re-mounts (and replays) on each increment.
+  const [sparkle, setSparkle] = useState(0);
+  const fireSparkle = () => {
+    setSparkle((count) => count + 1);
+  };
   const liquidTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -328,9 +336,15 @@ export function CaseStudyRow({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={handleToggleClick}
-        onPointerEnter={() => setLiquid(true)}
+        onPointerEnter={() => {
+          setLiquid(true);
+          fireSparkle();
+        }}
         onPointerLeave={() => setLiquid(false)}
-        onFocusCapture={() => setLiquid(true)}
+        onFocusCapture={() => {
+          setLiquid(true);
+          fireSparkle();
+        }}
         onBlurCapture={(event) => {
           const nextTarget = event.relatedTarget;
           if (
@@ -342,11 +356,19 @@ export function CaseStudyRow({
           setLiquid(false);
         }}
         onPointerDown={(event) => {
-          if (event.pointerType === "touch") startLiquidTapPulse();
+          if (event.pointerType === "touch") {
+            startLiquidTapPulse();
+            fireSparkle();
+          }
         }}
       >
         {/* Light header strip: the row number and count. */}
         <span className="journey-project-head" aria-hidden="true">
+          {/* RUN10-SPARKLE: the light burst fires from the header's
+              glow dot — the row's light source, on the dark header
+              band, so the particles read against dark instead of
+              washing out on the white preview screenshot. */}
+          <SparkleBurst burst={sparkle} />
           <span>
             <span className="journey-project-head-dot" />
             {labels.num} — {project.title.toUpperCase()}

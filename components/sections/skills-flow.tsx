@@ -25,11 +25,13 @@
 "use client";
 
 import { motion, useInView } from "motion/react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { flowLabels } from "@/lib/plate-labels";
 import { skillBinKind, skillBinSpan } from "@/lib/skill-bins";
+
+import { SparkleBurst } from "./sparkle-burst";
 
 /** Series kicker: "01 / 04 · 7 SKILLS" — flow number + item count. */
 export function seriesKicker(
@@ -83,6 +85,13 @@ export function SkillFlow({
   const ref = useRef<HTMLLIElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const reduceMotion = usePrefersReducedMotion();
+  // RUN10-SPARKLE: every hover-enter / focus / tap replays the light
+  // burst from the cell's top-right corner. A counter, not a boolean
+  // — the burst re-mounts (and replays) on each increment.
+  const [sparkle, setSparkle] = useState(0);
+  const fireSparkle = () => {
+    setSparkle((count) => count + 1);
+  };
   const settled = inView || reduceMotion;
   // A skill filed under >=2 entries spans two columns; a skill no
   // stack lists is a quiet cell — the grid rhythm comes from real
@@ -95,6 +104,7 @@ export function SkillFlow({
       ref={ref}
       data-skill-flow
       data-skill-kind={quiet ? "quiet" : "filed"}
+      onMouseEnter={fireSparkle}
       className={[
         "skill-flow",
         active ? "skill-flow--active" : "",
@@ -128,7 +138,11 @@ export function SkillFlow({
           type="button"
           className="skill-flow-skill"
           aria-pressed={active}
-          onClick={onToggle}
+          onClick={() => {
+            onToggle();
+            fireSparkle();
+          }}
+          onFocus={fireSparkle}
         >
           {name}
         </button>
@@ -153,6 +167,10 @@ export function SkillFlow({
           ))}
         </p>
       ) : null}
+      {/* RUN10-SPARKLE: the burst fires from the cell's top-right
+          corner — the cell is position: relative, so the zero-size
+          layer anchors there and the particles spill past the edge. */}
+      <SparkleBurst burst={sparkle} />
     </motion.li>
   );
 }
