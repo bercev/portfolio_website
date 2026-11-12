@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { PortfolioContent } from "@/data/content";
 
 import { skillProofHref } from "@/lib/skill-proof";
+import { skillRingGroupForSkill } from "@/lib/skill-rings";
 import {
   type SkillWorkEntry,
   skillUses,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/skill-work";
 
 import { seriesKicker, SkillFlow } from "@/components/sections/skills-flow";
+import { SkillRings } from "@/components/sections/skill-rings";
 
 type SkillsLedgerProps = {
   readonly groups: PortfolioContent["skills"];
@@ -172,6 +174,13 @@ export function SkillsLedger({ groups, workEntries }: SkillsLedgerProps) {
           </button>
         </p>
       ) : null}
+      {/* RUN10-RINGS: one glowing ring per group — the draw + count-up
+          summary above the cells. The active skill dims every ring but
+          the group holding it (lib/skill-rings.ts). */}
+      <SkillRings
+        activeGroup={skillRingGroupForSkill(groups, activeSkill)}
+        groups={groups}
+      />
       {series.map(({ group, start }, groupIndex) => (
         <section key={group.category} className="skills-field-series">
           <div className="skills-series-head">

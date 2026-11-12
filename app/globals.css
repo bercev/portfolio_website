@@ -4378,6 +4378,142 @@ html[data-journey] [data-effect-layer="background"] {
   margin-top: 2.5rem;
 }
 
+/* Skill rings (run-10 RUN10-RINGS): one glowing light ring per group,
+   drawn from the Kokonut apple-activity-card geometry (concentric
+   track + gradient progress + overflow lap + end cap) restyled to
+   FROST — no border, no plate, the ring IS the object. The disc is a
+   fixed 132px square (108px at phone width); the count sits upright
+   in its center while the svg itself rotates -90° so the draw starts
+   at the top. */
+.skill-rings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem 2.75rem;
+  margin: 0 0 2.5rem;
+}
+
+.skill-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.skill-ring-disc {
+  position: relative;
+  width: 132px;
+  height: 132px;
+}
+
+.skill-ring-svg {
+  display: block;
+  width: 132px;
+  height: 132px;
+  overflow: visible;
+  transform: rotate(-90deg);
+  outline: none;
+  transition: opacity 200ms ease-out;
+}
+
+.skill-ring-svg:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 6px;
+  border-radius: 50%;
+}
+
+.skill-ring-track {
+  stroke: color-mix(in srgb, var(--portfolio-accent) 16%, transparent);
+}
+
+/* The progress ring glows: a soft accent halo so the drawn arc reads
+   as light, not line. The stroke itself mixes the accent toward the
+   foreground, so it deepens on light themes and stays bright on dark
+   ones (the hero-particle-accent pattern). */
+.skill-ring-base,
+.skill-ring-lap {
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--portfolio-accent) 55%, transparent)
+  );
+}
+
+/* The overflow lap is white-hot (round-1 critics): it is drawn on top
+   of the base ring, so the same accent twice is invisible in the
+   settled state. White reads over the accent ring in dark theme and
+   over the deepened ring in light theme. */
+.skill-ring-lap {
+  stroke: #ffffff;
+}
+
+/* The lap's end cap is a white bead that clears the stroke (r=8 vs a
+   10px stroke) with its own white glow — the settled marker that the
+   ring has lapped past its goal. */
+.skill-ring-cap-dot {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.75));
+}
+
+.skill-ring-count {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease-out;
+}
+
+.skill-ring-count [data-ring-count] {
+  color: var(--foreground);
+  font: 600 1.7rem/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.skill-ring-unit {
+  margin-top: 0.3rem;
+  color: var(--muted-foreground);
+  font: 500 0.68rem/1.4 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.skill-ring-name {
+  margin: 0;
+  color: var(--foreground);
+  font: 600 0.95rem/1.35 var(--font-sans);
+  text-align: center;
+  transition: opacity 200ms ease-out;
+}
+
+/* Dim to focus: the unfocused rings recede to 25% and their labels to
+   40% — the reference's values. */
+.skill-ring--dimmed .skill-ring-svg {
+  opacity: 0.25;
+}
+
+.skill-ring--dimmed .skill-ring-count,
+.skill-ring--dimmed .skill-ring-name {
+  opacity: 0.4;
+}
+
+@media (max-width: 700px) {
+  .skill-rings {
+    gap: 1.25rem 1.5rem;
+  }
+
+  .skill-ring-disc,
+  .skill-ring-svg {
+    width: 108px;
+    height: 108px;
+  }
+
+  .skill-ring-count [data-ring-count] {
+    font-size: 1.4rem;
+  }
+}
+
 .skills-field-series {
   min-width: 0;
 }
