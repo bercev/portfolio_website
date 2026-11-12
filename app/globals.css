@@ -3124,6 +3124,106 @@ html[data-journey] [data-effect-layer="background"] {
     color-mix(in srgb, var(--portfolio-accent) 45%, transparent);
 }
 
+/* RUN10-FOIL — holographic foil sheen on the project preview. A
+   diagonal iridescent band (cyan → violet → teal, peak alpha 0.60,
+   plain compositing so it tints the near-white Vitae screenshot as
+   well as the dark Discord one) sweeps the frame while the preview is
+   morphed. The transit is LINEAR (2.8s): a front-loaded ease-out
+   crosses a wide row in ~150ms and never reads as a shaft (iter-26
+   sign). The hues shift slowly via a ±30deg hue-rotate oscillation
+   (6s, alternate) that stays inside the cool FROST family. The band
+   is 45% of the frame wide, starts one band width off the left edge,
+   and travels 340% of its own width (153% of the frame) — the exact
+   geometry lives in lib/project-foil.ts. The span mounts only while
+   morphed (see project-preview-liquid.tsx), so no animation runs at
+   rest; the frame's overflow + wobbling radius clip the band to the
+   liquid shape.
+   BLEND (iter-38 fix): `multiply`, NOT plain alpha. A 45%-alpha
+   normal composite washes the screenshot's small dark text to
+   near-illegible at mid-sweep (mobile critic, pixel-proven: zero
+   dark-red text pixels remain under the band at 390px — the rust
+   "RESUME VERSION CONTROL" line goes from 3.7:1 to ~1.6:1). Multiply
+   keeps dark text dark (the rust line holds ~4:1 through the band)
+   while tinting the near-white background a clear pale iridescent,
+   and on the dark Discord preview it tints the bright content
+   (text, bubbles, buttons) as the band passes. No alpha parameter
+   can satisfy both visibility and legibility — the mechanism, not
+   the number, is the fix. */
+.journey-project-liquid-foil {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 45%;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    color-mix(in srgb, var(--portfolio-accent) 60%, transparent) 28%,
+    color-mix(in srgb, #a78bfa 60%, transparent) 50%,
+    color-mix(in srgb, #5eead4 60%, transparent) 72%,
+    transparent 100%
+  );
+  animation:
+    foil-sweep 2.8s linear infinite,
+    foil-hue 6s ease-in-out infinite alternate;
+}
+
+@keyframes foil-sweep {
+  from {
+    transform: translateX(0) skewX(-12deg);
+  }
+  to {
+    transform: translateX(340%) skewX(-12deg);
+  }
+}
+
+@keyframes foil-hue {
+  from {
+    filter: hue-rotate(-30deg);
+  }
+  to {
+    filter: hue-rotate(30deg);
+  }
+}
+
+/* RUN10-FOIL core streak (iter-38 fix2) — the bright glint riding the
+   band's center. The multiply wash alone is too faint on the dark
+   Discord preview (desktop critic, pixel-proven: in-stripe B−R delta
+   ~4-5 vs ~26.6 on white). This sibling element carries the dark
+   visibility: a narrow screen-blended streak that glows brightly
+   across dark content while staying near-invisible on white
+   (white-on-white), so the screenshot's small dark text survives —
+   only a thin pale slash crosses ~1 glyph where the streak passes.
+   Same geometry and animations as the band (left -45%, 45% wide,
+   foil-sweep + foil-hue), so it travels in lockstep; its background
+   is transparent except for a bright near-white-cyan stripe at its
+   horizontal center (46.5–53.5% of the band ≈ 11px at desktop, soft
+   edges), which lands on the band's center line. Sibling, not child:
+   a child's screen blend would be multiplied away by the parent's
+   multiply blend. */
+.journey-project-liquid-foil-core {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 45%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 46.5%,
+    color-mix(in srgb, #e0f2fe 95%, transparent) 50%,
+    transparent 53.5%,
+    transparent 100%
+  );
+  animation:
+    foil-sweep 2.8s linear infinite,
+    foil-hue 6s ease-in-out infinite alternate;
+}
+
 /* RUN10-SPARKLE — the light-burst layer: zero-size, absolutely
    positioned at the burst origin (preview's top-right corner, or a
    skill cell's top-right corner), pointer-events none so it can never

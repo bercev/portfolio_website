@@ -6,8 +6,11 @@
  * tapped (mobile), the rest preview morphs into a slowly wobbling liquid
  * blob with an elastic overshoot scale, a glow wash blooms over the
  * image, and a single shared liquid blob (one layoutId, reel-4 rule 19)
- * glides between the rows' previews. At rest the preview is the same
- * calm rectangle as before — no border, no rotate, no pen trace.
+ * glides between the rows' previews. RUN10-FOIL adds a holographic
+ * sheen: a diagonal iridescent band sweeps the preview while morphed
+ * and shifts hue slowly inside the cool FROST family. At rest the
+ * preview is the same calm rectangle as before — no border, no rotate,
+ * no pen trace.
  *
  * The shared blob lives OUTSIDE the morphing frame: the frame clips its
  * contents (overflow hidden + blob radius), so a blob inside it would be
@@ -147,6 +150,55 @@ export function ProjectPreviewLiquid({
           animate={{ opacity: morph ? 1 : 0 }}
           transition={{ duration: 0.3, ease: SITE_EASE }}
         />
+        {/* RUN10-FOIL: holographic sheen — a diagonal iridescent band
+            that sweeps the preview while morphed and shifts hue slowly
+            (see lib/project-foil.ts). It mounts only while morphed, so
+            the rest preview carries no sheen and no running animation;
+            it sits inside the frame, so the wobbling radius clips it to
+            the liquid shape. Multiply blend, so it tints the
+            near-white Vitae screenshot as well as the dark Discord one
+            WITHOUT washing the screenshot's small dark text (plain
+            alpha erased the rust "RESUME VERSION CONTROL" line at
+            mid-sweep — iter-38 mobile critic, pixel-proven). */}
+        <AnimatePresence>
+          {morph ? (
+            <motion.span
+              key="foil-sheen"
+              data-foil-sheen
+              aria-hidden="true"
+              className="journey-project-liquid-foil"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: SITE_EASE }}
+            />
+          ) : null}
+        </AnimatePresence>
+        {/* RUN10-FOIL core streak (iter-38 fix2): the multiply wash
+            alone is too faint on the dark Discord preview (desktop
+            critic: B−R delta ~4-5 in-stripe vs ~26.6 on white —
+            detectable only by pixel-hunting). A narrow bright
+            screen-blended streak riding the band's center gives the
+            dark preview a visible sweeping glint, while on white it is
+            near-invisible (white-on-white) except for a thin pale
+            slash over dark text — the text stays readable around it.
+            Sibling of the band (NOT a child: a child's screen blend
+            would be multiplied away by the parent's multiply blend),
+            same sweep/hue animations so it travels in lockstep. */}
+        <AnimatePresence>
+          {morph ? (
+            <motion.span
+              key="foil-core"
+              data-foil-core
+              aria-hidden="true"
+              className="journey-project-liquid-foil-core"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: SITE_EASE }}
+            />
+          ) : null}
+        </AnimatePresence>
         {image}
       </motion.span>
     </span>
