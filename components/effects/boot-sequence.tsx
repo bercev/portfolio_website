@@ -2,38 +2,29 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  BOOT_DURATION_MS,
+  BOOT_FADE_MS,
+  BOOT_RING_LABEL,
+} from "@/lib/boot-ring";
+
 /**
- * Boot sequence — BIOS-style cold boot overlay on first visit.
- * 2–3 seconds of hardware checks, then fades out to reveal the site.
- * Skippable on click, skipped on repeat visits (localStorage), skipped
- * when prefers-reduced-motion is set, and skipped on phones
- * (coarse pointer or small viewport — nobody wants the theater on a
- * small screen).
+ * Boot sequence — first-visit light ring (RUN10-BOOT).
+ * A spinning gradient light ring with a breathing glow heart, shown
+ * for 2.6s while the particle BERAT gathers behind it, then fades out
+ * to reveal the site. Skippable on click/tap, skipped on repeat visits
+ * (localStorage), skipped when prefers-reduced-motion is set. The
+ * phone skip is gone (RUN10-BOOT): the old BIOS text wall was the
+ * reason phones skipped the theater; a light ring is the gathering
+ * moment itself and shows at 390px too. The reveal gate in
+ * light-ribbons.tsx (bootExpected) mirrors this gate.
  */
 
 const BOOT_KEY = "bercev-has-booted";
 
-const BOOT_LINES: Array<{ text: string; delay: number; color?: "ok" | "dim" | "accent" }> = [
-  { text: "BERCEV BIOS v2.6 — checking hardware...", delay: 0 },
-  { text: "memory check ........ OK (16384 MB)", delay: 320, color: "ok" },
-  { text: "mounting /dev/career ........ OK", delay: 620, color: "ok" },
-  { text: "loading kernel modules: curiosity.o, persistence.ko, shipped.so", delay: 950, color: "dim" },
-  { text: "starting portfolio daemon ........ OK", delay: 1350, color: "ok" },
-  { text: "initializing phosphor display ........ OK", delay: 1650, color: "ok" },
-  { text: "", delay: 1900 },
-  { text: "> welcome, visitor. system ready.", delay: 2000, color: "accent" },
-];
-
-const BOOT_DURATION_MS = 2600;
-
 function shouldBoot(): boolean {
   if (typeof window === "undefined") return false;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-  // Phones skip the theater (research iter 30): a first-visit phone should not
-  // sit through the 2.6s BIOS boot. Coarse-pointer is the primary phone proxy;
-  // the small-viewport check covers narrow windows where the boot is cramped.
-  if (window.matchMedia("(pointer: coarse)").matches) return false;
-  if (window.matchMedia("(max-width: 640px)").matches) return false;
   try {
     return window.localStorage.getItem(BOOT_KEY) !== "1";
   } catch {
@@ -46,7 +37,6 @@ export function BootSequence() {
   // the real value is set in useEffect after mount.
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
-  const [shownCount, setShownCount] = useState(0);
   const timers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const done = useRef(false);
 
@@ -63,7 +53,7 @@ export function BootSequence() {
       } catch {
         // storage unavailable — boot again next time, harmless
       }
-    }, 450);
+    }, BOOT_FADE_MS);
     timers.current.push(t);
   }, []);
 
@@ -76,10 +66,6 @@ export function BootSequence() {
 
   useEffect(() => {
     if (!visible) return;
-    BOOT_LINES.forEach((line, i) => {
-      const t = setTimeout(() => setShownCount(i + 1), line.delay);
-      timers.current.push(t);
-    });
     const end = setTimeout(finish, BOOT_DURATION_MS);
     timers.current.push(end);
 
@@ -90,19 +76,6 @@ export function BootSequence() {
   }, [finish, visible]);
 
   if (!visible) return null;
-
-  const colorFor = (c?: "ok" | "dim" | "accent") => {
-    switch (c) {
-      case "ok":
-        return "#4ade80"; // green OK
-      case "dim":
-        return "rgba(234, 246, 251, 0.55)";
-      case "accent":
-        return "#7dd3fc"; // cyan phosphor
-      default:
-        return "#eef4fa";
-    }
-  };
 
   return (
     <div
@@ -119,25 +92,23 @@ export function BootSequence() {
         justifyContent: "center",
         cursor: "pointer",
         opacity: fading ? 0 : 1,
-        transition: "opacity 0.45s ease-out",
+        transition: `opacity ${BOOT_FADE_MS}ms ease-out`,
       }}
     >
       <div
         style={{
-          width: "min(680px, 88vw)",
-          fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)",
-          fontSize: "clamp(13px, 2.4vw, 16px)",
-          lineHeight: 1.9,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "28px",
         }}
       >
-        {BOOT_LINES.slice(0, shownCount).map((line, i) => (
-          <div key={i} style={{ color: colorFor(line.color), minHeight: "1.9em" }}>
-            {line.text}
-            {i === shownCount - 1 && <span className="boot-cursor" />}
-          </div>
-        ))}
+        <div className="boot-ring-wrap" aria-hidden="true">
+          <div className="boot-ring-halo" />
+          <div className="boot-ring" data-boot-ring />
+          <div className="boot-ring-heart" />
+        </div>
+        <div className="boot-ring-label">{BOOT_RING_LABEL}</div>
       </div>
     </div>
   );

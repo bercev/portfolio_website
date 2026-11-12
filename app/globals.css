@@ -7172,21 +7172,106 @@ html.dark .plain-backdrop {
   display: none !important;
 }
 
-/* Boot sequence cursor (moved from inline <style> for cleanliness). */
-.boot-cursor {
-  display: inline-block;
-  width: 0.6em;
-  height: 1.1em;
-  margin-left: 2px;
-  vertical-align: -0.15em;
-  background-color: #7dd3fc;
-  animation: boot-blink 0.8s steps(1) infinite;
+/* Boot sequence light ring (RUN10-BOOT) — a spinning gradient ring
+   with a breathing glow heart, shown while the particle BERAT gathers.
+   Sizes mirror lib/boot-ring.ts (120px desktop / 96px <=700px);
+   the spin period mirrors BOOT_RING_SPIN_MS (1400ms). The conic
+   gradient carries one white-hot arc + a cyan tail so the rotation
+   reads in any frame pair; the mask cuts the disc to a 3px ring. */
+.boot-ring-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.boot-ring-halo {
+  position: absolute;
+  inset: -42px;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(125, 211, 252, 0.22),
+    rgba(125, 211, 252, 0.07) 55%,
+    transparent 72%
+  );
+  animation: boot-breathe 1.4s ease-in-out infinite;
+}
+.boot-ring {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(125, 211, 252, 0.25) 70deg,
+    rgba(125, 211, 252, 0.9) 130deg,
+    #ffffff 165deg,
+    rgba(125, 211, 252, 0.9) 200deg,
+    rgba(125, 211, 252, 0.2) 260deg,
+    transparent 320deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 4px),
+    #000 calc(100% - 3px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 4px),
+    #000 calc(100% - 3px)
+  );
+  filter: drop-shadow(0 0 10px rgba(125, 211, 252, 0.55));
+  animation: boot-ring-spin 1.4s linear infinite;
+}
+.boot-ring-heart {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e8f7ff;
+  box-shadow:
+    0 0 12px 3px rgba(125, 211, 252, 0.8),
+    0 0 32px 10px rgba(125, 211, 252, 0.25);
+  animation: boot-breathe 1.4s ease-in-out infinite;
+}
+.boot-ring-label {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  letter-spacing: 0.35em;
+  text-indent: 0.35em;
+  color: rgba(238, 244, 250, 0.6);
+  animation: boot-breathe 1.4s ease-in-out infinite;
+}
+@keyframes boot-ring-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes boot-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@media (max-width: 700px) {
+  .boot-ring-wrap,
+  .boot-ring {
+    width: 96px;
+    height: 96px;
+  }
+  .boot-ring-halo {
+    inset: -36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot-ring,
+  .boot-ring-halo,
+  .boot-ring-heart,
+  .boot-ring-label {
+    animation: none;
+  }
 }
 @keyframes boot-blink {
   50% { opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .boot-cursor { animation: none; }
 }
 
 /* Terminal flyout (Contact / "The Beacon") — shell behind a hover/tap trigger. */

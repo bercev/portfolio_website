@@ -947,18 +947,16 @@ describe("opening ring-of-light reveal", () => {
   });
 
   it("waits for the boot overlay only when a boot is expected", () => {
-    // Desktop first visit: fine pointer, wide viewport, no flag.
-    expect(bootExpected(true, 1440, false)).toBe(true);
+    // First visit: no flag, the boot runs and the reveal waits for it.
+    expect(bootExpected(false)).toBe(true);
     // Repeat visit: the flag is set, no boot, reveal starts on mount.
-    expect(bootExpected(true, 1440, true)).toBe(false);
-    // Phones skip the boot (coarse pointer / narrow viewport).
-    expect(bootExpected(false, 1440, false)).toBe(false);
-    expect(bootExpected(true, 390, false)).toBe(false);
-    expect(bootExpected(true, 640, false)).toBe(false);
-    expect(bootExpected(true, 641, false)).toBe(true);
+    expect(bootExpected(true)).toBe(false);
+    // RUN10-BOOT: the phone skip is gone — the light ring shows at
+    // every width and pointer type, so there is no pointer/viewport
+    // gate left to mirror (the old 390/640/641 expectations are dead).
     // Storage unavailable (null flag): expect the boot, matching the
     // boot's own fallback.
-    expect(bootExpected(true, 1440, null)).toBe(true);
+    expect(bootExpected(null)).toBe(true);
     // The cap bounds the wait past the boot's 3.05s unmount.
     expect(BOOT_WAIT_CAP_MS).toBeGreaterThan(3050);
     expect(BOOT_OVERLAY_SELECTOR).toContain("System boot sequence");

@@ -1148,18 +1148,14 @@ export const BOOT_OVERLAY_SELECTOR = '[aria-label="System boot sequence"]';
 export const BOOT_WAIT_CAP_MS = 3500;
 
 /** Whether a boot overlay is expected on this mount — the boot's own
- * shouldBoot conditions, minus reduced motion (handled by the caller):
- * fine pointer, wide viewport, and no `bercev-has-booted` flag. A null
- * flag (storage unavailable) falls back to expecting the boot, matching
- * the boot's own fallback (it mounts the overlay when storage fails).
- * Pure in its inputs so the gate is unit-testable. */
-export function bootExpected(
-  finePointer: boolean,
-  viewportWidth: number,
-  hasBootedFlag: boolean | null,
-): boolean {
-  if (!finePointer) return false;
-  if (!(viewportWidth > 640)) return false;
+ * shouldBoot condition, minus reduced motion (handled by the caller):
+ * no `bercev-has-booted` flag. A null flag (storage unavailable) falls
+ * back to expecting the boot, matching the boot's own fallback (it
+ * mounts the overlay when storage fails). The phone skip is gone
+ * (RUN10-BOOT): the light ring shows at every width, so there is no
+ * pointer/viewport gate left to mirror. Pure in its input so the gate
+ * is unit-testable. */
+export function bootExpected(hasBootedFlag: boolean | null): boolean {
   return hasBootedFlag !== true;
 }
 
@@ -1542,8 +1538,6 @@ export function LightRibbons() {
     // left it, or the safety cap elapses. The gate itself lives in
     // draw(), next to the reveal clock; these are its inputs.
     const bootExpectedNow = bootExpected(
-      window.matchMedia("(pointer: fine)").matches,
-      window.innerWidth,
       (() => {
         try {
           return window.localStorage.getItem("bercev-has-booted") === "1";
