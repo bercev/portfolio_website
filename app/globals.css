@@ -4020,6 +4020,47 @@ html[data-journey] [data-effect-layer="background"] {
   margin-top: 0.75rem;
 }
 
+/* Scroll-linked curtain reveal (run-10 RUN10-CURTAIN): the wrapper
+   carries the scroll-driven clip-path (inline, from case-curtain.tsx)
+   that opens from the center as the figure scrolls in; the inner layer
+   carries the parallax drift. No box styles of its own — the curtain
+   is light, not chrome — and the figure keeps its own margin, so the
+   drift stays inside the section gaps. */
+.journey-case-curtain {
+  position: relative;
+  will-change: clip-path;
+}
+
+.journey-case-curtain-inner {
+  will-change: transform;
+}
+
+/* The curtain's glowing leading edges (run-10 RUN10-CURTAIN, fix2):
+   2px accent lips riding the clip boundaries, in the detail-rule
+   light family (accent fading left-to-right + glow). They are what
+   makes the cut read as a curtain rather than a broken box — a node
+   straddling the clip sits behind the lip, not sliced by nothing.
+   Same width as the figure (100% capped at 30rem, like .journey-arch
+   itself) so the lips never stick out past the diagram. They fade
+   out as the curtain completes (see caseCurtainEdgeOpacityAt), so the
+   settled figure is clean. */
+.journey-case-curtain-edge {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  max-width: 30rem;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--accent-neon) 90%, transparent),
+    color-mix(in srgb, var(--accent-neon) 35%, transparent)
+  );
+  box-shadow: 0 0 12px 2px
+    color-mix(in srgb, var(--accent-neon) 55%, transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
 .journey-arch-box {
   fill: none;
   stroke: var(--portfolio-accent);
@@ -6814,6 +6855,20 @@ html.dark .plain-backdrop {
   .journey-arch-flow {
     stroke-dasharray: none !important;
     stroke-dashoffset: 0 !important;
+  }
+
+  /* Case-figure curtain (run-10 RUN10-CURTAIN): a figure below the
+     fold never scrolls in print layout, so its clip-path would print
+     the diagram half-hidden — !important beats the inline clip and
+     transform, and the diagram prints fully revealed. */
+  .journey-case-curtain {
+    clip-path: none !important;
+  }
+  .journey-case-curtain-inner {
+    transform: none !important;
+  }
+  .journey-case-curtain-edge {
+    display: none !important;
   }
 
   /* Author-position dial (run-9 RUN9-AUTHOR-DIALS): a plate below the

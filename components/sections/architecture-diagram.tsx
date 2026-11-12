@@ -44,6 +44,8 @@ import {
 } from "@/lib/arch-schematic";
 import type { Project } from "@/data/content";
 
+import { CaseCurtain } from "./case-curtain";
+
 /** Reel-4 rule 1: entrances ease out. */
 const SITE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -466,8 +468,15 @@ function ChatbotDiagram() {
           ease: SITE_EASE,
         }}
       />
+      {/* The label sits over the return run's right half (x=300):
+          measured bbox at the old x=281 was 233.5..328.5, so its "g"
+          was sliced by the Discord node's right border at x=240
+          (run-10 iter 40, both critics + 4x crops); at x=300 it spans
+          ~252..348, clear of the border by ~12 units, and its y-span
+          (12.9..27.2) stays above the run (y=32) so the right end never
+          touches the vertical drop at x=322. */}
       <motion.text
-        x={281}
+        x={300}
         y={24}
         className="journey-arch-sub"
         data-arch-label="grounded"
@@ -497,7 +506,15 @@ export function ArchitectureDiagram({
 }) {
   const Diagram = projectDiagrams[title];
   if (!Diagram) return null;
-  return <Diagram />;
+  // RUN10-CURTAIN: the figure scrolls in through a center-opening
+  // clip-path curtain with a gentle parallax drift (see
+  // case-curtain.tsx); the diagram's own first-view assembly runs
+  // inside it. Reduced motion + print render the figure fully.
+  return (
+    <CaseCurtain>
+      <Diagram />
+    </CaseCurtain>
+  );
 }
 
 export function hasArchitectureDiagram(title: Project["title"]): boolean {
