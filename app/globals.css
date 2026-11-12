@@ -1578,7 +1578,7 @@ html[data-journey] [data-effect-layer="background"] {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--portfolio-accent);
+  color: var(--contact-accent-text, var(--portfolio-accent));
 }
 
 /* The row rule is a fading light line, not a hairline: accent at the
@@ -6421,6 +6421,22 @@ html[data-light-preset="goldenHour"] #contact {
   --portfolio-accent: #ffaa50;
   --accent-neon: #ffbe6e;
 }
+/* RUN10-LIGHT-ORANGE: in true light mode the gold preset tint reads
+   ~2:1 as text, so the contact chapter's accent TEXT (flow numbers,
+   field labels, elsewhere numerals, receipt glow) reads through a
+   darkened gold token instead of the raw preset tint. Dots, rules,
+   washes, the wave canvas and the slide thumb keep the bright gold
+   (--portfolio-accent / --accent-neon stay untouched); dark mode is
+   untouched by construction (the token only exists under :not(.dark));
+   ASCII mode is untouched too (its palette lock keeps the dark canvas,
+   and this rule explicitly excludes data-ascii="active" — while the
+   ASCII tokens collapse to dark, gold text is correct there). The 56%
+   oklch mix is the iter-52 pattern; lib/contrast-tokens.test.ts pins
+   the wiring and the 4.5:1 ratio on every contact face. */
+html:not(.dark):not([data-ascii="active"])[data-light-preset="goldenHour"]
+  #contact {
+  --contact-accent-text: color-mix(in oklch, var(--accent-neon) 56%, #111111);
+}
 @media (prefers-reduced-motion: no-preference) {
   .journey-contact-flow-head-num::before,
   .journey-contact-form-flownum::before,
@@ -6446,7 +6462,7 @@ html[data-light-preset="goldenHour"] #contact {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  color: var(--portfolio-accent);
+  color: var(--contact-accent-text, var(--portfolio-accent));
   font-weight: 600;
   transition: transform 0.22s ease-out;
 }
@@ -6551,7 +6567,7 @@ html[data-light-preset="goldenHour"] #contact {
   display: block;
   margin-bottom: 0.35rem;
   font-size: 0.78rem;
-  color: var(--portfolio-accent);
+  color: var(--contact-accent-text, var(--portfolio-accent));
   letter-spacing: 0.02em;
 }
 .journey-contact-form-input {
@@ -6850,7 +6866,7 @@ html[data-light-preset="goldenHour"] #contact {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--portfolio-accent);
+  color: var(--contact-accent-text, var(--portfolio-accent));
   text-shadow: 0 0 12px
     color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
 }

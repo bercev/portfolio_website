@@ -260,6 +260,121 @@ describe("design-token contrast", () => {
     }
   });
 
+  it("wires the contact gold text to the darkened token, never the raw gold", () => {
+    // RUN10-LIGHT-ORANGE (run-10 iter 54): the goldenHour preset tints
+    // #contact's --portfolio-accent to #ffaa50, which reads ~2:1 on
+    // light backgrounds as TEXT. The four text instances below route
+    // through --contact-accent-text (dark amber in true light mode,
+    // unset everywhere else so the var() falls back to --portfolio-accent
+    // and dark/ASCII keep the gold). If a selector below stops matching,
+    // the test throws instead of silently passing.
+    const wired: [RegExp, string][] = [
+      [/\.journey-contact-form-flownum\s*\{([^}]*?display:\s*inline-flex[^}]*)\}/, "contact flow number"],
+      [/\.journey-contact-form-label\s*\{([^}]*)\}/, "contact field label"],
+      [/\.journey-elsewhere-flow-num\s*\{([^}]*)\}/, "elsewhere numeral"],
+      [/\.journey-contact-glow\s*\{([^}]*)\}/, "receipt glow"],
+    ];
+    for (const [selector, name] of wired) {
+      expect(decl(blockOf(selector), "color"), name).toBe(
+        "var(--contact-accent-text, var(--portfolio-accent))",
+      );
+    }
+  });
+
+  it("keeps the contact gold text at 4.5:1 on every contact face in light mode", () => {
+    // RUN10-LIGHT-ORANGE: resolve the token the same way the CSS
+    // composes it — color-mix(in oklch, var(--accent-neon) N%, #111111)
+    // with the neon the goldenHour override sets inside #contact
+    // (#ffbe6e) — then check it against every surface the four wired
+    // instances sit on: the page background, the form face (card 78%
+    // over the page), the field-plate face (card 68% over the form
+    // face — flownum/label live here), and the elsewhere/receipt face
+    // (card 78% over the page, same composite as the form face).
+    const goldBlock = blockOf(
+      /html\[data-light-preset="goldenHour"\]\s*#contact\s*\{([^}]*)\}/,
+    );
+    const neon = hexToRgb(decl(goldBlock, "--accent-neon"));
+    const tokenBlock = blockOf(
+      /html:not\(\.dark\):not\(\[data-ascii="active"\]\)\[data-light-preset="goldenHour"\]\s*#contact\s*\{([^}]*)\}/,
+    );
+    const tokenValue = decl(tokenBlock, "--contact-accent-text");
+    const mix =
+      /color-mix\(\s*in oklch\s*,\s*var\(--accent-neon\)\s*([\d.]+)%\s*,\s*(#[0-9a-fA-F]{6})\s*\)/.exec(
+        tokenValue,
+      );
+    if (!mix) {
+      throw new Error(
+        `contrast guard: unrecognized --contact-accent-text mix: ${tokenValue}`,
+      );
+    }
+    const text = mixOklch(neon, Number(mix[1]), hexToRgb(mix[2]));
+    const formDecl = decl(blockOf(/\.journey-contact-form\s*\{([^}]*)\}/), "background");
+    const formMix =
+      /color-mix\(\s*in srgb\s*,\s*var\(--card\)\s*([\d.]+)%\s*,\s*transparent\s*\)/.exec(
+        formDecl,
+      );
+    if (!formMix) {
+      throw new Error(`contrast guard: unrecognized form background: ${formDecl}`);
+    }
+    const formFace = composite(lightCard, Number(formMix[1]) / 100, lightBg);
+    const fieldDecl = decl(
+      blockOf(/\.journey-contact-form-field\s*\{([^}]*)\}/),
+      "background",
+    );
+    const fieldMix =
+      /color-mix\(\s*in srgb\s*,\s*var\(--card\)\s*([\d.]+)%\s*,\s*transparent\s*\)/.exec(
+        fieldDecl,
+      );
+    if (!fieldMix) {
+      throw new Error(`contrast guard: unrecognized field background: ${fieldDecl}`);
+    }
+    const fieldFace = composite(
+      lightCard,
+      Number(fieldMix[1]) / 100,
+      formFace,
+    );
+    for (const [bg, name] of [
+      [lightBg, "page background"],
+      [formFace, "form face"],
+      [fieldFace, "field-plate face"],
+    ] as [RGB, string][]) {
+      expect(
+        contrast(text, bg),
+        `contact gold text on ${name}`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("keeps the darkened contact token out of dark and ASCII modes", () => {
+    // RUN10-LIGHT-ORANGE: the token must exist ONLY under the true-light
+    // guard — :not(.dark) keeps dark mode gold, :not([data-ascii="active"])
+    // keeps the ASCII dark canvas gold. If the selector loses either
+    // guard, the dark amber would land on a dark background.
+    const tokenRule =
+      /html:not\(\.dark\):not\(\[data-ascii="active"\]\)\[data-light-preset="goldenHour"\]\s*#contact\s*\{[^}]*--contact-accent-text\s*:/.exec(
+        css,
+      );
+    expect(tokenRule, "light-only --contact-accent-text rule").not.toBeNull();
+    const stray = /--contact-accent-text\s*:/g;
+    const hits = [...css.matchAll(stray)].map((m) => m.index);
+    expect(hits.length).toBe(1);
+  });
+
+  it("leaves goldenHour/#contact the only preset that recolors accent text", () => {
+    // RUN10-LIGHT-ORANGE audit (run-10 iter 54): the only
+    // data-light-preset override in the stylesheet is goldenHour on
+    // #contact. Every other chapter's preset lives on the ribbon canvas
+    // only and never recolors DOM text tokens — if a future preset
+    // override appears, this test forces a contrast review of its text
+    // instances instead of silently shipping another ~2:1 gold.
+    const overrides = [
+      ...css.matchAll(
+        /html\[data-light-preset="([^"]+)"\]\s*#([a-z-]+)\s*\{/g,
+      ),
+    ].map((m) => `${m[1]} #${m[2]}`);
+    expect(overrides).toEqual(["goldenHour #contact"]);
+  });
+
   it("keeps accent text at 4.5:1 on its real background in light mode", () => {
     // RUN10-LIGHT-ACCENT: the text sits on tinted washes, not the bare
     // page — resolve each surface the same way the CSS composes it:
