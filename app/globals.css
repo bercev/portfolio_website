@@ -1366,6 +1366,43 @@ html[data-journey] [data-effect-layer="background"] {
   font-size: clamp(3.4rem, 8.6vw, 7rem);
 }
 
+/*
+ * Section-heading ASCII glow (RUN10-ASCII-GLOW, React Bits Gradient
+ * ASCII distilled into the site's own Canvas2D stack). The canvas
+ * hangs behind the heading text and paints a faint gradient ramp in
+ * ASCII glyphs; the WarpText span sits above it (z-index 1) so the
+ * light touches the heading's edge, never the letters. The radial
+ * mask fades the glyph field out at the band edges so it reads as a
+ * glow, not a box.
+ */
+.journey-station-heading {
+  position: relative;
+}
+
+.section-ascii-glow {
+  position: absolute;
+  inset: -0.3em -0.45em;
+  width: calc(100% + 0.9em);
+  height: calc(100% + 0.6em);
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask-image: radial-gradient(
+    ellipse 95% 95% at 40% 50%,
+    #000 55%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 95% 95% at 40% 50%,
+    #000 55%,
+    transparent 100%
+  );
+}
+
+.journey-station-heading > [data-warp-replay] {
+  position: relative;
+  z-index: 1;
+}
+
 @media (max-width: 900px) {
   .journey-station-note,
   .journey-station-heading,

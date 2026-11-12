@@ -1,5 +1,6 @@
 import type { SectionId } from "@/data/content";
 
+import { SectionAsciiGlow } from "@/components/effects/section-ascii-glow";
 import { WarpText } from "@/components/effects/warp-text";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ export function Station({
       <header className="journey-station-head">
         {note ? <p className="journey-station-note">{note}</p> : null}
         <h2 id={`${id}-heading`} className="journey-station-heading">
+          <SectionAsciiGlow />
           <WarpText text={heading} />
         </h2>
       </header>
