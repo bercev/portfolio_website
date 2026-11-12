@@ -302,6 +302,7 @@ html[data-ascii="active"] .journey-pub-row:last-child {
 html[data-ascii="active"] .journey-pub-gloss,
 html[data-ascii="active"] .journey-project-copy,
 html[data-ascii="active"] .journey-station-note,
+html[data-ascii="active"] [data-hero-thesis],
 html[data-ascii="active"] [data-hero-tagline] {
   text-shadow:
     0 1px 10px rgba(0, 0, 0, 1),
@@ -4794,9 +4795,13 @@ a.skill-flow-note {
   /* Contains the absolutely-positioned React Bits ASCIIText canvas. */
   position: relative;
   /* Transparent — the portfolio's dark background shows through. */
-  /* More vertical room so the larger wordmark dominates the hero. */
-  min-height: clamp(46vh, 56vh, 66vh);
-  padding-top: clamp(4.5rem, 12vh, 7.5rem);
+  /* RUN10-THESIS: the band's air is trimmed so the new thesis line fits
+     without pushing the signals strip below the fold (desktop signals
+     bottom 772 → 833, mobile 785 → 873 before this trim — the probe
+     judge is signals bottom ≤ before). The wordmark box itself is
+     untouched; only the air above it and the min-height floor shrink. */
+  min-height: clamp(40vh, 46vh, 60vh);
+  padding-top: clamp(2.75rem, 7vh, 4.5rem);
   /* Keep BERAT above the masthead rule instead of sitting on it. */
   padding-bottom: clamp(1.1rem, 2.4vh, 1.85rem);
   pointer-events: none;
@@ -4829,6 +4834,8 @@ html[data-journey="active"] [data-hero-name-fallback] {
   [data-hero-glyph-band],
   [data-hero-meta],
   [data-hero-tagline],
+  [data-hero-thesis],
+  [data-hero-thesis-word],
   [data-hero-verb-ticker],
   [data-hero-cta-wrap],
   [data-hero-signals] {
@@ -4850,7 +4857,7 @@ html[data-journey="active"] [data-hero-name-fallback] {
   /* RUN10-HERO-FLOW: the signals strip is three rows of light, not a
      plate — no head, no padding, no card face. The fold buy-back lives
      above it (below padding-top, lede gap) as before. */
-  padding-top: clamp(1.5rem, 3vh, 2.5rem);
+  padding-top: clamp(1rem, 2vh, 1.75rem);
   padding-bottom: clamp(6vh, 8vh, 11vh);
 }
 
@@ -4864,8 +4871,10 @@ html[data-journey="active"] [data-hero-name-fallback] {
      below the 844px fold on mobile (before: signals bottom 827).
      RUN10-HERO-FLOW: the plate is gone, so the stack buys back its own
      room — the tight gap stays as the safe value; the probe is the
-     judge. */
-  gap: clamp(0.55rem, 1.4vh, 1.15rem);
+     judge. RUN10-THESIS: tightened once more (the thesis line itself
+     adds ~50px desktop / ~76px mobile) so the signals bottom returns
+     to its pre-thesis value at both widths. */
+  gap: clamp(0.45rem, 1.1vh, 0.9rem);
 }
 
 [data-hero-editorial] [data-hero-meta] {
@@ -4891,6 +4900,42 @@ html[data-journey="active"] [data-hero-name-fallback] {
   line-height: 1.04;
   letter-spacing: -0.022em;
   text-wrap: balance;
+}
+
+/* RUN10-THESIS: the research thesis line — one sentence in the lede's
+   own body type, first after the name. A small glowing dot leads it
+   (the ribbon's light, distilled — the same marker the signals rows
+   and flow numbers use); the words rise in one by one with the site's
+   ease-out. The dot sits on the first line's cap height; the sentence
+   wraps under itself with a hanging indent so the dot never re-reads
+   as a list marker mid-sentence. */
+[data-hero-thesis] {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font: 500 1.05rem/1.5 var(--font-sans);
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  /* Balance the wrap so the sentence never strands one word ("for.")
+     alone on its last line at 390px. */
+  text-wrap: balance;
+}
+
+[data-hero-thesis-dot] {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 0.55em;
+  border-radius: 999px;
+  background: var(--accent-neon);
+  box-shadow: 0 0 10px 2px
+    color-mix(in srgb, var(--accent-neon) 55%, transparent);
+}
+
+[data-hero-thesis-word] {
+  display: inline-block;
+  will-change: transform, opacity;
 }
 
 /* RUN9-DETAIL-LEDE-FLIP: the tagline lines stack in one grid cell, so the
@@ -6116,6 +6161,8 @@ html[data-journey="active"] [data-hero-name-fallback] {
   [data-hero-glyph-band],
   [data-hero-meta],
   [data-hero-tagline],
+  [data-hero-thesis],
+  [data-hero-thesis-word],
   [data-hero-verb-ticker],
   [data-hero-cta-wrap],
   [data-hero-signals] {

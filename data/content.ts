@@ -108,6 +108,11 @@ export interface PortfolioContent {
     /** The lede flip cycles through these (first = tagline); all from
         content.ts roles only — no invented copy. */
     readonly taglines: readonly string[];
+    /** Research thesis — one sentence stating his point of view (Gleb
+        move), built only from his actual paper topics: human–LLM
+        interaction in the wild / public AI conversations (@GrokSet) and
+        agents getting better at skills (SkillOptimizer). No invented copy. */
+    readonly thesis: string;
     /** The verb ticker cycles through these (first = the static/RM line);
         verb-led phrases from his real work only — the bio's "study how
         LLMs behave in the wild" and "building multi-agent pipelines",
@@ -193,6 +198,8 @@ export const portfolio = {
       "LLM researcher",
       "AI systems engineer",
     ],
+    thesis:
+      "I study how people really talk to AI in the wild — and how AI gets better at the skills they ask for.",
     verbs: [
       { verb: "Measuring", object: "how LLMs behave in the wild" },
       { verb: "Probing", object: "public Grok conversations" },

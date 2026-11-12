@@ -7,6 +7,7 @@ import ASCIIText from "@/components/effects/react-bits-ascii-text";
 import { ParticleBerat } from "@/components/effects/particle-berat";
 import { HeroMetaballs } from "@/components/effects/hero-metaballs";
 import { HeroTaglineFlip } from "@/components/sections/hero-tagline-flip";
+import { HeroThesis } from "@/components/sections/hero-thesis";
 import {
   HeroVerbTicker,
   verbPhrase,
@@ -158,6 +159,12 @@ export function Hero({ content }: { content: HeroContent }) {
         {/* Role / location / tagline / scroll — always below the glyph band. */}
         <div data-hero-below>
           <div data-hero-lede>
+            {/* RUN10-THESIS: the research thesis line — one sentence
+                stating his point of view, first in the lede (Gleb move:
+                the thesis sits up top, right after the name). Word-by-word
+                kinetic reveal from 0.12s; static under reduced motion. */}
+            <HeroThesis thesis={hero.thesis} reduceMotion={reduceMotion} />
+
             <motion.div
               data-hero-meta
               initial={reduceMotion ? false : { opacity: 0, y: 16 }}
