@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
-import { StatefulSubmitButton } from "@/components/ui/stateful-button";
+import { ContactLightFlow } from "./contact-light-flow";
+import { SlideToSend } from "./slide-to-send";
 import {
   CONTACT_DRAFT_KEY,
   contactDraftAction,
@@ -23,8 +24,6 @@ import {
   resolveTopicParam,
 } from "@/lib/contact-topics";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
-
-import { ContactLightFlow } from "./contact-light-flow";
 
 type Status = "idle" | "sending" | "sent" | "error";
 type FieldName = "name" | "email" | "message";
@@ -119,22 +118,28 @@ export function ContactForm() {
     setError(message);
   }
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  // Validate + send, shared by every submit path (the slide-to-send thumb,
+  // the keyboard commit, and implicit submission via Enter in a field).
+  // Returns true only on a genuine send — the slide shakes and springs home
+  // on false, and the form's error line carries the reason either way.
+  // The sending guard stops a double submit from any path (the old pill
+  // disabled itself while sending; the slide locks the same way).
+  async function attemptSend(): Promise<boolean> {
+    if (status === "sending") return false;
     setError("");
     setInvalidField(null);
 
     if (name.trim().length < 2) {
       fail("name", "01 · Your name needs at least 2 characters");
-      return;
+      return false;
     }
     if (!EMAIL_RE.test(email.trim())) {
       fail("email", "02 · That email address doesn't look right");
-      return;
+      return false;
     }
     if (message.trim().length < 10) {
       fail("message", "03 · Your message needs at least 10 characters");
-      return;
+      return false;
     }
 
     setStatus("sending");
@@ -170,6 +175,7 @@ export function ContactForm() {
       // failure; the field listener resolves the origin at fire
       // time (the receipt panel keeps this form's class).
       window.dispatchEvent(new CustomEvent("contact-transmit"));
+      return true;
     } catch (err) {
       setStatus("error");
       setError(
@@ -177,7 +183,13 @@ export function ContactForm() {
           ? `Couldn't send — ${err.message}`
           : "Couldn't send — please try again",
       );
+      return false;
     }
+  }
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await attemptSend();
   }
 
   // Success cut (run-9 RUN9-FILE-THE-SHEET, re-skinned run-10
@@ -433,16 +445,23 @@ export function ContactForm() {
         </p>
       ) : null}
 
-      {/* Pre-built Aceternity Stateful Button: idle -> spinner (sending) ->
-          idle-reset (error). Success is the receipt panel above — the
-          site's intentional success state — so the button never holds a
-          "sent" state. */}
-      <StatefulSubmitButton
-        state={status}
-        className="journey-contact-form-submit"
+      {/* Slide-to-send (run-10 RUN10-SLIDE-SEND): the luminous submit pill
+          becomes a slide-the-thumb track — drag the glowing thumb to the
+          end, or flick it past 90%, to send; keyboard users slide with the
+          arrow keys or commit with End / Enter / Space. The hidden submit
+          button keeps implicit submission alive (Enter in a field still
+          sends) without adding a second visible control; it sits outside
+          the tab order because the slide is the keyboard path. */}
+      <SlideToSend disabled={status === "sending"} onCommit={attemptSend} />
+      <button
+        type="submit"
+        tabIndex={-1}
+        disabled={status === "sending"}
+        aria-hidden="true"
+        className="journey-contact-form-submit-sr"
       >
-        {status === "sending" ? "Transmitting…" : "Transmit →"}
-      </StatefulSubmitButton>
+        Send message
+      </button>
           </motion.form>
         )}
       </AnimatePresence>

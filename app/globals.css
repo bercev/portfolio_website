@@ -6363,52 +6363,140 @@ html[data-light-preset="goldenHour"] #contact {
      floating caption. */
   border-left: 2px solid #ff6b57;
 }
-/* Submit (run-9 RUN9-FORM-CONTROLS, re-skinned run-10): a luminous
-   full-width pill — accent wash + glow, brighter + deeper glow on
-   hover, 0.97 press — replacing the stamped TRANSMIT plate. The
-   StatefulSubmitButton mechanism (sending spinner, error reset) is
-   untouched; only this class restyles it. */
-.journey-contact-form-submit {
+/* Slide-to-send (run-10 RUN10-SLIDE-SEND): the luminous submit pill
+   becomes a slide-the-thumb track — same accent wash + glow as the pill
+   it replaces, now a full-width track with a glowing thumb that drags a
+   trail of light behind it. Mechanism after React Bits SlideCommit (see
+   lib/slide-to-send.ts); the thumb is a glowing disc with a "→" glyph,
+   the label fades as the thumb travels, the spinner runs while sending.
+   The hidden submit button below keeps implicit submission (Enter in a
+   field) without a second visible control. */
+.journey-contact-slide {
   position: relative;
-  display: flex;
   width: 100%;
+  height: 56px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--portfolio-accent) 14%, transparent);
+  box-shadow: 0 0 24px -6px
+    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+.journey-contact-slide:hover:not([aria-disabled="true"]) {
+  background: color-mix(in srgb, var(--portfolio-accent) 22%, transparent);
+  box-shadow: 0 0 32px -4px
+    color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
+}
+.journey-contact-slide:active:not([aria-disabled="true"]) {
+  cursor: grabbing;
+}
+.journey-contact-slide:focus-visible {
+  outline: 2px solid var(--portfolio-accent);
+  outline-offset: 2px;
+}
+.journey-contact-slide[aria-disabled="true"] {
+  cursor: wait;
+}
+.journey-contact-slide-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--portfolio-accent) 38%, transparent),
+    color-mix(in srgb, var(--portfolio-accent) 12%, transparent)
+  );
+  pointer-events: none;
+}
+.journey-contact-slide-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
   justify-content: center;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: 0.8rem 1.4rem;
   color: var(--foreground);
-  background: color-mix(in srgb, var(--portfolio-accent) 14%, transparent);
-  border: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.journey-contact-slide-thumb {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 48px;
+  height: 48px;
   border-radius: 999px;
-  box-shadow: 0 0 24px -6px
-    color-mix(in srgb, var(--portfolio-accent) 55%, transparent);
-  cursor: pointer;
-  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out,
-    transform 0.22s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: color-mix(in srgb, var(--portfolio-accent) 85%, #fff 15%);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, #fff 55%, transparent),
+    0 0 24px 2px color-mix(in srgb, var(--portfolio-accent) 75%, transparent);
+  pointer-events: none;
 }
-.journey-contact-form-submit:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--portfolio-accent) 22%, transparent);
-  box-shadow: 0 0 32px -4px
-    color-mix(in srgb, var(--portfolio-accent) 70%, transparent);
+.journey-contact-slide-arrow {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
 }
-.journey-contact-form-submit:active:not(:disabled) {
-  transform: scale(0.97);
+.journey-contact-slide-spinner {
+  display: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: slide-send-spin 1s linear infinite;
 }
-.journey-contact-form-submit:focus-visible {
-  outline: 2px solid var(--portfolio-accent);
-  outline-offset: 2px;
+.journey-contact-slide[data-phase="pending"] .journey-contact-slide-arrow,
+.journey-contact-slide[aria-disabled="true"]
+  .journey-contact-slide-arrow {
+  display: none;
 }
-.journey-contact-form-submit:disabled {
-  opacity: 0.6;
-  cursor: wait;
+.journey-contact-slide[data-phase="pending"] .journey-contact-slide-spinner,
+.journey-contact-slide[aria-disabled="true"]
+  .journey-contact-slide-spinner {
+  display: block;
+}
+@keyframes slide-send-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Hidden submit button: visually hidden but present, so Enter in a field
+   still submits the form (implicit submission). Outside the tab order —
+   the slide is the keyboard path. */
+.journey-contact-form-submit-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 /* Reduced motion (run-9 RUN9-FORM-CONTROLS, re-skinned run-10):
    the light-rule appears instantly on focus (no draw), the flow
-   number never presses, chips and the submit swap state with no
-   transition — the settled form is the same form. */
+   number never presses, chips and the slide swap state with no
+   transition — the settled form is the same form. The slide's spinner
+   breathes instead of spinning (the SlideCommit reduced-motion rule);
+   the thumb still drags — travel is pointer-driven, not animated. */
 @media (prefers-reduced-motion: reduce) {
   .journey-contact-form-field::after {
     transition: none;
@@ -6421,9 +6509,22 @@ html[data-light-preset="goldenHour"] #contact {
     animation: none;
   }
   .journey-contact-form-topic-chip,
-  .journey-contact-form-submit,
+  .journey-contact-slide,
   .journey-contact-receipt-action {
     transition: none;
+  }
+  .journey-contact-slide-spinner {
+    animation: slide-send-breathe 1.4s ease-in-out infinite;
+    border-top-color: currentColor;
+  }
+  @keyframes slide-send-breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
   }
 }
 /* Sent receipt (run-9 RUN9-DETAIL-CARD-READY, re-skinned run-10): a

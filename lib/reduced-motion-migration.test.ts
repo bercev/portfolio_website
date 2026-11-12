@@ -76,7 +76,9 @@ describe("reduced-motion hook migration (RUN9-RM-HOOK-AUDIT)", () => {
       "components/sections/project-case-study.tsx",
       "components/ui/chromatic-image.tsx",
       "components/ui/hover-preview.tsx",
-      "components/ui/stateful-button.tsx",
+      // run-10 RUN10-SLIDE-SEND: the slide-to-send control replaces the
+      // deleted stateful-button as the contact form's motion consumer.
+      "components/sections/slide-to-send.tsx",
     ];
     for (const rel of migrated) {
       const src = readFileSync(join(REPO_ROOT, rel), "utf8");
