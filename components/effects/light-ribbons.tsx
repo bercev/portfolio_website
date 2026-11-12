@@ -11,6 +11,16 @@ import {
   getBustTravelBox,
   streamGlyphHiddenByBust,
 } from "@/lib/bust-travel";
+import {
+  CLICK_PULSE_TAIL_COUNT,
+  clickPulseActive,
+  clickPulseEnergyAt,
+  clickPulseHead,
+  clickPulseHeadRadius,
+  clickPulseSpawn,
+  clickPulseTail,
+  type ClickPulse,
+} from "@/lib/click-pulse";
 
 /**
  * LightRibbons — run 7: the user-approved Waylume-style animated light
@@ -197,6 +207,22 @@ import {
  *   width with dense 36px spacing (2–3 glyphs in the ~96px right
  *   margin at once) plus ~495px of travel in a 3s pair, so the pair
  *   shows a wholly different constellation.
+ *
+ * - Click pulse (run-10 iter 31, RUN10-CLICK-PULSE, React Bits Soft
+ *   Aurora behavior: "clicks send a pulse of light along it"): a
+ *   pointer click anywhere spawns a bright head + fading tail at the
+ *   click point that travels +x along the bright band's effective
+ *   slope for ~1.8s (~420px/s desktop, ~300 narrow), drawn sharp on
+ *   the main canvas after the flare so it is the brightest object —
+ *   the react half of the charter's "light that flows, reacts, and
+ *   carries the page". Distinct from SPARKLE's hover burst (a radial
+ *   burst AT the pointer) and from the ambient flare (a slow periodic
+ *   crossing): this one is click-triggered, faster, bigger, brighter,
+ *   and starts exactly where the pointer landed. The tail grows
+ *   behind the head as it travels (lib/click-pulse.ts), so at spawn
+ *   the pulse is a point, not a pre-drawn smear. Up to 4 concurrent
+ *   pulses; the oldest is dropped, never queued. Reduced motion =
+ *   absent (no listener, no pulses, static frame untouched).
  *
  * Contracts preserved from the glyph field it replaces:
  * - It claims the page background via documentElement[data-journey=
@@ -538,6 +564,30 @@ function makeFlareSprite(bright: Rgb, accent: Rgb): HTMLCanvasElement {
   grad.addColorStop(1.0, rgba(accent, 0));
   g.fillStyle = grad;
   g.fillRect(0, 0, 96, 96);
+  return c;
+}
+
+/**
+ * Click-pulse core sprite (run-10 iter 31, RUN10-CLICK-PULSE): a hard
+ * near-white disc with a sharp edge, drawn over the pulse head. The
+ * mobile critic flagged the head as camouflaged among the ambient
+ * soft orbs at 390px — same visual family, just brighter. The core
+ * makes the head a different *kind* of object (a hot dot inside the
+ * glow), so a single glance says "comet", not "another ambient orb".
+ */
+function makePulseCoreSprite(): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = 48;
+  c.height = 48;
+  const g = c.getContext("2d");
+  if (!g) return c;
+  const grad = g.createRadialGradient(24, 24, 0, 24, 24, 24);
+  grad.addColorStop(0.0, rgba(WHITE, 1));
+  grad.addColorStop(0.55, rgba(WHITE, 1));
+  grad.addColorStop(0.8, rgba(WHITE, 0.45));
+  grad.addColorStop(1.0, rgba(WHITE, 0));
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 48, 48);
   return c;
 }
 
@@ -1007,6 +1057,7 @@ export function LightRibbons() {
     null,
   );
   const flareSpriteRef = useRef<HTMLCanvasElement | null>(null);
+  const pulseCoreSpriteRef = useRef<HTMLCanvasElement | null>(null);
   const bgRef = useRef<Rgb>({ r: 5, g: 7, b: 12 });
   const accentRef = useRef<Rgb>({ r: 125, g: 211, b: 252 });
   // Under reduced motion there is no loop to pick up rebuilt sprites, so
@@ -1050,6 +1101,7 @@ export function LightRibbons() {
       accent: makeSprite(colors.accent),
     };
     flareSpriteRef.current = makeFlareSprite(colors.bright, colors.accent);
+    pulseCoreSpriteRef.current = makePulseCoreSprite();
     repaintStaticRef.current?.();
   }, []);
 
@@ -1163,6 +1215,11 @@ export function LightRibbons() {
     let lastVelScrollY = -1;
     let lastVelT = -1;
     let lastVelProbe = "";
+
+    // Click pulse (run-10 iter 31, RUN10-CLICK-PULSE): live pulses
+    // spawned by pointerdown, drawn in draw() after the flare.
+    const pulses: ClickPulse[] = [];
+    let lastPulseProbe = "";
 
     // Daylight (RUN7-EXP-DAYLIGHT): the time-of-day set currently
     // rendered, chased toward the set for the visitor's local hour.
@@ -1843,6 +1900,92 @@ export function LightRibbons() {
           }
         }
       }
+
+      // Click pulse (run-10 iter 31, RUN10-CLICK-PULSE): the head +
+      // tail a pointer click sent traveling along the bright band's
+      // slope. Drawn AFTER the flare so it is the brightest object
+      // on the canvas, sharp on the main canvas (never through the
+      // blur pass), additive in dark mode — the same treatment as
+      // the flare head, with energy() + the reveal factor applied
+      // exactly as for the flare. Expired pulses are pruned here so
+      // the probe below reads the live set. Under reduced motion
+      // there is no listener and no pulse — the static frame is
+      // untouched.
+      if (!reduced) {
+        const pulseSprite = flareSpriteRef.current;
+        if (pulseSprite) {
+          for (let i = pulses.length - 1; i >= 0; i--) {
+            if (!clickPulseActive(t - pulses[i].startT)) {
+              pulses.splice(i, 1);
+            }
+          }
+          if (pulses.length > 0) {
+            ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
+            for (const p of pulses) {
+              const age = t - p.startT;
+              // Tail first: fading ghosts behind the head along the
+              // band slope (the tail grows as the head travels — see
+              // lib/click-pulse.ts). Energy is floored (same file):
+              // the pulse must read on its own in dark gaps, where
+              // raw energy() falls to ~0.25.
+              for (let k = CLICK_PULSE_TAIL_COUNT; k >= 1; k--) {
+                const g = clickPulseTail(p, age, k);
+                if (g.alpha < 0.004) continue;
+                const ga =
+                  g.alpha *
+                  clickPulseEnergyAt(energy(g.x, g.y)) *
+                  revealFactorAt(g.x, g.y);
+                if (ga < 0.004) continue;
+                const d = clickPulseHeadRadius(p.narrow) * (1 - k / 12) * 2;
+                ctx.globalAlpha = Math.min(1, ga);
+                ctx.drawImage(pulseSprite, g.x - d / 2, g.y - d / 2, d, d);
+              }
+              const h = clickPulseHead(p, age);
+              const ha =
+                h.alpha *
+                clickPulseEnergyAt(energy(h.x, h.y)) *
+                revealFactorAt(h.x, h.y);
+              if (ha >= 0.004) {
+                const d = clickPulseHeadRadius(p.narrow) * 2;
+                ctx.globalAlpha = Math.min(1, ha);
+                ctx.drawImage(pulseSprite, h.x - d / 2, h.y - d / 2, d, d);
+                // Hard white core: the head's signature — a hot dot
+                // inside the glow, a different kind of object from
+                // the ambient soft orbs (mobile critic, iter 31: the
+                // head was camouflaged at 390px).
+                const coreSprite = pulseCoreSpriteRef.current;
+                if (coreSprite) {
+                  const cd = d * 0.5;
+                  ctx.drawImage(
+                    coreSprite,
+                    h.x - cd / 2,
+                    h.y - cd / 2,
+                    cd,
+                    cd,
+                  );
+                }
+              }
+            }
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = "source-over";
+          }
+          // Probe hook for verification: the newest active pulse
+          // head as "n:x,y,alpha" (n = active count), "0" when none.
+          const newest = pulses[pulses.length - 1];
+          const pulseProbe = newest
+            ? (() => {
+                const h = clickPulseHead(newest, t - newest.startT);
+                return `${pulses.length}:${Math.round(h.x)},${Math.round(
+                  h.y,
+                )},${h.alpha.toFixed(2)}`;
+              })()
+            : "0";
+          if (pulseProbe !== lastPulseProbe) {
+            lastPulseProbe = pulseProbe;
+            canvas.dataset.clickPulse = pulseProbe;
+          }
+        }
+      }
     };
 
     const loop = (now: number) => {
@@ -1861,6 +2004,27 @@ export function LightRibbons() {
       }
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(loop);
+    };
+
+    // Click pulse (run-10 iter 31, RUN10-CLICK-PULSE): a pointer
+    // click anywhere spawns a pulse at the click point that travels
+    // along the bright band's slope. Passive — never interferes with
+    // the click itself. Registered only in the full-motion branch
+    // below; reduced motion has no listener and no pulses.
+    const onPointerDown = (e: PointerEvent) => {
+      const narrow = W < 700;
+      const host = (narrow ? NARROW_RIBBONS : DESKTOP_RIBBONS).find(
+        (b) => b.role === "bright",
+      );
+      const spawned = clickPulseSpawn(pulses, {
+        x0: e.clientX,
+        y0: e.clientY,
+        slope: (host?.slope ?? 0.2) + chapterCur.slope,
+        startT: performance.now(),
+        narrow,
+      });
+      pulses.length = 0;
+      pulses.push(...spawned);
     };
 
     let resizeTimer = 0;
@@ -1904,6 +2068,9 @@ export function LightRibbons() {
       // loop reads bgRef/spritesRef per frame, so no remount is needed.
       probeThemeTokens();
       document.addEventListener("visibilitychange", onVisibility);
+      window.addEventListener("pointerdown", onPointerDown, {
+        passive: true,
+      });
       raf = requestAnimationFrame(loop);
     }
     window.addEventListener("resize", onResize);
@@ -1916,6 +2083,7 @@ export function LightRibbons() {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onReducedScroll);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pointerdown", onPointerDown);
       if (root.getAttribute("data-ascii") === "active") {
         root.removeAttribute("data-ascii");
       }
